@@ -50,6 +50,8 @@
 .demo-character-card h5 { margin:var(--space-2) 0; font-size:var(--text-md); overflow-wrap:anywhere; }
 .demo-character-badge { color:var(--green); font-size:var(--text-sm); font-weight:600; }
 .demo-character-card a { display:inline-flex; align-items:center; min-height:var(--tap-min); }
+.experimental-create-form[data-demo-id] > :is(.demo-prefill-bar,.demo-description,.experimental-create-actions,.app-demo) { grid-column:1 / -1; }
+@media(min-width:768px) { .experimental-create-form[data-demo-id] { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; } }
 @media(max-width:600px) { .demo-comparison strong { min-height:3.2em; } .demo-character-card { grid-template-columns:minmax(0,1fr); } .demo-character-card > img { max-height:280px; } }
 @media(max-width:767px) { .app-node-graph { padding: var(--space-4); }.app-demo { padding: var(--space-3); }.graph-viewport { height: 340px; }.graph-parameters { grid-template-columns: minmax(0,1fr); }.graph-parameters dt { border-bottom: 0; padding-bottom: 0; }.graph-parameters dd { padding-top: var(--space-1); }.demo-form textarea { font-size: var(--text-md); } }
 @media(prefers-reduced-motion:reduce) { .demo-progress span { transition: none; } }

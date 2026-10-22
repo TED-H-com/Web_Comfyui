@@ -117,6 +117,9 @@ ASSERT = r'''(async () => {
   assert(document.querySelector('.experimental-create-form button[type=submit]').textContent.includes('demo'),'English native demo action');
   assert(document.querySelector('.demo-output h4').textContent==='Demo character created','English character completion');
   assert(document.querySelector('.demo-character-card h5').textContent===characterForm.elements.name.value,'language preserves personal name');
+  const cardBounds=document.querySelector('.demo-character-card').getBoundingClientRect();
+  assert(cardBounds.width>characterForm.getBoundingClientRect().width*0.7,'character result spans form columns');
+  for(const link of document.querySelectorAll('.demo-character-card a')) assert(link.getBoundingClientRect().right<=cardBounds.right,'next action fits inside character card');
   const cardURL=cardPhoto.src;
   characterForm.querySelector('.demo-prefill-bar button').click();
   assert(revoked.includes(cardURL)&&document.querySelector('.app-demo').hidden&&!document.querySelector('.demo-character-card'),'reset clears card and releases its photo');
