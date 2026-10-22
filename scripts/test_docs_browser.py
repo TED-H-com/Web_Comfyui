@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote, urlsplit
 
@@ -34,7 +35,7 @@ ASSERT = r'''(async () => {
   assert(visible('[data-view="characters"]') && visible('[data-view="studio"]') && visible('[data-view="workflows"]'), 'same app navigation');
   assert(document.getElementById('servicePill').textContent==='互動說明','no fake live service');
   if(new URLSearchParams(location.search).has('screenshot')) {result.textContent = 'SCREENSHOT READY'; return;}
-  document.querySelector('.app-guide-button button').click();
+  if (!new URLSearchParams(location.search).has('slowguide')) document.querySelector('.app-guide-button button').click();
   await until(()=>document.querySelector('.app-feature-guide'));
   let detail = document.querySelector('.app-feature-guide');
   for(const text of ['z_image_turbo_bf16.safetensors','qwen_3_4b.safetensors','ae.safetensors','zimage_prompt','會怎麼跑','使用什麼技巧']) assert(detail.textContent.includes(text),'actual text2img source '+text);
@@ -72,7 +73,8 @@ ASSERT = r'''(async () => {
 '''
 
 
-def test_static_docs_browser(tmp_path):
+@pytest.mark.parametrize('direct_guide', [False, True])
+def test_static_docs_browser(tmp_path, direct_guide):
     browser = shutil.which('chromium')
     if not browser:
         pytest.skip('Chromium not installed')
@@ -92,6 +94,7 @@ def test_static_docs_browser(tmp_path):
                 file = output / relative
                 if not file.resolve().is_relative_to(output.resolve()) or not file.is_file(): self.send_error(404); return
                 data = file.read_bytes()
+                if direct_guide and file.name == 'app.js': time.sleep(0.5)
                 mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json'}.get(file.suffix, 'text/plain')
                 if file.name == 'index.html': data = data.replace(b'<head>', b'<head><script src="./monitor.js"></script>').replace(b'</body>', b'<script src="./assert.js"></script></body>')
             else: self.send_error(404); return
@@ -101,8 +104,9 @@ def test_static_docs_browser(tmp_path):
     server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:
-        for width in (1440, 768, 390):
-            run = subprocess.run([browser, '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', f'--user-data-dir={tmp_path / str(width)}', f'--window-size={width},900', '--virtual-time-budget=15000', '--dump-dom', f'http://127.0.0.1:{server.server_port}/Web_Comfyui/'], capture_output=True, text=True, timeout=45)
+        for width in ((390,) if direct_guide else (1440, 768, 390)):
+            route = '?slowguide#/studio/text2img?guide=1' if direct_guide else ''
+            run = subprocess.run([browser, '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', f'--user-data-dir={tmp_path / str(width)}', f'--window-size={width},900', '--virtual-time-budget=15000', '--dump-dom', f'http://127.0.0.1:{server.server_port}/Web_Comfyui/{route}'], capture_output=True, text=True, timeout=45)
             marker = run.stdout.split('id="docs-test-result"')[-1].split('</pre>')[0]
             assert '>PASS' in marker, (width, marker[-1000:], run.stderr[-500:])
         assert not any('/api/' in path or path.startswith('POST ') for path in requests)

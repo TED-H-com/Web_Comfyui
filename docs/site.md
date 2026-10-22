@@ -2,7 +2,7 @@
 
 公開網站：https://ted-h-com.github.io/Web_Comfyui/
 
-網站使用真正的 `webui/static/index.html`、`app.js`、樣式與工作庫元件，保留本機 WebUI 的導覽、工具按鈕與表單。`webui/docs/docs.js` 加上唯讀文件轉接層：提供靜態資料，將生成、上傳、儲存和 API 操作導向說明，不連接本機 ComfyUI 或供應商。角色、素材、帳號與任務使用空白資料。
+網站使用真正的 `webui/static/index.html`、`app.js`、樣式與工作庫元件，保留本機 WebUI 的導覽、工具按鈕與表單。`webui/docs/docs.js` 加上唯讀文件轉接層：提供靜態資料，將生成、上傳與表單送出導向說明，封鎖 API 寫入，不連接本機 ComfyUI 或供應商。角色、素材、帳號與任務使用空白資料。
 
 點 **文生圖** 等工具名稱、**查看流程與模型** 或生成按鈕，會顯示該功能真正使用的組圖程式、checkpoint／編碼器／VAE／LoRA、預設參數、操作步驟與前置需求。23 項功能說明對應實際 registry；隱藏、停用或角色限定的旗標仍保留。文件中可操作表單不代表功能已在使用者電腦上就緒。
 

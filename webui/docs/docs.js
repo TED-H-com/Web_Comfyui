@@ -108,7 +108,7 @@
     content.append(el('p', '這是 Web ComfyUI 的互動說明版，使用與本機版相同的頁面、按鈕和表單。', 'workflow-summary'));
     rows(content, '怎麼看這個介面', [
       '從「創作」切換文生圖、改圖、影片或聲音工具；點工具名稱或「查看流程與模型」會說明真正使用的模型與 template。',
-      '表單可以切換設定以了解操作位置；生成、上傳、連接 API 與儲存按鈕只開啟說明。',
+      '表單可以切換設定以了解操作位置；生成、上傳與表單送出會開啟說明。API 呼叫與儲存不會送出。',
       '「工作庫」整理其他可下載工作流與來源方法；這些社群流程與創作表單使用的內建組圖程式分別標示。',
       '角色、素材、任務與供應商清單從空白開始。個人內容由安裝後的本機 WebUI 管理。',
     ]);
@@ -148,14 +148,22 @@
   const disableSecrets = () => document.querySelectorAll('input[type=password]').forEach(input => {input.disabled = true;input.value = '';input.placeholder = '請在本機 WebUI 設定';});
   new MutationObserver(disableSecrets).observe(document.documentElement, {childList: true, subtree: true});
   disableSecrets();
+  // Wait for the real app script, including slow first visits; a fixed delay
+  // can fire before its shared sheet controller has been defined.
+  const appLoaded = new Promise(resolve => {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', resolve, {once: true});
+    else resolve();
+  });
+  const showLoadError = () => {const message = document.getElementById('docsBanner'); if(message) message.textContent = '說明資料載入失敗，請重新整理頁面。';};
+  const initialGuide = callback => Promise.all([ready, appLoaded]).then(callback).catch(showLoadError);
   if (!location.hash || location.hash === '#/') history.replaceState(null, '', '#/studio/text2img');
   // Keep former static help links useful; workflow deep links remain supported.
-  if (['#/start', '#/about'].includes(location.hash)) {history.replaceState(null, '', '#/studio/text2img');ready.then(() => setTimeout(openHelp, 100));}
+  if (['#/start', '#/about'].includes(location.hash)) {history.replaceState(null, '', '#/studio/text2img');initialGuide(openHelp);}
   const guideMatch = /^#\/studio\/([\w-]+)\?guide=1$/.exec(location.hash);
   if (guideMatch) {
     history.replaceState(null, '', '#/studio/' + guideMatch[1]);
-    ready.then(() => setTimeout(() => openFeature(guideMatch[1]), 200));
+    initialGuide(() => openFeature(guideMatch[1]));
   }
-  ready.catch(() => {const message = document.getElementById('docsBanner'); if(message) message.textContent = '說明資料載入失敗，請重新整理頁面。';});
+  ready.catch(showLoadError);
   document.getElementById('docsHelpButton')?.addEventListener('click', event => openHelp(event.currentTarget));
 })();
