@@ -24,3 +24,16 @@ body[data-view="workflows"] .layout { grid-template-columns: minmax(0,1fr); }
   .workflow-library .catalogue-toolbar select { flex: 1; min-width: 120px; max-width: none; font-size: var(--text-md); }
   .workflow-grid { grid-template-columns: minmax(0,1fr); }
 }
+.workflow-card-summary { font-size: var(--text-sm); line-height: 1.6; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.workflow-card .workflow-state { margin-top: auto; padding-top: var(--space-2); }
+.workflow-summary { font-size: var(--text-lg); line-height: 1.7; margin-top: 0; }
+.workflow-evidence { color: var(--muted); font-size: var(--text-sm); line-height: 1.7; padding: var(--space-3); background: var(--bg); border-radius: var(--space-2); }
+.workflow-guide-section { margin-block: var(--space-5); }
+.workflow-guide-section h3 { margin-bottom: var(--space-3); }
+.workflow-guide-section li { margin-block: var(--space-2); line-height: 1.7; overflow-wrap: anywhere; }
+.workflow-guide-section ol, .workflow-guide-section ul { padding-left: var(--space-5); }
+.workflow-techniques { margin: 0; line-height: 1.7; }
+.workflow-techniques dt { font-size: var(--text-sm); font-weight: 650; margin-top: var(--space-3); overflow-wrap: anywhere; }
+.workflow-techniques dd { color: var(--muted); margin: var(--space-1) 0 var(--space-3); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.workflow-technical { border-top: 1px solid var(--line); margin-block: var(--space-5); padding-top: var(--space-3); }
+.workflow-technical summary { cursor: pointer; min-height: var(--tap-min); display: flex; align-items: center; color: var(--blue-dark); }

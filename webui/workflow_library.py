@@ -5,8 +5,14 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import urllib.parse
+
+try:
+    from workflow_guides import active_nodes, enrich_entry
+except ModuleNotFoundError:
+    from webui.workflow_guides import active_nodes, enrich_entry
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_WORKFLOW_BYTES = 8 * 1024 * 1024
@@ -23,13 +29,47 @@ def graph_details(graph):
     if not isinstance(graph, dict):
         raise ValueError('工作流必須是 JSON 物件')
     if isinstance(graph.get('nodes'), list):
-        nodes = graph['nodes']
+        nodes = active_nodes(graph)
         types = sorted({str(n.get('type')) for n in nodes if isinstance(n, dict) and n.get('type')})
         return {'format': 'visual', 'node_types': types, 'node_count': len(nodes)}
     nodes = [v for v in graph.values() if isinstance(v, dict) and 'class_type' in v]
     if nodes and len(nodes) == len(graph):
         return {'format': 'api', 'node_types': sorted({str(n['class_type']) for n in nodes}), 'node_count': len(nodes)}
     raise ValueError('不是 ComfyUI visual / API 工作流')
+
+
+def graph_models(graph):
+    """Describe known loader fields, without publishing absolute or opaque paths."""
+    loaders = {
+        'CheckpointLoaderSimple': ('checkpoints', ('ckpt_name',)),
+        'UNETLoader': ('diffusion_models', ('unet_name',)),
+        'UnetLoaderGGUF': ('diffusion_models', ('unet_name',)),
+        'VAELoader': ('vae', ('vae_name',)),
+        'LoraLoader': ('loras', ('lora_name',)),
+        'LoraLoaderModelOnly': ('loras', ('lora_name',)),
+        'CLIPLoader': ('text_encoders', ('clip_name',)),
+        'DualCLIPLoader': ('text_encoders', ('clip_name1', 'clip_name2')),
+    }
+    result, seen = [], set()
+    for node in active_nodes(graph):
+        kind = node['type']
+        if kind not in loaders:
+            continue
+        directory, fields = loaders[kind]
+        raw = node.get('inputs', {}) if node.get('class_type') else node.get('widgets_values', [])
+        for index, field in enumerate(fields):
+            value = raw.get(field) if isinstance(raw, dict) else raw[index] if isinstance(raw, list) and index < len(raw) else None
+            if not isinstance(value, str) or len(value) > 240:
+                continue
+            name = value.replace('\\', '/')
+            if (not re.fullmatch(r'[\w .()/+-]+\.(?:safetensors|ckpt|gguf|pth|pt|bin|sft)', name, re.I)
+                or name.startswith(('/', '~')) or '..' in name.split('/')
+                or re.search(r'(?:sk-|aip_|gh[pousr]_|hf_)[A-Za-z0-9_-]{16,}', name)):
+                continue
+            if (directory, name) not in seen:
+                result.append({'name': name, 'node_type': kind, 'directory_hint': directory})
+                seen.add((directory, name))
+    return result
 
 
 def safe_path(relative, root=ROOT):
@@ -43,7 +83,7 @@ def safe_path(relative, root=ROOT):
     return candidate
 
 
-def catalog(root=ROOT):
+def catalog(root=ROOT, *, include_discovered=True):
     entries = []
     covered = set()
     provenance_path = root / 'manifests/workflow_coverage/imported_sources.json'
@@ -56,49 +96,60 @@ def catalog(root=ROOT):
         for raw in data.get('workflows', []):
             entry = dict(raw)
             source = data.get('sources', {}).get(entry.get('source'), {})
-            entry['license'] = source.get('license') or '未宣告再散布授權'
+            entry['license'] = entry.get('license') or source.get('license') or '未宣告再散布授權'
             imported = by_url.get(entry.get('upstream_url'), {})
-            if imported:
+            if imported and not entry.get('local_path'):
                 entry['local_path'] = imported['destination']
                 entry['license'] = imported['license']
             relative = entry.get('local_path')
+            graph = None
             entry['available'] = False
             if relative:
                 try:
                     path = safe_path(relative, root)
                     graph = read_json(path)
                     entry.update(graph_details(graph))
+                    if not entry.get('models'):
+                        entry['models'] = graph_models(graph)
                     entry['available'] = True
                     covered.add(path.resolve())
                 except (ValueError, OSError):
                     entry['status'] = 'file-unavailable'
             entry['kind'] = 'workflow'
+            entry['guide'] = enrich_entry(entry, graph)
             entries.append(entry)
-    for path in sorted((root / 'workflows').rglob('*.json')):
+    paths = (root / 'workflows').rglob('*.json') if include_discovered else (root / path for path in by_path)
+    for path in sorted(paths):
         if path.resolve() in covered:
             continue
         relative = path.relative_to(root).as_posix()
         try:
             safe_path(relative, root)
-            details = graph_details(read_json(path))
+            graph = read_json(path)
+            details = graph_details(graph)
         except (ValueError, OSError):
             continue
-        entries.append({
+        entry = {
             'id': 'local-' + hashlib.sha256(relative.encode()).hexdigest()[:20],
             'title': path.stem, 'category': path.parent.name if path.parent.name != 'workflows' else 'local',
             'source': 'workspace', 'kind': 'workflow', 'available': True,
             'local_path': relative, 'tags': [], 'status': 'not-gpu-qualified', **details,
+            'models': graph_models(graph),
             **({'upstream_url': by_path[relative].get('source_url'),
                 'license': by_path[relative].get('license'),
                 'source': urllib.parse.urlsplit(by_path[relative].get('source_url', '')).path.split('/')[1],
                 'notes': by_path[relative].get('modifications', [])} if relative in by_path else {}),
-        })
+        }
+        entry['guide'] = enrich_entry(entry, graph)
+        entries.append(entry)
     recipes_path = root / 'manifests/community_recipes/recipes.json'
     if recipes_path.is_file():
         data = read_json(recipes_path)
         recipes = data if isinstance(data, list) else data.get('recipes', [])
         for raw in recipes:
-            entries.append({**raw, 'id': 'recipe-' + str(raw['id']), 'kind': 'recipe', 'available': False})
+            entry = {**raw, 'id': 'recipe-' + str(raw['id']), 'kind': 'recipe', 'available': False}
+            entry['guide'] = enrich_entry(entry)
+            entries.append(entry)
     return entries
 
 

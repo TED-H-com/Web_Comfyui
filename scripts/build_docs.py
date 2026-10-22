@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+"""Build the public, offline-readable workflow guide from reviewed repository inputs.
+
+No running server, user data, credentials or network access are used. The output
+is a deployable directory, not the source checkout. Only licensed, hash-pinned
+workflow files from the two source manifests are eligible for download.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import ipaddress
+import json
+from pathlib import Path
+import re
+import shutil
+import sys
+import tempfile
+from urllib.parse import urlsplit
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from webui.workflow_library import catalog
+from scripts.check_public_release import inspect
+
+MARKER = '.web-comfyui-docs'
+ASSETS = {
+    'webui/docs/index.html': 'index.html',
+    'webui/docs/docs.css': 'assets/docs.css',
+    'webui/docs/docs.js': 'assets/docs.js',
+    'webui/static/styles.css': 'assets/styles.css',
+    'webui/static/workflow-library.css': 'assets/workflow-library.css',
+    'webui/static/workflow-library.js': 'assets/workflow-library.js',
+    'LICENSE': 'licenses/project-GPL-3.0.txt',
+    'third_party/community/dseditor/NOTICE.md': 'licenses/dseditor-NOTICE.md',
+}
+FIELDS = {'id', 'title', 'category', 'source', 'kind', 'available', 'format', 'tags',
+          'node_types', 'node_count', 'models', 'license', 'upstream_url', 'source_urls',
+          'status', 'requirements', 'settings', 'validation', 'guide'}
+
+
+def source_bytes(root: Path, relative: str) -> bytes:
+    path = root / relative
+    if Path(relative).is_absolute() or '..' in Path(relative).parts:
+        raise ValueError('Source must be a repository-relative path')
+    if any(part.is_symlink() for part in (path, *path.parents)):
+        raise ValueError('Symlink source is not publishable: ' + relative)
+    if not path.resolve().is_relative_to(root.resolve()) or not path.is_file():
+        raise ValueError('Source missing or outside repository: ' + relative)
+    data = path.read_bytes()
+    if inspect(Path(relative), data):
+        raise ValueError('Source failed release scan: ' + relative)
+    return data
+
+
+def source_json(root, relative):
+    return json.loads(source_bytes(root, relative))
+
+
+def public_url(value):
+    parsed = urlsplit(value)
+    if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password:
+        raise ValueError('Only HTTPS source URLs without credentials are publishable')
+    host = parsed.hostname.lower()
+    if host in {'localhost', 'localhost.localdomain'} or host.endswith(('.localhost', '.local', '.internal')):
+        raise ValueError('Local source URL is not publishable')
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        address = None
+    if address is not None and not address.is_global:
+        raise ValueError('Private source URL is not publishable')
+    return value
+
+
+def build(root: Path = ROOT, output: Path | None = None) -> dict:
+    root = Path(root).absolute()
+    output = Path(output or root / '.site').absolute()
+    if output == root or output in root.parents or output.is_symlink():
+        raise ValueError('Output must be a separate, non-symlink build directory')
+    if any(parent.is_symlink() for parent in output.parents):
+        raise ValueError('Output parent must not be a symlink')
+    if output.exists() and (not output.is_dir() or not (output / MARKER).is_file()):
+        raise ValueError('Refusing to replace a directory without the documentation build marker')
+    community = source_json(root, 'manifests/community_workflows/catalog.json')
+    coverage = source_json(root, 'manifests/workflow_coverage/imported_sources.json')
+    source_json(root, 'manifests/community_recipes/recipes.json')
+    approved = {}
+    records = []
+    licenses = {}
+    for item in community['workflows']:
+        if not item.get('local_path'):
+            continue
+        source = community['sources'][item['source']]
+        if not source.get('license') or not source.get('license_local_path'):
+            raise ValueError('Download has no redistribution license')
+        record = {'path': item['local_path'], 'sha256': item['local_sha256'],
+                  'source_url': public_url(item['upstream_url']), 'source_revision': source['commit'],
+                  'license': source['license'], 'license_file': source['license_local_path'],
+                  'modifications': item.get('notes', [])}
+        approved[record['path']] = record
+        licenses[record['license_file']] = source.get('license_sha256')
+    for row in coverage['records']:
+        if not row.get('destination'):
+            continue
+        if not row.get('license') or not row.get('license_file'):
+            raise ValueError('Download has no redistribution license')
+        record = {'path': row['destination'], 'sha256': row['distributed_sha256'],
+                  'source_url': public_url(row['source_url']), 'source_revision': row['source_revision'],
+                  'license': row['license'], 'license_file': row['license_file'],
+                  'modifications': row.get('modifications', [])}
+        approved[record['path']] = record
+        licenses.setdefault(record['license_file'], None)
+    graph_bytes = {}
+    for relative, record in approved.items():
+        if not relative.startswith('workflows/') or Path(relative).suffix != '.json':
+            raise ValueError('Unexpected workflow path')
+        data = source_bytes(root, relative)
+        if hashlib.sha256(data).hexdigest() != record['sha256']:
+            raise ValueError('Workflow hash mismatch: ' + relative)
+        graph_bytes[relative] = data
+    license_bytes = {}
+    for relative, digest in licenses.items():
+        if not relative.startswith('third_party/') or Path(relative).name != 'LICENSE':
+            raise ValueError('Unexpected license path')
+        data = source_bytes(root, relative)
+        if digest and hashlib.sha256(data).hexdigest() != digest:
+            raise ValueError('License hash mismatch')
+        license_bytes[relative] = data
+    items = []
+    entries = catalog(root, include_discovered=False)
+    for entry in entries:
+        if not re.fullmatch(r'[A-Za-z0-9_-]+', entry['id']):
+            raise ValueError('Invalid catalog ID')
+        item = {key: value for key, value in entry.items() if key in FIELDS}
+        if item.get('upstream_url'):
+            public_url(item['upstream_url'])
+        for url in item.get('source_urls', []):
+            public_url(url)
+        if entry.get('available'):
+            relative = entry.get('local_path')
+            if relative not in approved:
+                raise ValueError('Unreviewed workflow is not publishable')
+            item['download_url'] = './downloads/' + item['id'] + '.json'
+            record = dict(approved[relative])
+            record['download_url'] = item['download_url']
+            record['license_url'] = './licenses/' + record['license_file'] + '.txt'
+            record.pop('path')
+            records.append(record)
+        items.append(item)
+    if len({row['id'] for row in items}) != len(items):
+        raise ValueError('Duplicate catalog IDs')
+    if len(records) != len(approved):
+        raise ValueError('A reviewed workflow is absent from the built catalog')
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.docs-build-', dir=output.parent) as scratch:
+        stage = Path(scratch) / 'site'; stage.mkdir()
+        def write(relative, data):
+            if inspect(Path(relative), data):
+                raise ValueError('Artifact failed release scan: ' + relative)
+            path = stage / relative; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+        for source, destination in ASSETS.items():
+            write(destination, source_bytes(root, source))
+        for relative, data in license_bytes.items():
+            write('licenses/' + relative + '.txt', data)
+        for entry, item in zip(entries, items):
+            if item.get('download_url'):
+                write(item['download_url'].removeprefix('./'), graph_bytes[entry['local_path']])
+        payload = {'schema_version': 1, 'mode': 'documentation', 'gpu_tested': False, 'items': items}
+        write('catalog.json', (json.dumps(payload, ensure_ascii=False, indent=2) + '\n').encode())
+        write('sources.json', (json.dumps({'records': records}, ensure_ascii=False, indent=2) + '\n').encode())
+        notice = 'Web ComfyUI documentation and source: https://github.com/TED-H-com/Web_Comfyui\nProject: GPL-3.0 (licenses/project-GPL-3.0.txt)\nWorkflow authors, revisions, modifications and individual licenses: sources.json\nThis site has no generation service. GPU execution has not been verified.\n\n'
+        notice += '\n'.join(sorted('licenses/' + relative + '.txt' for relative in licenses))
+        notice += '\nlicenses/dseditor-NOTICE.md\n'
+        write('NOTICE.txt', notice.encode())
+        write('.nojekyll', b'')
+        write(MARKER, b'Generated documentation build; safe to replace.\n')
+        if output.exists():
+            shutil.rmtree(output)
+        stage.rename(output)
+    return {'items': len(items), 'downloads': len(records), 'output': str(output)}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path, default=ROOT / '.site')
+    args = parser.parse_args()
+    print(json.dumps(build(output=args.output)))
+
+
+if __name__ == '__main__':
+    main()

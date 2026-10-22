@@ -5,6 +5,7 @@ import sys
 import types
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 spec = importlib.util.spec_from_file_location('workflow_library', ROOT / 'webui/workflow_library.py')
 library = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(library)
@@ -43,6 +44,23 @@ def test_reference_only_cannot_be_downloaded(tmp_path):
 
 def test_missing_nodes_excludes_frontend_notes():
     assert library.missing_nodes({'node_types': ['Note', 'Reroute', 'KSampler', 'Unknown']}, {'KSampler': {}}) == ['Unknown']
+
+
+def test_subgraph_dependencies_expand_and_models_ignore_private_paths():
+    graph = {'nodes': [{'id': 1, 'type': 'subgraph-id'}], 'definitions': {'subgraphs': [
+        {'id': 'subgraph-id', 'nodes': [
+            {'type': 'KSampler'},
+            {'type': 'UNETLoader', 'widgets_values': ['example/model.safetensors']},
+            {'type': 'VAELoader', 'widgets_values': ['/home/example/private.safetensors']},
+            {'type': 'LoraLoader', 'widgets_values': ['../outside.safetensors']},
+        ]},
+        {'id': 'unused', 'nodes': [{'type': 'UnusedCustomNode'}]},
+    ]}}
+    details = library.graph_details(graph)
+    assert 'subgraph-id' not in details['node_types']
+    assert 'UnusedCustomNode' not in details['node_types']
+    assert library.missing_nodes(details, {'KSampler': {}, 'UNETLoader': {}, 'VAELoader': {}, 'LoraLoader': {}}) == []
+    assert library.graph_models(graph) == [{'name': 'example/model.safetensors', 'node_type': 'UNETLoader', 'directory_hint': 'diffusion_models'}]
 
 
 def test_routes_authenticate_before_reading(monkeypatch):

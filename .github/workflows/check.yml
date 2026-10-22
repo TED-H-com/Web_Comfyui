@@ -13,14 +13,16 @@ jobs:
       - run: python -m pip install pytest -r requirements-webui.txt
       - run: python scripts/check_public_release.py
       - run: python scripts/community_workflows.py validate
+      - run: python scripts/build_docs.py && python scripts/check_public_release.py --root .site
       - name: CPU tests on disk
         shell: bash
         run: |
           mkdir -p "$HOME/agent-work/tmp/pytest"
           test_tmp="$(mktemp -d "$HOME/agent-work/tmp/pytest/public-ci-XXXXXX")"
           trap 'rm -rf "$test_tmp"' EXIT
-          python -m pytest -q --basetemp="$test_tmp/bt" tests scripts/test_community_workflows.py scripts/test_moss_trainer.py scripts/test_workflow_library.py scripts/test_autoip_oct22.py scripts/test_autoip_contract.py scripts/test_autoip_worker.py scripts/test_autoip_quote.py scripts/test_provider_autoip_profiles.py
+          python -m pytest -q --basetemp="$test_tmp/bt" tests scripts/test_community_workflows.py scripts/test_moss_trainer.py scripts/test_workflow_library.py scripts/test_workflow_guides.py scripts/test_autoip_oct22.py scripts/test_autoip_contract.py scripts/test_autoip_worker.py scripts/test_autoip_quote.py scripts/test_provider_autoip_profiles.py
       - name: JavaScript syntax
         run: |
           node --check webui/static/app.js
           node --check webui/static/workflow-library.js
+          node --check webui/docs/docs.js

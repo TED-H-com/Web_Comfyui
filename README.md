@@ -1,74 +1,66 @@
 # Web_Comfyui
 
-A local Web UI for your own ComfyUI installation: image and video tools, workflow browsing, character and voice libraries, media management, generation queues, and configurable provider integrations. The interface currently uses Traditional Chinese for many controls.
+A local front end for your own ComfyUI: image and video forms, a searchable workflow library, generation queues, and user-managed character, voice and media collections. Many controls are in Traditional Chinese.
 
-Run it on Linux or WSL2 with Python 3.11+ and Pillow. ComfyUI runs separately; this repository does not bundle models, personal characters, voices, API keys, accounts, or generation history. GPU workflows depend on the models, nodes, memory, and accelerator supported by your ComfyUI installation. A CPU can run the Web UI; this does not make demanding GPU workflows usable on a CPU.
+[Documentation & workflow guides](https://ted-h-com.github.io/Web_Comfyui/) · [繁體中文安裝與操作](README.zh-TW.md) · [First workflow](docs/getting-started.md)
 
-## Quick start
+The documentation website contains guides. The application runs on **your computer**, with a separately installed ComfyUI. Models, custom nodes, accounts, personal media and API credentials are not bundled.
 
-Start your existing ComfyUI on `127.0.0.1:8188`, then clone this repository:
+## Start locally
+
+Use **Linux or WSL2 and Python 3.11+**. Under WSL2, run both applications in the same Linux distribution. Native Windows and macOS are not supported by this launcher.
+
+**1. Start ComfyUI.** Follow the [official installation guide](https://docs.comfy.org/installation/manual_install) if needed. From its own environment, start it on loopback:
+
+```bash
+python main.py --listen 127.0.0.1 --port 8188
+```
+
+Confirm that **http://127.0.0.1:8188** opens the node editor. Keep this process running.
+
+**2. Install Web_Comfyui in a separate terminal and environment.**
 
 ```bash
 git clone https://github.com/TED-H-com/Web_Comfyui.git
 cd Web_Comfyui
-```
-
-Install the small WebUI environment:
-
-```bash
+python3 --version
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-webui.txt
 cp .env.example .env
 chmod 600 .env
 ```
 
-Edit `COMFY_HOME` in `.env` if your ComfyUI directory is not `~/comfyui`. Then:
+`python3 --version` must report 3.11 or newer. Edit `COMFY_HOME` in `.env` to match your ComfyUI directory; the default is `~/comfyui`. Then:
 
 ```bash
 .venv/bin/python run.py --check
 .venv/bin/python run.py
 ```
 
-Open **http://127.0.0.1:8190** and set your local administrator password on first use. No preset account or password exists. Stop the Web UI with Ctrl+C; ComfyUI remains independently managed.
+**3. Open http://127.0.0.1:8190.** Set a local administrator password of at least eight characters. First-time setup signs you in; there is no preset username or password.
 
-`--check` reads the configured local ComfyUI status endpoint and reports optional dependency readiness. It does not install software, download models, submit generation jobs, reveal credentials, or attest that every workflow is ready. Exit code `1` means the platform/Python/Pillow requirement or ComfyUI connectivity check failed; optional components can be unavailable while basic tools work.
+`--check` reports basic dependency and ComfyUI connectivity status without installing software or running a model. A passing check does not qualify every workflow. See [installation and troubleshooting](docs/installation.md) if it fails. Ctrl+C stops the Web UI; ComfyUI is managed separately.
 
-## What is included
+## Use the workflow library
 
-- Existing generation forms and settings, workflow library and upstream workflow catalog.
-- Empty, user-managed character, voice, and material libraries.
-- OpenAI/Gemini post generation, Google Drive import, and provider account APIs that you configure using your own credentials.
-- Orchestration and optional voice, reel, and model-specific adapters. Their external tools and models must be installed and configured separately.
+Open **工作庫** and filter by category, source, or content type:
 
-Published workflow files and catalog entries do not guarantee local readiness. Missing nodes/models must be installed into **ComfyUI's environment**. Community catalog entries retain their upstream sources and licensing context. H3 and other advanced runtime paths have no inherited private qualification receipts; a new installation must establish its own readiness.
+| Label | Meaning |
+| --- | --- |
+| 可下載工作流 | A local JSON is available to download. Visual graphs can also be loaded by an operator. |
+| 方法與參數 | A recipe with settings and prerequisites; it is not an executable graph. |
+| 上游參考 | A source link; the JSON is not bundled. |
 
-## Configuration and data
+Open a card, inspect its models/nodes/license, then choose **檢查 ComfyUI 節點**. This checks registered node names, not model files, memory capacity or render quality. **載入 ComfyUI** saves a visual graph into ComfyUI's `webui-library` workflow folder. Open it in the native editor, select your models and inputs, and run it there. Loading does not queue a job or install dependencies. Follow the [first-workflow walkthrough](docs/getting-started.md).
 
-Only this checkout's `.env` is loaded by the launcher. It parses plain `KEY=VALUE` assignments without executing shell commands, expanding `$VARIABLES`, or searching another project's files. Existing process environment settings take precedence. Use `--no-env` to skip `.env`.
+The application also retains generation forms and optional API/voice integrations. Advanced H3, training, voice and orchestration paths need their own models, workers and local qualification. Features may remain unavailable until those prerequisites are met. [Workflow coverage and limits](docs/workflow-coverage.md).
 
-Application state defaults to `~/.local/share/web-comfyui`, cache and disk temporary files to `~/.cache/web-comfyui`. Images and videos remain in your configured ComfyUI input/output directories. API credentials entered through provider account management are stored in the private application data directory; environment credentials stay in your process or explicit secrets file.
+## Your configuration and data
 
-Both services should stay bound to loopback. The launcher enforces this for the Web UI and ComfyUI URL. Any reverse proxy or remote access is a separate deployment decision; do not expose an unprotected ComfyUI listener.
+API features are optional. Configure your own supported provider accounts or `.env` credentials; imported API nodes may require separate setup in ComfyUI. No single key enables every workflow. [API setup](docs/autoip-api.md).
 
-See [installation and feature requirements](docs/installation.md) for Linux/WSL setup, configuration, optional dependencies, and troubleshooting. The existing `install.sh` is an **optional advanced ComfyUI provisioner** targeting a pinned NVIDIA Blackwell stack. It can change your ComfyUI checkout, Python packages, custom nodes, patches, and workflow links. It is not required to install this Web UI and should not be run against an existing environment without reviewing it.
+State defaults to `~/.local/share/web-comfyui`, cache to `~/.cache/web-comfyui`, and generated media to ComfyUI's configured output directory. Keep `.env`, credentials and personal data out of Git. The launcher reads only this checkout's `.env`, without executing shell commands or expanding `$VARIABLES`; process environment values take precedence.
 
-## Workflow and API guides
+Keep both listeners on loopback. The separate `install.sh` is an **advanced ComfyUI provisioner** that can change packages, nodes and workflow links; it is not needed for the installation above. Review [its scope](docs/installation.md#optional-advanced-provisioner) before using it.
 
-- [繁體中文快速開始](README.zh-TW.md)
-- [Community workflows and source catalog](docs/community-workflows.md)
-- [Included workflows, licenses, and coverage](docs/workflow-coverage.md)
-- [Local LLM, H3, and NVIDIA VFX recipes](docs/rtx-video-research.md)
-- [MOSS image LoRA setup and preflight](docs/moss-training.md)
-- [AutoIP setup and supported API operations](docs/autoip-api.md)
-
-The initial release includes **40 workflow JSON files**, a source catalog covering
-both requested community collections, and **8 article-derived recipes**. The WebUI's
-**工作庫** page searches categories, models and nodes; shows source/license details;
-checks your local ComfyUI node inventory; and lets an operator load a visual workflow
-into ComfyUI's `webui-library` folder. Loading a graph does not run it or install its
-dependencies. Open it in ComfyUI to supply your files, choose installed models, and
-execute. Community references without redistributed JSON remain clearly labeled.
-
-WebUI code is GPL-3.0. Third-party files retain their own licenses; see
-[NOTICE.md](NOTICE.md). Model weights and optional trainer/runtime components are
-not bundled or relicensed.
+WebUI code is GPL-3.0. Third-party workflows retain their own licenses: see [NOTICE.md](NOTICE.md) and [source coverage](docs/workflow-coverage.md). Model and runtime licenses remain separate.

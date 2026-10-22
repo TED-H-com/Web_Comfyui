@@ -16,6 +16,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+.site/
 node_modules/
 .cache/
 .local/

@@ -1,0 +1,37 @@
+.docs-site .brand { text-decoration: none; }
+.docs-site .docs-nav { display: flex !important; }
+.docs-nav a { text-decoration: none; display: inline-flex; align-items: center; min-height: var(--tap-min); }
+.docs-label { color: var(--muted); font-size: var(--text-xs); white-space: nowrap; }
+.docs-notice { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-4); font-size: var(--text-sm); color: var(--muted); line-height: 1.7; }
+.docs-site a { color: var(--blue-dark); }
+.docs-site .layout { padding-bottom: var(--space-5); }
+.docs-prose { max-width: 960px; margin-inline: auto; padding: var(--space-6); line-height: 1.8; }
+.docs-prose[hidden], #workflowPage[hidden] { display: none; }
+.docs-prose h1 { font-size: var(--text-xl); line-height: 1.5; margin-top: 0; }
+.docs-prose h2 { font-size: var(--text-lg); margin-top: var(--space-5); }
+.docs-prose p { margin-block: var(--space-3); }
+.docs-lead { color: var(--muted); }
+.docs-steps { padding-left: var(--space-5); }
+.docs-steps li { padding-left: var(--space-2); padding-bottom: var(--space-4); }
+.docs-prose pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg); padding: var(--space-4); border-radius: var(--space-2); font-size: var(--text-sm); line-height: 1.7; }
+.docs-prose code { overflow-wrap: anywhere; }
+.docs-footer { padding: var(--space-4) var(--space-5); font-size: var(--text-xs); color: var(--muted); border-top: 1px solid var(--line); }
+.docs-site .docs-primary { color: var(--panel); }
+.docs-skip { position: fixed; left: var(--space-4); top: -100px; background: var(--panel); padding: var(--space-3); z-index: var(--z-modal); }
+.docs-skip:focus { top: var(--space-2); }
+.docs-site dialog.app-sheet { position: fixed; inset: 0 0 0 auto; margin: 0; border: 0; width: min(860px, 96vw); height: 100dvh; max-height: 100dvh; max-width: 100vw; }
+.docs-site dialog.app-sheet:not([open]) { display: none; }
+.docs-site dialog::backdrop { background: rgba(18,28,42,.48); }
+.docs-site .sheet-head h2 { font-size: var(--text-lg); overflow-wrap: anywhere; }
+.docs-site .sheet-head { align-items: flex-start; }
+.docs-site .sheet-close { flex-shrink: 0; }
+@media(max-width:767px) {
+  .docs-site .topbar { padding: var(--space-2) var(--space-3); flex-wrap: wrap; }
+  .docs-site .docs-nav { order: 3; width: 100%; justify-content: flex-start; }
+  .docs-site .top-actions { margin-left: auto; }
+  .docs-site .docs-label { display: none; }
+  .docs-site .view-tab { font-size: var(--text-sm); padding: var(--space-2) var(--space-3); }
+  .docs-prose { padding: var(--space-4); }
+  .docs-site dialog.app-sheet { width: 100vw; border-radius: 0; }
+  .docs-site .workflow-details { padding: var(--space-2); }
+}

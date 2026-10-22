@@ -1,0 +1,45 @@
+name: Publish workflow guides
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Check source and publication boundary
+        shell: bash
+        run: |
+          python scripts/check_public_release.py
+          mkdir -p "$HOME/agent-work/tmp/pytest"
+          docs_test_tmp="$(mktemp -d "$HOME/agent-work/tmp/pytest/docs-ci-XXXXXX")"
+          trap 'rm -rf "$docs_test_tmp"' EXIT
+          python -m pytest -q --basetemp="$docs_test_tmp/bt" tests/test_docs_site.py
+          python scripts/build_docs.py
+          python scripts/check_public_release.py --root .site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: .site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

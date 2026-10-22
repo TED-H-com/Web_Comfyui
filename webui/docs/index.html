@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Web ComfyUI 工作流說明：用途、執行步驟、模型需求與技巧。下載開源 WebUI，在自己的 ComfyUI 執行。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>工作流說明 · Web ComfyUI</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+  <link rel="stylesheet" href="./assets/workflow-library.css">
+  <link rel="stylesheet" href="./assets/docs.css">
+</head>
+<body data-view="workflows" class="docs-site">
+  <a class="docs-skip" href="#workspace">跳到內容</a>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="#/workflows">Web ComfyUI</a>
+      <nav class="view-nav docs-nav" aria-label="主要導覽">
+        <a class="view-tab active" data-page="workflows" href="#/workflows">工作庫</a>
+        <a class="view-tab" data-page="start" href="#/start">開始使用</a>
+        <a class="view-tab" data-page="about" href="#/about">來源與授權</a>
+      </nav>
+      <div class="top-actions"><span class="docs-label">工作流說明</span><a class="ghost small workflow-link" href="https://github.com/TED-H-com/Web_Comfyui" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+    </header>
+    <div class="layout">
+      <main id="workspace" class="workspace" tabindex="-1">
+        <div class="docs-notice">這裡可以閱讀流程、查看技巧與下載 JSON。實際生成請在自己的電腦安裝 WebUI 與 ComfyUI。<a href="#/start">查看安裝步驟 →</a></div>
+        <div id="workflowPage"></div>
+        <section id="startPage" class="panel docs-prose" hidden>
+          <p class="workflow-category">GET STARTED</p><h1>從一個工作流開始</h1>
+          <p class="docs-lead">ComfyUI 負責跑模型，WebUI 負責整理角色、素材與工作流。兩者安裝在同一台電腦，再用瀏覽器操作。</p>
+          <ol class="docs-steps">
+            <li><h2>安裝並啟動 ComfyUI</h2><p>先依官方文件安裝適合自己 GPU 的 ComfyUI，在本機 <code>127.0.0.1:8188</code> 開啟。確認原生介面能連上，再安裝這套 WebUI。</p><a href="https://docs.comfy.org/installation/manual_install" target="_blank" rel="noopener noreferrer">ComfyUI 官方安裝文件 ↗</a></li>
+            <li><h2>安裝 WebUI，建立自己的密碼</h2><p>目前支援 Linux／Windows WSL2 與 Python 3.11 以上。下載 repo、建立虛擬環境、安裝依賴，再複製 <code>.env.example</code> 為 <code>.env</code>，填入 ComfyUI 路徑。</p><pre><code>git clone https://github.com/TED-H-com/Web_Comfyui.git
+cd Web_Comfyui
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-webui.txt
+cp .env.example .env
+chmod 600 .env
+.venv/bin/python run.py --check
+.venv/bin/python run.py</code></pre><p><code>--check</code> 用來確認環境與 ComfyUI 連線；通過後啟動並開啟 <code>http://127.0.0.1:8190</code>，設定至少 8 字元的管理密碼。</p><a href="https://github.com/TED-H-com/Web_Comfyui/blob/main/docs/installation.md" target="_blank" rel="noopener noreferrer">完整安裝、路徑設定與排錯 ↗</a></li>
+            <li><h2>選擇「可下載工作流」，先做小規模測試</h2><p>點卡片閱讀準備素材、執行順序與技巧。安裝列出的節點、下載符合模型家族的權重，放進自己 ComfyUI 的對應資料夾。</p><p>本網站的「下載 JSON」可直接匯入原生 ComfyUI。本機 WebUI 的「載入 ComfyUI」會把工作流放進 <code>webui-library</code> 資料夾；開啟並確認模型、提示詞與素材後，再按 ComfyUI 的執行按鈕。</p></li>
+          </ol>
+          <h2>卡住時，從這裡看</h2>
+          <dl class="workflow-techniques"><dt>連不上 ComfyUI</dt><dd>先確認 ComfyUI 已啟動。檢查 .env 的 COMFYUI_URL、COMFY_HOME，以及兩個程序是否位於同一個 WSL／Linux 環境。</dd><dt>缺少節點或模型</dt><dd>節點名稱與模型權重是不同的需求。「節點已具備」不代表模型已下載，也不代表 GPU 記憶體足夠。依工作流來源確認版本與權重。</dd><dt>沒有圖片、角色或 API 帳號</dt><dd>公開版從空白素材庫開始。請匯入自己的素材；需要外部 API 的功能，再設定自己的金鑰。本站沒有金鑰輸入欄，也不會連到你的本機服務。</dd><dt>想跑訓練或進階影片</dt><dd>MOSS 訓練、H3 與 NVIDIA RTX VFX 各有額外模型或環境需求。先看對應方案，避免直接替換目前可用的 ComfyUI 環境。</dd></dl>
+          <a class="primary small workflow-link docs-primary" href="#/workflows">回工作庫選擇流程</a>
+        </section>
+        <section id="aboutPage" class="panel docs-prose" hidden>
+          <p class="workflow-category">SOURCES</p><h1>每個流程都有來源與使用邊界</h1>
+          <p>工作庫整理 dseditor、ecjojo、ComfyUI 官方範例，以及 MOSS、H3、RTX 影片與本機 LLM 文章中的方法。詳細頁保留上游連結、模型／節點需求與說明依據。</p>
+          <dl class="workflow-techniques"><dt>已收錄 JSON</dt><dd>提供已確認再散布授權的工作流檔。已做靜態檢查，尚未逐一完成 GPU 生成驗證。</dd><dt>方法與參數</dt><dd>把文章概念整理成可操作的方案與條件。需要自行建立／調整流程，不是可直接執行的 JSON。</dd><dt>上游參考</dt><dd>提供來源與節點清單的解讀；圖的精確接線、參數與版本仍需向上游確認。ecjojo 項目目前採這種方式收錄，未隨庫再散布原始 JSON。</dd></dl>
+          <p>圖內參數是原檔可確認的設定；調整建議是方法說明，不是保證最佳參數。下載後請依自己的模型版本、素材與 GPU 先做小規模測試。</p>
+          <div class="workflow-actions"><a class="ghost small workflow-link" href="./sources.json">公開來源與修改紀錄</a><a class="ghost small workflow-link" href="./NOTICE.txt">授權索引</a><a class="ghost small workflow-link" href="https://github.com/TED-H-com/Web_Comfyui/blob/main/docs/workflow-coverage.md" target="_blank" rel="noopener noreferrer">收錄範圍 ↗</a></div>
+          <h2>資料由自己管理</h2><p>本站是靜態說明頁，沒有登入、生成、API 金鑰輸入或分析追蹤程式。安裝後的 WebUI 將帳號、素材與設定保存在使用者自己的環境。</p>
+        </section>
+        <noscript><p class="panel docs-prose">請啟用 JavaScript 以搜尋工作流。也可以閱讀 <a href="https://github.com/TED-H-com/Web_Comfyui/blob/main/README.zh-TW.md">安裝文件</a> 或下載 <a href="./catalog.json">完整說明資料</a>。</p></noscript>
+      </main>
+    </div>
+    <footer class="docs-footer">Web ComfyUI · 開源工作流說明 <span id="docsCounts"></span></footer>
+  </div>
+  <div id="sheetLayer" class="sheet-layer"></div>
+  <script src="./assets/workflow-library.js"></script>
+  <script src="./assets/docs.js"></script>
+</body>
+</html>
