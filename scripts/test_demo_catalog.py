@@ -48,6 +48,14 @@ def test_outputs_require_matching_gpu_evidence(app):
     for identifier, example in demos(app).items():
         output = example['output']
         assert output['kind'] in {'image', 'video', 'audio', 'text', 'character', 'gallery', 'unavailable'}
+        if identifier == 'character-create':
+            # Character creation is a form preview, not a claimed model result.
+            assert output == {'kind': 'character', 'images': []}
+            assert example['evidence'] == {'kind': 'interface-simulation'}
+            assert example['inputs'][0]['slot'] == 'photos'
+            assert example['inputs'][0]['src'].removeprefix('./assets/examples/') in ledger
+            assert 'nothing is saved' in example['note_en']
+            continue
         if output['kind'] == 'unavailable':
             assert output.get('images', []) == []
             assert not output.get('video') and not output.get('audio')

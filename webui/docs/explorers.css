@@ -41,6 +41,16 @@
 .demo-output { border-top: 1px solid var(--line); margin-top: var(--space-4); padding-top: var(--space-3); }.demo-output h4 { font-size: var(--text-md); margin: 0 0 var(--space-3); }
 .demo-gallery { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,220px),1fr)); gap: var(--space-3); }.demo-gallery figure { margin: 0; min-width: 0; }.demo-gallery img { display: block; width: 100%; height: auto; max-height: 480px; object-fit: contain; background: var(--bg); border-radius: var(--space-2); }.demo-gallery figcaption { font-size: var(--text-xs); padding-top: var(--space-2); overflow-wrap: anywhere; }.demo-character img { aspect-ratio: 4/5; }.demo-output video { width: 100%; max-height: 480px; background: var(--ink); border-radius: var(--space-2); }.demo-result-text { white-space: pre-wrap; overflow-wrap: anywhere; }.demo-transcript-label { font-weight: 600; }
 .app-demo [hidden], .app-node-graph [hidden] { display: none !important; }
+.app-demo[hidden] { display: none !important; }
+.demo-comparison { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.demo-comparison strong { display:block; font-size:var(--text-sm); margin-bottom:var(--space-2); }
+.demo-character-card { display:grid; grid-template-columns:minmax(0,200px) minmax(0,1fr); gap:var(--space-4); padding:var(--space-3); border:1px solid var(--line); border-radius:var(--catalogue-radius); background:var(--panel); }
+.demo-character-card > img { width:100%; height:auto; object-fit:contain; border-radius:var(--space-2); background:var(--bg); }
+.demo-character-card > div { min-width:0; }
+.demo-character-card h5 { margin:var(--space-2) 0; font-size:var(--text-md); overflow-wrap:anywhere; }
+.demo-character-badge { color:var(--green); font-size:var(--text-sm); font-weight:600; }
+.demo-character-card a { display:inline-flex; align-items:center; min-height:var(--tap-min); }
+@media(max-width:600px) { .demo-comparison strong { min-height:3.2em; } .demo-character-card { grid-template-columns:minmax(0,1fr); } .demo-character-card > img { max-height:280px; } }
 @media(max-width:767px) { .app-node-graph { padding: var(--space-4); }.app-demo { padding: var(--space-3); }.graph-viewport { height: 340px; }.graph-parameters { grid-template-columns: minmax(0,1fr); }.graph-parameters dt { border-bottom: 0; padding-bottom: 0; }.graph-parameters dd { padding-top: var(--space-1); }.demo-form textarea { font-size: var(--text-md); } }
 @media(prefers-reduced-motion:reduce) { .demo-progress span { transition: none; } }
 

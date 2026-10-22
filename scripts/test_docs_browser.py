@@ -36,6 +36,7 @@ ASSERT = r'''(async () => {
   assert(document.getElementById('servicePill').textContent==='互動說明','no fake live service');
   assert(document.querySelectorAll('.app-guide-button button').length===2,'two guide actions, no separate example button');
   assert(document.querySelector('[data-field-id="positive"] textarea')?.value || document.querySelector('textarea[data-field-id="positive"]').value, 'real form prefilled');
+  assert(document.querySelector('.app-demo').hidden && !document.querySelector('.demo-output img,.demo-output video'), 'no result before Generate');
   if (new URLSearchParams(location.search).has('helptest')) {
     await until(()=>document.querySelector('[role="dialog"]'));
     assert(document.querySelector('[role="dialog"]').textContent.includes('互動說明與安裝'),'legacy help link');
@@ -61,11 +62,20 @@ ASSERT = r'''(async () => {
   await until(()=>document.querySelector('[data-demo-id="img2img"]'));
   const editingDemo=WebComfyTour.demoFor('img2img');
   if(editingDemo.inputs?.length) {
-    const original=document.querySelector('.demo-references img');
+    const original=document.querySelector('.demo-input-preview img');
     assert(original&&original.src===editingDemo.inputs[0].src,'reference visible before playback under Pages subpath');
     await until(()=>original.naturalWidth>0);
     assert(!editingDemo.output.images?.some(image=>image.src===original.src),'original not recycled as result');
   }
+  assert(document.querySelector('.app-demo').hidden && !document.querySelector('.demo-references'), 'only upload reference visible before editing');
+  document.querySelector('.generate-btn').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
+  const comparison=document.querySelector('.demo-comparison');
+  assert(comparison?.querySelectorAll('img').length===2,'before and after shown only after Generate');
+  assert(comparison.querySelector('[data-comparison-before] img').src===editingDemo.inputs[0].src,'comparison shows exact original');
+  assert(comparison.querySelector('figure:not([data-comparison-before]) img').src===editingDemo.output.images[0].src,'comparison shows actual recolored uniform');
+  assert(comparison.textContent.includes('紅色上衣、深藍短褲'),'visible description of changed clothing');
+  document.querySelector('.demo-prefill-bar button').click();
+  assert(document.querySelector('.app-demo').hidden && !document.querySelector('.demo-output img'),'reset hides and removes result');
   const upload=document.querySelector('input[type=file][data-demo-upload]');
   const transfer=new DataTransfer();transfer.items.add(new File(['synthetic local input'],'local-example.png',{type:'image/png'}));upload.files=transfer.files;upload.dispatchEvent(new Event('change',{bubbles:true}));
   assert(document.querySelector('.demo-input-preview img').src.startsWith('blob:'),'selected file preview remains local');
@@ -79,11 +89,37 @@ ASSERT = r'''(async () => {
   assert([...document.querySelectorAll('input[type="password"]')].every(node=>node.disabled),'credentials disabled');
   visible('[data-view="characters"]').click();await until(()=>document.querySelector('[data-demo-id="character-create"]'));
   assert(document.querySelector('.experimental-create-form input[name=name]').value,'character name prefilled');
+  assert(document.querySelector('.experimental-create-form textarea[name=description]').value,'character description prefilled');
+  assert(document.querySelector('.demo-input-preview img').src.includes('cheer-reference.webp'),'character reference matches photos slot');
+  assert(document.querySelector('.app-demo').hidden&&!document.querySelector('.demo-character-card'),'character not created before submit');
   document.querySelector('.experimental-create-form button[type=submit]').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
-  assert(document.querySelector('.demo-character img') || WebComfyTour.demoFor('character-create').output.kind==='unavailable','character result or explicit unavailable status');
+  assert(document.querySelector('.demo-character img'),'successful character card');
+  await until(()=>document.querySelector('.demo-character img').naturalWidth>0);
+  assert(document.querySelector('.demo-output h4').textContent==='示範角色建立完成','character success label');
+  assert(document.querySelector('.demo-character-card h5').textContent==='晴晴','prefilled name on card');
+  assert(document.querySelectorAll('.demo-character-card a[href^="#/studio/"]').length===3,'next workflow demo links');
+  const characterForm=document.querySelector('.experimental-create-form');
+  characterForm.elements.name.value='<img src=x onerror=alert(1)> 文生圖';
+  characterForm.elements.description.value='我的角色描述，換成紅色隊服。';
+  const canvas=document.createElement('canvas');canvas.width=32;canvas.height=48;canvas.getContext('2d').fillRect(0,0,32,48);
+  const photoFile=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+  const photos=new DataTransfer();photos.items.add(new File([photoFile],'my-character.png',{type:'image/png'}));
+  characterForm.elements.photos.files=photos.files;characterForm.elements.photos.dispatchEvent(new Event('change',{bubbles:true}));
+  assert(document.querySelector('.app-demo').hidden,'photo replacement clears previous card');
+  characterForm.querySelector('button[type=submit]').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
+  assert(document.querySelector('.demo-character-card h5').textContent===characterForm.elements.name.value&&!document.querySelector('.demo-character-card h5 img'),'name is safe literal text');
+  assert(document.querySelector('.demo-character-card .demo-result-text').textContent===characterForm.elements.description.value,'custom description on card');
+  const cardPhoto=document.querySelector('.demo-character-card img');
+  assert(cardPhoto.src.startsWith('blob:')&&cardPhoto.src!==document.querySelector('.demo-input-preview img').src,'card owns a separate local photo URL');
+  await until(()=>cardPhoto.naturalWidth>0);
   const lang=document.getElementById('languageSelect');lang.value='en';lang.dispatchEvent(new Event('change'));
   await until(()=>document.documentElement.lang==='en' && visible('[data-view="characters"]').textContent.includes('Characters'));
   assert(document.querySelector('.experimental-create-form button[type=submit]').textContent.includes('demo'),'English native demo action');
+  assert(document.querySelector('.demo-output h4').textContent==='Demo character created','English character completion');
+  assert(document.querySelector('.demo-character-card h5').textContent===characterForm.elements.name.value,'language preserves personal name');
+  const cardURL=cardPhoto.src;
+  characterForm.querySelector('.demo-prefill-bar button').click();
+  assert(revoked.includes(cardURL)&&document.querySelector('.app-demo').hidden&&!document.querySelector('.demo-character-card'),'reset clears card and releases its photo');
   assert(document.documentElement.scrollWidth<=innerWidth+1,'English hardware header overflow');
   assert(document.querySelector('.topbar .brand').getBoundingClientRect().width>70,'English brand remains visible');
   location.hash='#/studio/img2img';await until(()=>document.querySelector('form[data-demo-id="img2img"]'));
@@ -114,6 +150,7 @@ ASSERT = r'''(async () => {
     location.hash='#/studio/'+entry.id;
     await until(()=>document.querySelector('[data-demo-id="'+entry.id+'"]'));
     const form=document.querySelector('[data-demo-id="'+entry.id+'"]');
+    assert(form.querySelector('.app-demo').hidden&&!form.querySelector('.demo-output img,.demo-output video'),'every tool waits for Generate '+entry.id);
     const generate=form.querySelector('.generate-btn,button[type=submit]');assert(generate&&!generate.disabled,'demo action ready '+entry.id);
     generate.click();await until(()=>form.querySelector('.app-demo')?.dataset.state==='complete');
     assert(!form.querySelector('.demo-output').hidden,'all options produce a prepared result '+entry.id);

@@ -98,6 +98,7 @@
       const item = inputs.find(item => item.slot && item.slot === key) || inputs.filter(item => !item.slot)[state.uploads.filter(slot => !slot.item?.slot).length];
       const slotState = {input, preview, title, item, url: null};
       slotState.reset = () => {
+        state.result.demo.reset();
         releaseSlot(state, slotState);
         input.value = ''; preview.replaceChildren();
         title.dataset.i18nZh = item?.label || '參考輸入'; title.dataset.i18nEn = item?.label_en || 'Reference input';
@@ -106,7 +107,9 @@
       };
       slotState.reset();
       box.append(title, preview, button('還原參考輸入', 'Restore reference input', slotState.reset));
-      box.append(text('small', '你的檔案只在瀏覽器預覽，不會上傳，也不會改變下方記錄的成果。', 'Your files are previewed only in this browser. They are not uploaded and do not change the recorded result below.'));
+      box.append(state.id === 'character-create'
+        ? text('small', '選擇的照片會顯示在示範角色卡上，只在此頁預覽，不會上傳。', 'Your selected photo appears on the demo character card, stays on this page, and is not uploaded.')
+        : text('small', '這是修改前的參考素材。按「開始生成（示範）」才會顯示固定實測成果；自選檔案只供本機預覽。', 'This is a reference input. Select Generate (demo) to reveal the recorded result; your own files are previewed locally only.'));
       slot.append(box); state.uploads.push(slotState);
     }
   }
@@ -116,9 +119,17 @@
     const state = {id, form, feature, demo, uploads: [], urls: new Set(), filled: new WeakMap(), running: false}; mounted.set(form, state);
     form.dataset.demoId = id; form.noValidate = true;
     const bar = document.createElement('div'); bar.className = 'demo-prefill-bar'; bar.dataset.docsInteractive = 'true';
-    bar.append(text('strong', '示範案例', 'Demo example'), text('span', '可修改文字或預覽自己的素材；此頁只播放既有記錄。實測提示詞與設定列在下方。', 'Edit text or preview your own files; this page replays existing records. Tested prompts and settings appear below.'));
+    bar.append(text('strong', '示範案例', 'Demo example'), id === 'character-create'
+      ? text('span', '填入名字、描述與參考照片，按下建立後就能看到示範角色卡。', 'Enter a name, description and reference photo, then create your demo character card.')
+      : text('span', '先查看參考素材與預填指令，再按「開始生成（示範）」查看成品。此頁重播已完成的實測，不會即時生成。', 'Review the reference and prefilled instruction, then select Generate (demo) to reveal the result. This page replays a completed run, not live generation.'));
     bar.append(button('重新填入示範', 'Reset example inputs', () => {fill(state, true); state.uploads.forEach(slot => slot.reset()); state.result.demo.reset();}));
     form.prepend(bar);
+    if (id === 'character-create' && !form.querySelector('[name=description]')) {
+      const label = document.createElement('label'); label.className = 'field demo-description';
+      const input = document.createElement('textarea'); input.name = 'description'; input.rows = 3; input.maxLength = 2000;
+      label.append(text('span', '角色描述（示範）', 'Character description (demo)'), input);
+      form.querySelector('.experimental-create-actions').before(label);
+    }
     if (!form.querySelector('textarea,input[type=text],input:not([type])')) {
       const label = document.createElement('label'); label.className = 'field demo-description';
       label.append(text('span', '示範描述', 'Example description'));
@@ -158,24 +169,33 @@
     if (window.WebComfyHardware && !window.WebComfyHardware.canUse(state.id)) return false;
     state.running = true;
     const buttons = [...form.querySelectorAll('[data-demo-submit]')]; buttons.forEach(button => {button.disabled = true;});
-    state.result.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest'});
-    try {await state.result.demo.start(readPrompt(state));}
+    const characterValues = state.id === 'character-create' ? {
+      name: form.elements.namedItem('name')?.value.trim(), description: form.elements.namedItem('description')?.value.trim(),
+      photo: state.uploads.find(slot => slot.file)?.file,
+    } : {};
+    try {
+      const completed = state.result.demo.start(readPrompt(state), characterValues);
+      state.result.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
+      await completed;
+    }
     finally {state.running = false; buttons.forEach(button => {button.disabled = false;}); window.WebComfyHardware?.decorate(state.id, form);}
     return true;
   }
   function localFile(input, file) {
     const state = mounted.get(input.closest('form'));
     const slot = state?.uploads.find(slot => slot.input === input); if (!slot || !file) return;
+    state.result.demo.reset();
     releaseSlot(state, slot);
-    if (!/^(image\/(png|jpeg|webp)|video\/(mp4|webm)|audio\/(mpeg|wav|x-wav|ogg|mp4|webm))$/.test(file.type) || file.size > 25 * 1024 * 1024) {
+    if (!/^(image\/(png|jpeg|webp)|video\/(mp4|webm)|audio\/(mpeg|wav|x-wav|ogg|mp4|webm))$/.test(file.type) || (state.id === 'character-create' && !file.type.startsWith('image/')) || file.size > 25 * 1024 * 1024) {
       slot.preview.replaceChildren(text('span', '請選擇 25 MB 以內的 PNG、JPG、WebP、影片或音訊。', 'Choose a PNG, JPG, WebP, video or audio file under 25 MB.')); input.value = ''; return;
     }
-    const url = URL.createObjectURL(file); state.urls.add(url); slot.url = url;
+    const url = URL.createObjectURL(file); state.urls.add(url); slot.url = url; slot.file = file;
     const media = document.createElement(file.type.startsWith('image/') ? 'img' : file.type.startsWith('video/') ? 'video' : 'audio');
     media.src = url; if (media.tagName !== 'IMG') {media.controls = true; media.preload = 'metadata';} else media.alt = file.name;
     slot.preview.replaceChildren(media); slot.title.removeAttribute('data-i18n-zh'); slot.title.removeAttribute('data-i18n-en'); slot.title.textContent = file.name;
   }
   function releaseSlot(state, slot) {
+    slot.file = null;
     if (slot.url) {URL.revokeObjectURL(slot.url); state.urls.delete(slot.url); slot.url = null;}
   }
   window.addEventListener('webcomfy:language', () => {for (const state of mounted.values()) fill(state);});

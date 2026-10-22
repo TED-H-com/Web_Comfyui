@@ -132,13 +132,9 @@ def demos(app_catalog):
             'prompt': prompt, 'prompt_en': prompt_en, 'steps': list(guides[feature_id]['steps']),
             'steps_en': list(STEPS_EN[feature_id]), 'output': output, 'note': note, 'note_en': note_en}
     result['character-create'] = {
-        'id': 'character-create', 'title': '建立虛構角色「沐野」', 'title_en': 'Create the fictional character “Mori”',
-        'prompt': '沐野是一位原創成年探險家，短髮、青綠外套與橘色圍巾，喜歡觀星與海岸旅行。',
-        'prompt_en': 'Mori is an original fictional adult explorer with short hair, a teal jacket, and an orange scarf, who enjoys stargazing and coastal journeys.',
-        'steps': ['在建立角色表單填入名字與外觀描述。', '選擇角色參考圖；本機版本會把角色與素材存入自己的資料庫。', '本站只顯示預先準備的角色卡，不建立帳戶或保存上傳素材。'],
-        'steps_en': ['Enter a name and appearance in the character form.', 'Choose a character reference; the installed app stores characters and assets in your own database.', 'This site shows a prepared character card without creating accounts or retaining uploaded files.'],
-        'output': {'kind': 'unavailable', 'images': [], 'reason': '此頁只示範角色表單；沒有執行角色建立或保存素材。', 'reason_en': 'This page demonstrates the character form only; it does not create a character or save assets.'},
-        'note': NOTE, 'note_en': NOTE_EN,
+        'id': 'character-create',
+        'steps': ['在建立角色表單填入名字與外觀描述。', '選擇角色參考圖；本機版本會把角色與素材存入自己的資料庫。', '按下建立後顯示名字、描述與參考照片組成的示範角色卡；離開表單即清除。'],
+        'steps_en': ['Enter a name and appearance in the character form.', 'Choose a character reference; the installed app stores characters and assets in your own database.', 'Create a demo card from the name, description and reference photo; leaving the form clears it.'],
     }
     for identifier, recorded in RECORDED_DEMOS.items():
         if identifier not in result:

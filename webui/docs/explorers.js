@@ -188,13 +188,15 @@
     const root = el('section', '', `app-demo${options.inline ? ' app-demo-inline' : ''}`); root.dataset.docsInteractive = 'true'; root.dataset.demoId = text(demo.id);
     const evidence = demo.evidence || {}, verified = evidence.kind === 'local-comfyui' && Boolean(evidence.run_id);
     const unavailable = demo.output?.kind === 'unavailable';
+    const character = demo.id === 'character-create' && demo.output?.kind === 'character' && evidence.kind === 'interface-simulation';
     const disclosure = verified
       ? copy(el('p', '', 'demo-disclosure'), 'GPU 實測記錄 · 此頁播放已完成的成果，不會即時生成', 'Recorded GPU result · This page replays a completed run; it does not generate live')
+      : character ? copy(el('p', '', 'demo-disclosure'), '角色卡模擬 · 使用表單內容在此頁預覽，不會保存或訓練模型', 'Character card simulation · Preview your form on this page; nothing is saved or trained')
       : unavailable ? copy(el('p', '', 'demo-disclosure'), '尚無此工作流的 GPU 實測成果', 'No recorded GPU result for this workflow yet')
       : el('p', '模擬展示・預先準備範例，並非依輸入即時生成', 'demo-disclosure');
     root.append(el('h3', text(demo.title) || '操作範例'), disclosure);
     if (demo.note) root.append(copy(el('p', '', 'explorer-evidence'), text(demo.note), text(demo.note_en || demo.note)));
-    if (Array.isArray(demo.inputs) && demo.inputs.length) {
+    if (!options.inline && Array.isArray(demo.inputs) && demo.inputs.length) {
       const references = el('section', '', 'demo-references');
       references.append(copy(el('h4'), '參考輸入 · 生成前', 'Reference inputs · before generation'));
       const gallery = el('div', '', 'demo-gallery');
@@ -226,9 +228,10 @@
     if (steps.length < 3) steps.splice(1, 0, '展示處理階段');
     const list = el('ol', '', 'demo-stages'), stageNodes = steps.map(step => el('li', step)); stageNodes.forEach((node, i) => {if (demo.steps_en?.[i]) copy(node, steps[i], demo.steps_en[i]); list.append(node);});
     const output = el('div', '', 'demo-output'); output.hidden = true;
-    const actions = el('div', '', 'explorer-toolbar'), replay = button('重播展示', '', () => start(lastPrompt)); replay.hidden = true;
-    actions.append(replay, resetButton); root.append(echo, state, meter, copy(el('p', '', 'demo-workflow-label'), '工作流步驟說明 · 此頁不執行', 'Workflow reference · not executed on this page'), list, output, actions);
-    let timer = null, resolveRun = null, disposed = false, lastPrompt = input.value, sequence = 0;
+    const actions = el('div', '', 'explorer-toolbar'), replay = button('重播展示', '', () => start(lastPrompt, lastCharacter)); replay.hidden = true;
+    actions.append(replay, resetButton); root.append(state, output, echo, meter, copy(el('p', '', 'demo-workflow-label'), '工作流步驟說明 · 此頁不執行', 'Workflow reference · not executed on this page'), list, actions);
+    let timer = null, resolveRun = null, disposed = false, lastPrompt = input.value, sequence = 0, lastCharacter = {}, characterURL = null;
+    function releaseCharacter() {if (characterURL) URL.revokeObjectURL(characterURL); characterURL = null;}
     function cancel() {sequence++; clearTimeout(timer); timer = null; if (resolveRun) {resolveRun(false); resolveRun = null;} root.querySelectorAll('video,audio').forEach(media => media.pause());}
     function setProgress(index) {meter.setAttribute('aria-valuenow', String(Math.round(index / steps.length * 100))); meter.firstElementChild.style.width = `${index / steps.length * 100}%`; stageNodes.forEach((node, i) => {node.classList.toggle('done', !verified && !unavailable && i < index); node.classList.toggle('active', !verified && !unavailable && i === index); attribute(node, 'aria-label', `工作流步驟：${steps[i]}`, `Workflow reference: ${demo.steps_en?.[i] || steps[i]}`);});}
     function imageFigure(image) {const src = localAsset(image?.src); if (!src) return null; const figure = el('figure');
@@ -240,7 +243,23 @@
       }
       const picture = el('img'); picture.src = src; picture.alt = translated(text(image.alt) || '預先準備的展示圖片', text(image.alt_en) || 'Prepared demonstration image'); picture.dataset.explorerAltZh = text(image.alt) || '預先準備的展示圖片'; picture.dataset.explorerAltEn = text(image.alt_en) || 'Prepared demonstration image'; picture.loading = 'lazy'; picture.decoding = 'async'; figure.append(picture); if (image.alt) figure.append(copy(el('figcaption'), text(image.alt), text(image.alt_en || image.alt))); return figure;}
     function renderOutput() {
-      output.replaceChildren(verified ? copy(el('h4'), 'GPU 實測成果 · 生成後', 'Recorded GPU result · after generation') : unavailable ? copy(el('h4'), '尚無實測成果', 'Result unavailable') : el('h4', '預製範例結果'));
+      output.replaceChildren(verified ? copy(el('h4'), 'GPU 實測成果 · 生成後', 'Recorded GPU result · after generation') : character ? copy(el('h4'), '示範角色建立完成', 'Demo character created') : unavailable ? copy(el('h4'), '尚無實測成果', 'Result unavailable') : el('h4', '預製範例結果'));
+      if (character) {
+        const card = el('article', '', 'demo-character-card demo-character'), picture = el('img');
+        const photo = lastCharacter.photo;
+        if (photo instanceof File && /^image\/(png|jpeg|webp)$/.test(photo.type) && photo.size <= 25 * 1024 * 1024) characterURL = URL.createObjectURL(photo);
+        const source = characterURL || localAsset(demo.inputs?.[0]?.src);
+        if (source) {picture.src = source; attribute(picture, 'alt', '示範角色的參考照片', 'Demo character reference photo'); card.append(picture);}
+        const details = el('div'), name = el('h5', text(lastCharacter.name) || translated(demo.prefill?.name, demo.prefill_en?.name)), description = el('p', text(lastCharacter.description) || translated(demo.prefill?.description, demo.prefill_en?.description), 'demo-result-text');
+        name.dataset.i18nIgnore = 'true'; description.dataset.i18nIgnore = 'true';
+        details.append(copy(el('span', '', 'demo-character-badge'), '示範角色', 'Demo character'), name, description,
+          copy(el('p', '', 'explorer-evidence'), '這張角色卡只存在目前頁面，照片沒有上傳。重新整理或離開此表單後即清除。', 'This card exists only on this page. Your photo is not uploaded; refreshing or leaving this form clears it.'));
+        const next = el('nav', '', 'explorer-toolbar'); attribute(next, 'aria-label', '接著體驗其他示範', 'Explore more demonstrations');
+        for (const [id, zh, en] of [['character-angles', '查看肖像示範', 'Explore portraits'], ['img2video', '查看圖生影片示範', 'Explore image to video'], ['dance', '查看動作示範', 'Explore motion']]) {
+          const link = copy(el('a', '', 'ghost small'), zh, en); link.href = '#/studio/' + id; next.append(link);
+        }
+        details.append(copy(el('p'), '下一步可查看以下工作流的固定案例：', 'Next, explore the recorded examples for these workflows:'), next); card.append(details); output.append(card); output.hidden = false; return;
+      }
       if (unavailable) {
         output.append(copy(el('p', '', 'explorer-evidence'), text(demo.output.reason || '尚未完成此工作流的 GPU 實測。'), text(demo.output.reason_en || 'This workflow has not completed a verified GPU run.')));
         output.hidden = false; return;
@@ -250,7 +269,12 @@
         const video = el('video'); video.controls = true; video.playsInline = true; video.preload = 'none'; video.src = localAsset(media.video?.src || media.src); const poster = localAsset(media.video?.poster); if (poster) video.poster = poster; attribute(video, 'aria-label', verified ? 'GPU 實測影片' : '預製動畫範例，非本次模型生成', verified ? 'Recorded GPU video' : 'Prepared animation, not generated by this interaction'); output.append(video);
       } else if (images.length) {
         const gallery = el('div', '', `demo-gallery${media.kind === 'character' ? ' demo-character' : ''}`);
-        images.forEach(image => {const figure = imageFigure(image); if (figure) gallery.append(figure);}); output.append(gallery);
+        if (verified && media.comparison && demo.inputs?.[0]) {
+          gallery.classList.add('demo-comparison');
+          const before = imageFigure(demo.inputs[0]);
+          if (before) {before.dataset.comparisonBefore = 'true'; before.prepend(copy(el('strong'), '修改前 · 青綠白隊服', 'Before · teal and white uniform')); gallery.append(before);}
+        }
+        images.forEach(image => {const figure = imageFigure(image); if (figure) {if (media.comparison) figure.prepend(copy(el('strong'), '修改後 · 紅色上衣、深藍短褲', 'After · red jersey and navy shorts')); gallery.append(figure);}}); output.append(gallery);
         if (media.kind === 'video') output.append(el('p', '預製分鏡圖；這組圖片不是即時影片生成。', 'explorer-evidence'));
       }
       if (media.kind === 'audio') output.append(el('p', '音訊流程示意：以下為預製文字內容，本展示不合成或播放人聲。', 'demo-transcript-label'));
@@ -258,10 +282,10 @@
       if (!images.length && !media.text && !localAsset(media.video?.src || media.src)) output.append(el('p', '此範例尚未附上可展示的素材。'));
       output.append(copy(el('p', '', 'explorer-evidence'), '修改文字或預覽自己的檔案不會改變這份記錄的成果。', 'Editing text or previewing your files does not change this recorded result.')); output.hidden = false;
     }
-    function reset() {cancel(); run.disabled = false; replay.hidden = true; output.hidden = true; output.replaceChildren(); echo.hidden = true; verified ? copy(state, '可開啟已完成的 GPU 實測記錄。', 'Ready to open the recorded GPU result.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '等待播放預製範例。'); setProgress(0); stageNodes.forEach(node => node.classList.remove('active')); root.dataset.state = 'idle';}
-    function start(prompt = input.value) {
+    function reset() {cancel(); releaseCharacter(); lastCharacter = {}; root.hidden = Boolean(options.inline); run.disabled = false; replay.hidden = true; output.hidden = true; output.replaceChildren(); echo.hidden = true; verified ? copy(state, '可開啟已完成的 GPU 實測記錄。', 'Ready to open the recorded GPU result.') : character ? copy(state, '填妥表單後即可建立示範角色卡。', 'Complete the form to create a demo character card.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '等待播放預製範例。'); setProgress(0); stageNodes.forEach(node => node.classList.remove('active')); root.dataset.state = 'idle';}
+    function start(prompt = input.value, characterValues = {}) {
       if (disposed) return Promise.resolve(false);
-      cancel(); const current = sequence; lastPrompt = text(prompt).slice(0, 2000); input.value = lastPrompt;
+      cancel(); releaseCharacter(); lastCharacter = characterValues; root.hidden = false; const current = sequence; lastPrompt = text(prompt).slice(0, 2000); input.value = lastPrompt;
       copy(echo, `這次體驗輸入：${lastPrompt || '（未填寫）'}`, `Your demonstration input: ${lastPrompt || '(empty)'}`); echo.hidden = false; output.hidden = true; output.replaceChildren(); replay.hidden = true; run.disabled = true; root.dataset.state = 'running';
       const reduced = verified || unavailable || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       return new Promise(resolve => {
@@ -269,14 +293,14 @@
         function advance(index) {
           if (disposed || current !== sequence || !root.isConnected) {cancel(); return;}
           setProgress(index);
-          if (index === steps.length) {renderOutput(); verified ? copy(state, '已開啟 GPU 實測記錄。', 'Recorded GPU result opened.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '展示完成 · 這是預先準備的範例。'); root.dataset.state = 'complete'; run.disabled = false; replay.hidden = false; resolveRun = null; resolve(true); root.dispatchEvent(new CustomEvent('demo-complete', {bubbles: true, detail: {id: text(demo.id)}})); return;}
+          if (index === steps.length) {renderOutput(); verified ? copy(state, '已開啟 GPU 實測記錄。', 'Recorded GPU result opened.') : character ? copy(state, '示範角色卡已完成，可繼續探索工作流。', 'Demo character card complete. You can now explore the workflows.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '展示完成 · 這是預先準備的範例。'); root.dataset.state = 'complete'; run.disabled = false; replay.hidden = false; resolveRun = null; resolve(true); root.dispatchEvent(new CustomEvent('demo-complete', {bubbles: true, detail: {id: text(demo.id)}})); return;}
           copy(state, `模擬 ${index + 1} / ${steps.length} · ${steps[index]}`, `Simulation ${index + 1} / ${steps.length} · ${demo.steps_en?.[index] || COPY[steps[index]] || steps[index]}`);
           if (reduced) advance(index + 1); else timer = setTimeout(() => advance(index + 1), 650);
         }
         advance(0);
       });
     }
-    root.demo = {start, reset, dispose: removalGuard(root, () => {disposed = true; cancel();})};
+    root.demo = {start, reset, dispose: removalGuard(root, () => {disposed = true; cancel(); releaseCharacter(); lastCharacter = {};})};
     if (verified || unavailable) meter.hidden = true;
     reset(); return root;
   }

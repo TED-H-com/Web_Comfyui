@@ -150,7 +150,7 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
                                     'alt': '球衣換色：青綠改紅、白短褲改深藍；此為實際 GPU 輸出。',
                                     'alt_en': 'Uniform recolor: teal to red, white shorts to navy; actual '
                                               'GPU output.'}],
-                        'run_id': 'cheer-kontext-v1'},
+                        'run_id': 'cheer-kontext-v1', 'comparison': True},
              'note': '這是已在本機 RTX 5090 完成的實測記錄；此網站只重播成果，不會依你輸入即時生成。角色為原創虛構成年人。',
              'note_en': 'Recorded on a local RTX 5090, not generated from your input on this website. The '
                         'performer is an original fictional adult.'},
@@ -578,11 +578,9 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
                       'inputs': [{'src': './assets/examples/cheer-reference.webp',
                                   'alt': '可匯入本機的原創角色參考圖',
                                   'alt_en': 'Original character reference for your local installation',
-                                  'slot': 'image',
+                                  'slot': 'photos',
                                   'kind': 'image'}],
-                      'output': {'kind': 'unavailable',
-                                 'images': [],
-                                 'reason': '本站只示範角色表單；以上為參考素材，沒有執行角色建立或保存資料。',
-                                 'reason_en': 'This page demonstrates the character form only. The reference '
-                                              'above is not a saved character; no account or database write '
-                                              'occurs.'}}}
+                      'evidence': {'kind': 'interface-simulation'},
+                      'output': {'kind': 'character', 'images': []},
+                      'note': '依表單內容組成示範角色卡；參考圖不會依描述生成，也不會保存到帳戶或資料庫。',
+                      'note_en': 'A simulated card uses your form values. Its reference image is not generated from your input; nothing is saved to an account or database.'}}
