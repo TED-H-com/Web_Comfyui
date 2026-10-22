@@ -79,6 +79,20 @@ def source_json(root, relative):
     return json.loads(source_bytes(root, relative))
 
 
+def version_assets(root, html):
+    """Changing shared app bytes must also invalidate a visitor's cached scripts."""
+    sources = {destination: source for source, destination in ASSETS.items()}
+    def replace(match):
+        attribute, value = match.groups()
+        path = urlsplit(value).path
+        destination = path.removeprefix('../').removeprefix('./')
+        if destination not in sources or Path(destination).suffix not in {'.js', '.css'}:
+            return match.group(0)
+        digest = hashlib.sha256(source_bytes(root, sources[destination])).hexdigest()[:16]
+        return attribute + '="' + path + '?v=' + digest + '"'
+    return re.sub(r'(src|href)="([^"]+)"', replace, html)
+
+
 def site_html(root):
     """Use the real application markup and scripts, with a read-only adapter."""
     html = source_bytes(root, HTML_SOURCE).decode('utf-8')
@@ -90,14 +104,14 @@ def site_html(root):
     banner = '''<aside class="app-docs-banner" id="docsBanner"><div><strong data-i18n-zh="介面示範 · 非實際服務" data-i18n-en="Interface demo · Not a live service">介面示範 · 非實際服務</strong><p data-i18n-zh="生成按鈕只展示預製成果，不執行模型、不上傳檔案。實際創作請自行安裝 WebUI，或使用 AutoIP 支援的雲端服務。" data-i18n-en="Generate shows prepared examples. No models run and no files are uploaded. Install the WebUI for real work, or use supported AutoIP cloud services.">生成按鈕只展示預製成果，不執行模型、不上傳檔案。實際創作請自行安裝 WebUI，或使用 AutoIP 支援的雲端服務。</p></div><nav aria-label="Demo information"><a class="ghost small workflow-link" href="../" data-i18n-zh="專案介紹" data-i18n-en="Project overview">專案介紹</a><button id="docsHelpButton" class="ghost small" type="button">安裝與使用說明</button><a class="ghost small workflow-link" href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND" target="_blank" rel="sponsored noopener noreferrer" data-i18n-zh="沒有顯卡？AutoIP 推薦連結" data-i18n-en="No GPU? AutoIP referral">沒有顯卡？AutoIP 推薦連結</a></nav></aside>'''
     html = html.replace('</header>', '</header>' + banner, 1)
     html = html.replace('<script src="../assets/login-return.js', '<script src="../assets/docs.js"></script>\n    <script src="../assets/explorers.js"></script>\n    <script src="../assets/hardware.js"></script>\n    <script src="../assets/tour.js"></script>\n    <script src="../assets/login-return.js', 1)
-    return html.encode('utf-8')
+    return version_assets(root, html).encode('utf-8')
 
 
 def landing_html(root):
     html = source_bytes(root, LANDING_SOURCE).decode('utf-8')
     policy = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
     html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + policy + '">\n</head>')
-    return html.encode('utf-8')
+    return version_assets(root, html).encode('utf-8')
 
 
 def public_url(value):

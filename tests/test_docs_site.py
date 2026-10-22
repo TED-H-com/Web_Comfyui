@@ -269,9 +269,13 @@ def test_static_shell_preserves_app_navigation_and_loads_adapter_first(source, t
         assert path.is_file() or (path / 'index.html').is_file(), reference
     assert "connect-src 'self'" in html
     assert "form-action 'none'" in html
-    assert parsed.scripts[0] == '../assets/docs.js'
-    assert parsed.scripts[1:4] == ['../assets/explorers.js', '../assets/hardware.js', '../assets/tour.js']
-    assert parsed.scripts[4:] == [url.replace('/static/', '../assets/') for url in original.scripts]
+    script_paths = [urlsplit(url).path for url in parsed.scripts]
+    assert script_paths[0] == '../assets/docs.js'
+    assert script_paths[1:4] == ['../assets/explorers.js', '../assets/hardware.js', '../assets/tour.js']
+    assert script_paths[4:] == [urlsplit(url).path.replace('/static/', '../assets/') for url in original.scripts]
+    for url in parsed.scripts:
+        asset = output / 'demo' / urlsplit(url).path
+        assert urlsplit(url).query == 'v=' + hashlib.sha256(asset.read_bytes()).hexdigest()[:16]
     assert {'assets/app.js', 'assets/login-return.js', 'assets/provider-fabric.js', 'assets/project-preview.js'} <= artifact_files(output)
 
 

@@ -41,7 +41,16 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install pytest playwright Pillow
-      - run: python -m playwright install --with-deps chromium
+      - name: Use the runner browser or install Chromium
+        shell: bash
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            mkdir -p "$RUNNER_TEMP/browser-bin"
+            ln -s "$(command -v google-chrome)" "$RUNNER_TEMP/browser-bin/chromium"
+            echo "$RUNNER_TEMP/browser-bin" >> "$GITHUB_PATH"
+          else
+            python -m playwright install --with-deps chromium
+          fi
       - name: Interactive guide at real mobile, tablet and desktop viewports
         shell: bash
         run: |
