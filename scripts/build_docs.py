@@ -35,6 +35,7 @@ ASSETS = {
     'webui/docs/docs.js': 'assets/docs.js',
     'webui/docs/explorers.js': 'assets/explorers.js',
     'webui/docs/explorers.css': 'assets/explorers.css',
+    'webui/docs/character-session.js': 'assets/character-session.js',
     'webui/docs/tour.js': 'assets/tour.js',
     'webui/static/app.js': 'assets/app.js',
     'webui/static/i18n.js': 'assets/i18n.js',
@@ -103,7 +104,7 @@ def site_html(root):
     html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + policy + '">\n<link rel="stylesheet" href="../assets/docs.css">\n<link rel="stylesheet" href="../assets/explorers.css">\n<link rel="stylesheet" href="../assets/hardware.css">\n</head>')
     banner = '''<aside class="app-docs-banner" id="docsBanner"><div><strong data-i18n-zh="介面示範 · 非實際服務" data-i18n-en="Interface demo · Not a live service">介面示範 · 非實際服務</strong><p data-i18n-zh="生成按鈕重播已記錄的 GPU 實測成果；未實測的功能不顯示成品。本站不即時生成、不上傳檔案；實際創作請自行安裝，或使用支援的 AutoIP 雲端服務。" data-i18n-en="Generate replays recorded GPU results; untested features show no result. This is not live generation and files are not uploaded. Install the WebUI or use supported AutoIP cloud services.">生成按鈕重播已記錄的 GPU 實測成果；未實測的功能不顯示成品。本站不即時生成、不上傳檔案；實際創作請自行安裝，或使用支援的 AutoIP 雲端服務。</p></div><nav aria-label="Demo information"><a class="ghost small workflow-link" href="../" data-i18n-zh="專案介紹" data-i18n-en="Project overview">專案介紹</a><button id="docsHelpButton" class="ghost small" type="button">安裝與使用說明</button><a class="ghost small workflow-link" href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND" target="_blank" rel="sponsored noopener noreferrer" data-i18n-zh="沒有顯卡？AutoIP 推薦連結" data-i18n-en="No GPU? AutoIP referral">沒有顯卡？AutoIP 推薦連結</a></nav></aside>'''
     html = html.replace('</header>', '</header>' + banner, 1)
-    html = html.replace('<script src="../assets/login-return.js', '<script src="../assets/docs.js"></script>\n    <script src="../assets/explorers.js"></script>\n    <script src="../assets/hardware.js"></script>\n    <script src="../assets/tour.js"></script>\n    <script src="../assets/login-return.js', 1)
+    html = html.replace('<script src="../assets/login-return.js', '<script src="../assets/docs.js"></script>\n    <script src="../assets/explorers.js"></script>\n    <script src="../assets/hardware.js"></script>\n    <script src="../assets/character-session.js"></script>\n    <script src="../assets/tour.js"></script>\n    <script src="../assets/login-return.js', 1)
     return version_assets(root, html).encode('utf-8')
 
 

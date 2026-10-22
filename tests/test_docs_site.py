@@ -271,8 +271,8 @@ def test_static_shell_preserves_app_navigation_and_loads_adapter_first(source, t
     assert "form-action 'none'" in html
     script_paths = [urlsplit(url).path for url in parsed.scripts]
     assert script_paths[0] == '../assets/docs.js'
-    assert script_paths[1:4] == ['../assets/explorers.js', '../assets/hardware.js', '../assets/tour.js']
-    assert script_paths[4:] == [urlsplit(url).path.replace('/static/', '../assets/') for url in original.scripts]
+    assert script_paths[1:5] == ['../assets/explorers.js', '../assets/hardware.js', '../assets/character-session.js', '../assets/tour.js']
+    assert script_paths[5:] == [urlsplit(url).path.replace('/static/', '../assets/') for url in original.scripts]
     for url in parsed.scripts:
         asset = output / 'demo' / urlsplit(url).path
         assert urlsplit(url).query == 'v=' + hashlib.sha256(asset.read_bytes()).hexdigest()[:16]

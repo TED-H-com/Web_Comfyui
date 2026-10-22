@@ -134,6 +134,33 @@ def test_generated_images_retain_no_exif_or_text_metadata():
         assert b'VP8 ' in kinds or b'VP8L' in kinds
 
 
+def test_subject_demo_preserves_person_pixels_and_changes_background():
+    from PIL import Image, ImageChops
+
+    root = ROOT / 'webui/docs/examples'
+    example = demos(catalog(ROOT))['image-blend']
+    provenance = json.loads((root / 'provenance.json').read_text())
+    run = next(row for row in provenance['runs'] if row['id'] == example['output']['run_id'])
+    proof = run['pixel_verification']
+    source = Image.open(root / proof['source']).convert('RGB')
+    result = Image.open(root / proof['output']).convert('RGB')
+    mask = Image.open(root / proof['mask']).convert('L')
+    assert source.size == result.size == mask.size
+    assert {value for value, count in enumerate(mask.histogram()) if count} == {0, 255}
+    assert mask.histogram()[255] == proof['subject_pixels'] > 100_000
+    difference = ImageChops.difference(source, result)
+    masked = Image.composite(difference, Image.new('RGB', source.size), mask)
+    maximum = max(high for _, high in masked.getextrema())
+    assert maximum == proof['max_subject_channel_difference'] <= 2
+    assert mask.crop(proof['face_rectangle_xyxy']).getextrema() == (255, 255)
+    face_difference = max(high for _, high in difference.crop(proof['face_rectangle_xyxy']).getextrema())
+    assert face_difference == proof['max_face_channel_difference'] <= 2
+    assert max(high for _, high in difference.getextrema()) > 50, 'The background must visibly change'
+    assert example['evidence']['workflow'] == 'subject_blend_prompt'
+    assert example['inputs'][0]['src'].endswith('/' + proof['source'])
+    assert example['output']['images'][0]['src'].endswith('/' + proof['output'])
+
+
 def test_examples_are_fresh_objects_and_do_not_modify_source_guides(app):
     original = deepcopy(app)
     first = demos(app)

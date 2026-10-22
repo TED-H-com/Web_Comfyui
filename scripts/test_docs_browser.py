@@ -17,7 +17,7 @@ ASSERT = r'''(async () => {
  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
  const until = async fn => {for (let i = 0; i < 300; i++) {if(fn())return; await wait(20);}throw Error('timeout: '+fn.toString());};
  const assert = (value, message) => {if(!value)throw Error(message);};
- const visible = selector => [...document.querySelectorAll(selector)].find(node => node.getBoundingClientRect().width > 0);
+ const visible = selector => [...document.querySelectorAll(selector)].find(node => node !== document.body && node.getBoundingClientRect().width > 0);
  const close = async () => {document.querySelector('.sheet-close').click(); await until(()=>!document.querySelector('[role="dialog"]'));};
  const feature = async name => {
   document.getElementById('studioToolTrigger').click();
@@ -52,7 +52,9 @@ ASSERT = r'''(async () => {
   document.querySelector('[data-action="view-graph"]').click();await until(()=>document.querySelector('.app-node-graph'));
   assert(document.querySelectorAll('.graph-node').length===9,'actual Z-Image builder graph');
   document.querySelector('.graph-node').click();assert(document.querySelector('.graph-inspector').textContent.includes('z_image_turbo_bf16.safetensors'),'source model on node');await close();
-  document.querySelector('.generate-btn').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
+  document.querySelector('.generate-btn').click();
+  assert(document.querySelector('.app-demo')?.dataset.state==='running' && document.querySelector('[role=progressbar]'),'visible simulated progress after submit');
+  await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
   assert(!document.querySelector('.demo-output').hidden && !document.querySelector('[role="dialog"]'),'result status appears in original form');
   if(WebComfyTour.demoFor('text2img').output.kind==='unavailable') assert(!document.querySelector('.demo-output img'),'untested text2img has no borrowed image');
   else await until(()=>document.querySelector('.demo-output img')?.naturalWidth>0);
@@ -92,37 +94,51 @@ ASSERT = r'''(async () => {
   assert(document.querySelector('.experimental-create-form textarea[name=description]').value,'character description prefilled');
   assert(document.querySelector('.demo-input-preview img').src.includes('cheer-reference.webp'),'character reference matches photos slot');
   assert(document.querySelector('.app-demo').hidden&&!document.querySelector('.demo-character-card'),'character not created before submit');
-  document.querySelector('.experimental-create-form button[type=submit]').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
-  assert(document.querySelector('.demo-character img'),'successful character card');
-  await until(()=>document.querySelector('.demo-character img').naturalWidth>0);
-  assert(document.querySelector('.demo-output h4').textContent==='示範角色建立完成','character success label');
-  assert(document.querySelector('.demo-character-card h5').textContent==='晴晴','prefilled name on card');
-  assert(document.querySelectorAll('.demo-character-card a[href^="#/studio/"]').length===3,'next workflow demo links');
+  document.querySelector('.experimental-create-form button[type=submit]').click();
+  await until(()=>document.querySelector('[data-session-character]'));
+  assert(!document.querySelector('.experimental-create-form'),'creation closes form');
+  assert(document.querySelector('.docs-character-header h1').textContent==='晴晴','created character name');
+  assert(document.querySelectorAll('.docs-character-example').length===3,'prepared portrait outfit video examples');
+  const firstId=document.querySelector('[data-session-character]').dataset.sessionCharacter;
+  const reference=document.querySelector('.docs-character-reference').src;
+  for(const media of document.querySelectorAll('.docs-character-example img,.docs-character-example video')) assert(media.src!==reference,'prepared results differ from reference');
+  visible('[data-view="characters"]').click();await until(()=>document.querySelector('[data-character-id="'+firstId+'"]'));
+  assert(!document.querySelector('.experimental-create-form'),'return list keeps form closed');
+  document.querySelector('[data-character-id="'+firstId+'"]').click();await until(()=>document.querySelector('[data-session-character]'));
+  visible('[data-view="characters"]').click();await until(()=>document.querySelector('.new-character-card'));
+  document.querySelector('.new-character-card').click();await until(()=>document.querySelector('.experimental-create-form'));
   const characterForm=document.querySelector('.experimental-create-form');
-  characterForm.elements.name.value='<img src=x onerror=alert(1)> 文生圖';
-  characterForm.elements.description.value='我的角色描述，換成紅色隊服。';
+  const personalName='文生圖';
+  characterForm.elements.name.value=personalName;
+  characterForm.elements.description.value='<img src=x onerror=alert(1)> 文生圖';
   const canvas=document.createElement('canvas');canvas.width=32;canvas.height=48;canvas.getContext('2d').fillRect(0,0,32,48);
   const photoFile=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
   const photos=new DataTransfer();photos.items.add(new File([photoFile],'my-character.png',{type:'image/png'}));
   characterForm.elements.photos.files=photos.files;characterForm.elements.photos.dispatchEvent(new Event('change',{bubbles:true}));
-  assert(document.querySelector('.app-demo').hidden,'photo replacement clears previous card');
-  characterForm.querySelector('button[type=submit]').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
-  assert(document.querySelector('.demo-character-card h5').textContent===characterForm.elements.name.value&&!document.querySelector('.demo-character-card h5 img'),'name is safe literal text');
-  assert(document.querySelector('.demo-character-card .demo-result-text').textContent===characterForm.elements.description.value,'custom description on card');
-  const cardPhoto=document.querySelector('.demo-character-card img');
-  assert(cardPhoto.src.startsWith('blob:')&&cardPhoto.src!==document.querySelector('.demo-input-preview img').src,'card owns a separate local photo URL');
+  const previewURL=document.querySelector('.demo-input-preview img').src;
+  characterForm.querySelector('button[type=submit]').click();await until(()=>document.querySelector('[data-session-character]'));
+  assert(document.querySelector('.docs-character-header h1').textContent===personalName&&!document.querySelector('.docs-character-header h1 img'),'name is safe literal text');
+  assert(document.querySelector('.docs-character-description').textContent==='<img src=x onerror=alert(1)> 文生圖' && !document.querySelector('.docs-character-description img'),'custom description retained');
+  const cardPhoto=document.querySelector('.docs-character-reference'),cardURL=cardPhoto.src;
+  assert(cardURL.startsWith('blob:')&&cardURL!==previewURL,'session owns separate photo URL');
   await until(()=>cardPhoto.naturalWidth>0);
+  assert(!revoked.includes(cardURL),'closing form preserves session photo');
+  assert((await (await fetch('/api/characters')).json()).characters.length===2,'both characters in memory list');
   const lang=document.getElementById('languageSelect');lang.value='en';lang.dispatchEvent(new Event('change'));
   await until(()=>document.documentElement.lang==='en' && visible('[data-view="characters"]').textContent.includes('Characters'));
-  assert(document.querySelector('.experimental-create-form button[type=submit]').textContent.includes('demo'),'English native demo action');
-  assert(document.querySelector('.demo-output h4').textContent==='Demo character created','English character completion');
-  assert(document.querySelector('.demo-character-card h5').textContent===characterForm.elements.name.value,'language preserves personal name');
-  const cardBounds=document.querySelector('.demo-character-card').getBoundingClientRect();
-  assert(cardBounds.width>characterForm.getBoundingClientRect().width*0.7,'character result spans form columns');
-  for(const link of document.querySelectorAll('.demo-character-card a')) assert(link.getBoundingClientRect().right<=cardBounds.right,'next action fits inside character card');
-  const cardURL=cardPhoto.src;
-  characterForm.querySelector('.demo-prefill-bar button').click();
-  assert(revoked.includes(cardURL)&&document.querySelector('.app-demo').hidden&&!document.querySelector('.demo-character-card'),'reset clears card and releases its photo');
+  assert(document.querySelector('.docs-character-header h1').textContent===personalName,'language preserves personal name');
+  [...document.querySelectorAll('.docs-character-workspace button')].find(button=>button.textContent==='Delete character').click();
+  await until(()=>!document.querySelector('[data-session-character]') && document.querySelector('.new-character-card,.experimental-create-form'));
+  await until(()=>document.querySelector('#workspace h1')?.textContent==='Character gallery');
+  assert(document.querySelector('#workspace').textContent.includes('Choose a character to start creating.'),'English character list guidance');
+  assert(document.querySelector('#workspace').textContent.includes('+ New character'),'English new character action');
+  assert(document.querySelector('.works-badge').textContent==='0 media items','English character media count');
+  assert(revoked.includes(cardURL),'delete releases session photo');
+  assert((await (await fetch('/api/characters')).json()).characters.length===1,'deleting one preserves other character');
+  document.querySelector('[data-character-id="'+firstId+'"]').click();await until(()=>document.querySelector('[data-session-character]'));
+  [...document.querySelectorAll('.docs-character-workspace button')].find(button=>button.textContent==='Clear all session characters').click();
+  await until(()=>!document.querySelector('[data-session-character]') && document.querySelector('.new-character-card,.experimental-create-form'));
+  assert((await (await fetch('/api/characters')).json()).characters.length===0,'clear session removes all characters');
   assert(document.documentElement.scrollWidth<=innerWidth+1,'English hardware header overflow');
   assert(document.querySelector('.topbar .brand').getBoundingClientRect().width>70,'English brand remains visible');
   location.hash='#/studio/img2img';await until(()=>document.querySelector('form[data-demo-id="img2img"]'));
@@ -158,6 +174,12 @@ ASSERT = r'''(async () => {
     generate.click();await until(()=>form.querySelector('.app-demo')?.dataset.state==='complete');
     assert(!form.querySelector('.demo-output').hidden,'all options produce a prepared result '+entry.id);
     const example=WebComfyTour.demoFor(entry.id);
+    if(entry.id==='image-blend') {
+      const blend=form.querySelector('.demo-comparison');
+      assert(blend?.querySelectorAll('img').length===2,'subject blend shows original and composite');
+      assert(blend.textContent.includes('保留人物、更換背景')&&!blend.textContent.includes('紅色上衣'),'subject blend captions describe background replacement');
+      assert(blend.querySelector('figure:not([data-comparison-before]) img').src!==blend.querySelector('[data-comparison-before] img').src,'subject composite differs from original');
+    }
     if(example.output.kind==='unavailable') assert(!form.querySelector('.demo-output img,.demo-output video'),'untested tool has no unrelated media '+entry.id);
     if(example.evidence?.kind==='local-comfyui') {
       for(const source of example.inputs || []) if(source.slot) {
@@ -245,12 +267,17 @@ def test_static_docs_browser(tmp_path, initial_page):
                         page = context.new_page()
                         page.goto(f'http://127.0.0.1:{server.server_port}/Web_Comfyui/demo/{route}')
                         assert page.evaluate('innerWidth') == width
-                        for _ in range(600):
+                        for _ in range(1800):
                             if page.locator('#docs-test-result').count() and page.locator('#docs-test-result').inner_text().startswith(('PASS', 'FAIL')):
                                 break
                             page.wait_for_timeout(100)
                         marker = page.locator('#docs-test-result').inner_text()
                         assert marker == 'PASS', (width, marker)
+                        page.evaluate("WebComfyCharacterSession.create({name:'Refresh check'})")
+                        assert page.evaluate("WebComfyCharacterSession.list().length") == 1
+                        page.reload()
+                        page.wait_for_function("window.WebComfyCharacterSession !== undefined")
+                        assert page.evaluate("WebComfyCharacterSession.list().length") == 0
         assert not any('/api/' in path or path.startswith('POST ') for path in requests)
         assert any('/downloads/' in path for path in requests)
     finally:

@@ -63,20 +63,21 @@
     },
     "image-blend": {
       "source": "webui/server.py",
-      "symbol": "ip_blend_prompt",
-      "summary": "SDXL 搭配 IPAdapter Plus，依兩至三張參考圖生成新構圖。",
+      "symbol": "subject_blend_prompt",
+      "summary": "SAM3 辨識人物並去背，再把人物原始像素合成到背景參考圖。",
       "steps": [
-        "上傳至少兩張參考圖，選擇比例與描述。",
-        "載入 SDXL checkpoint、IPAdapter Plus 與 CLIP Vision。",
-        "每張圖依序加入 IPAdapterAdvanced；採樣後用 checkpoint 內附 VAE 解碼。"
+        "上傳人物原圖與背景參考圖；主體預設 person。",
+        "SAM3 產生主體遮罩，二值化後保留遮罩內的原始人物像素。",
+        "只將背景縮放並置中裁切至人物原圖尺寸，再直接合成儲存。"
       ],
       "techniques": [
-        "SDXL",
-        "IPAdapter 參考條件串接",
-        "CLIP Vision"
+        "SAM3 主體分割",
+        "二值遮罩",
+        "直接像素合成"
       ],
       "requirements": [
-        "不能保證保留同一張臉、服裝或人物身分；不是精準換裝入口。"
+        "需原生 SAM3 節點及 sam3.1_multiplex_fp16.safetensors；不需擴散模型或 IPAdapter。",
+        "不重畫臉或服裝，不自動補光或生成陰影；去背邊緣需檢查。"
       ]
     },
     "character-angles": {

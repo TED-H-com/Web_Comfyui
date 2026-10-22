@@ -617,7 +617,7 @@ FEATURE_OUTPUT_PREFIXES = {
     "text2img": "Castle/text2img_ZImageTurbo",
     "img2img": "Castle/img2img_FluxKontext",
     "anime-scene-card": "Castle/anime-scene-card",
-    "image-blend": "Castle/image-blend_IPAdapter",
+    "image-blend": "Castle/image-blend_subject",
     "character-angles": "Castle/character-angles_InstantID",
     "clipmode-character-photoshoot": "Castle/clipmode-character-photoshoot_SDXL",
     "img2video": "Castle/img2video_WanI2V",
@@ -1243,27 +1243,20 @@ FEATURES = [
         "id": "image-blend",
         "studio": "image",
         "title": "AI 參考圖融合",
-        "subtitle": "IPAdapter 依多張參考圖重新創作",
+        "subtitle": "保留人物原貌 · AI 去背合成",
         "kind": "generate",
-        "builder": "ip_blend",
+        "builder": "subject_blend",
         "uploads": [
-            {"id": "image1", "label": "參考圖 1", "accept": "image/*", "required": True},
-            {"id": "image2", "label": "參考圖 2", "accept": "image/*", "required": True},
-            {"id": "image3", "label": "參考圖 3（可選）", "accept": "image/*", "required": False},
+            {"id": "image1", "label": "人物原圖", "accept": "image/*", "required": True},
+            {"id": "image2", "label": "背景參考圖", "accept": "image/*", "required": True},
         ],
         "fields": [
-            {"id": "positive", "type": "textarea", "label": "正向提示詞", "default": "a high quality photo, cohesive blend of the references", "rows": 3},
-            {"id": "negative", "type": "textarea", "label": "負向提示詞", "default": "lowres, bad anatomy, watermark, text", "rows": 2},
-            {"id": "aspect", "type": "aspect", "label": "畫面比例", "options": SDXL_ASPECTS, "default": "1024x1024"},
-            {"id": "weight", "type": "slider", "label": "參考強度", "default": 0.8, "min": 0, "max": 1.5, "step": 0.05},
-            {"id": "steps", "type": "slider", "label": "步數", "default": 28, "min": 1, "max": 60, "step": 1},
-            {"id": "cfg", "type": "slider", "label": "CFG", "default": 6.5, "min": 0, "max": 15, "step": 0.1},
-            {"id": "batchSize", "type": "number", "label": "張數", "default": 1, "min": 1, "max": 4, "step": 1},
-            _seed_field(),
+            {"id": "positive", "type": "text", "label": "保留的主體", "default": "person"},
+            {"id": "threshold", "type": "slider", "label": "主體偵測門檻", "default": 0.5, "min": 0, "max": 1, "step": 0.01},
         ],
-        "requiredModels": ["sd_xl_base_1.0.safetensors", "ip-adapter-plus_sdxl_vit-h.safetensors", "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"],
-        "requiredNodes": ["IPAdapterModelLoader", "IPAdapterAdvanced", "CheckpointLoaderSimple"],
-        "note": "會依參考圖重新生成新畫面，不保證保留同一張臉、服裝或人物身分；不作為角色合照或精準換裝入口。",
+        "requiredModels": ["sam3.1_multiplex_fp16.safetensors"],
+        "requiredNodes": ["SAM3_Detect", "CheckpointLoaderSimple", "ResizeImageMaskNode", "ThresholdMask", "ImageCompositeMasked"],
+        "note": "AI 辨識人物後保留遮罩內的原始像素，只縮放裁切背景。輸出維持人物原圖尺寸；不重畫臉、不換裝，也不自動補光或生成陰影。去背邊緣需檢查。",
     },
     {
         "id": "character-angles",
@@ -1713,13 +1706,6 @@ _IMAGE_PROMPT_PRESETS = [
     {"label": "動漫", "text": "anime style illustration, vibrant colors, clean lineart, detailed background"},
     {"label": "寵物", "text": "an adorable pet, close-up, shallow depth of field, warm light, fluffy detailed fur"},
 ]
-_BLEND_PRESETS = [
-    {"label": "場景合成", "text": "the subjects from the references placed naturally together in one cohesive scene"},
-    {"label": "雙人構圖", "text": "the two people standing side by side, group photo, consistent lighting, same scene"},
-    {"label": "服裝靈感", "text": "the person wearing an outfit inspired by the reference, full body, natural fit"},
-    {"label": "故事場景", "text": "the characters interacting within the environment, telling a story, cinematic"},
-    {"label": "創意混搭", "text": "creatively blend the elements from all references into one imaginative artwork"},
-]
 _MOTION_PRESETS = [
     {"label": "輕微擺動", "text": "subtle natural motion, gentle breathing, slight head movement, cinematic"},
     {"label": "轉頭微笑", "text": "the subject slowly turns their head and smiles, gentle camera push-in"},
@@ -1730,7 +1716,6 @@ _MOTION_PRESETS = [
 _PROMPT_FIELD_CONFIG = {
     "text2img": ("positive", _IMAGE_PROMPT_PRESETS, "image"),
     "img2img": ("instruction", [], "image"),
-    "image-blend": ("positive", _BLEND_PRESETS, "image"),
     "character-angles": ("positive", [], "image"),
     CLIPMODE_CHARACTER_PHOTOSHOOT_FEATURE_ID: ("prompt", _IMAGE_PROMPT_PRESETS, "image"),
     "img2video": ("positive", _MOTION_PRESETS, "video"),
@@ -4450,13 +4435,6 @@ FEATURE_PRESETS = {
             "fine": {"steps": 14},
         },
     },
-    "image-blend": {
-        "quality": {
-            "fast": {"steps": 18},
-            "standard": {},
-            "fine": {"steps": 40},
-        },
-    },
     "character-angles": {
         "quality": {
             "fast": {"steps": 20, "batchSize": 1},
@@ -7028,6 +7006,26 @@ def clipmode_character_photoshoot_prompt(
         },
         "7": {"class_type": "VAEDecode", "inputs": {"samples": ["6", 0], "vae": ["1", 2]}},
         "8": {"class_type": "SaveImage", "inputs": {"images": ["7", 0], "filename_prefix": prefix}},
+    }
+
+
+def subject_blend_prompt(settings: dict, uploads: dict[str, str] | None = None) -> dict:
+    """Segment the subject and copy original pixels onto a resized background."""
+    uploads = uploads or {}
+    if not uploads.get("image1") or not uploads.get("image2"):
+        raise ValueError("請上傳人物原圖及背景參考圖")
+    subject = str(settings.get("positive") or "person").strip() or "person"
+    threshold = clamp_float(settings.get("threshold"), 0.5, 0.0, 1.0)
+    return {
+        "1": {"class_type": "LoadImage", "inputs": {"image": uploads["image1"]}},
+        "2": {"class_type": "LoadImage", "inputs": {"image": uploads["image2"]}},
+        "3": {"class_type": "ResizeImageMaskNode", "inputs": {"input": ["2", 0], "resize_type": "match size", "resize_type.match": ["1", 0], "resize_type.crop": "center", "scale_method": "lanczos"}},
+        "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "sam3.1_multiplex_fp16.safetensors"}},
+        "5": {"class_type": "CLIPTextEncode", "inputs": {"text": subject, "clip": ["4", 1]}},
+        "6": {"class_type": "SAM3_Detect", "inputs": {"model": ["4", 0], "image": ["1", 0], "threshold": threshold, "refine_iterations": 2, "individual_masks": False, "conditioning": ["5", 0]}},
+        "7": {"class_type": "ThresholdMask", "inputs": {"mask": ["6", 0], "value": 0.5}},
+        "8": {"class_type": "ImageCompositeMasked", "inputs": {"destination": ["3", 0], "source": ["1", 0], "x": 0, "y": 0, "resize_source": False, "mask": ["7", 0]}},
+        "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": output_prefix(settings, "image-blend")}},
     }
 
 
@@ -13005,6 +13003,7 @@ BUILDERS = {
     "wan_i2v": wan_i2v_prompt,
     "wan_flf": wan_flf_prompt,
     "scail_dance": scail_dance_prompt,
+    "subject_blend": subject_blend_prompt,
     "ip_blend": ip_blend_prompt,
     "instantid": instantid_prompt,
     "face_swap": face_swap_prompt,

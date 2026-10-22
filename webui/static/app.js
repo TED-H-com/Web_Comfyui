@@ -2245,6 +2245,13 @@ function setView(view) {
 
 function renderWorkspace() {
   document.body.dataset.view = currentView;
+  if (window.WebComfyDocs?.renderCharacterRoute?.(currentRoute, {
+    begin: beginWorkspaceRender, navigate, refresh: loadCharacters,
+  })) {
+    document.body.classList.remove("has-character-composer");
+    unbindGenerateComposer();
+    return;
+  }
   const characterComposer = ["character-workspace", "provider-character-studio"].includes(currentRoute.view);
   document.body.classList.toggle("has-character-composer", characterComposer);
   if (!characterComposer) unbindGenerateComposer();
@@ -2420,6 +2427,13 @@ async function createCharacter() {
     if (isStaleSessionError(error)) return;
     showAlert(`建立角色失敗：${error.message}`, true);
   }
+}
+
+async function completeDocumentationCharacter(character) {
+  experimentalCreateOpen = false;
+  selectedCharacterId = character.id;
+  await loadCharacters();
+  navigate({view: "character-workspace", characterId: character.id});
 }
 
 async function createExperimentalCharacter(form) {
@@ -3806,7 +3820,7 @@ function renderProviderCharacterWallCard(character) {
       h("span", { class: "works-badge", text: status }),
     ]),
     h("div", { class: "wall-card-body" }, [
-      h("div", { class: "wall-card-name", text: character.name }),
+      h("div", { class: "wall-card-name", ...(window.WebComfyDocs ? {dataset: {i18nIgnore: ""}} : {}), text: character.name }),
       h("div", {
         class: "wall-card-tagline",
         text: tagline,
@@ -3841,7 +3855,10 @@ function renderCharacterCardWall() {
   }
   const legacyIds = new Set(characters.map((character) => character.id));
   const providerOnlyCharacters = providerCharacters.filter((character) => !legacyIds.has(character.id));
-  for (const [visualClass, label, subtitle] of CHARACTER_VISUAL_GROUPS) {
+  for (const [visualClass, groupLabel, groupSubtitle] of CHARACTER_VISUAL_GROUPS) {
+    const documentationGroup = window.WebComfyDocs && visualClass === "unknown";
+    const label = documentationGroup ? "示範角色" : groupLabel;
+    const subtitle = documentationGroup ? "只保留在本頁記憶體，重新整理後清除。" : groupSubtitle;
     const legacyList = characters.filter((character) => characterWallVisualGroup(character) === visualClass);
     const providerList = providerOnlyCharacters
       .filter((character) => characterWallVisualGroup(character) === visualClass)
@@ -3885,9 +3902,9 @@ function renderCharacterWallCard(character) {
       h("span", { class: "works-badge", dataset: { characterWorks: character.id }, text: `${characterWorksCount(character.id)} 媒體` }),
     ]),
     h("div", { class: "wall-card-body" }, [
-      h("div", { class: "wall-card-name", text: character.name }),
+      h("div", { class: "wall-card-name", ...(window.WebComfyDocs ? {dataset: {i18nIgnore: ""}} : {}), text: character.name }),
       isAdmin() && characterType(character) === "experimental" && character.ownerEmail ? h("div", { class: "wall-card-owner", text: character.ownerEmail }) : null,
-      h("div", { class: "wall-card-tagline", text: character.tagline || character.profile || character.origin || "未設定一句話定位" }),
+      h("div", { class: "wall-card-tagline", ...(window.WebComfyDocs ? {dataset: {i18nIgnore: ""}} : {}), text: character.tagline || character.profile || character.origin || "未設定一句話定位" }),
       h("div", { class: "wall-card-enter", text: "進入" }),
     ]),
   ]);

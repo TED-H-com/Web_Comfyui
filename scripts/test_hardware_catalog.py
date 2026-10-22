@@ -34,8 +34,11 @@ def test_thresholds_do_not_pool_cards(hardware):
     assert not can_use(hardware,'text2img','none')
     assert can_use(hardware,'voice-library','none')
     assert can_use(hardware,'character-create','none')
-    assert not can_use(hardware,'image-blend','vram-12')
-    assert can_use(hardware,'image-blend','vram-16')
+    assert not can_use(hardware,'image-blend','none')
+    assert can_use(hardware,'image-blend','vram-8')
+    assert hardware['features']['image-blend']['model_names'] == ['sam3.1_multiplex_fp16.safetensors']
+    assert not can_use(hardware,'character-angles','vram-12')
+    assert can_use(hardware,'character-angles','vram-16')
     assert can_use(hardware,'text2img','vram-24')
     assert not can_use(hardware,'dance','vram-24')
     assert not can_use(hardware,'dance','dual-24')

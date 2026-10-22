@@ -3,6 +3,9 @@
   'use strict';
   const pairs = `
 角色|Characters
+角色卡片牆|Character gallery
+選一個角色開始創作。|Choose a character to start creating.
++ 新角色|+ New character
 創作|Create
 專案|Projects
 媒體庫|Media library
@@ -197,7 +200,12 @@ Qwen 2.1 指令改圖|Qwen 2.1 image editing
 聲音生成 · 簡報配音 · 聲音庫|Speech generation · Presentation voiceover · Voice library
 Flux Kontext 重新生成式編輯|Regenerative editing with Flux Kontext
 角色原圖合成 · 不會轉成真人|Original character compositing · Keeps the illustrated style
-IPAdapter 依多張參考圖重新創作|IPAdapter recreation from multiple reference images
+保留人物原貌 · AI 去背合成|Keep the original subject · AI background compositing
+人物原圖|Original subject image
+背景參考圖|Background reference
+保留的主體|Subject to keep
+主體偵測門檻|Subject detection threshold
+AI 辨識人物後保留遮罩內的原始像素，只縮放裁切背景。輸出維持人物原圖尺寸；不重畫臉、不換裝，也不自動補光或生成陰影。去背邊緣需檢查。|AI segments the subject and preserves original pixels inside the mask. Only the background is resized and cropped. Output matches the subject image dimensions, without redrawing faces, changing clothes, relighting, or generating shadows. Check the cutout edges.
 InstantID · 依同一張真人正臉生成候選肖像|InstantID · Generate portrait candidates from one real face photo
 角色卡原圖雙重身份鎖定 · SDXL Beta|Dual identity guidance from the character profile · SDXL Beta
 SCAIL 姿態驅動|SCAIL pose-driven motion

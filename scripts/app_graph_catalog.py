@@ -19,10 +19,11 @@ MODEL_FIELDS = frozenset(('unet_name','ckpt_name','clip_name','clip_name1','clip
 NUMBER_FIELDS = frozenset(('width','height','steps','cfg','denoise','guidance','strength_model',
     'weight','shift','batch_size','length','fps','frame_rate','force_rate','pose_strength',
     'context_length','context_overlap','start_at','end_at','ip_weight','cn_strength','noise',
+    'threshold','value','refine_iterations','x','y',
     'face_restore_visibility','codeformer_weight','resize_type.megapixels','resize_type.multiple'))
 ENUM_FIELDS = frozenset(('sampler_name','scheduler','weight_dtype','type','crop','format',
     'resize_type','scale_method','weight_type','combine_embeds','embeds_scaling','provider'))
-ENUM_VALUES = frozenset(('default','flux','lumina2','wan','qwen_image','minimax','res_multistep','simple','euler','karras','dpmpp_2m','none','center','mp4','video/h264-mp4','scale total pixels','scale to multiple','nearest-exact','linear','concat','V only','CPU','CUDA','average'))
+ENUM_VALUES = frozenset(('default','flux','lumina2','wan','qwen_image','minimax','res_multistep','simple','euler','karras','dpmpp_2m','none','center','mp4','video/h264-mp4','scale total pixels','scale to multiple','nearest-exact','linear','concat','V only','CPU','CUDA','average','match size','lanczos'))
 SECRET = re.compile(r'(?:sk-|aip_|gh[pousr]_|hf_)[A-Za-z0-9_-]{12,}', re.I)
 
 
@@ -149,6 +150,7 @@ def diagram(raw, source, notes=()):
             elif key in MODEL_FIELDS and model_value(value):inputs[key]=value
             elif key in NUMBER_FIELDS and type(value) in (int,float) and math.isfinite(value) and abs(value)<=10_000_000:inputs[key]=value
             elif key in ENUM_FIELDS and isinstance(value,str) and value in ENUM_VALUES:inputs[key]=value
+            elif key in {'resize_source', 'individual_masks'} and type(value) is bool:inputs[key]=value
         nodes.append({'id':id,'type':kind,'inputs':inputs})
     if omitted:notes=(*notes,f'{omitted} 條無法在此代表分支解析的連線未顯示。')
     return {'kind':'comfyui','evidence':'從實際 Python builder 的 AST 讀取節點與插槽連線；已遮蔽提示詞、輸入媒體與執行期值。僅供閱讀，不能當作可執行 prompt JSON。',
@@ -302,7 +304,6 @@ def graphs(root,app_catalog):
         if id in result:continue
         if id.startswith('h3-'):result[id]=h3(native,id);continue
         if id in {'qwen21-edit','qwen21-text2img'}:result[id]=qwen(qwen_source,id=='qwen21-edit');continue
-        if id=='image-blend':result[id]=ip_blend(server);continue
         symbol=guides[id].get('builder_symbol')
         raw,_,_=primary_graph(server,symbol,largest=id=='clipmode-character-photoshoot',scope={'model_ref':['1',0]} if id=='text2img' else None)
         notes=[]

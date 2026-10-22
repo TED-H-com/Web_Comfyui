@@ -105,19 +105,6 @@
       "run_id": "cheer-kontext-v1"
     },
     {
-      "file": "cheer-blend.webp",
-      "kind": "image",
-      "sha256": "b74778d4131fe0509087f6aed16794d77f520a3891b47f915c23a25b7de045b2",
-      "bytes": 1187020,
-      "width": 896,
-      "height": 1152,
-      "source_sha256": "f152e605f84e574ed22d12e72a437e67517d9229d093ebddff6c15026ecba154",
-      "metadata_policy": "Lossless RGB WebP; no EXIF, prompt chunks or private metadata.",
-      "source": "Actual local ComfyUI GPU output from cheer-blend-v2",
-      "tool": "ComfyUI + Pillow",
-      "run_id": "cheer-blend-v2"
-    },
-    {
       "file": "cheer-instantid.webp",
       "kind": "image",
       "sha256": "f949c46a8363be731e824782b85562203460da3d3fbc8c8123105736ca3be870",
@@ -254,6 +241,59 @@
       "derived_from": [
         "cheer-kontext.webp"
       ]
+    },
+    {
+      "file": "stadium-ground-v2-reference.webp",
+      "kind": "image",
+      "sha256": "4a57388912280922fcc7a7b6418b120904fd6c1717404eff23b487b09bb6cdba",
+      "bytes": 1173444,
+      "width": 1024,
+      "height": 1536,
+      "source_sha256": "37354aaeade25267f0f10b35cf0df4bebabafde038b227c564749c2e796a1672",
+      "metadata_policy": "Lossless RGB WebP; no EXIF, prompt chunks or private metadata.",
+      "source": "Actual local ComfyUI GPU output from stadium-ground-v2",
+      "tool": "ComfyUI + Pillow",
+      "run_id": "stadium-ground-v2"
+    },
+    {
+      "file": "cheer-subject-reference.webp",
+      "kind": "image",
+      "sha256": "004728e3b0cca52e7557da9a038e3affc7cb82be72a881dae771ebbc670f757b",
+      "bytes": 1274512,
+      "width": 1024,
+      "height": 1536,
+      "source": "Lossless re-encoding of the original fictional adult reference, with identical decoded RGB pixels.",
+      "tool": "Pillow",
+      "derived_from": [
+        "cheer-reference.webp"
+      ],
+      "metadata_policy": "Lossless RGB WebP; no EXIF or text metadata. Exact published bytes used as ComfyUI input."
+    },
+    {
+      "file": "cheer-subject-mask.webp",
+      "kind": "image",
+      "sha256": "f0c7e8d5461ecb1ef56f456f86224d9b276a817a7064b132872f56b4e5b77523",
+      "bytes": 2196,
+      "width": 1024,
+      "height": 1536,
+      "source_sha256": "b807c173a43d37a1918b59c97b83a7889d77ee3d2793da7adb30dc50461ae027",
+      "metadata_policy": "Lossless RGB WebP; no EXIF, prompt chunks or private metadata.",
+      "source": "Actual local ComfyUI GPU output from cheer-subject-blend-v4",
+      "tool": "ComfyUI + Pillow",
+      "run_id": "cheer-subject-blend-v4"
+    },
+    {
+      "file": "cheer-subject-blend.webp",
+      "kind": "image",
+      "sha256": "6cd14f743227dcff61b57a88e596018b4a1978115c7f108db3d2efd8a49a5b6e",
+      "bytes": 1249776,
+      "width": 1024,
+      "height": 1536,
+      "source_sha256": "5e0cc0208f2e697f8e0b46297be80c8b6282404aee82e4b9aab2ab92f5b8c872",
+      "metadata_policy": "Lossless RGB WebP; no EXIF, prompt chunks or private metadata.",
+      "source": "Actual local ComfyUI GPU output from cheer-subject-blend-v4",
+      "tool": "ComfyUI + Pillow",
+      "run_id": "cheer-subject-blend-v4"
     }
   ],
   "runs": [
@@ -706,218 +746,6 @@
       },
       "builder_source": "webui/server.py",
       "builder": "flux_kontext_prompt"
-    },
-    {
-      "id": "cheer-blend-v2",
-      "feature_id": "image-blend",
-      "status": "success",
-      "executed_at": "2026-10-22T20:05:36.327000+00:00",
-      "duration_seconds": 7.538,
-      "device": "NVIDIA GeForce RTX 5090 (32 GB)",
-      "comfyui_version": "0.37.0",
-      "inputs": [
-        {
-          "file": "cheer-reference.webp",
-          "sha256": "b0ab1356283d4f182245a6bd398a258cb5eb6bba63e4b01eed859137650d111f",
-          "slot": "image1",
-          "graph_name": "web-demo-cheer-reference.webp"
-        },
-        {
-          "file": "stadium-reference.webp",
-          "sha256": "09b7e805ddf2f1552bad4c520c8799f0bb33489138c54f2f44740ffa8b20b17e",
-          "slot": "image2",
-          "graph_name": "web-demo-stadium-reference.webp"
-        }
-      ],
-      "outputs": [
-        {
-          "file": "cheer-blend.webp",
-          "sha256": "f152e605f84e574ed22d12e72a437e67517d9229d093ebddff6c15026ecba154"
-        }
-      ],
-      "settings": {
-        "positive": "Candid realistic photograph of a smiling adult Taiwanese woman with long dark hair in a ponytail, plain unmarked teal and white baseball jersey, half body portrait, standing in an empty baseball stadium during blue hour, soft stadium floodlights illuminate her face, detailed natural skin texture, realistic eyes, 85mm portrait lens, shallow depth of field, contemporary sports editorial photograph, unbranded clothing",
-        "negative": "illustration, 3d, render, cartoon, doll, painting, plastic, overly smooth skin, overexposed, oversaturated, deformed, watermark, text, logo, symbols, writing, emblem, badge, duplicate person, low quality",
-        "width": 896,
-        "height": 1152,
-        "steps": 36,
-        "cfg": 5.0,
-        "weight": 0.35,
-        "batchSize": 1,
-        "seed": 2026102314,
-        "sampler": "dpmpp_2m",
-        "scheduler": "karras",
-        "prefix": "public-web-demo/cheer-blend-v2"
-      },
-      "workflow": {
-        "graph": {
-          "1": {
-            "class_type": "CheckpointLoaderSimple",
-            "inputs": {
-              "ckpt_name": "sd_xl_base_1.0.safetensors"
-            }
-          },
-          "2": {
-            "class_type": "IPAdapterModelLoader",
-            "inputs": {
-              "ipadapter_file": "ip-adapter-plus_sdxl_vit-h.safetensors"
-            }
-          },
-          "3": {
-            "class_type": "CLIPVisionLoader",
-            "inputs": {
-              "clip_name": "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
-            }
-          },
-          "4": {
-            "class_type": "CLIPTextEncode",
-            "inputs": {
-              "text": "Candid realistic photograph of a smiling adult Taiwanese woman with long dark hair in a ponytail, plain unmarked teal and white baseball jersey, half body portrait, standing in an empty baseball stadium during blue hour, soft stadium floodlights illuminate her face, detailed natural skin texture, realistic eyes, 85mm portrait lens, shallow depth of field, contemporary sports editorial photograph, unbranded clothing",
-              "clip": [
-                "1",
-                1
-              ]
-            }
-          },
-          "5": {
-            "class_type": "CLIPTextEncode",
-            "inputs": {
-              "text": "illustration, 3d, render, cartoon, doll, painting, plastic, overly smooth skin, overexposed, oversaturated, deformed, watermark, text, logo, symbols, writing, emblem, badge, duplicate person, low quality",
-              "clip": [
-                "1",
-                1
-              ]
-            }
-          },
-          "6": {
-            "class_type": "EmptyLatentImage",
-            "inputs": {
-              "width": 896,
-              "height": 1152,
-              "batch_size": 1
-            }
-          },
-          "10": {
-            "class_type": "LoadImage",
-            "inputs": {
-              "image": "web-demo-cheer-reference.webp"
-            }
-          },
-          "11": {
-            "class_type": "IPAdapterAdvanced",
-            "inputs": {
-              "model": [
-                "1",
-                0
-              ],
-              "ipadapter": [
-                "2",
-                0
-              ],
-              "image": [
-                "10",
-                0
-              ],
-              "clip_vision": [
-                "3",
-                0
-              ],
-              "weight": 0.35,
-              "weight_type": "linear",
-              "combine_embeds": "concat",
-              "start_at": 0.0,
-              "end_at": 1.0,
-              "embeds_scaling": "V only"
-            }
-          },
-          "12": {
-            "class_type": "LoadImage",
-            "inputs": {
-              "image": "web-demo-stadium-reference.webp"
-            }
-          },
-          "13": {
-            "class_type": "IPAdapterAdvanced",
-            "inputs": {
-              "model": [
-                "11",
-                0
-              ],
-              "ipadapter": [
-                "2",
-                0
-              ],
-              "image": [
-                "12",
-                0
-              ],
-              "clip_vision": [
-                "3",
-                0
-              ],
-              "weight": 0.35,
-              "weight_type": "linear",
-              "combine_embeds": "concat",
-              "start_at": 0.0,
-              "end_at": 1.0,
-              "embeds_scaling": "V only"
-            }
-          },
-          "7": {
-            "class_type": "KSampler",
-            "inputs": {
-              "model": [
-                "13",
-                0
-              ],
-              "seed": 2026102314,
-              "steps": 36,
-              "cfg": 5.0,
-              "sampler_name": "dpmpp_2m",
-              "scheduler": "karras",
-              "positive": [
-                "4",
-                0
-              ],
-              "negative": [
-                "5",
-                0
-              ],
-              "latent_image": [
-                "6",
-                0
-              ],
-              "denoise": 1.0
-            }
-          },
-          "8": {
-            "class_type": "VAEDecode",
-            "inputs": {
-              "samples": [
-                "7",
-                0
-              ],
-              "vae": [
-                "1",
-                2
-              ]
-            }
-          },
-          "9": {
-            "class_type": "SaveImage",
-            "inputs": {
-              "images": [
-                "8",
-                0
-              ],
-              "filename_prefix": "public-web-demo/cheer-blend-v2"
-            }
-          }
-        },
-        "sha256": "5bcbdb02db79c42c6f1d7fc04a46b733a808e3384ea6218184ec5b9d0ee77b71"
-      },
-      "builder_source": "webui/server.py",
-      "builder": "ip_blend_prompt"
     },
     {
       "id": "cheer-instantid-v3",
@@ -1968,6 +1796,329 @@
         "Use portable input-directory VHS_LoadVideo loader instead of absolute-path loader.",
         "Silent output; no source audio link."
       ]
+    },
+    {
+      "id": "stadium-ground-v2",
+      "feature_id": "text2img",
+      "status": "success",
+      "executed_at": "2026-10-22T20:53:07.235000+00:00",
+      "duration_seconds": 10.909,
+      "device": "NVIDIA GeForce RTX 5090 (32 GB)",
+      "comfyui_version": "0.37.0",
+      "inputs": [],
+      "outputs": [
+        {
+          "file": "stadium-ground-v2-reference.webp",
+          "sha256": "37354aaeade25267f0f10b35cf0df4bebabafde038b227c564749c2e796a1672",
+          "kind": "images"
+        }
+      ],
+      "settings": {
+        "positive": "A photographic bokeh backdrop of an EMPTY baseball stadium after sunset. Ground-level camera placed on the wide flat reddish-brown running track beside the grass field. The entire lower half is an uninterrupted flat red track surface extending right up to the camera. Distant blue stadium seats and green grass form a low horizontal band across the middle of the image. Deep blue twilight sky. Large warm golden circles of defocused stadium floodlights above the stands. Very shallow depth of field, distant seating and architecture strongly out of focus, softly illuminated foreground ground, natural ground-level perspective. Empty quiet sports venue, plain surfaces, no lettering. Vertical landscape photograph, 2:3 aspect ratio.",
+        "width": 1024,
+        "height": 1536,
+        "steps": 9,
+        "seed": 2026102308,
+        "batchSize": 1,
+        "prefix": "public-web-demo/stadium-ground-v2"
+      },
+      "workflow": {
+        "graph": {
+          "1": {
+            "class_type": "UNETLoader",
+            "inputs": {
+              "unet_name": "z_image_turbo_bf16.safetensors",
+              "weight_dtype": "default"
+            }
+          },
+          "2": {
+            "class_type": "CLIPLoader",
+            "inputs": {
+              "clip_name": "qwen_3_4b.safetensors",
+              "type": "lumina2",
+              "device": "default"
+            }
+          },
+          "3": {
+            "class_type": "VAELoader",
+            "inputs": {
+              "vae_name": "ae.safetensors"
+            }
+          },
+          "4": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "A photographic bokeh backdrop of an EMPTY baseball stadium after sunset. Ground-level camera placed on the wide flat reddish-brown running track beside the grass field. The entire lower half is an uninterrupted flat red track surface extending right up to the camera. Distant blue stadium seats and green grass form a low horizontal band across the middle of the image. Deep blue twilight sky. Large warm golden circles of defocused stadium floodlights above the stands. Very shallow depth of field, distant seating and architecture strongly out of focus, softly illuminated foreground ground, natural ground-level perspective. Empty quiet sports venue, plain surfaces, no lettering. Vertical landscape photograph, 2:3 aspect ratio.",
+              "clip": [
+                "2",
+                0
+              ]
+            }
+          },
+          "5": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "text, watermark",
+              "clip": [
+                "2",
+                0
+              ]
+            }
+          },
+          "6": {
+            "class_type": "EmptySD3LatentImage",
+            "inputs": {
+              "width": 1024,
+              "height": 1536,
+              "batch_size": 1
+            }
+          },
+          "7": {
+            "class_type": "KSampler",
+            "inputs": {
+              "model": [
+                "1",
+                0
+              ],
+              "seed": 2026102308,
+              "steps": 9,
+              "cfg": 1.0,
+              "sampler_name": "res_multistep",
+              "scheduler": "simple",
+              "positive": [
+                "4",
+                0
+              ],
+              "negative": [
+                "5",
+                0
+              ],
+              "latent_image": [
+                "6",
+                0
+              ],
+              "denoise": 1.0
+            }
+          },
+          "9": {
+            "class_type": "VAEDecode",
+            "inputs": {
+              "samples": [
+                "7",
+                0
+              ],
+              "vae": [
+                "3",
+                0
+              ]
+            }
+          },
+          "12": {
+            "class_type": "SaveImage",
+            "inputs": {
+              "images": [
+                "9",
+                0
+              ],
+              "filename_prefix": "public-web-demo/stadium-ground-v2"
+            }
+          }
+        },
+        "sha256": "c58c44ea21bc03b8a95bd640e3171ad6f83bc16c19abb9043c655325fc925f61"
+      },
+      "builder": "zimage_prompt",
+      "builder_source": "webui/server.py"
+    },
+    {
+      "id": "cheer-subject-blend-v4",
+      "feature_id": "image-blend",
+      "status": "success",
+      "executed_at": "2026-10-22T21:00:02.032000+00:00",
+      "duration_seconds": 1.066,
+      "device": "NVIDIA GeForce RTX 5090 (32 GB)",
+      "comfyui_version": "0.37.0",
+      "inputs": [
+        {
+          "file": "cheer-subject-reference.webp",
+          "sha256": "004728e3b0cca52e7557da9a038e3affc7cb82be72a881dae771ebbc670f757b",
+          "slot": "image1",
+          "graph_name": "web-demo-cheer-subject-reference.webp"
+        },
+        {
+          "file": "stadium-ground-v2-reference.webp",
+          "sha256": "4a57388912280922fcc7a7b6418b120904fd6c1717404eff23b487b09bb6cdba",
+          "slot": "image2",
+          "graph_name": "web-demo-stadium-ground-v2-reference.webp"
+        }
+      ],
+      "outputs": [
+        {
+          "file": "cheer-subject-mask.webp",
+          "sha256": "b807c173a43d37a1918b59c97b83a7889d77ee3d2793da7adb30dc50461ae027",
+          "kind": "images"
+        },
+        {
+          "file": "cheer-subject-blend.webp",
+          "sha256": "5e0cc0208f2e697f8e0b46297be80c8b6282404aee82e4b9aab2ab92f5b8c872",
+          "kind": "images"
+        }
+      ],
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5,
+        "prefix": "public-web-demo/cheer-subject-blend-v4"
+      },
+      "workflow": {
+        "graph": {
+          "1": {
+            "class_type": "LoadImage",
+            "inputs": {
+              "image": "web-demo-cheer-subject-reference.webp"
+            }
+          },
+          "2": {
+            "class_type": "LoadImage",
+            "inputs": {
+              "image": "web-demo-stadium-ground-v2-reference.webp"
+            }
+          },
+          "3": {
+            "class_type": "ResizeImageMaskNode",
+            "inputs": {
+              "input": [
+                "2",
+                0
+              ],
+              "resize_type": "match size",
+              "resize_type.match": [
+                "1",
+                0
+              ],
+              "resize_type.crop": "center",
+              "scale_method": "lanczos"
+            }
+          },
+          "4": {
+            "class_type": "CheckpointLoaderSimple",
+            "inputs": {
+              "ckpt_name": "sam3.1_multiplex_fp16.safetensors"
+            }
+          },
+          "5": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "person",
+              "clip": [
+                "4",
+                1
+              ]
+            }
+          },
+          "6": {
+            "class_type": "SAM3_Detect",
+            "inputs": {
+              "model": [
+                "4",
+                0
+              ],
+              "image": [
+                "1",
+                0
+              ],
+              "threshold": 0.5,
+              "refine_iterations": 2,
+              "individual_masks": false,
+              "conditioning": [
+                "5",
+                0
+              ]
+            }
+          },
+          "7": {
+            "class_type": "ThresholdMask",
+            "inputs": {
+              "mask": [
+                "6",
+                0
+              ],
+              "value": 0.5
+            }
+          },
+          "8": {
+            "class_type": "ImageCompositeMasked",
+            "inputs": {
+              "destination": [
+                "3",
+                0
+              ],
+              "source": [
+                "1",
+                0
+              ],
+              "x": 0,
+              "y": 0,
+              "resize_source": false,
+              "mask": [
+                "7",
+                0
+              ]
+            }
+          },
+          "9": {
+            "class_type": "SaveImage",
+            "inputs": {
+              "images": [
+                "8",
+                0
+              ],
+              "filename_prefix": "public-web-demo/cheer-subject-blend-v4"
+            }
+          },
+          "10": {
+            "class_type": "MaskToImage",
+            "inputs": {
+              "mask": [
+                "7",
+                0
+              ]
+            }
+          },
+          "11": {
+            "class_type": "SaveImage",
+            "inputs": {
+              "images": [
+                "10",
+                0
+              ],
+              "filename_prefix": "public-web-demo/cheer-subject-mask-v4"
+            }
+          }
+        },
+        "sha256": "a5c0f0057fd1f31e59e7ab130084a80833460d93446b21c0c082f40af7a7c729"
+      },
+      "builder": "subject_blend_prompt",
+      "builder_source": "webui/server.py",
+      "adjustments": [
+        "Nodes 10 and 11 save the binary subject mask for pixel-preservation verification. Nodes 1–9 are the application builder unchanged."
+      ],
+      "pixel_verification": {
+        "source": "cheer-subject-reference.webp",
+        "output": "cheer-subject-blend.webp",
+        "mask": "cheer-subject-mask.webp",
+        "method": "RGB comparison on every white pixel of the saved binary mask; lossless public assets.",
+        "subject_pixels": 315611,
+        "max_subject_channel_difference": 2,
+        "channel_scale": 255,
+        "tolerance_note": "ComfyUI image decode/save quantization is measured against the published lossless reference; this is not bit-identical output.",
+        "face_rectangle_xyxy": [
+          475,
+          185,
+          540,
+          245
+        ],
+        "max_face_channel_difference": 1,
+        "background_changed": true
+      }
     }
   ]
 }

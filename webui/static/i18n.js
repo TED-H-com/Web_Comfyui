@@ -39,6 +39,7 @@
       [/^開啟任務，(\d+) 個進行中$/, (_,n) => `Open tasks, ${n} active`],
       [/^段落 (\d+)$/, (_,n) => `Beat ${n}`],
       [/^第 (\d+) 段$/, (_,n) => `Segment ${n}`],
+      [/^(\d+) 媒體$/, (_,n) => `${n} media items`],
       [/^(\d+) 位$/, (_,n) => `${n} characters`],
       [/^(\d+) 字$/, (_,n) => `${n} characters`],
       [/^缺少 (\d+) 個節點、(\d+) 個模型$/, (_,n,m) => `Missing ${n} nodes and ${m} models`],

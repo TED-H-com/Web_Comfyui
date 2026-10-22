@@ -28,6 +28,7 @@ jobs:
           node --check webui/docs/docs.js
           node --check webui/docs/explorers.js
           node --check webui/docs/tour.js
+          node --check webui/docs/character-session.js
           node --check webui/static/i18n.js
           node --check webui/static/translations-en.js
           node --check webui/static/guide-translations-en.js

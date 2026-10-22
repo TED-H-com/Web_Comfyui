@@ -61,12 +61,25 @@ def test_real_zimage_topology_and_models(registry):
     assert 'useDopsd=false' in g['notes_en'][0]
 
 
-def test_ipadapter_loop_and_qwen_branch_connections(registry):
+def test_subject_composite_preserves_original_pixel_path(registry):
+    blend=graphs(ROOT,registry)['image-blend']
+    assert blend['source']=='webui/server.py#subject_blend_prompt'
+    types={n['type'] for n in blend['nodes']}
+    assert {'SAM3_Detect', 'ThresholdMask', 'ImageCompositeMasked'} <= types
+    assert not types & {'IPAdapterAdvanced', 'KSampler', 'VAEDecode', 'EmptyLatentImage'}
+    connections=edges(blend)
+    assert ('1','6',0,'image') in connections  # Segment the subject.
+    assert ('2','3',0,'input') in connections  # Resize only the background.
+    assert ('1','3',0,'resize_type.match') in connections
+    assert ('6','7',0,'mask') in connections
+    assert ('7','8',0,'mask') in connections
+    assert ('1','8',0,'source') in connections  # Original pixels bypass resizing.
+    assert ('3','8',0,'destination') in connections
+    assert ('8','9',0,'images') in connections
+
+
+def test_qwen_branch_connections(registry):
     output=graphs(ROOT,registry)
-    ip=output['image-blend']
-    assert sum(n['type']=='IPAdapterAdvanced' for n in ip['nodes'])==2
-    assert ('11','13',0,'model') in edges(ip)
-    assert ('13','7',0,'model') in edges(ip)
     q=output['qwen21-edit']
     assert ('11','4',0,'images.image_1') in edges(q)
     assert ('5','7',0,'model') in edges(q)

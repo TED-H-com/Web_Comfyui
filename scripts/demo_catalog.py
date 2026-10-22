@@ -23,9 +23,8 @@ CONTENT = {
     'anime-scene-card': ('角色與場景的素材卡', 'Character and scene references',
         '準備一位穿青綠外套的虛構探險家與海岸天文台場景，確認角色與場景素材後再製作場景卡。',
         'Prepare a fictional explorer in a teal jacket and a coastal observatory scene; review both references before building a scene card.', 'gallery', 'explorer'),
-    'image-blend': ('陶瓷與青綠配色', 'Ceramic materials and teal accents',
-        '融合奶油色陶瓷質感與青綠金屬細節，設計一台拿著葉子的原創桌面機器人。',
-        'Combine cream ceramic materials and teal metal details into an original desk robot holding a leaf.', 'image', 'robot'),
+    'image-blend': ('保留人物原貌、更換背景', 'Keep the original person and replace the background',
+        'person', 'person', 'image', None),
     'character-angles': ('虛構探險家的肖像', 'Portrait of a fictional explorer',
         '原創成年探險家，青綠外套、橘色圍巾，三分之二側面肖像，柔和海岸夕陽。',
         'An original adult explorer in a teal jacket and orange scarf, three-quarter portrait in soft coastal sunset light.', 'image', 'explorer'),
@@ -91,7 +90,7 @@ STEPS_EN = {
     'text2img': ['Enter a scene and aspect ratio; defaults are 1088×1920, 8 steps, CFG 1.', 'Load Z-Image Turbo, the Qwen 3 4B lumina2 text encoder, and AE.', 'Sample with res_multistep / simple and save; DOPSD adds the white-backdrop LoRA only when selected.'],
     'img2img': ['Upload an image and enter an editing instruction.', 'Scale with FluxKontextImageScale, encode with AE, and supply ReferenceLatent.', 'Apply FluxGuidance, sample, decode, and save.'],
     'anime-scene-card': ['Choose an approved character outfit and scene from the character page.', 'Read the character alpha mask and invert it for compositing.', 'Composite with ImageCompositeMasked and save.'],
-    'image-blend': ['Upload at least two references and choose a description and aspect ratio.', 'Load the SDXL checkpoint, IPAdapter Plus, and CLIP Vision.', 'Add each reference through IPAdapterAdvanced, sample, and decode with the checkpoint VAE.'],
+    'image-blend': ['Upload the original subject and a target background, then name the subject to keep.', 'SAM3 detects the subject and creates a binary mask; resize only the background to match the original.', 'Composite the original subject pixels over the background; no diffusion sampler redraws the face or clothing.'],
     'character-angles': ['Prepare a clear, near-frontal reference face with permission.', 'Analyze it with InsightFace and condition SDXL with InstantID and ControlNet.', 'Sample the requested scene or angle and decode with the checkpoint VAE.'],
     'clipmode-character-photoshoot': ['Choose a character, scene, aspect ratio, and seed on the character page.', 'The installed server binds identity references and models, using InstantID / ReActor or a configured character LoRA.', 'Generate locally, check identity and person consistency, and keep accepted results.'],
     'img2video': ['Upload an opening image and describe motion and aspect ratio.', 'Encode with CLIP Vision, create WanImageToVideo conditioning, and load LightX2V LoRA.', 'Defaults are 81 frames, 16 FPS, and 6 steps; decode and assemble MP4.'],
@@ -133,8 +132,8 @@ def demos(app_catalog):
             'steps_en': list(STEPS_EN[feature_id]), 'output': output, 'note': note, 'note_en': note_en}
     result['character-create'] = {
         'id': 'character-create',
-        'steps': ['在建立角色表單填入名字與外觀描述。', '選擇角色參考圖；本機版本會把角色與素材存入自己的資料庫。', '按下建立後顯示名字、描述與參考照片組成的示範角色卡；離開表單即清除。'],
-        'steps_en': ['Enter a name and appearance in the character form.', 'Choose a character reference; the installed app stores characters and assets in your own database.', 'Create a demo card from the name, description and reference photo; leaving the form clears it.'],
+        'steps': ['確認範例名字與參考照片，或填入自己的角色資料。', '模擬建立角色，加入此分頁的角色列表與素材工作區。', '查看不同的預製換裝、肖像與影片案例，或回角色列表繼續操作。'],
+        'steps_en': ['Review the example name and photo, or enter your own character details.', 'Simulate creation and add the character to this tab’s list and media workspace.', 'Explore distinct prerecorded outfit, portrait and video examples, or return to the character list.'],
     }
     for identifier, recorded in RECORDED_DEMOS.items():
         if identifier not in result:

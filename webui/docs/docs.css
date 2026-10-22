@@ -27,3 +27,17 @@
   .app-guide-models tr { padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
   .app-guide-models td:first-child { font-weight: 700; }
 }
+
+.docs-character-workspace {display: grid; gap: 16px; min-width: 0;}
+.docs-character-header {display: flex; gap: 24px; padding: 24px; align-items: start;}
+.docs-character-header > div {min-width: 0; overflow-wrap: anywhere;}
+.docs-character-reference {width: 120px; aspect-ratio: 4 / 5; object-fit: contain; background: var(--bg); border-radius: var(--catalogue-radius);}
+.docs-character-description {white-space: pre-wrap;}
+.docs-character-examples {display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px;}
+.docs-character-example {padding: 16px; min-width: 0; display: flex; flex-direction: column; gap: 12px;}
+.docs-character-example > img,.docs-character-example > video {width: 100%; aspect-ratio: 4 / 5; object-fit: contain; background: var(--bg);}
+.docs-character-example > a {align-self: start; margin-top: auto;}
+@media (max-width: 767px) {.docs-character-header {flex-direction: column; padding: 16px; gap: 16px;} .docs-character-examples {grid-template-columns: minmax(0,1fr);}}
+
+.docs-character-header > div {display: grid; gap: 12px;}
+.docs-character-header h1,.docs-character-header p,.docs-character-workspace > h2,.docs-character-workspace > p,.docs-character-example h3,.docs-character-example p {margin: 0;}

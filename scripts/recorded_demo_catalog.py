@@ -150,119 +150,56 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
                                     'alt': '球衣換色：青綠改紅、白短褲改深藍；此為實際 GPU 輸出。',
                                     'alt_en': 'Uniform recolor: teal to red, white shorts to navy; actual '
                                               'GPU output.'}],
-                        'run_id': 'cheer-kontext-v1', 'comparison': True},
+                        'run_id': 'cheer-kontext-v1',
+                        'comparison': True},
              'note': '這是已在本機 RTX 5090 完成的實測記錄；此網站只重播成果，不會依你輸入即時生成。角色為原創虛構成年人。',
              'note_en': 'Recorded on a local RTX 5090, not generated from your input on this website. The '
                         'performer is an original fictional adult.'},
- 'image-blend': {'title': '人物與夜間球場參考融合',
-                 'title_en': 'Blend performer and evening stadium references',
-                 'prompt': 'Candid realistic photograph of a smiling adult Taiwanese woman with long dark '
-                           'hair in a ponytail, plain unmarked teal and white baseball jersey, half body '
-                           'portrait, standing in an empty baseball stadium during blue hour, soft stadium '
-                           'floodlights illuminate her face, detailed natural skin texture, realistic eyes, '
-                           '85mm portrait lens, shallow depth of field, contemporary sports editorial '
-                           'photograph, unbranded clothing',
-                 'prompt_en': 'Candid realistic photograph of a smiling adult Taiwanese woman with long dark '
-                              'hair in a ponytail, plain unmarked teal and white baseball jersey, half body '
-                              'portrait, standing in an empty baseball stadium during blue hour, soft '
-                              'stadium floodlights illuminate her face, detailed natural skin texture, '
-                              'realistic eyes, 85mm portrait lens, shallow depth of field, contemporary '
-                              'sports editorial photograph, unbranded clothing',
-                 'prefill': {'positive': 'Candid realistic photograph of a smiling adult Taiwanese woman '
-                                         'with long dark hair in a ponytail, plain unmarked teal and white '
-                                         'baseball jersey, half body portrait, standing in an empty baseball '
-                                         'stadium during blue hour, soft stadium floodlights illuminate her '
-                                         'face, detailed natural skin texture, realistic eyes, 85mm portrait '
-                                         'lens, shallow depth of field, contemporary sports editorial '
-                                         'photograph, unbranded clothing',
-                             'negative': 'illustration, 3d, render, cartoon, doll, painting, plastic, overly '
-                                         'smooth skin, overexposed, oversaturated, deformed, watermark, '
-                                         'text, logo, symbols, writing, emblem, badge, duplicate person, low '
-                                         'quality',
-                             'width': 896,
-                             'height': 1152,
-                             'steps': 36,
-                             'cfg': 5.0,
-                             'weight': 0.35,
-                             'batchSize': 1,
-                             'seed': 2026102314,
-                             'sampler': 'dpmpp_2m',
-                             'scheduler': 'karras',
-                             'aspect': '896x1152'},
-                 'prefill_en': {'positive': 'Candid realistic photograph of a smiling adult Taiwanese woman '
-                                            'with long dark hair in a ponytail, plain unmarked teal and '
-                                            'white baseball jersey, half body portrait, standing in an empty '
-                                            'baseball stadium during blue hour, soft stadium floodlights '
-                                            'illuminate her face, detailed natural skin texture, realistic '
-                                            'eyes, 85mm portrait lens, shallow depth of field, contemporary '
-                                            'sports editorial photograph, unbranded clothing',
-                                'negative': 'illustration, 3d, render, cartoon, doll, painting, plastic, '
-                                            'overly smooth skin, overexposed, oversaturated, deformed, '
-                                            'watermark, text, logo, symbols, writing, emblem, badge, '
-                                            'duplicate person, low quality',
-                                'width': 896,
-                                'height': 1152,
-                                'steps': 36,
-                                'cfg': 5.0,
-                                'weight': 0.35,
-                                'batchSize': 1,
-                                'seed': 2026102314,
-                                'sampler': 'dpmpp_2m',
-                                'scheduler': 'karras',
-                                'aspect': '896x1152'},
-                 'inputs': [{'src': './assets/examples/cheer-reference.webp',
-                             'alt': '人物參考圖',
-                             'alt_en': 'Performer reference',
-                             'label': '人物參考圖',
-                             'label_en': 'Performer reference',
+ 'image-blend': {'title': '保留人物原貌：換成夜間球場背景',
+                 'title_en': 'Keep the original person: switch to an evening stadium',
+                 'prompt': 'person',
+                 'prompt_en': 'person',
+                 'prefill': {'positive': 'person', 'threshold': 0.5},
+                 'prefill_en': {'positive': 'person', 'threshold': 0.5},
+                 'inputs': [{'src': './assets/examples/cheer-subject-reference.webp',
+                             'alt': '保留原貌的原始人物',
+                             'alt_en': 'Original subject to preserve',
+                             'label': '人物原圖：保留臉、服裝與姿勢',
+                             'label_en': 'Original subject: preserve face, clothing and pose',
                              'slot': 'image1',
                              'kind': 'image'},
-                            {'src': './assets/examples/stadium-reference.webp',
-                             'alt': '球場氛圍參考圖',
-                             'alt_en': 'Stadium reference',
-                             'label': '球場氛圍參考圖',
-                             'label_en': 'Stadium reference',
+                            {'src': './assets/examples/stadium-ground-v2-reference.webp',
+                             'alt': '生成的夜間球場背景',
+                             'alt_en': 'Generated evening stadium background',
+                             'label': '目標背景：夜間球場',
+                             'label_en': 'Target background: evening stadium',
                              'slot': 'image2',
                              'kind': 'image'}],
                  'evidence': {'kind': 'local-comfyui',
-                              'run_id': 'cheer-blend-v2',
-                              'workflow': 'ip_blend_prompt',
+                              'run_id': 'cheer-subject-blend-v4',
+                              'workflow': 'subject_blend_prompt',
                               'device': 'NVIDIA GeForce RTX 5090 (32 GB)',
-                              'models': ['CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors',
-                                         'ip-adapter-plus_sdxl_vit-h.safetensors',
-                                         'sd_xl_base_1.0.safetensors'],
-                              'prompt': 'Candid realistic photograph of a smiling adult Taiwanese woman with '
-                                        'long dark hair in a ponytail, plain unmarked teal and white '
-                                        'baseball jersey, half body portrait, standing in an empty baseball '
-                                        'stadium during blue hour, soft stadium floodlights illuminate her '
-                                        'face, detailed natural skin texture, realistic eyes, 85mm portrait '
-                                        'lens, shallow depth of field, contemporary sports editorial '
-                                        'photograph, unbranded clothing',
-                              'negative_prompt': 'illustration, 3d, render, cartoon, doll, painting, '
-                                                 'plastic, overly smooth skin, overexposed, oversaturated, '
-                                                 'deformed, watermark, text, logo, symbols, writing, emblem, '
-                                                 'badge, duplicate person, low quality',
-                              'duration_seconds': 7.538,
-                              'executed_at': '2026-10-22T20:05:36.327000+00:00',
-                              'seed': 2026102314,
-                              'steps': 36,
-                              'cfg': 5.0,
-                              'weight': 0.35,
-                              'sampler': 'dpmpp_2m',
-                              'scheduler': 'karras',
-                              'width': 896,
-                              'height': 1152},
+                              'models': ['sam3.1_multiplex_fp16.safetensors'],
+                              'prompt': 'person',
+                              'threshold': 0.5,
+                              'duration_seconds': 1.066,
+                              'executed_at': '2026-10-22T21:00:02.032000+00:00',
+                              'width': 1024,
+                              'height': 1536},
                  'output': {'kind': 'image',
-                            'images': [{'src': './assets/examples/cheer-blend.webp',
-                                        'alt': '人物與夜間球場參考融合；此為實際 GPU 輸出。',
-                                        'alt_en': 'Blend performer and evening stadium references; actual '
-                                                  'GPU output.'}],
-                            'run_id': 'cheer-blend-v2'},
-                 'note': '這是已在本機 RTX 5090 完成的實測記錄；此網站只重播成果，不會依你輸入即時生成。角色為原創虛構成年人。 IPAdapter '
-                         '會重新創作人物外觀與服裝，不是精準保留身分或像素合成。',
-                 'note_en': 'Recorded on a local RTX 5090, not generated from your input on this website. '
-                            'The performer is an original fictional adult. IPAdapter reinterprets appearance '
-                            'and clothing; it is not an exact identity-preserving composite.'},
+                            'images': [{'src': './assets/examples/cheer-subject-blend.webp',
+                                        'alt': 'GPU 分割人物後換背景；保留原圖的臉孔、服裝與姿勢。',
+                                        'alt_en': 'GPU subject segmentation and background replacement; '
+                                                  'the original face, clothing and pose are preserved.'}],
+                            'run_id': 'cheer-subject-blend-v4',
+                            'comparison': True},
+                 'note': 'RTX 5090 實跑：SAM3 '
+                         '分割人物後直接合成原圖像素，不重畫臉。已比對人物區域，保留原圖人物，只更換背景；不會自動補光或生成陰影。此網站重播固定成果，不會依你的輸入即時生成。',
+                 'note_en': 'Recorded on an RTX 5090, not generated from your input on this website. SAM3 '
+                            'segments the subject and composites original pixels without redrawing the face. '
+                            'Subject pixels were compared with the original; only the background is '
+                            'replaced, with small image decode/save quantization. No automatic relighting or '
+                            'shadows.'},
  'character-angles': {'title': '臉部參考：夜間球場肖像候選',
                       'title_en': 'Face reference: evening stadium portrait candidates',
                       'prompt': 'RAW candid close-up photograph of a 26-year-old adult Taiwanese woman, '
@@ -565,8 +502,8 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
            'note_en': 'Recorded on a local RTX 5090, not generated from your input on this website. The '
                       'performer is an original fictional adult. The video is silent; movement was generated '
                       'without third-party dance footage or music.'},
- 'character-create': {'title': '建立虛構成人應援角色「晴晴」',
-                      'title_en': 'Create fictional adult cheer performer “Qing”',
+ 'character-create': {'title': '建立角色與素材工作區',
+                      'title_en': 'Create a character and media workspace',
                       'prompt': '晴晴，26 歲的虛構台灣應援角色，青綠白球衣、馬尾、自然親切的笑容。',
                       'prompt_en': 'Qing, a fictional 26-year-old Taiwanese cheer performer in a '
                                    'teal-and-white jersey, ponytail and friendly smile.',
@@ -576,11 +513,15 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
                                                     'original clothing and identity, not a real team '
                                                     'member.'},
                       'inputs': [{'src': './assets/examples/cheer-reference.webp',
-                                  'alt': '可匯入本機的原創角色參考圖',
-                                  'alt_en': 'Original character reference for your local installation',
+                                  'label': '範例參考圖・尚未建立角色',
+                                  'label_en': 'Example reference · character not created yet',
+                                  'alt': '原創角色範例參考圖，尚未建立角色',
+                                  'alt_en': 'Original example reference; character not created yet',
                                   'slot': 'photos',
                                   'kind': 'image'}],
                       'evidence': {'kind': 'interface-simulation'},
                       'output': {'kind': 'character', 'images': []},
-                      'note': '依表單內容組成示範角色卡；參考圖不會依描述生成，也不會保存到帳戶或資料庫。',
-                      'note_en': 'A simulated card uses your form values. Its reference image is not generated from your input; nothing is saved to an account or database.'}}
+                      'note': '建立後進入角色工作區，查看預先實跑的換裝、肖像與影片案例。角色暫存於此分頁，重新整理或清除示範後消失；不會上傳照片或訓練模型。',
+                      'note_en': 'Creation opens a character workspace with prerecorded outfit, portrait and '
+                                 'video examples, not generated from your input. Characters stay in this tab '
+                                 'until refresh or reset; nothing is saved to an account or database.'}}

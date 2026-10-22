@@ -119,8 +119,8 @@
     const state = {id, form, feature, demo, uploads: [], urls: new Set(), filled: new WeakMap(), running: false}; mounted.set(form, state);
     form.dataset.demoId = id; form.noValidate = true;
     const bar = document.createElement('div'); bar.className = 'demo-prefill-bar'; bar.dataset.docsInteractive = 'true';
-    bar.append(text('strong', '示範案例', 'Demo example'), id === 'character-create'
-      ? text('span', '填入名字、描述與參考照片，按下建立後就能看到示範角色卡。', 'Enter a name, description and reference photo, then create your demo character card.')
+    bar.append(text('strong', id === 'character-create' ? '範例資料・尚未建立' : '示範案例', id === 'character-create' ? 'Example data · not created yet' : 'Demo example'), id === 'character-create'
+      ? text('span', '填入名字、描述與參考照片，建立後進入暫存角色工作室。', 'Enter a name, description and reference photo, then open your session character workspace.')
       : text('span', '先查看參考素材與預填指令，再按「開始生成（示範）」查看成品。此頁重播已完成的實測，不會即時生成。', 'Review the reference and prefilled instruction, then select Generate (demo) to reveal the result. This page replays a completed run, not live generation.'));
     bar.append(button('重新填入示範', 'Reset example inputs', () => {fill(state, true); state.uploads.forEach(slot => slot.reset()); state.result.demo.reset();}));
     form.prepend(bar);
@@ -139,7 +139,7 @@
     if (!form.querySelector('.generate-btn,button[type=submit]')) {
       const submit = text('button', '開始生成（示範）', 'Generate (demo)', 'primary generate-btn'); submit.type = 'submit'; form.append(submit);
     }
-    const result = window.WebComfyExplorers.demoContent(demo, {inline: true, hidePrompt: true});
+    const result = window.WebComfyExplorers.demoContent(demo, {inline: true, hidePrompt: true, suppressOutput: id === 'character-create'});
     state.result = result; form.append(result); prepareUploads(state); fill(state, true);
     window.WebComfyI18n?.translate(form);
   }
@@ -176,7 +176,10 @@
     try {
       const completed = state.result.demo.start(readPrompt(state), characterValues);
       state.result.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
-      await completed;
+      if (await completed && state.id === 'character-create' && form.isConnected) {
+        const character = window.WebComfyCharacterSession.create(characterValues);
+        await window.WebComfyDocs.completeCharacter(character);
+      }
     }
     finally {state.running = false; buttons.forEach(button => {button.disabled = false;}); window.WebComfyHardware?.decorate(state.id, form);}
     return true;

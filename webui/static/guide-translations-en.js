@@ -541,5 +541,13 @@ window.WebComfyI18n?.register({
   "噪聲時間表；需搭配模型及採樣器檢查。 這是已存值，未解析連線運算或條件分支。": "Noise schedule; check it against the model and sampler. This is a stored value; connected computations and conditional branches were not resolved.",
   "整個去噪序列的步數。 取自已收錄配方；不是本機實測推薦值。": "Steps in the complete denoising sequence. From the recorded recipe; not a locally tested recommendation.",
   "是否進行色階平滑。 取自已收錄配方；不是本機實測推薦值。": "Whether to smooth color banding. From the recorded recipe; not a locally tested recommendation.",
-  "依節點清單推測用途：將既有影片影格處理後重新封裝，改善尺寸或流暢度。": "Purpose inferred from node inventory: Process existing video frames and repackage them to improve dimensions or smoothness."
+  "依節點清單推測用途：將既有影片影格處理後重新封裝，改善尺寸或流暢度。": "Purpose inferred from node inventory: Process existing video frames and repackage them to improve dimensions or smoothness.",
+  "SAM3 辨識人物並去背，再把人物原始像素合成到背景參考圖。": "SAM3 segments the subject, then composites the original subject pixels onto the reference background.",
+  "上傳人物原圖與背景參考圖；主體預設 person。": "Upload the original subject image and a background reference. The subject label defaults to person.",
+  "SAM3 產生主體遮罩，二值化後保留遮罩內的原始人物像素。": "SAM3 creates a subject mask. A binary mask preserves the original subject pixels inside it.",
+  "只將背景縮放並置中裁切至人物原圖尺寸，再直接合成儲存。": "Resize and center-crop only the background to the original subject dimensions, then composite and save.",
+  "SAM3 主體分割": "SAM3 subject segmentation",
+  "二值遮罩": "Binary mask",
+  "需原生 SAM3 節點及 sam3.1_multiplex_fp16.safetensors；不需擴散模型或 IPAdapter。": "Requires native SAM3 nodes and sam3.1_multiplex_fp16.safetensors; no diffusion model or IPAdapter is needed.",
+  "不重畫臉或服裝，不自動補光或生成陰影；去背邊緣需檢查。": "Does not redraw faces or clothing, relight the subject, or generate shadows. Check the cutout edges."
 });

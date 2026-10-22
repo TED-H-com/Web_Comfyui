@@ -222,18 +222,23 @@
     if (!options.hidePrompt) root.append(form);
     const echo = el('p', '', 'demo-prompt-echo'); echo.hidden = true;
     const state = el('p', '等待播放預製範例。', 'demo-state'); state.setAttribute('role', 'status'); state.setAttribute('aria-live', 'polite');
-    const meter = el('div', '', 'demo-progress'); meter.setAttribute('role', 'progressbar'); meter.setAttribute('aria-label', '模擬展示進度'); meter.setAttribute('aria-valuemin', '0'); meter.setAttribute('aria-valuemax', '100'); meter.setAttribute('aria-valuenow', '0'); meter.append(el('span'));
+    const meter = el('div', '', 'demo-progress'); meter.setAttribute('role', 'progressbar'); attribute(meter, 'aria-label', '模擬進度，非即時 GPU 進度', 'Simulated progress, not live GPU progress'); meter.setAttribute('aria-valuemin', '0'); meter.setAttribute('aria-valuemax', '100'); meter.setAttribute('aria-valuenow', '0'); meter.append(el('span'));
+    const progressLabel = copy(el('p', '', 'demo-progress-label'), '模擬進度 · 非即時 GPU 進度', 'Simulated progress · not live GPU progress');
     let steps = (Array.isArray(demo.steps) ? demo.steps : []).filter(s => typeof s === 'string').slice(0, 5);
     if (steps.length < 3) steps = ['讀取展示輸入', ...steps, '開啟預製範例'].slice(0, 5);
     if (steps.length < 3) steps.splice(1, 0, '展示處理階段');
     const list = el('ol', '', 'demo-stages'), stageNodes = steps.map(step => el('li', step)); stageNodes.forEach((node, i) => {if (demo.steps_en?.[i]) copy(node, steps[i], demo.steps_en[i]); list.append(node);});
     const output = el('div', '', 'demo-output'); output.hidden = true;
     const actions = el('div', '', 'explorer-toolbar'), replay = button('重播展示', '', () => start(lastPrompt, lastCharacter)); replay.hidden = true;
-    actions.append(replay, resetButton); root.append(state, output, echo, meter, copy(el('p', '', 'demo-workflow-label'), '工作流步驟說明 · 此頁不執行', 'Workflow reference · not executed on this page'), list, actions);
-    let timer = null, resolveRun = null, disposed = false, lastPrompt = input.value, sequence = 0, lastCharacter = {}, characterURL = null;
+    actions.append(replay, resetButton); root.append(state, progressLabel, meter, output, echo, copy(el('p', '', 'demo-workflow-label'), '工作流步驟說明 · 此頁不執行', 'Workflow reference · not executed on this page'), list, actions);
+    let timer = null, resolveRun = null, pendingRun = null, disposed = false, lastPrompt = input.value, sequence = 0, lastCharacter = {}, characterURL = null;
     function releaseCharacter() {if (characterURL) URL.revokeObjectURL(characterURL); characterURL = null;}
-    function cancel() {sequence++; clearTimeout(timer); timer = null; if (resolveRun) {resolveRun(false); resolveRun = null;} root.querySelectorAll('video,audio').forEach(media => media.pause());}
-    function setProgress(index) {meter.setAttribute('aria-valuenow', String(Math.round(index / steps.length * 100))); meter.firstElementChild.style.width = `${index / steps.length * 100}%`; stageNodes.forEach((node, i) => {node.classList.toggle('done', !verified && !unavailable && i < index); node.classList.toggle('active', !verified && !unavailable && i === index); attribute(node, 'aria-label', `工作流步驟：${steps[i]}`, `Workflow reference: ${demo.steps_en?.[i] || steps[i]}`);});}
+    function cancel() {sequence++; clearTimeout(timer); timer = null; pendingRun = null; run.disabled = false; replay.disabled = false; if (resolveRun) {resolveRun(false); resolveRun = null;} root.querySelectorAll('video,audio').forEach(media => media.pause());}
+    function setProgress(percent) {
+      meter.setAttribute('aria-valuenow', String(percent)); meter.firstElementChild.style.width = `${percent}%`;
+      copy(progressLabel, `模擬進度 ${percent}% · 非即時 GPU 進度`, `Simulated progress ${percent}% · not live GPU progress`);
+      stageNodes.forEach((node, i) => attribute(node, 'aria-label', `工作流步驟：${steps[i]}`, `Workflow reference: ${demo.steps_en?.[i] || steps[i]}`));
+    }
     function imageFigure(image) {const src = localAsset(image?.src); if (!src) return null; const figure = el('figure');
       if (image.kind === 'video') {
         const video = el('video'); video.src = src; video.controls = true; video.playsInline = true; video.preload = 'metadata';
@@ -272,9 +277,9 @@
         if (verified && media.comparison && demo.inputs?.[0]) {
           gallery.classList.add('demo-comparison');
           const before = imageFigure(demo.inputs[0]);
-          if (before) {before.dataset.comparisonBefore = 'true'; before.prepend(copy(el('strong'), '修改前 · 青綠白隊服', 'Before · teal and white uniform')); gallery.append(before);}
+          if (before) {before.dataset.comparisonBefore = 'true'; before.prepend(copy(el('strong'), demo.id === 'img2img' ? '修改前 · 青綠白隊服' : '修改前 · 原始人物與背景', demo.id === 'img2img' ? 'Before · teal and white uniform' : 'Before · original subject and background')); gallery.append(before);}
         }
-        images.forEach(image => {const figure = imageFigure(image); if (figure) {if (media.comparison) figure.prepend(copy(el('strong'), '修改後 · 紅色上衣、深藍短褲', 'After · red jersey and navy shorts')); gallery.append(figure);}}); output.append(gallery);
+        images.forEach(image => {const figure = imageFigure(image); if (figure) {if (media.comparison) figure.prepend(copy(el('strong'), demo.id === 'img2img' ? '修改後 · 紅色上衣、深藍短褲' : '修改後 · 保留人物、更換背景', demo.id === 'img2img' ? 'After · red jersey and navy shorts' : 'After · original subject, new background')); gallery.append(figure);}}); output.append(gallery);
         if (media.kind === 'video') output.append(el('p', '預製分鏡圖；這組圖片不是即時影片生成。', 'explorer-evidence'));
       }
       if (media.kind === 'audio') output.append(el('p', '音訊流程示意：以下為預製文字內容，本展示不合成或播放人聲。', 'demo-transcript-label'));
@@ -285,23 +290,27 @@
     function reset() {cancel(); releaseCharacter(); lastCharacter = {}; root.hidden = Boolean(options.inline); run.disabled = false; replay.hidden = true; output.hidden = true; output.replaceChildren(); echo.hidden = true; verified ? copy(state, '可開啟已完成的 GPU 實測記錄。', 'Ready to open the recorded GPU result.') : character ? copy(state, '填妥表單後即可建立示範角色卡。', 'Complete the form to create a demo character card.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '等待播放預製範例。'); setProgress(0); stageNodes.forEach(node => node.classList.remove('active')); root.dataset.state = 'idle';}
     function start(prompt = input.value, characterValues = {}) {
       if (disposed) return Promise.resolve(false);
+      if (pendingRun) return pendingRun;
       cancel(); releaseCharacter(); lastCharacter = characterValues; root.hidden = false; const current = sequence; lastPrompt = text(prompt).slice(0, 2000); input.value = lastPrompt;
-      copy(echo, `這次體驗輸入：${lastPrompt || '（未填寫）'}`, `Your demonstration input: ${lastPrompt || '(empty)'}`); echo.hidden = false; output.hidden = true; output.replaceChildren(); replay.hidden = true; run.disabled = true; root.dataset.state = 'running';
-      const reduced = verified || unavailable || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      return new Promise(resolve => {
+      copy(echo, `這次體驗輸入：${lastPrompt || '（未填寫）'}`, `Your demonstration input: ${lastPrompt || '(empty)'}`); echo.hidden = false; output.hidden = true; output.replaceChildren(); replay.hidden = true; run.disabled = true; replay.disabled = true; root.dataset.state = 'running';
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      root.classList.toggle('demo-reduced-motion', reduced);
+      pendingRun = new Promise(resolve => {
         resolveRun = resolve;
-        function advance(index) {
+        function advance(tick) {
           if (disposed || current !== sequence || !root.isConnected) {cancel(); return;}
-          setProgress(index);
-          if (index === steps.length) {renderOutput(); verified ? copy(state, '已開啟 GPU 實測記錄。', 'Recorded GPU result opened.') : character ? copy(state, '示範角色卡已完成，可繼續探索工作流。', 'Demo character card complete. You can now explore the workflows.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '展示完成 · 這是預先準備的範例。'); root.dataset.state = 'complete'; run.disabled = false; replay.hidden = false; resolveRun = null; resolve(true); root.dispatchEvent(new CustomEvent('demo-complete', {bubbles: true, detail: {id: text(demo.id)}})); return;}
-          copy(state, `模擬 ${index + 1} / ${steps.length} · ${steps[index]}`, `Simulation ${index + 1} / ${steps.length} · ${demo.steps_en?.[index] || COPY[steps[index]] || steps[index]}`);
-          if (reduced) advance(index + 1); else timer = setTimeout(() => advance(index + 1), 650);
+          timer = null;
+          setProgress(Math.round(tick / 24 * 100));
+          if (tick === 24) {if (!options.suppressOutput) renderOutput(); verified ? copy(state, '已開啟 GPU 實測記錄。', 'Recorded GPU result opened.') : character ? copy(state, '示範角色卡已完成，可繼續探索工作流。', 'Demo character card complete. You can now explore the workflows.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '展示完成 · 這是預先準備的範例。'); root.dataset.state = 'complete'; run.disabled = false; replay.disabled = false; replay.hidden = false; resolveRun = null; pendingRun = null; resolve(true); root.dispatchEvent(new CustomEvent('demo-complete', {bubbles: true, detail: {id: text(demo.id)}})); return;}
+          copy(state, '正在播放模擬流程，完成後顯示範例成果。', 'Playing the simulated flow. The example result appears when complete.');
+          timer = setTimeout(() => advance(reduced || unavailable ? 24 : tick + 1), reduced || unavailable ? 0 : 100);
         }
         advance(0);
       });
+      return pendingRun;
     }
     root.demo = {start, reset, dispose: removalGuard(root, () => {disposed = true; cancel(); releaseCharacter(); lastCharacter = {};})};
-    if (verified || unavailable) meter.hidden = true;
+    if (unavailable) {meter.hidden = true; progressLabel.hidden = true;}
     reset(); return root;
   }
   window.addEventListener('webcomfy:language', () => {

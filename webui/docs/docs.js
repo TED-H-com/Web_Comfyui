@@ -63,7 +63,7 @@
     switch (url.pathname) {
       case '/api/auth/status': return reply({configured: true, authenticated: true, lane: 'local', user: {email: 'documentation@example.invalid', displayName: '說明模式', role: 'admin', operator: true}});
       case '/api/features': return reply({studios: registry.studios, features: registry.features.map(feature => ({...feature, ready: true, runnable: !['storage', 'gated'].includes(feature.kind), missingModels: [], missingNodes: [], documentationOnly: true}))});
-      case '/api/characters': return reply({characters: [], actions: []});
+      case '/api/characters': return reply({characters: window.WebComfyCharacterSession?.list() || [], actions: []});
       case '/api/provider-characters': return reply({...emptyProvider, characters: []});
       case '/api/providers': return reply({...emptyProvider, providers: []});
       case '/api/assets': return reply({...emptyProvider, assets: [], items: []});
@@ -225,6 +225,8 @@
   }
   window.WebComfyDocs = {
     ready, openFeature, openGraph, openHelp,
+    renderCharacterRoute: (route, hooks) => window.WebComfyCharacterSession?.render(route, hooks),
+    completeCharacter: character => window.completeDocumentationCharacter(character),
     createCharacterDemo() { location.hash = '#/characters'; openFeature('character-create'); },
     featureButton(id) {
       const wrap = el('div', '', 'app-guide-button'); wrap.dataset.guideFeature = id;
@@ -269,10 +271,11 @@
   const showLoadError = () => {const message = document.getElementById('docsBanner'); if(message) message.textContent = '說明資料載入失敗，請重新整理頁面。';};
   const initialGuide = callback => Promise.all([ready, appLoaded]).then(() => callback()).catch(showLoadError);
   initialGuide(() => {
-    window.WebComfyI18n?.register(registry.translations || {});
+    window.WebComfyI18n?.register({...registry.translations, '示範角色': 'Demo characters', '只保留在本頁記憶體，重新整理後清除。': 'Kept in page memory only; cleared on refresh.'});
     const requestedLanguage = new URLSearchParams(location.search).get('lang');
     if (['en', 'zh-Hant'].includes(requestedLanguage)) window.WebComfyI18n?.setLanguage(requestedLanguage);
     window.WebComfyHardware?.install(registry);
+    window.WebComfyCharacterSession?.install(registry);
     window.WebComfyTour?.install(registry);
   });
   if (!location.hash || location.hash === '#/') history.replaceState(null, '', '#/studio/text2img');

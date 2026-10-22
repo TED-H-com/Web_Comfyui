@@ -31,7 +31,7 @@ ESTIMATES = {
     'text2img': (24, 'Z-Image BF16 與 Qwen 4B 編碼器；預設大圖需留採樣／解碼空間。', 'Z-Image BF16 plus the Qwen 4B encoder; the large default image needs sampling and decoding headroom.'),
     'img2img': (24, 'Flux Kontext FP8、T5 編碼器及原圖 latent；預留編輯採樣空間。', 'Flux Kontext FP8, T5 and an input-image latent; allow headroom for editing and sampling.'),
     'anime-scene-card': (0, '已核准圖片的 alpha 合成，沒有擴散 checkpoint；仍需 ComfyUI 與素材。', 'Alpha compositing of approved images has no diffusion checkpoint; ComfyUI and assets are still required.'),
-    'image-blend': (16, 'SDXL、IPAdapter 與 CLIP Vision；多張參考比純 SDXL 多用記憶體。', 'SDXL, IPAdapter and CLIP Vision; multiple references add memory beyond plain SDXL.'),
+    'image-blend': (8, 'SAM3 主體分割與原圖合成的規劃值；大圖仍需額外記憶體，沒有擴散採樣。', 'Planning allowance for SAM3 segmentation and original-pixel compositing; large images need additional memory. No diffusion sampling.'),
     'character-angles': (16, 'SDXL、InstantID、ControlNet 與臉部分析模型。', 'SDXL, InstantID, ControlNet and face-analysis models.'),
     'clipmode-character-photoshoot': (24, 'SDXL 身份條件及可選換臉／修復；角色路線與私人模型另行設定。', 'SDXL identity conditioning with optional face swap/restoration; character routes and models need separate setup.'),
     'img2video': (24, 'Wan 14B FP8、文字／視覺編碼器與逐幀 latent；長片可能超過估計。', 'Wan 14B FP8, text/vision encoders and frame latents; longer clips can exceed this estimate.'),
