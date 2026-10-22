@@ -1,37 +1,18 @@
-"""Prepared, bilingual examples for the documentation UI, never model execution.
+"""Bilingual forms with recorded GPU results, never browser-side model execution.
 
-The files are fictional illustrations created with the built-in image tool.
-Video files only animate those stills. Audio examples deliberately contain no
-audio: there is no approved speech sample, voice clone, or synthesized waveform.
+Only reviewed, provenance-bound runs can attach results. Other features retain
+workflow explanations but explicitly show that no recorded result is available.
 """
 from __future__ import annotations
 
 from copy import deepcopy
 
+from scripts.recorded_demo_catalog import RECORDED_DEMOS
+
 NOTE = '模擬展示：預先準備的插圖／文案，不會依輸入即時生成，也不是所列模型的實測或品質保證。'
 NOTE_EN = 'Simulation: prepared illustrations or copy, not generated from your input and not a benchmark or quality claim for the listed models.'
-VIDEO_NOTE = '示範動畫，非模型實際輸出：只對插圖做鏡頭縮放與淡入淡出，沒有物件動作、口型同步或音軌。'
-VIDEO_NOTE_EN = 'Prepared demonstration animation, not model output: only camera zoom and fades over a still illustration, with no object motion, lip sync, or soundtrack.'
-AUDIO_NOTE = '此範例只有預先撰寫的逐字稿，不含聲音、聲紋或克隆結果；未呼叫任何語音服務。'
-AUDIO_NOTE_EN = 'This example contains a prepared transcript only, with no audio, voiceprint, or cloned voice. No speech service is called.'
-
-IMAGES = {
-    'tea': {'src': './assets/examples/mountain-teahouse.webp',
-            'alt': '預先製作的虛構高山茶屋插圖，湖面、晨霧與前景茶杯。',
-            'alt_en': 'Prepared illustration of a fictional mountain tea house, lake, morning mist, and a foreground tea cup.'},
-    'explorer': {'src': './assets/examples/explorer-portrait.webp',
-                 'alt': '原創虛構成年探險家肖像，青綠外套與橘色圍巾，海岸背景。',
-                 'alt_en': 'Original fictional adult explorer in a teal jacket and orange scarf, with coastal cliffs behind them.'},
-    'robot': {'src': './assets/examples/ceramic-robot.webp',
-              'alt': '預先製作的原創陶瓷桌面機器人插圖，青綠關節、暖黃眼睛與一片葉子。',
-              'alt_en': 'Prepared illustration of an original ceramic desk robot with teal joints, amber eyes, and a leaf.'},
-    'coast': {'src': './assets/examples/coastal-observatory.webp',
-              'alt': '預先製作的虛構海岸天文台插圖，石造圓頂、觀景平台與暮色海面。',
-              'alt_en': 'Prepared illustration of a fictional coastal observatory with a stone dome, viewing deck, and twilight sea.'},
-}
-
-# Prompts describe each prepared example. They are editable demonstration input,
-# not a claim that these exact prompts produced results with a listed workflow.
+# Unverified tools retain editable examples of input text only. Verified runs
+# override these fields with the exact executed settings and recorded outputs.
 CONTENT = {
     'text2img': ('高山茶屋的清晨', 'Morning at a mountain tea house',
         '高山湖畔的木造茶屋，清晨薄霧、暖金色陽光，前景一杯冒著熱氣的茶，電影感構圖。',
@@ -142,24 +123,11 @@ def demos(app_catalog):
     result = {}
     for feature_id, spec in CONTENT.items():
         title, title_en, prompt, prompt_en, kind, asset = spec
-        output = {'kind': kind, 'images': [deepcopy(IMAGES[asset])] if asset else []}
-        note, note_en = NOTE, NOTE_EN
-        if kind == 'video':
-            file = 'explorer-pan.mp4' if asset == 'explorer' else 'coastal-pan.mp4'
-            output['video'] = {'src': './assets/examples/' + file, 'poster': IMAGES[asset]['src']}
-            note += ' ' + VIDEO_NOTE
-            note_en += ' ' + VIDEO_NOTE_EN
-        elif kind == 'audio':
-            output.update(text=prompt, text_en=prompt_en)
-            note += ' ' + AUDIO_NOTE
-            note_en += ' ' + AUDIO_NOTE_EN
-        if feature_id == 'anime-scene-card':
-            output['images'].append(deepcopy(IMAGES['coast']))
-            output.update(text='兩張獨立參考插圖，未執行角色場景合成。',
-                          text_en='Two separate reference illustrations; no character-scene compositing has been performed.')
-        elif feature_id == 'post-generator':
-            output.update(text='晨霧還沒散，茶香已經醒了。\n在山湖邊留一個早晨，不趕路，只看光線慢慢移動。\n你想把下一杯茶，留給哪一片風景？',
-                          text_en='The mist is still resting, but the tea is awake.\nKeep one morning by the mountain lake: no hurry, just light moving across the water.\nWhich view would you choose for your next cup?')
+        output = {'kind': 'unavailable', 'images': [],
+                  'reason': '這個工作流尚未完成可公開的實測，暫不展示成品。流程與模型說明仍可查看。',
+                  'reason_en': 'This workflow has no publishable recorded run yet. No result is shown; its workflow and model guide remain available.'}
+        note = '介面示範，不會依輸入即時生成；尚未實測的功能不展示替代成品。'
+        note_en = 'Interface demonstration, not generated from your input. Untested workflows do not display substitute results.'
         result[feature_id] = {'id': feature_id, 'title': title, 'title_en': title_en,
             'prompt': prompt, 'prompt_en': prompt_en, 'steps': list(guides[feature_id]['steps']),
             'steps_en': list(STEPS_EN[feature_id]), 'output': output, 'note': note, 'note_en': note_en}
@@ -169,9 +137,11 @@ def demos(app_catalog):
         'prompt_en': 'Mori is an original fictional adult explorer with short hair, a teal jacket, and an orange scarf, who enjoys stargazing and coastal journeys.',
         'steps': ['在建立角色表單填入名字與外觀描述。', '選擇角色參考圖；本機版本會把角色與素材存入自己的資料庫。', '本站只顯示預先準備的角色卡，不建立帳戶或保存上傳素材。'],
         'steps_en': ['Enter a name and appearance in the character form.', 'Choose a character reference; the installed app stores characters and assets in your own database.', 'This site shows a prepared character card without creating accounts or retaining uploaded files.'],
-        'output': {'kind': 'character', 'images': [deepcopy(IMAGES['explorer'])],
-                   'text': '沐野 · 虛構成年探險家\n青綠外套、橘色圍巾、海岸與星空。',
-                   'text_en': 'Mori · Fictional adult explorer\nTeal jacket, orange scarf, coastlines, and starlight.'},
+        'output': {'kind': 'unavailable', 'images': [], 'reason': '此頁只示範角色表單；沒有執行角色建立或保存素材。', 'reason_en': 'This page demonstrates the character form only; it does not create a character or save assets.'},
         'note': NOTE, 'note_en': NOTE_EN,
     }
+    for identifier, recorded in RECORDED_DEMOS.items():
+        if identifier not in result:
+            raise ValueError('Recorded example does not match an app feature')
+        result[identifier].update(deepcopy(recorded))
     return result

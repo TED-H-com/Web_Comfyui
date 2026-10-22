@@ -14,8 +14,28 @@
     registry = app; workflows = library;
     for (const item of workflows.items) if (item.download_url) item.download_url = new URL(item.download_url, base).href;
     for (const demo of Object.values(app.demos || {})) {
-      for (const item of demo.output?.images || []) item.src = new URL(item.src, base).href;
+      for (const item of [...(demo.inputs || []), ...(demo.output?.images || [])]) {
+        item.src = new URL(item.src, base).href;
+        if (item.poster) item.poster = new URL(item.poster, base).href;
+      }
       for (const key of ['src', 'poster']) if (demo.output?.video?.[key]) demo.output.video[key] = new URL(demo.output.video[key], base).href;
+    }
+    // Recorded runs may use dimensions outside the native form presets.
+    // Add those choices only to this in-memory documentation catalogue.
+    for (const feature of app.features || []) {
+      const demo = app.demos?.[feature.id];
+      if (demo?.evidence?.kind !== 'local-comfyui') continue;
+      for (const field of feature.fields || []) {
+        if (field.type !== 'aspect') continue;
+        const value = String(demo.prefill?.[field.id] ?? '');
+        const match = /^(\d+)x(\d+)$/.exec(value);
+        if (!match || field.options?.some(option => `${option.width}x${option.height}` === value)) continue;
+        const width = Number(match[1]), height = Number(match[2]);
+        if (width < 1 || height < 1) continue;
+        const label = `實測尺寸 ${width}×${height}`;
+        (field.options ||= []).push({label, width, height});
+        (app.translations ||= {})[label] = `Recorded size ${width}×${height}`;
+      }
     }
     return app;
   });
@@ -186,7 +206,7 @@
     content.append(el('p', '這是 Web ComfyUI 的互動說明版，使用與本機版相同的頁面、按鈕和表單。', 'workflow-summary'));
     rows(content, '怎麼看這個介面', [
       '從「創作」切換文生圖、改圖、影片或聲音工具；點工具名稱或「查看流程與模型」會說明真正使用的模型與 template。',
-      '表單已填入示範案例，可修改文字或點擊／拖曳檔案在瀏覽器預覽；按開始生成會播放模擬步驟並顯示預製成果。',
+      label('表單已填入示範案例；有 GPU 實測記錄的工具會分開展示原始輸入、實測設定與成果，未實測工具明示尚無成果。修改文字或預覽檔案不會觸發生成或上傳。', 'Forms are prefilled with examples. Tools with recorded GPU runs show original inputs, tested settings and results separately; untested tools explicitly show no result. Editing text or previewing files does not generate or upload anything.'),
       '查看 ComfyUI 範本與節點可探索節點連線與參數；API 或獨立工具則顯示已標明的處理流程。',
       '「工作庫」整理其他可下載工作流與來源方法；這些社群流程與創作表單使用的內建組圖程式分別標示。',
       '角色、素材、任務與供應商清單從空白開始。個人內容由安裝後的本機 WebUI 管理。',

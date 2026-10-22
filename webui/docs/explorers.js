@@ -186,9 +186,31 @@
 
   function demoContent(demo = {}, options = {}) {
     const root = el('section', '', `app-demo${options.inline ? ' app-demo-inline' : ''}`); root.dataset.docsInteractive = 'true'; root.dataset.demoId = text(demo.id);
-    const disclosure = el('p', '模擬展示・預先準備範例，並非依輸入即時生成', 'demo-disclosure');
+    const evidence = demo.evidence || {}, verified = evidence.kind === 'local-comfyui' && Boolean(evidence.run_id);
+    const unavailable = demo.output?.kind === 'unavailable';
+    const disclosure = verified
+      ? copy(el('p', '', 'demo-disclosure'), 'GPU 實測記錄 · 此頁播放已完成的成果，不會即時生成', 'Recorded GPU result · This page replays a completed run; it does not generate live')
+      : unavailable ? copy(el('p', '', 'demo-disclosure'), '尚無此工作流的 GPU 實測成果', 'No recorded GPU result for this workflow yet')
+      : el('p', '模擬展示・預先準備範例，並非依輸入即時生成', 'demo-disclosure');
     root.append(el('h3', text(demo.title) || '操作範例'), disclosure);
     if (demo.note) root.append(copy(el('p', '', 'explorer-evidence'), text(demo.note), text(demo.note_en || demo.note)));
+    if (Array.isArray(demo.inputs) && demo.inputs.length) {
+      const references = el('section', '', 'demo-references');
+      references.append(copy(el('h4'), '參考輸入 · 生成前', 'Reference inputs · before generation'));
+      const gallery = el('div', '', 'demo-gallery');
+      demo.inputs.forEach(item => {const figure = imageFigure({...item, alt: item.label || item.alt, alt_en: item.label_en || item.alt_en}); if (figure) gallery.append(figure);});
+      references.append(gallery); root.append(references);
+    }
+    if (verified) {
+      const record = el('details', '', 'demo-run-record');
+      record.append(copy(el('summary'), '實測提示詞與設定', 'Tested prompt and settings'));
+      const values = el('dl', '', 'graph-parameters');
+      for (const [key, zh, en] of [['prompt','實際提示詞','Exact prompt'], ['negative_prompt','反向提示詞','Negative prompt'], ['workflow','工作流','Workflow'], ['device','顯卡','GPU'], ['models','模型','Models'], ['seed','種子','Seed'], ['steps','步數','Steps'], ['width','寬度','Width'], ['height','高度','Height'], ['cfg','CFG','CFG'], ['guidance','引導強度','Guidance'], ['weight','參考強度','Reference weight'], ['sampler','取樣器','Sampler'], ['scheduler','排程器','Scheduler'], ['length','影格數','Frames'], ['fps','每秒影格','FPS'], ['duration_seconds','執行秒數（不含排隊）','Execution seconds (excluding queue)'], ['run_id','執行記錄','Run ID']]) {
+        if (evidence[key] === undefined) continue;
+        values.append(copy(el('dt'), zh, en), el('dd', Array.isArray(evidence[key]) ? evidence[key].join(' · ') : scalar(evidence[key])));
+      }
+      record.append(values); root.append(record);
+    }
     const form = el('form', '', 'demo-form'); form.dataset.docsInteractive = 'true';
     const label = el('label'), input = el('textarea'); input.rows = 3; input.maxLength = 2000; input.value = text(options.initialPrompt ?? translated(text(demo.prompt), text(demo.prompt_en || demo.prompt))); input.setAttribute('aria-label', '範例提示詞'); label.append(el('span', '範例提示詞'), input);
     const titleNode = root.querySelector('h3'); if (demo.title_en) copy(titleNode, text(demo.title), text(demo.title_en));
@@ -205,16 +227,27 @@
     const list = el('ol', '', 'demo-stages'), stageNodes = steps.map(step => el('li', step)); stageNodes.forEach((node, i) => {if (demo.steps_en?.[i]) copy(node, steps[i], demo.steps_en[i]); list.append(node);});
     const output = el('div', '', 'demo-output'); output.hidden = true;
     const actions = el('div', '', 'explorer-toolbar'), replay = button('重播展示', '', () => start(lastPrompt)); replay.hidden = true;
-    actions.append(replay, resetButton); root.append(echo, state, meter, list, output, actions);
+    actions.append(replay, resetButton); root.append(echo, state, meter, copy(el('p', '', 'demo-workflow-label'), '工作流步驟說明 · 此頁不執行', 'Workflow reference · not executed on this page'), list, output, actions);
     let timer = null, resolveRun = null, disposed = false, lastPrompt = input.value, sequence = 0;
     function cancel() {sequence++; clearTimeout(timer); timer = null; if (resolveRun) {resolveRun(false); resolveRun = null;} root.querySelectorAll('video,audio').forEach(media => media.pause());}
-    function setProgress(index) {meter.setAttribute('aria-valuenow', String(Math.round(index / steps.length * 100))); meter.firstElementChild.style.width = `${index / steps.length * 100}%`; stageNodes.forEach((node, i) => {node.classList.toggle('done', i < index); node.classList.toggle('active', i === index); node.setAttribute('aria-label', `${i < index ? '已展示' : i === index ? '展示中' : '待展示'}：${steps[i]}`);});}
-    function imageFigure(image) {const src = localAsset(image?.src); if (!src) return null; const figure = el('figure'), picture = el('img'); picture.src = src; picture.alt = translated(text(image.alt) || '預先準備的展示圖片', text(image.alt_en) || 'Prepared demonstration image'); picture.dataset.explorerAltZh = text(image.alt) || '預先準備的展示圖片'; picture.dataset.explorerAltEn = text(image.alt_en) || 'Prepared demonstration image'; picture.loading = 'lazy'; picture.decoding = 'async'; figure.append(picture); if (image.alt) figure.append(copy(el('figcaption'), text(image.alt), text(image.alt_en || image.alt))); return figure;}
+    function setProgress(index) {meter.setAttribute('aria-valuenow', String(Math.round(index / steps.length * 100))); meter.firstElementChild.style.width = `${index / steps.length * 100}%`; stageNodes.forEach((node, i) => {node.classList.toggle('done', !verified && !unavailable && i < index); node.classList.toggle('active', !verified && !unavailable && i === index); attribute(node, 'aria-label', `工作流步驟：${steps[i]}`, `Workflow reference: ${demo.steps_en?.[i] || steps[i]}`);});}
+    function imageFigure(image) {const src = localAsset(image?.src); if (!src) return null; const figure = el('figure');
+      if (image.kind === 'video') {
+        const video = el('video'); video.src = src; video.controls = true; video.playsInline = true; video.preload = 'metadata';
+        const poster = localAsset(image.poster); if (poster) video.poster = poster;
+        attribute(video, 'aria-label', text(image.alt) || '參考影片', text(image.alt_en) || 'Reference video');
+        figure.append(video, copy(el('figcaption'), text(image.alt), text(image.alt_en || image.alt))); return figure;
+      }
+      const picture = el('img'); picture.src = src; picture.alt = translated(text(image.alt) || '預先準備的展示圖片', text(image.alt_en) || 'Prepared demonstration image'); picture.dataset.explorerAltZh = text(image.alt) || '預先準備的展示圖片'; picture.dataset.explorerAltEn = text(image.alt_en) || 'Prepared demonstration image'; picture.loading = 'lazy'; picture.decoding = 'async'; figure.append(picture); if (image.alt) figure.append(copy(el('figcaption'), text(image.alt), text(image.alt_en || image.alt))); return figure;}
     function renderOutput() {
-      output.replaceChildren(el('h4', '預製範例結果'));
+      output.replaceChildren(verified ? copy(el('h4'), 'GPU 實測成果 · 生成後', 'Recorded GPU result · after generation') : unavailable ? copy(el('h4'), '尚無實測成果', 'Result unavailable') : el('h4', '預製範例結果'));
+      if (unavailable) {
+        output.append(copy(el('p', '', 'explorer-evidence'), text(demo.output.reason || '尚未完成此工作流的 GPU 實測。'), text(demo.output.reason_en || 'This workflow has not completed a verified GPU run.')));
+        output.hidden = false; return;
+      }
       const media = demo.output || {}, images = Array.isArray(media.images) ? media.images : [];
       if (media.kind === 'video' && localAsset(media.video?.src || media.src)) {
-        const video = el('video'); video.controls = true; video.playsInline = true; video.preload = 'none'; video.src = localAsset(media.video?.src || media.src); const poster = localAsset(media.video?.poster); if (poster) video.poster = poster; video.setAttribute('aria-label', '預製動畫範例，非本次模型生成'); output.append(video, el('p', '預製動畫範例；播放的是已準備的影片。', 'explorer-evidence'));
+        const video = el('video'); video.controls = true; video.playsInline = true; video.preload = 'none'; video.src = localAsset(media.video?.src || media.src); const poster = localAsset(media.video?.poster); if (poster) video.poster = poster; attribute(video, 'aria-label', verified ? 'GPU 實測影片' : '預製動畫範例，非本次模型生成', verified ? 'Recorded GPU video' : 'Prepared animation, not generated by this interaction'); output.append(video);
       } else if (images.length) {
         const gallery = el('div', '', `demo-gallery${media.kind === 'character' ? ' demo-character' : ''}`);
         images.forEach(image => {const figure = imageFigure(image); if (figure) gallery.append(figure);}); output.append(gallery);
@@ -223,20 +256,20 @@
       if (media.kind === 'audio') output.append(el('p', '音訊流程示意：以下為預製文字內容，本展示不合成或播放人聲。', 'demo-transcript-label'));
       if (media.text) output.append(copy(el('p', '', 'demo-result-text'), text(media.text), text(media.text_en || media.text)));
       if (!images.length && !media.text && !localAsset(media.video?.src || media.src)) output.append(el('p', '此範例尚未附上可展示的素材。'));
-      output.append(el('p', '你的輸入僅用來體驗操作，不會改變這份預製結果。', 'explorer-evidence')); output.hidden = false;
+      output.append(copy(el('p', '', 'explorer-evidence'), '修改文字或預覽自己的檔案不會改變這份記錄的成果。', 'Editing text or previewing your files does not change this recorded result.')); output.hidden = false;
     }
-    function reset() {cancel(); run.disabled = false; replay.hidden = true; output.hidden = true; output.replaceChildren(); echo.hidden = true; copy(state, '等待播放預製範例。'); setProgress(0); stageNodes.forEach(node => node.classList.remove('active')); root.dataset.state = 'idle';}
+    function reset() {cancel(); run.disabled = false; replay.hidden = true; output.hidden = true; output.replaceChildren(); echo.hidden = true; verified ? copy(state, '可開啟已完成的 GPU 實測記錄。', 'Ready to open the recorded GPU result.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '等待播放預製範例。'); setProgress(0); stageNodes.forEach(node => node.classList.remove('active')); root.dataset.state = 'idle';}
     function start(prompt = input.value) {
       if (disposed) return Promise.resolve(false);
       cancel(); const current = sequence; lastPrompt = text(prompt).slice(0, 2000); input.value = lastPrompt;
       copy(echo, `這次體驗輸入：${lastPrompt || '（未填寫）'}`, `Your demonstration input: ${lastPrompt || '(empty)'}`); echo.hidden = false; output.hidden = true; output.replaceChildren(); replay.hidden = true; run.disabled = true; root.dataset.state = 'running';
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const reduced = verified || unavailable || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       return new Promise(resolve => {
         resolveRun = resolve;
         function advance(index) {
           if (disposed || current !== sequence || !root.isConnected) {cancel(); return;}
           setProgress(index);
-          if (index === steps.length) {renderOutput(); copy(state, '展示完成 · 這是預先準備的範例。'); root.dataset.state = 'complete'; run.disabled = false; replay.hidden = false; resolveRun = null; resolve(true); root.dispatchEvent(new CustomEvent('demo-complete', {bubbles: true, detail: {id: text(demo.id)}})); return;}
+          if (index === steps.length) {renderOutput(); verified ? copy(state, '已開啟 GPU 實測記錄。', 'Recorded GPU result opened.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '展示完成 · 這是預先準備的範例。'); root.dataset.state = 'complete'; run.disabled = false; replay.hidden = false; resolveRun = null; resolve(true); root.dispatchEvent(new CustomEvent('demo-complete', {bubbles: true, detail: {id: text(demo.id)}})); return;}
           copy(state, `模擬 ${index + 1} / ${steps.length} · ${steps[index]}`, `Simulation ${index + 1} / ${steps.length} · ${demo.steps_en?.[index] || COPY[steps[index]] || steps[index]}`);
           if (reduced) advance(index + 1); else timer = setTimeout(() => advance(index + 1), 650);
         }
@@ -244,6 +277,7 @@
       });
     }
     root.demo = {start, reset, dispose: removalGuard(root, () => {disposed = true; cancel();})};
+    if (verified || unavailable) meter.hidden = true;
     reset(); return root;
   }
   window.addEventListener('webcomfy:language', () => {

@@ -5,7 +5,7 @@ Keep the existing design tokens and interactions in DESIGN.md.
 
 - Keep server defaults on loopback; never add deployment-specific accounts or URLs.
 - Runtime accounts, credentials, character/voice assets, generated media and databases are local user data. Never commit them.
-- The explicitly requested public documentation examples are the sole media exception: only the six reviewed files in `scripts/public_demo_assets.py`, with matching hashes and `webui/docs/examples/provenance.json`. Do not broaden this into a runtime/media directory exception.
+- The explicitly requested public documentation examples are the sole media exception: only the reviewed, hash-pinned reference inputs and actual GPU result files in `scripts/public_demo_assets.py`, with matching hashes and `webui/docs/examples/provenance.json`. Do not broaden this into a runtime/media directory exception.
 - API integrations must use explicit user configuration. Do not discover credentials from sibling projects.
 - Document new workflow sources, pinned revisions, dependencies, redistribution licenses and actual validation level.
 - Never imply a static JSON check proves GPU generation works.

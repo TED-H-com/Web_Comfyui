@@ -1,14 +1,17 @@
-"""Reviewed, fictional demonstration media: only these exact bytes are public.
-
-The user's requested examples are separate from runtime/personal media. Prompts,
-tool provenance and deterministic video derivations are recorded beside assets.
-Never add discovered user files or a blanket image/video extension exception.
-"""
-PUBLIC_DEMO_ASSETS = {
-    'mountain-teahouse.webp': '5741fb366449ee02243d2a46989702e79c6113dbeb581e39b526c9a002449d14',
-    'explorer-portrait.webp': 'c6a2e28213b8aa3d296a65660500db36bc2c674d3fcac23128858c9a7c374a38',
-    'ceramic-robot.webp': '99d5125defb27da9169764e5097529f08166e2a3b346f3f222707ed2f18d5e05',
-    'coastal-observatory.webp': 'bafc5fd212ffa80b686c8b5e9f4a9060d9c1791bd0bec6d231d67af481c60495',
-    'coastal-pan.mp4': 'e0ac2aaaee4d242365761a5f0d145ef8c1051cdf104becbcca7bd6e23e89b26a',
-    'explorer-pan.mp4': '28e777af12f932dbc35f22db75bae97e838973d50442f9deaa38f9272e46e43c',
-}
+"""Only these reviewed documentation media bytes are public; runtime media is excluded."""
+PUBLIC_DEMO_ASSETS = {'cheer-blend.webp': 'b74778d4131fe0509087f6aed16794d77f520a3891b47f915c23a25b7de045b2',
+ 'cheer-face-reference.webp': '7201b9400bb958311abf12a97f49611edc3eda985b7e9395af55541ed32817f6',
+ 'cheer-instantid-2.webp': '907e5732be01e077f7ef31a4c9a1d455f2066b1616e56fdb3aff4c4884b68ef2',
+ 'cheer-instantid.webp': 'f949c46a8363be731e824782b85562203460da3d3fbc8c8123105736ca3be870',
+ 'cheer-kontext.webp': 'df3e2e62c84f85af84aeef88fd8a2f4a215b9365e14a64d5bb739597816372a0',
+ 'cheer-motion-source-poster.webp': 'be45f6a23c84fef6fbf5e34361a110e5dfaff96a0ac1b91642865fa8e81100e0',
+ 'cheer-motion-source.mp4': '5b7ed6bff5f85bf996efb2d45611d99163cd3e784cf3af7c0f05cf411f1f4eed',
+ 'cheer-red-reference.webp': 'df3e2e62c84f85af84aeef88fd8a2f4a215b9365e14a64d5bb739597816372a0',
+ 'cheer-reference.webp': 'b0ab1356283d4f182245a6bd398a258cb5eb6bba63e4b01eed859137650d111f',
+ 'cheer-scail-poster.webp': 'fe9e705df59ec88e7c74f4031e450e9c65c0aff89c0dc30906714969a075a860',
+ 'cheer-scail.mp4': '8fe0a9c7dea12babe96e1a90e5c83863cbd682696a6f097b2123c6dfe32240f3',
+ 'cheer-text2img.webp': 'b3f8e5d16155f736fd06b4a619bfa8770bf3a94716fcca6caf495a6af26ad2c5',
+ 'cheer-wave-poster.webp': '842153d0725a9cba8912ee08dd2ae2a03abbf7fa54a493c1ba99c7913733c298',
+ 'cheer-wave.mp4': '6e9a2b8d9909c9ed3df9afcf21095ed84d1cfcf72833219a32b4c6bbf5da1472',
+ 'mountain-teahouse.webp': '5741fb366449ee02243d2a46989702e79c6113dbeb581e39b526c9a002449d14',
+ 'stadium-reference.webp': '09b7e805ddf2f1552bad4c520c8799f0bb33489138c54f2f44740ffa8b20b17e'}

@@ -24,7 +24,7 @@ jobs:
           mkdir -p "$HOME/agent-work/tmp/pytest"
           docs_test_tmp="$(mktemp -d "$HOME/agent-work/tmp/pytest/docs-ci-XXXXXX")"
           trap 'rm -rf "$docs_test_tmp"' EXIT
-          python -m pytest -q --basetemp="$docs_test_tmp/bt" tests/test_docs_site.py
+          python -m pytest -q --basetemp="$docs_test_tmp/bt" tests/test_docs_site.py tests/test_demo_publication.py scripts/test_demo_catalog.py
           python scripts/build_docs.py
           python scripts/check_public_release.py --root .site
       - uses: actions/configure-pages@v5

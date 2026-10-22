@@ -18,11 +18,11 @@ QR code 與上方連結編碼相同的完整網址。SVG 使用原生向量圖�
 
 | 範圍 | 能做什麼 | 使用條件 |
 | --- | --- | --- |
-| 本站互動示範 | 所有展示功能可操作表單、預覽本機檔案，按生成顯示固定範例 | 不上傳、不執行 GPU 或 API 生成；開啟所有示範不表示所有實際服務都已串接 |
+| 本站互動示範 | 所有展示功能可操作表單、預覽本機檔案，按示範按鈕查看已記錄的實跑成果或尚未驗證狀態 | 不上傳、不執行 GPU 或 API 生成；開啟所有示範不表示所有實際服務都已串接 |
 | 自行安裝 WebUI | 控制使用者自己安裝的 ComfyUI，並使用已實作的外部供應商整合 | 本機工作流仍需要相應模型、節點、硬體或工具；各功能檢查自己的依賴 |
 | AutoIP 雲端服務 | 使用 AutoIP 提供的線上工具或其公開 API | 自己的帳戶、適用方案與點數；API 還需要自己的金鑰，不能在靜態示範頁輸入 |
 
-本站的六個固定媒體範例是[獨立準備的插圖與衍生動畫](../webui/docs/examples/provenance.json)，不是 AutoIP 的實測輸出，也不是具名模型的效能或品質測試。影片是插圖的平移／縮放與淡入淡出；聲音範例只有逐字稿，沒有合成語音。[示範站說明](site.md)
+本站只將具有工作流執行證據的素材標為實跑成果；尚未驗證的功能顯示無成果可用。參考插圖不作為模型輸出，鏡頭動畫與逐字稿也不作為影片／語音生成證明。本機 GPU 執行紀錄不代表 AutoIP 已成功執行同一工作流。見 [素材與執行來源](../webui/docs/examples/provenance.json) 及 [示範站說明](site.md)。
 
 ## API 與目前整合的界線
 
@@ -40,7 +40,7 @@ QR code 與上方連結編碼相同的完整網址。SVG 使用原生向量圖�
 
 ## English
 
-AutoIP offers hosted creation tools, while this site demonstrates WebUI interactions using prepared examples. The demo does not upload selected files, call generation APIs, or run a GPU. Its sample media are independently prepared illustrations and simple camera animations, not AutoIP benchmark outputs; voice previews contain transcripts only.
+AutoIP offers hosted creation tools, while this site demonstrates WebUI interactions and recorded workflow results. The demo does not upload selected files, call generation APIs, or run a GPU. Results require actual execution evidence; unverified features explicitly have no result. A local GPU run does not establish an AutoIP API result.
 
 **Referral disclosure:** the registration link and QR code contain affiliate referral code `TEDH2FND`. The referrer may receive a reward. No discount or credit offer is promised. You can instead visit the [AutoIP homepage without referral parameters](https://autoip.app/).
 

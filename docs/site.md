@@ -8,11 +8,11 @@
 
 ## 在原有表單體驗範例
 
-23 項工具與建立角色都有預填範例。使用原有的 **開始生成（示範）** 或 **建立角色（示範）** 按鈕，會展示短暫的模擬階段，再於同一張表單內呈現固定的預製結果。說明區仍只有上述兩個按鈕；示範操作直接使用原有表單。修改提示詞或選項可用來熟悉介面，不會重新生成或改變預製結果。
+23 項工具與建立角色都保留預填表單與說明。示範按鈕可查看已記錄的工作流實跑成果；沒有通過驗證的功能顯示「尚無實跑成果」，不再以同一張參考圖、鏡頭動畫或逐字稿充當生成結果。修改提示詞或選項只用來熟悉介面，不會重新生成。
 
 點選或拖入支援的檔案，可在瀏覽器預覽自己的圖片、影片或音訊。預覽使用暫時的 blob URL，不上傳、不讀取其他本機檔案，也不寫入帳戶或素材庫。替換、清除或離開表單時會釋放預覽 URL。密碼欄位停用；文件模式的草稿與偏好只放在頁面記憶體。可操作的表單與模擬進度不表示依賴已安裝或 GPU 已完成生成。
 
-公開示範素材共六份，約 **1.68 MiB**：四張原創虛構 WebP 插圖、兩支由這些插圖製作的四秒無聲縮放／淡入淡出動畫。影片只有鏡頭動畫，沒有生成的物件動作、口型同步或音軌；語音範例只有逐字稿，沒有聲音克隆或合成人聲。範例不作為任何所列模型的輸出、效能或品質證明。
+參考素材與實跑成果分開呈現。成果必須有對應功能的 GPU 執行紀錄，包含經整理的工作流、輸入／輸出雜湊、執行時間與硬體；影片、語音與其他功能若尚未實跑，就不顯示冒充成果的替代媒體。單次實跑只證明紀錄中的設定成功，不是所有選項或硬體的效能保證。
 
 **工作庫** 則提供獨立的社群流程、參考來源與方法配方。目前公開目錄共 248 項，包含 46 份可下載 JSON（24 份精選社群流程、22 份基礎範例）。大部分創作表單使用 Python 直接組圖；不把名稱相近的社群 JSON 當作該表單的實際模板。
 
@@ -20,7 +20,7 @@
 
 硬體選單提供無 NVIDIA GPU、8／12／16／24／32 GB，以及雙 24 GB 等規劃級距。顯存需求是依預設 builder 整理的估計，不是偵測結果、最低需求實測或效能基準；解析度、精度、影格數、參考素材、卸載方式及系統記憶體都會影響實際需求。這些 builder 沒有自動跨卡切分模型，雙 24 GB 以單卡 24 GB 計，不加總成 48 GB。
 
-選擇只影響靜態示範中的操作提示與範例可用性，不修改安裝後 WebUI 的設定、不啟用原本停用的 API，也不因選擇無 GPU 而停用使用者的本機服務。**AutoIP** 選項開放全部 23 項預製範例供探索；不代表供應商已支援每個本機工作流、節點或訓練器。實際雲端能力與目前七項已實作 API 整合分開核對。首頁的選用註冊連結與 QR code 使用聯盟推薦碼 `TEDH2FND`，詳見 [服務界線與推薦揭露](autoip-cloud-demo.md)。
+選擇只影響靜態示範中的操作提示與範例可用性，不修改安裝後 WebUI 的設定、不啟用原本停用的 API，也不因選擇無 GPU 而停用使用者的本機服務。**AutoIP** 選項開放全部 23 項示範表單供探索；不代表供應商已支援每個本機工作流、節點或訓練器。實際雲端能力與目前七項已實作 API 整合分開核對。首頁的選用註冊連結與 QR code 使用聯盟推薦碼 `TEDH2FND`，詳見 [服務界線與推薦揭露](autoip-cloud-demo.md)。
 
 ## 本機預覽
 
@@ -38,7 +38,7 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory .site
 
 - `scripts/app_guide_catalog.py` 靜態解析 `webui/server.py`、H3 product/native 與 Qwen 模組的 AST，取得工作室、23 項 feature、完整欄位、選項、圖示、模型載入器與預設值。它不匯入或執行伺服器，不讀環境變數、憑證、模型或使用者資料。語音欄位的環境設定只使用程式中的文字預設值。
 - `manifests/app_guides/catalog.json` 維護每個實際 feature 的用途、流程、技巧與來源對應；產物為 `app-guide.json`。程式 builder 與官方參考 JSON 分別標示，無固定 checkpoint 的語音／API 工具不虛構模型路徑。
-- `scripts/app_graph_catalog.py` 從核准來源建立節點／流程檢視資料；`scripts/demo_catalog.py` 為 23 項 feature 與建立角色提供繁中／英文提示詞、來源步驟、固定結果與揭露文字。`webui/docs/tour.js` 將範例接到原有表單，`webui/docs/explorers.js` 顯示節點與模擬結果；它們不執行生成。
+- `scripts/app_graph_catalog.py` 從核准來源建立節點／流程檢視資料；`scripts/demo_catalog.py` 為 23 項 feature 與建立角色提供繁中／英文提示詞、來源步驟、實跑成果或未驗證狀態與揭露文字。`webui/docs/tour.js` 將範例接到原有表單，`webui/docs/explorers.js` 顯示節點與實跑紀錄；它們不執行生成。
 - 建置器先檢查抽取器明列的 `SOURCE_FILES`；抽取器拒絕未列出的路徑與 symlink。只允許特定 AST 常數與純資料操作，未知語法會失敗，不使用 `eval`／`exec`。
 - `webui/workflow_guides.py` 產生工作庫的用途、素材、方法與技巧。只從可確認欄位抽取參數，不把提示詞、媒體路徑或憑證轉成教學資料。工作庫資料輸出為 `catalog.json`。
 - `manifests/community_workflows/catalog.json` 管理社群來源、授權與固定版本；`manifests/workflow_coverage/imported_sources.json` 記錄其他已授權收錄檔案與修改。文章配方放在 `manifests/community_recipes/recipes.json`，不複製文章全文或圖片。
@@ -47,9 +47,9 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory .site
 
 ## 示範媒體的發布邊界
 
-六份公開素材是使用者明確要求的文件示範例外，存放在 `webui/docs/examples/`，建置時只複製指定檔案到 `assets/examples/`。[provenance.json](../webui/docs/examples/provenance.json) 記錄每張圖的完整提示詞、內建影像工具、原始 PNG 雜湊、WebP 轉換參數，以及影片的 ffmpeg 衍生指令與最終 SHA-256。圖片不含 EXIF 或文字中繼資料；公開目錄只保留最佳化後的四張 WebP 與兩支 MP4。
+公開範例是使用者明確要求的文件示範例外，存放在 `webui/docs/examples/`，建置時只複製指定檔案到 `assets/examples/`。[provenance.json](../webui/docs/examples/provenance.json) 記錄素材來源、轉換與最終 SHA-256；實跑成果另有工作流及輸入／輸出的執行證據。參考圖來源與 GPU 生成來源分別記錄。發布的 WebP 圖片不含 EXIF 或文字中繼資料；不公開私有路徑、帳戶、模型權重或憑證。
 
-`scripts/public_demo_assets.py` 固定這六個檔名與雜湊。發布檢查只允許完全符合雜湊的檔案出現在 `webui/docs/examples/` 或產物的 `assets/examples/`；改名、改內容、未列出的媒體、symlink 與個人／執行期路徑仍會被拒絕。這不是對圖片或影片副檔名的全面開放。`provenance.json` 與發布允許清單需一併審核，不能只更新來源紀錄就讓其他媒體通過。
+`scripts/public_demo_assets.py` 固定經審核的檔名與雜湊。發布檢查只允許完全符合雜湊的檔案出現在 `webui/docs/examples/` 或產物的 `assets/examples/`；改名、改內容、未列出的媒體、symlink 與個人／執行期路徑仍會被拒絕。這不是對圖片或影片副檔名的全面開放。`provenance.json` 與發布允許清單需一併審核，不能只更新來源紀錄就讓其他媒體通過。
 
 ## 驗證與發布
 
@@ -62,3 +62,25 @@ pytest-disktmp uv run --python 3.12 --with pytest --with Pillow --with playwrigh
 `.github/workflows/pages.yml` 在 `main` 更新時先檢查來源、執行發布邊界測試、建立 `.site` 並檢查產物，再上傳至 GitHub Pages。首次設定需在 repo 的 Pages 設定選擇 **GitHub Actions**；後續由 workflow 自動部署。
 
 文件網站不做即時依賴檢查。本機 **檢查 ComfyUI 節點與模型** 才會讀取使用者 ComfyUI 回報的節點與模型選項；缺少與未知狀態分別顯示。靜態檢查、選項匹配與瀏覽器測試都不代表 GPU 生成成功。
+
+## 已記錄的 GPU 範例
+
+目前 [來源紀錄](../webui/docs/examples/provenance.json) 包含 RTX 5090 上完成的 8 次執行，示範頁選用其中 6 項功能的成果：文生圖、指令改圖、參考圖融合、臉部參考肖像、圖生影片與舞蹈／動作轉移。實際模型與設定以各筆紀錄中的工作流為準；這些單次範例不是全部功能已完成驗證的宣告。
+
+人物參考為原創生成的虛構成年女性。動作轉移使用的 `cheer-motion-source.mp4` 也是由 Wan 實際生成的側步／抬手應援動作影片，再輸入 SCAIL 工作流；它不是下載的真人表演素材或單張圖片的平移縮放動畫。影片海報由對應輸出影片擷取。素材的來源雜湊、發布版本雜湊與執行關聯都保留在來源紀錄中。
+
+## 在自己的 GPU 重跑公開紀錄
+
+先依安裝指南準備 ComfyUI，以及紀錄所用的模型與 custom nodes。`scripts/replay_recorded_demo.py` 只讀取公開來源紀錄與固定雜湊素材，不搜尋帳號、憑證或個人檔案。從 `provenance.json` 的 `runs` 選取一個 `id`，先驗證：
+
+```bash
+python3 scripts/replay_recorded_demo.py <run-id>
+```
+
+預設只檢查與列出紀錄，不連線、不複製檔案、不執行 GPU。要實際提交給自己的本機 ComfyUI，明確加入 `--run`；有參考輸入的紀錄還須指定自己的 ComfyUI `input` 目錄：
+
+```bash
+python3 scripts/replay_recorded_demo.py <run-id> --run --input-dir ~/comfyui/input
+```
+
+預設連線為 `http://127.0.0.1:8188`；`--comfy-url` 只接受數字形式的 HTTP loopback 位址，不接受帳密、外部位址或重新導向。核准素材會複製至指定目錄中的 `web-demo-replay/`，遇到同名但不同內容的檔案會停止。腳本只回報提交取得的 `prompt_id`，完成與否請在 ComfyUI 查看；它不宣稱佇列提交就是生成成功。重跑前會確認輸入雜湊與原始執行一致；成果可能轉成公開用格式，與 ComfyUI 原始輸出分別記錄雜湊。即使使用同一份輸入，重跑結果也不保證逐像素相同。模型與節點版本、執行硬體也可能影響結果。

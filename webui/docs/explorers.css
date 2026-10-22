@@ -43,3 +43,13 @@
 .app-demo [hidden], .app-node-graph [hidden] { display: none !important; }
 @media(max-width:767px) { .app-node-graph { padding: var(--space-4); }.app-demo { padding: var(--space-3); }.graph-viewport { height: 340px; }.graph-parameters { grid-template-columns: minmax(0,1fr); }.graph-parameters dt { border-bottom: 0; padding-bottom: 0; }.graph-parameters dd { padding-top: var(--space-1); }.demo-form textarea { font-size: var(--text-md); } }
 @media(prefers-reduced-motion:reduce) { .demo-progress span { transition: none; } }
+
+.demo-references { margin-block: var(--space-4); }
+.demo-references h4 { font-size: var(--text-md); margin-block: var(--space-3); }
+.demo-references .demo-gallery { grid-template-columns: repeat(auto-fit,minmax(min(100%,140px),220px)); }
+.demo-references img { height: 180px; }
+.demo-run-record { margin-block: var(--space-4); border-block: 1px solid var(--line); padding-block: var(--space-3); }
+.demo-run-record summary { cursor: pointer; min-height: var(--tap-min); font-weight: 600; }
+
+.demo-references video { display:block; width:100%; max-height:180px; background:var(--bg); }
+.demo-workflow-label { color:var(--muted); font-size:var(--text-xs); margin-bottom:var(--space-2); }

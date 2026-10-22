@@ -52,12 +52,20 @@ ASSERT = r'''(async () => {
   assert(document.querySelectorAll('.graph-node').length===9,'actual Z-Image builder graph');
   document.querySelector('.graph-node').click();assert(document.querySelector('.graph-inspector').textContent.includes('z_image_turbo_bf16.safetensors'),'source model on node');await close();
   document.querySelector('.generate-btn').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
-  assert(document.querySelector('.demo-output img') && !document.querySelector('[role="dialog"]'),'prepared output appears in original form');
-  await until(()=>document.querySelector('.demo-output img').naturalWidth>0);
+  assert(!document.querySelector('.demo-output').hidden && !document.querySelector('[role="dialog"]'),'result status appears in original form');
+  if(WebComfyTour.demoFor('text2img').output.kind==='unavailable') assert(!document.querySelector('.demo-output img'),'untested text2img has no borrowed image');
+  else await until(()=>document.querySelector('.demo-output img')?.naturalWidth>0);
   await feature('AI 指令改圖');
   detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors'),'actual editing checkpoint');await close();
   assert(location.hash.includes('img2img'), 'feature route matches selected button');
   await until(()=>document.querySelector('[data-demo-id="img2img"]'));
+  const editingDemo=WebComfyTour.demoFor('img2img');
+  if(editingDemo.inputs?.length) {
+    const original=document.querySelector('.demo-references img');
+    assert(original&&original.src===editingDemo.inputs[0].src,'reference visible before playback under Pages subpath');
+    await until(()=>original.naturalWidth>0);
+    assert(!editingDemo.output.images?.some(image=>image.src===original.src),'original not recycled as result');
+  }
   const upload=document.querySelector('input[type=file][data-demo-upload]');
   const transfer=new DataTransfer();transfer.items.add(new File(['synthetic local input'],'local-example.png',{type:'image/png'}));upload.files=transfer.files;upload.dispatchEvent(new Event('change',{bubbles:true}));
   assert(document.querySelector('.demo-input-preview img').src.startsWith('blob:'),'selected file preview remains local');
@@ -72,7 +80,7 @@ ASSERT = r'''(async () => {
   visible('[data-view="characters"]').click();await until(()=>document.querySelector('[data-demo-id="character-create"]'));
   assert(document.querySelector('.experimental-create-form input[name=name]').value,'character name prefilled');
   document.querySelector('.experimental-create-form button[type=submit]').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
-  assert(document.querySelector('.demo-character img'),'character sample result');
+  assert(document.querySelector('.demo-character img') || WebComfyTour.demoFor('character-create').output.kind==='unavailable','character result or explicit unavailable status');
   const lang=document.getElementById('languageSelect');lang.value='en';lang.dispatchEvent(new Event('change'));
   await until(()=>document.documentElement.lang==='en' && visible('[data-view="characters"]').textContent.includes('Characters'));
   assert(document.querySelector('.experimental-create-form button[type=submit]').textContent.includes('demo'),'English native demo action');
@@ -109,7 +117,20 @@ ASSERT = r'''(async () => {
     const generate=form.querySelector('.generate-btn,button[type=submit]');assert(generate&&!generate.disabled,'demo action ready '+entry.id);
     generate.click();await until(()=>form.querySelector('.app-demo')?.dataset.state==='complete');
     assert(!form.querySelector('.demo-output').hidden,'all options produce a prepared result '+entry.id);
-    if(entry.id==='img2video') assert(form.querySelector('.demo-output video')?.src.includes('coastal-pan.mp4'),'prepared video is playable media');
+    const example=WebComfyTour.demoFor(entry.id);
+    if(example.output.kind==='unavailable') assert(!form.querySelector('.demo-output img,.demo-output video'),'untested tool has no unrelated media '+entry.id);
+    if(example.evidence?.kind==='local-comfyui') {
+      for(const source of example.inputs || []) if(source.slot) {
+        const preview=form.querySelector('[data-upload-id="'+source.slot+'"]')?.closest('.upload-slot')?.querySelector('.demo-input-preview img,.demo-input-preview video') || form.querySelector('[data-upload-id="'+source.slot+'"] .demo-input-preview img,[data-upload-id="'+source.slot+'"] .demo-input-preview video');
+        assert(preview?.src===source.src,'actual upload slot uses recorded reference '+entry.id+' '+source.slot);
+      }
+      assert(form.querySelector('.demo-run-record').textContent.includes(example.evidence.prompt),'exact tested prompt '+entry.id);
+      for(const field of entry.fields || []) if(field.type==='aspect' && example.prefill?.[field.id]) assert(form.querySelector('[data-field-id="'+field.id+'"] button.active')?.dataset.value===example.prefill[field.id],'recorded dimensions selected '+entry.id);
+      assert(form.querySelector('.demo-output h4').textContent.includes('GPU'),'recorded GPU result label '+entry.id);
+      for(const image of form.querySelectorAll('.demo-output img')) await until(()=>image.naturalWidth>0);
+      const video=form.querySelector('.demo-output video');
+      if(video) {video.preload='metadata';video.load();await until(()=>video.readyState>=1);assert(video.duration>0,'recorded video metadata '+entry.id);video.muted=true;await video.play();await until(()=>video.currentTime>0.1&&video.readyState>=2);video.pause();}
+    }
   }
   window.matchMedia=originalMatchMedia;
   const hardware=document.getElementById('hardwareSelect');assert(hardware,'hardware selector');

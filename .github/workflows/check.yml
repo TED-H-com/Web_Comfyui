@@ -57,4 +57,4 @@ jobs:
           mkdir -p "$HOME/agent-work/tmp/pytest"
           browser_test_tmp="$(mktemp -d "$HOME/agent-work/tmp/pytest/browser-ci-XXXXXX")"
           trap 'rm -rf "$browser_test_tmp"' EXIT
-          python -m pytest -q --basetemp="$browser_test_tmp/bt" scripts/test_docs_browser.py scripts/test_landing_browser.py
+          python -m pytest -q --basetemp="$browser_test_tmp/bt" scripts/test_docs_browser.py scripts/test_landing_browser.py scripts/test_tour_browser.py scripts/test_explorers_browser.py

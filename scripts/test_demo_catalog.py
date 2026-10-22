@@ -34,61 +34,85 @@ def test_every_real_feature_and_character_creation_has_bilingual_content(app):
         assert all(isinstance(step, str) and step for step in example['steps'] + example['steps_en'])
         if identifier in guides:
             assert example['steps'] == guides[identifier]['steps']
-        assert '預先準備' in example['note'] and 'not generated from your input' in example['note_en']
-        assert 'benchmark' in example['note_en']
+        assert 'not generated from your input' in example['note_en']
 
 
-def test_outputs_match_declared_and_hash_verified_assets(app):
+def test_outputs_require_matching_gpu_evidence(app):
     root = ROOT / 'webui/docs/examples'
     provenance = json.loads((root / 'provenance.json').read_text())
     ledger = {row['file']: row for row in provenance['assets']}
+    runs = {row['id']: row for row in provenance.get('runs', [])}
     assert len(ledger) == len(provenance['assets'])
-    referenced = set()
-    for example in demos(app).values():
+    assert len(runs) == len(provenance.get('runs', []))
+    verified = []
+    for identifier, example in demos(app).items():
         output = example['output']
-        assert output['kind'] in {'image', 'video', 'audio', 'text', 'character', 'gallery'}
-        for image in output['images']:
-            assert image['src'].startswith('./assets/examples/')
-            name = image['src'].removeprefix('./assets/examples/')
-            assert '/' not in name and name in ledger
-            assert image['alt'] and image['alt_en']
-            assert ledger[name]['kind'] == 'image'
-            referenced.add(name)
+        assert output['kind'] in {'image', 'video', 'audio', 'text', 'character', 'gallery', 'unavailable'}
+        if output['kind'] == 'unavailable':
+            assert output.get('images', []) == []
+            assert not output.get('video') and not output.get('audio')
+            assert not output.get('run_id')
+            continue
+        # Every claimed result must refer to a successful run of THIS feature;
+        # generic illustrations, transcripts and pan videos are not evidence.
+        assert output['run_id'] in runs
+        run = runs[output['run_id']]
+        assert run['feature_id'] == identifier
+        assert run['status'] == 'success'
+        assert example['evidence']['run_id'] == run['id']
+        verified.append(identifier)
+        recorded_outputs = {row['file']: row['sha256'] for row in run['outputs']}
+        for asset in output.get('images', []):
+            assert asset['src'].startswith('./assets/examples/')
+            name = asset['src'].removeprefix('./assets/examples/')
+            assert name in ledger and name in recorded_outputs
+            assert asset['alt'] and asset['alt_en']
         if output['kind'] == 'video':
-            video = output['video']
-            assert video['src'].startswith('./assets/examples/')
-            name = video['src'].removeprefix('./assets/examples/')
-            assert name in ledger and ledger[name]['kind'] == 'video'
-            assert video['poster'] == output['images'][0]['src']
-            assert 'camera zoom' in example['note_en']
-            assert ledger[name]['audio'] is False
-            assert 3 <= ledger[name]['duration_seconds'] <= 5
-            assert all(source in ledger for source in ledger[name]['derived_from'])
-            referenced.add(name)
-        if output['kind'] == 'audio':
-            assert output['text'] and output['text_en']
-            assert 'audio' not in output and 'video' not in output
-            assert 'transcript only' in example['note_en']
-        if 'text' in output:
-            assert output['text_en']
-    assert referenced == set(ledger)
+            name = output['video']['src'].removeprefix('./assets/examples/')
+            assert name in ledger and name in recorded_outputs
+            assert ledger[name]['kind'] == 'video'
+    assert verified, 'The public demo must include actual workflow results'
     for name, record in ledger.items():
         path = root / name
-        assert not path.is_symlink() and path.is_file()
+        assert '/' not in name and not path.is_symlink() and path.is_file()
         payload = path.read_bytes()
         assert hashlib.sha256(payload).hexdigest() == record['sha256']
         assert len(payload) == record['bytes']
         assert record['source'] and record['tool']
 
 
+def test_public_run_evidence_is_complete_and_bound_to_assets():
+    provenance = json.loads((ROOT / 'webui/docs/examples/provenance.json').read_text())
+    ledger = {row['file']: row for row in provenance['assets']}
+    assert provenance.get('runs'), 'Missing GPU execution evidence'
+    for run in provenance['runs']:
+        assert run['status'] == 'success'
+        assert run['executed_at'] and run['device']
+        assert run['duration_seconds'] > 0
+        workflow = run['workflow']
+        graph = workflow['graph']
+        assert graph and all(node.get('class_type') for node in graph.values())
+        canonical = json.dumps(graph, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
+        assert hashlib.sha256(canonical).hexdigest() == workflow['sha256']
+        assert run['outputs']
+        for record in run['inputs']:
+            assert record['sha256'] == ledger[record['file']]['sha256']
+        for record in run['outputs']:
+            asset = ledger[record['file']]
+            assert record['sha256'] in {asset['sha256'], asset.get('source_sha256')}
+        # A copied input must never become a claimed workflow output.
+        assert not ({row['sha256'] for row in run['inputs']} &
+                    {row['sha256'] for row in run['outputs']})
+        serialized = json.dumps(run)
+        assert not any(prefix in serialized for prefix in ('/home/', '/mnt/', '/media/', '/tmp/'))
+
+
 def test_generated_images_retain_no_exif_or_text_metadata():
     root = ROOT / 'webui/docs/examples'
     provenance = json.loads((root / 'provenance.json').read_text())
     images = [row for row in provenance['assets'] if row['kind'] == 'image']
-    assert 3 <= len(images) <= 5
+    assert images
     for record in images:
-        assert record['tool'] == 'image_gen.imagegen'
-        assert record['prompt'] and 'fictional' in record['prompt']
         payload = (root / record['file']).read_bytes()
         assert payload[:4] == b'RIFF' and payload[8:12] == b'WEBP'
         offset = 12
@@ -106,10 +130,10 @@ def test_examples_are_fresh_objects_and_do_not_modify_source_guides(app):
     original = deepcopy(app)
     first = demos(app)
     first['text2img']['steps'][0] = 'changed locally'
-    first['text2img']['output']['images'][0]['alt'] = 'changed locally'
+    first['text2img']['output']['images'].append({'alt': 'changed locally'})
     second = demos(app)
     assert second['text2img']['steps'][0] != 'changed locally'
-    assert second['text2img']['output']['images'][0]['alt'] != 'changed locally'
+    assert all(row['alt'] != 'changed locally' for row in second['text2img']['output']['images'])
     assert app == original
 
 

@@ -75,6 +75,22 @@ CHECK = r'''
   const unsafe=WebComfyExplorers.demoContent({...fixture.demo,output:{kind:'image',images:[{src:'https://external.invalid/private.png',alt:'external'}]}});document.body.append(unsafe);
   const reduced=matchMedia;window.matchMedia=()=>({matches:true});check(await unsafe.demo.start('reduced motion'),'reduced motion completes');window.matchMedia=reduced;
   check(!unsafe.querySelector('img'),'external assets rejected');unsafe.demo.dispose();unsafe.remove();
+  const recorded=WebComfyExplorers.demoContent({...fixture.demo,inputs:[{src:'/input.webp',label:'原圖',label_en:'Original'},{kind:'video',src:'/motion.mp4',poster:'/poster.webp',label:'動作影片',label_en:'Motion video'}],evidence:{kind:'local-comfyui',run_id:'run-42',prompt:'Exact GPU prompt',models:['model.safetensors'],seed:42,steps:8,width:512,height:512},output:{kind:'image',images:[{src:'/result.webp',alt:'Generated result'}]}});document.body.append(recorded);
+  check(recorded.querySelector('.demo-references img').src.endsWith('/input.webp'),'original visible before run');
+  check(recorded.querySelector('.demo-output').hidden,'output separate and initially hidden');
+  check(recorded.querySelector('.demo-references video').controls&&!recorded.querySelector('.demo-references video').autoplay,'video reference controls without autoplay');
+  check(recorded.querySelector('.demo-run-record').textContent.includes('Exact GPU prompt'),'exact tested prompt visible');
+  await recorded.demo.start('changed user prompt');
+  check(recorded.querySelector('.demo-output h4').textContent.includes('Recorded GPU result'),'verified result labeled');
+  check(recorded.querySelector('.demo-output img').src.endsWith('/result.webp'),'result distinct from original');
+  check(!recorded.querySelector('.demo-stages .done,.demo-stages .active')&&recorded.querySelector('.demo-progress').hidden,'recorded workflow is a reference, not simulated execution');
+  check(recorded.querySelector('.demo-run-record').textContent.includes('Exact GPU prompt'),'user edits do not rewrite run evidence');
+  WebComfyI18n.setLanguage('zh-Hant');await pause(20);
+  check(recorded.querySelector('.demo-output h4').textContent.includes('GPU 實測成果'),'verified result Chinese');
+  const missing=WebComfyExplorers.demoContent({...fixture.demo,output:{kind:'unavailable',reason:'尚待測試',reason_en:'Awaiting testing',images:[{src:'/unrelated.webp'}]}});document.body.append(missing);await missing.demo.start('anything');
+  check(!missing.querySelector('.demo-output img, .demo-output video'),'unavailable never shows unrelated media');
+  check(missing.querySelector('.demo-output').textContent.includes('尚待測試'),'unavailable reason');
+  recorded.demo.dispose();recorded.remove();missing.demo.dispose();missing.remove();
   check(!window.errors.length,window.errors.join('\n'));result.textContent='PASS';
  }catch(e){result.textContent='FAIL '+e.stack;}
  parent.postMessage({explorerResult:result.textContent},location.origin);

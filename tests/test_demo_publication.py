@@ -57,11 +57,11 @@ def test_unlisted_binary_and_runtime_data_remain_forbidden(relative):
     assert inspect(Path(relative), b'\0synthetic private runtime fixture')
 
 
-def test_pins_match_provenance_and_only_the_final_six_assets_ship():
+def test_pins_match_provenance_and_only_reviewed_assets_ship():
     provenance = json.loads((EXAMPLES / 'provenance.json').read_text())
     assets = provenance['assets']
     assert {row['file']: row['sha256'] for row in assets} == PUBLIC_DEMO_ASSETS
-    assert len(assets) == 6
+    assert assets
     assert {path.name for path in EXAMPLES.iterdir()} == set(PUBLIC_DEMO_ASSETS) | {'provenance.json'}
     serialized = json.dumps(provenance)
     assert not any(prefix in serialized for prefix in ('/home/', '/mnt/', '/media/', '/tmp/'))

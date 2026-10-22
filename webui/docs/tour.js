@@ -26,7 +26,7 @@
     for (const input of state.form.querySelectorAll('textarea,input[type=text],input:not([type])')) {
       if (input.closest('[data-docs-interactive]')) continue;
       const key = input.dataset.fieldId || input.name || '';
-      if (force || !input.value || input.value === state.filled.get(input)) {
+      if (force || !state.filled.has(input) || input.value === state.filled.get(input)) {
         const field = state.feature?.fields?.find(item => item.id === key);
         let value = state.demo.prefill?.[key];
         if (language() === 'en') value = state.demo.prefill_en?.[key] ?? value;
@@ -38,16 +38,25 @@
         input.value = String(value); state.filled.set(input, input.value); input.dispatchEvent(new Event('input', {bubbles: true}));
       }
     }
-    if (force) for (const field of state.feature?.fields || []) {
-      if (field.default === undefined || field.type === 'textarea') continue;
-      const controls = state.form.querySelectorAll('[data-field-id="' + CSS.escape(field.id) + '"]');
-      for (const control of controls) {
-        if (control.matches('input[type=checkbox]')) control.checked = Boolean(field.default);
-        else if (control.matches('select,input[type=range],input[type=number]')) {
-          control.value = String(field.default); control.dispatchEvent(new Event('input', {bubbles: true}));
-        } else if (['aspect', 'select'].includes(field.type)) {
-          const option = [...control.querySelectorAll('button[data-value]')].find(button => button.dataset.value === String(field.default));
-          option?.click();
+    for (const field of state.feature?.fields || []) {
+      let value = state.demo.prefill?.[field.id];
+      if (language() === 'en') value = state.demo.prefill_en?.[field.id] ?? value;
+      value ??= field.default;
+      if (value === undefined) continue;
+      for (const control of state.form.querySelectorAll('[data-field-id="' + CSS.escape(field.id) + '"]')) {
+        if (control.matches('input[type=checkbox],select,input[type=range],input[type=number]')) {
+          const checkbox = control.matches('input[type=checkbox]');
+          const current = checkbox ? control.checked : control.value;
+          if (!force && state.filled.has(control) && current !== state.filled.get(control)) continue;
+          if (checkbox) control.checked = Boolean(value); else control.value = String(value);
+          state.filled.set(control, checkbox ? control.checked : control.value);
+          control.dispatchEvent(new Event('input', {bubbles: true}));
+          control.dispatchEvent(new Event('change', {bubbles: true}));
+        } else if (control.querySelector('button[data-value]')) {
+          const current = control.querySelector('button[data-value].active')?.dataset.value;
+          if (!force && state.filled.has(control) && current !== state.filled.get(control)) continue;
+          const option = [...control.querySelectorAll('button[data-value]')].find(button => button.dataset.value === String(value));
+          if (option) {option.click(); state.filled.set(control, String(value));}
         }
       }
     }
@@ -67,9 +76,14 @@
   }
   function mediaPreview(host, item) {
     host.replaceChildren();
-    if (!item) {host.append(text('span', '示範輸入已選取；可直接開始。', 'Demo input selected; ready to start.')); return;}
-    const image = document.createElement('img'); image.src = item.src; image.alt = pick(item, 'alt') || 'Demo input';
-    image.loading = 'lazy'; image.decoding = 'async'; host.append(image);
+    if (!item) {host.append(text('span', '尚未提供實測參考素材。', 'No tested reference input is available.')); return;}
+    const media = document.createElement(item.kind === 'video' ? 'video' : 'img'); media.src = item.src;
+    if (item.kind === 'video') {
+      media.controls = true; media.playsInline = true; media.preload = 'metadata';
+      if (item.poster) media.poster = item.poster;
+      media.setAttribute('aria-label', pick(item, 'alt') || 'Reference video');
+    } else {media.alt = pick(item, 'alt') || 'Reference input'; media.loading = 'lazy'; media.decoding = 'async';}
+    host.append(media);
   }
   function prepareUploads(state) {
     for (const input of state.form.querySelectorAll('input[type=file]')) {
@@ -77,22 +91,22 @@
       input.dataset.demoUpload = 'true'; input.required = false;
       const slot = input.closest('.upload-slot') || input.closest('label') || input.parentElement;
       const box = document.createElement('div'); box.className = 'demo-input-example'; box.dataset.docsInteractive = 'true';
-      const title = text('span', '示範案例 · 已選取預設素材', 'Demo example · prepared input selected', 'demo-input-label');
+      const title = text('span', '參考輸入 · 實測使用的原圖', 'Reference input · original used in the recorded run', 'demo-input-label');
       const preview = document.createElement('div'); preview.className = 'demo-input-preview';
-      const images = state.demo.output.images || [];
-      const item = images[state.uploads.length % Math.max(1, images.length)];
-      const slotState = {input, preview, title, url: null};
+      const inputs = state.demo.inputs || [];
+      const key = input.dataset.fieldId || input.closest('[data-field-id]')?.dataset.fieldId || input.closest('[data-upload-id]')?.dataset.uploadId || input.name;
+      const item = inputs.find(item => item.slot && item.slot === key) || inputs.filter(item => !item.slot)[state.uploads.filter(slot => !slot.item?.slot).length];
+      const slotState = {input, preview, title, item, url: null};
       slotState.reset = () => {
         releaseSlot(state, slotState);
         input.value = ''; preview.replaceChildren();
-        title.dataset.i18nZh = '示範案例 · 已選取預設素材'; title.dataset.i18nEn = 'Demo example · prepared input selected';
+        title.dataset.i18nZh = item?.label || '參考輸入'; title.dataset.i18nEn = item?.label_en || 'Reference input';
         title.textContent = language() === 'en' ? title.dataset.i18nEn : title.dataset.i18nZh;
-        if ((input.accept || '').includes('image')) mediaPreview(preview, item);
-        else preview.append(text('span', (input.accept || '').includes('video') ? '預製示範短片' : '示範語音逐字稿', (input.accept || '').includes('video') ? 'Prepared demo clip' : 'Demo voice transcript'));
+        mediaPreview(preview, item);
       };
       slotState.reset();
-      box.append(title, preview, button('使用示範素材', 'Use prepared input', slotState.reset));
-      box.append(text('small', '選取的檔案只在瀏覽器預覽；示範成果固定，不會上傳。', 'Selected files stay in your browser. The prepared result is fixed; nothing is uploaded.'));
+      box.append(title, preview, button('還原參考輸入', 'Restore reference input', slotState.reset));
+      box.append(text('small', '你的檔案只在瀏覽器預覽，不會上傳，也不會改變下方記錄的成果。', 'Your files are previewed only in this browser. They are not uploaded and do not change the recorded result below.'));
       slot.append(box); state.uploads.push(slotState);
     }
   }
@@ -102,7 +116,7 @@
     const state = {id, form, feature, demo, uploads: [], urls: new Set(), filled: new WeakMap(), running: false}; mounted.set(form, state);
     form.dataset.demoId = id; form.noValidate = true;
     const bar = document.createElement('div'); bar.className = 'demo-prefill-bar'; bar.dataset.docsInteractive = 'true';
-    bar.append(text('strong', '示範案例', 'Demo example'), text('span', '已預填設定，可修改文字或預覽自己的素材；成果為預製示範。', 'Settings are prefilled. Edit the text or preview your own files; the result is a prepared example.'));
+    bar.append(text('strong', '示範案例', 'Demo example'), text('span', '可修改文字或預覽自己的素材；此頁只播放既有記錄。實測提示詞與設定列在下方。', 'Edit text or preview your own files; this page replays existing records. Tested prompts and settings appear below.'));
     bar.append(button('重新填入示範', 'Reset example inputs', () => {fill(state, true); state.uploads.forEach(slot => slot.reset()); state.result.demo.reset();}));
     form.prepend(bar);
     if (!form.querySelector('textarea,input[type=text],input:not([type])')) {

@@ -19,9 +19,9 @@ Before installing models, explore the online **創作** page. Its two help butto
 
 Each of the 23 tools, plus character creation, has a prefilled example. Edit the text or click/drop a supported local file to preview your own input in the browser. Press the existing **Generate** button to see a short simulated sequence followed by the fixed prepared result in the form. Nothing is uploaded, queued or sent to a provider. Changed inputs do not generate a different result.
 
-The demo set contains four fictional illustrations and two four-second silent pan/fade animations, approximately 1.68 MiB in total. Video previews animate prepared stills; they do not demonstrate model-generated motion or lip sync. Voice examples show transcripts only. [Prompts, derivations and hashes](../webui/docs/examples/provenance.json) identify the six approved public assets, which are separate from runtime and personal media. The [site maintenance guide](site.md) explains the publication checks.
+Recorded result examples require actual GPU execution evidence, including the workflow and input/output hashes. Reference illustrations are shown as inputs; unverified features have no result example. The [provenance ledger](../webui/docs/examples/provenance.json) identifies reviewed public assets separately from runtime and personal media. The [site maintenance guide](site.md) explains the publication checks.
 
-The demo hardware selector offers no NVIDIA GPU and common VRAM tiers (8/12/16/24/32 GB), plus two 24 GB cards. Treat its labels as planning estimates, not benchmarks or proven minimums. Two 24 GB cards do not become one 48 GB device. The selector changes only the demo; it never disables or configures your installed app. Choose **AutoIP** to explore all 23 prepared demonstrations, while checking real provider support separately. The optional registration link and QR code use referral code `TEDH2FND`; [cloud/demo boundaries and referral disclosure](autoip-cloud-demo.md) explain the distinction.
+The demo hardware selector offers no NVIDIA GPU and common VRAM tiers (8/12/16/24/32 GB), plus two 24 GB cards. Treat its labels as planning estimates, not benchmarks or proven minimums. Two 24 GB cards do not become one 48 GB device. The selector changes only the demo; it never disables or configures your installed app. Choose **AutoIP** to explore all 23 demo forms, while checking real provider support separately. The optional registration link and QR code use referral code `TEDH2FND`; [cloud/demo boundaries and referral disclosure](autoip-cloud-demo.md) explain the distinction.
 
 Most actual generation forms build their own API graphs in Python. A community JSON with a similar title is a separate example, not automatically the form’s template.
 
@@ -60,7 +60,7 @@ If the loading action is unavailable, check the entry type and your access. Only
 Inside the native editor:
 
 1. Select installed checkpoints, encoders, VAEs and adapters. Match the source's model family and variant.
-2. Replace example input filenames with your own uploaded images, video or audio. A filename in a template does not mean its input media was bundled; the six documentation demo assets are a separate illustration set.
+2. Replace example input filenames with your own uploaded images, video or audio. A filename in a template does not mean its input media was bundled; documentation reference assets are separate from executable template inputs.
 3. Edit the prompt and choose one image or a short clip for the first test. Check output dimensions, duration and filename prefix.
 4. If the graph contains API nodes, configure your own endpoint/model/credentials before running it. An application `.env` key may not configure those nodes.
 5. Queue the graph in ComfyUI. Watch its queue and terminal for errors, then inspect the saved output.
