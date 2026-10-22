@@ -187,10 +187,12 @@
   function demoContent(demo = {}, options = {}) {
     const root = el('section', '', `app-demo${options.inline ? ' app-demo-inline' : ''}`); root.dataset.docsInteractive = 'true'; root.dataset.demoId = text(demo.id);
     const evidence = demo.evidence || {}, verified = evidence.kind === 'local-comfyui' && Boolean(evidence.run_id);
+    const prepared = evidence.kind === 'prepared-example';
     const unavailable = demo.output?.kind === 'unavailable';
     const character = demo.id === 'character-create' && demo.output?.kind === 'character' && evidence.kind === 'interface-simulation';
     const disclosure = verified
       ? copy(el('p', '', 'demo-disclosure'), 'GPU 實測記錄 · 此頁播放已完成的成果，不會即時生成', 'Recorded GPU result · This page replays a completed run; it does not generate live')
+      : prepared ? copy(el('p', '', 'demo-disclosure'), '預製介面範例 · 非此工作流實測', 'Prepared interface example · not a verified run of this workflow')
       : character ? copy(el('p', '', 'demo-disclosure'), '角色卡模擬 · 使用表單內容在此頁預覽，不會保存或訓練模型', 'Character card simulation · Preview your form on this page; nothing is saved or trained')
       : unavailable ? copy(el('p', '', 'demo-disclosure'), '尚無此工作流的 GPU 實測成果', 'No recorded GPU result for this workflow yet')
       : el('p', '模擬展示・預先準備範例，並非依輸入即時生成', 'demo-disclosure');
@@ -248,7 +250,7 @@
       }
       const picture = el('img'); picture.src = src; picture.alt = translated(text(image.alt) || '預先準備的展示圖片', text(image.alt_en) || 'Prepared demonstration image'); picture.dataset.explorerAltZh = text(image.alt) || '預先準備的展示圖片'; picture.dataset.explorerAltEn = text(image.alt_en) || 'Prepared demonstration image'; picture.loading = 'lazy'; picture.decoding = 'async'; figure.append(picture); if (image.alt) figure.append(copy(el('figcaption'), text(image.alt), text(image.alt_en || image.alt))); return figure;}
     function renderOutput() {
-      output.replaceChildren(verified ? copy(el('h4'), 'GPU 實測成果 · 生成後', 'Recorded GPU result · after generation') : character ? copy(el('h4'), '示範角色建立完成', 'Demo character created') : unavailable ? copy(el('h4'), '尚無實測成果', 'Result unavailable') : el('h4', '預製範例結果'));
+      output.replaceChildren(verified ? copy(el('h4'), 'GPU 實測成果 · 生成後', 'Recorded GPU result · after generation') : prepared ? copy(el('h4'), '預製介面範例 · 非此工作流實測', 'Prepared interface example · not a verified run of this workflow') : character ? copy(el('h4'), '示範角色建立完成', 'Demo character created') : unavailable ? copy(el('h4'), '尚無實測成果', 'Result unavailable') : el('h4', '預製範例結果'));
       if (character) {
         const card = el('article', '', 'demo-character-card demo-character'), picture = el('img');
         const photo = lastCharacter.photo;
@@ -282,10 +284,29 @@
         images.forEach(image => {const figure = imageFigure(image); if (figure) {if (media.comparison) figure.prepend(copy(el('strong'), demo.id === 'img2img' ? '修改後 · 紅色上衣、深藍短褲' : '修改後 · 保留人物、更換背景', demo.id === 'img2img' ? 'After · red jersey and navy shorts' : 'After · original subject, new background')); gallery.append(figure);}}); output.append(gallery);
         if (media.kind === 'video') output.append(el('p', '預製分鏡圖；這組圖片不是即時影片生成。', 'explorer-evidence'));
       }
-      if (media.kind === 'audio') output.append(el('p', '音訊流程示意：以下為預製文字內容，本展示不合成或播放人聲。', 'demo-transcript-label'));
+      const tracks = Array.isArray(media.audio_tracks) ? media.audio_tracks : media.audio ? [typeof media.audio === 'string' ? {src: media.audio} : media.audio] : [];
+      const audioList = el('div', '', 'demo-audio-list');
+      tracks.forEach((track, index) => {
+        const src = localAsset(track?.src); if (!src) return;
+        const item = el('section', '', 'demo-audio-track');
+        const title = text(track.title) || `聲音範例 ${index + 1}`, titleEn = text(track.title_en) || text(track.title) || `Voice example ${index + 1}`;
+        item.append(copy(el('h5'), title, titleEn));
+        if (track.style) item.append(copy(el('p', '', 'demo-audio-style'), text(track.style), text(track.style_en || track.style)));
+        const audio = el('audio'); audio.controls = true; audio.preload = 'metadata'; audio.src = src;
+        attribute(audio, 'aria-label', title, titleEn);
+        audio.addEventListener('play', () => root.querySelectorAll('audio,video').forEach(other => {if (other !== audio) other.pause();}));
+        item.append(audio);
+        if (track.transcript) {
+          const transcript = el('details', '', 'demo-audio-transcript');
+          transcript.append(copy(el('summary'), '逐字稿', 'Transcript'), copy(el('p', '', 'demo-result-text'), text(track.transcript), text(track.transcript_en || track.transcript)));
+          item.append(transcript);
+        }
+        audioList.append(item);
+      });
+      if (audioList.childElementCount) output.append(audioList);
       if (media.text) output.append(copy(el('p', '', 'demo-result-text'), text(media.text), text(media.text_en || media.text)));
-      if (!images.length && !media.text && !localAsset(media.video?.src || media.src)) output.append(el('p', '此範例尚未附上可展示的素材。'));
-      output.append(copy(el('p', '', 'explorer-evidence'), '修改文字或預覽自己的檔案不會改變這份記錄的成果。', 'Editing text or previewing your files does not change this recorded result.')); output.hidden = false;
+      if (!images.length && !media.text && !audioList.childElementCount && !localAsset(media.video?.src || media.src)) output.append(el('p', '此範例尚未附上可展示的素材。'));
+      output.append(prepared ? copy(el('p', '', 'explorer-evidence'), '修改輸入或選擇自己的檔案不會改變這份預製範例；播放不會執行模型。', 'Editing inputs or selecting your files does not change this prepared example; playback does not run a model.') : copy(el('p', '', 'explorer-evidence'), '修改文字或預覽自己的檔案不會改變這份記錄的成果。', 'Editing text or previewing your files does not change this recorded result.')); output.hidden = false;
     }
     function reset() {cancel(); releaseCharacter(); lastCharacter = {}; root.hidden = Boolean(options.inline); run.disabled = false; replay.hidden = true; output.hidden = true; output.replaceChildren(); echo.hidden = true; verified ? copy(state, '可開啟已完成的 GPU 實測記錄。', 'Ready to open the recorded GPU result.') : character ? copy(state, '填妥表單後即可建立示範角色卡。', 'Complete the form to create a demo character card.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '等待播放預製範例。'); setProgress(0); stageNodes.forEach(node => node.classList.remove('active')); root.dataset.state = 'idle';}
     function start(prompt = input.value, characterValues = {}) {

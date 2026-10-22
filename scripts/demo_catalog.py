@@ -1,13 +1,14 @@
 """Bilingual forms with recorded GPU results, never browser-side model execution.
 
-Only reviewed, provenance-bound runs can attach results. Other features retain
-workflow explanations but explicitly show that no recorded result is available.
+Recorded results require provenance-bound runs. Other features offer explicitly
+labeled prepared interface examples whose media retains its true source.
 """
 from __future__ import annotations
 
 from copy import deepcopy
 
 from scripts.recorded_demo_catalog import RECORDED_DEMOS
+from scripts.prepared_demo_catalog import PREPARED_DEMOS
 
 NOTE = '模擬展示：預先準備的插圖／文案，不會依輸入即時生成，也不是所列模型的實測或品質保證。'
 NOTE_EN = 'Simulation: prepared illustrations or copy, not generated from your input and not a benchmark or quality claim for the listed models.'
@@ -135,8 +136,10 @@ def demos(app_catalog):
         'steps': ['確認範例名字與參考照片，或填入自己的角色資料。', '模擬建立角色，加入此分頁的角色列表與素材工作區。', '查看不同的預製換裝、肖像與影片案例，或回角色列表繼續操作。'],
         'steps_en': ['Review the example name and photo, or enter your own character details.', 'Simulate creation and add the character to this tab’s list and media workspace.', 'Explore distinct prerecorded outfit, portrait and video examples, or return to the character list.'],
     }
-    for identifier, recorded in RECORDED_DEMOS.items():
+    for identifier, recorded in {**PREPARED_DEMOS, **RECORDED_DEMOS}.items():
         if identifier not in result:
             raise ValueError('Recorded example does not match an app feature')
         result[identifier].update(deepcopy(recorded))
+    if any(row['output']['kind'] == 'unavailable' for row in result.values()):
+        raise ValueError('Every public tool needs a recorded result or an explicitly labeled prepared example')
     return result

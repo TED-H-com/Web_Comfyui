@@ -32,7 +32,7 @@ def test_default_only_describes_without_network_or_disk_changes(monkeypatch, cap
     assert 'Validated only' in capsys.readouterr().out
 
 
-@pytest.mark.parametrize('node_type,field', [('LoadImage', 'image'), ('VHS_LoadVideo', 'video')])
+@pytest.mark.parametrize('node_type,field', [('LoadImage', 'image'), ('LoadAudio', 'audio'), ('VHS_LoadVideo', 'video')])
 def test_rewrites_only_recorded_inputs_and_refuses_overwrite(tmp_path, monkeypatch, node_type, field):
     examples = tmp_path / 'examples'
     examples.mkdir()
@@ -97,6 +97,16 @@ def test_every_committed_record_validates_without_submission(monkeypatch):
     assert ledger['runs']
     for run in ledger['runs']:
         assert replay.main([run['id']]) == 0
+
+
+def test_recorded_lipsync_can_prepare_both_video_and_synthetic_audio(tmp_path):
+    run, graph = replay.load_record('cheer-lipsync-v1')
+    inputs = tmp_path / 'input'
+    inputs.mkdir()
+    prepared = replay.prepare_inputs(run, graph, inputs)
+    assert prepared['1']['inputs']['video'] == 'web-demo-replay/cheer-wave.mp4'
+    assert prepared['2']['inputs']['audio'] == 'web-demo-replay/warm-welcome.wav'
+    assert len(list((inputs / 'web-demo-replay').iterdir())) == 2
 
 
 def test_rehashed_graph_with_unreviewed_node_is_rejected(tmp_path):

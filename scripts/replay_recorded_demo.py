@@ -32,6 +32,7 @@ GetImageSize IPAdapterAdvanced IPAdapterModelLoader InstantIDFaceAnalysis
 InstantIDModelLoader KSampler LoadImage LoraLoaderModelOnly ModelSamplingSD3
 ReferenceLatent ResizeImageMaskNode SAM3_VideoTrack SAM3_Detect ThresholdMask
 ImageCompositeMasked MaskToImage SCAIL2ColoredMask SaveImage
+LoadAudio ReActorFaceSwap Wav2Lip VHS_VideoInfo WanFirstLastFrameToVideo
 UNETLoader VAEDecode VAEEncode VAELoader VHS_LoadVideo VHS_LoadVideoPath
 VHS_VideoCombine WanContextWindowsManual WanImageToVideo WanSCAILToVideo
 '''.split())
@@ -107,7 +108,7 @@ def prepare_inputs(run: dict, graph: dict, input_dir: Path,
         if not isinstance(node, dict) or not isinstance(node.get('inputs'), dict) or not node.get('class_type'):
             raise ValueError('Invalid ComfyUI API node')
         cls = node['class_type']
-        field = {'LoadImage': 'image', 'VHS_LoadVideo': 'video', 'VHS_LoadVideoPath': 'video'}.get(cls)
+        field = {'LoadImage': 'image', 'LoadAudio': 'audio', 'VHS_LoadVideo': 'video', 'VHS_LoadVideoPath': 'video'}.get(cls)
         if field:
             value = node['inputs'].get(field)
             if value not in mapping:

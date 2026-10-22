@@ -67,4 +67,12 @@
 .demo-workflow-label { color:var(--muted); font-size:var(--text-xs); margin-bottom:var(--space-2); }
 
 .demo-progress-label { color: var(--muted); margin-bottom: var(--space-2); }
-.demo-reduced-motion .demo-progress span { transition: none; }
+.demo-reduced-motion .demo-progress span, .app-demo[data-state="complete"] .demo-progress span { transition: none; }
+
+.demo-audio-list { display: grid; gap: var(--space-3); }
+.demo-audio-track { min-width: 0; padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
+.demo-audio-track h5 { font-size: var(--text-sm); margin: 0 0 var(--space-2); }
+.demo-audio-style { color: var(--muted); margin: 0 0 var(--space-2); }
+.demo-audio-track audio { display: block; width: 100%; max-width: 480px; }
+.demo-audio-transcript { margin-top: var(--space-2); }
+.demo-audio-transcript summary { cursor: pointer; min-height: var(--tap-min); padding: var(--space-3) 0; }

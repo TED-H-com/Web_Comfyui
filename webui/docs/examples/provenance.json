@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "purpose": "Reviewed original references and real precomputed ComfyUI outputs for static documentation. Only runs marked success establish an executed example; no browser model execution.",
-  "source_policy": "All new people are fictional adults generated for this project. No private character/user media, third-party dance footage, music, credentials, account records or model weights are published. Model software/weight licenses remain separate from these example records.",
+  "source_policy": "Original fictional adult image/video and synthetic adult voice examples only. No private recordings, characters, accounts, credentials, third-party dance footage, music or model weights. Exact model/software licenses remain separate.",
   "assets": [
     {
       "file": "mountain-teahouse.webp",
@@ -294,6 +294,282 @@
       "source": "Actual local ComfyUI GPU output from cheer-subject-blend-v4",
       "tool": "ComfyUI + Pillow",
       "run_id": "cheer-subject-blend-v4"
+    },
+    {
+      "file": "cheer-wave-start.webp",
+      "kind": "image",
+      "sha256": "616b6d3dbbf10512809b47c89a1e51af85a9dbcf34d2641b59d4d1b8de6fbcf5",
+      "bytes": 226332,
+      "source": "Frame extracted from the published original generated waving clip.",
+      "tool": "ffmpeg + Pillow",
+      "width": 480,
+      "height": 720,
+      "derived_from": [
+        "cheer-wave.mp4"
+      ],
+      "frame_index": 0,
+      "metadata_policy": "Lossless RGB WebP with no EXIF or text metadata."
+    },
+    {
+      "file": "cheer-wave-end.webp",
+      "kind": "image",
+      "sha256": "52a69e6dcb92c6c37edceb799600c3fda81445a71405483335add04a9874094f",
+      "bytes": 209912,
+      "source": "Frame extracted from the published original generated waving clip.",
+      "tool": "ffmpeg + Pillow",
+      "width": 480,
+      "height": 720,
+      "derived_from": [
+        "cheer-wave.mp4"
+      ],
+      "frame_index": 80,
+      "metadata_policy": "Lossless RGB WebP with no EXIF or text metadata."
+    },
+    {
+      "file": "warm-welcome.wav",
+      "kind": "audio",
+      "sha256": "403f56833e254fef82fa88bf0062bff4ac19ab71619942838caa5da52282e977",
+      "bytes": 537644,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-warm-welcome",
+      "duration_seconds": 5.6,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "game-cheer.wav",
+      "kind": "audio",
+      "sha256": "bf8af7f6ce6d9bc42e0304749fdf96e2a56aeb13f6d2c2e5fdf54f7af388e6ab",
+      "bytes": 721964,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-game-cheer",
+      "duration_seconds": 7.52,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "gentle-story.wav",
+      "kind": "audio",
+      "sha256": "2b801fbe1fccee46069cfdd5abb8c7319aca444ad6e346363554444da5ae3b15",
+      "bytes": 906284,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-gentle-story",
+      "duration_seconds": 9.44,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "mature-announcement.wav",
+      "kind": "audio",
+      "sha256": "8e656e697584b91fb6114558e445daa2bcdeb9f3bc4609013351bfea898945f2",
+      "bytes": 752684,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-mature-announcement",
+      "duration_seconds": 7.84,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "slide-one.wav",
+      "kind": "audio",
+      "sha256": "fb981a8fa554205e3434df7541fb1b6fadf0c196d26ca2c9afba8c0a38ddf106",
+      "bytes": 752684,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-slide-one",
+      "duration_seconds": 7.84,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "slide-two.wav",
+      "kind": "audio",
+      "sha256": "4b77593c82889f7130e4bb0653ba1da0c21b0841831fe289d2ba3c7284072643",
+      "bytes": 921644,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-slide-two",
+      "duration_seconds": 9.6,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "slide-three.wav",
+      "kind": "audio",
+      "sha256": "19dd88066062f9cc26a8219c7b7f7f3cd4e748575612c8ac93930e0ab5209963",
+      "bytes": 814124,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-slide-three",
+      "duration_seconds": 8.48,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "english-welcome.wav",
+      "kind": "audio",
+      "sha256": "5aa1c3c46ab71e9054f46086ca900584cff332197976f42f2b20017a4ca67fee",
+      "bytes": 783404,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-english-welcome",
+      "duration_seconds": 8.16,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "synthetic-clone.wav",
+      "kind": "audio",
+      "sha256": "91c9bccfcdef34fbfa359135aa2b05de51b29c9f1352046e9f2cb5d467a4f04a",
+      "bytes": 537644,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-synthetic-clone",
+      "duration_seconds": 5.6,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "cheer-face-swap.mp4",
+      "kind": "video",
+      "sha256": "217c3ea255248daebb2c9b594db6861849eb47e8078f2780b91b0f9300259c8e",
+      "bytes": 924487,
+      "source": "Actual local ComfyUI output from cheer-face-swap-v1",
+      "tool": "ComfyUI + ffmpeg",
+      "source_sha256": "ad64836147db2fe8321127e887b797ef584171ab25c29e22d34a8868a3f0f824",
+      "run_id": "cheer-face-swap-v1",
+      "width": 480,
+      "height": 720,
+      "duration_seconds": 4.0,
+      "has_audio": false,
+      "metadata_policy": "MP4 stream copy, private container metadata removed, faststart enabled."
+    },
+    {
+      "file": "cheer-face-swap-poster.webp",
+      "kind": "image",
+      "sha256": "4b03bf1cbb02bd72919c5c9b4aa763fb9271dfedd571928d05bd8a1d950272f8",
+      "bytes": 231358,
+      "source": "Frame extracted from the actual published cheer-face-swap.mp4",
+      "tool": "ffmpeg + Pillow",
+      "width": 480,
+      "height": 720,
+      "derived_from": [
+        "cheer-face-swap.mp4"
+      ],
+      "metadata_policy": "Lossless RGB WebP with no EXIF or text metadata."
+    },
+    {
+      "file": "cheer-lipsync.mp4",
+      "kind": "video",
+      "sha256": "470d2a4ab2becd251678014bc0d0d4ba04b452a4ca45d58a67902e397349d333",
+      "bytes": 2040513,
+      "source": "Actual local ComfyUI output from cheer-lipsync-v1",
+      "tool": "ComfyUI + ffmpeg",
+      "source_sha256": "615afc1562e7d2c601df779c2737b6fc497f0fd5954335442a2f4d79e708ad1e",
+      "run_id": "cheer-lipsync-v1",
+      "width": 480,
+      "height": 720,
+      "duration_seconds": 5.466667,
+      "has_audio": true,
+      "metadata_policy": "MP4 stream copy, private container metadata removed, faststart enabled."
+    },
+    {
+      "file": "cheer-lipsync-poster.webp",
+      "kind": "image",
+      "sha256": "b660054d5a30e180f8235393935bfc5831df4f7e09e8e87b251a177c93e730a1",
+      "bytes": 207736,
+      "source": "Frame extracted from the actual published cheer-lipsync.mp4",
+      "tool": "ffmpeg + Pillow",
+      "width": 480,
+      "height": 720,
+      "derived_from": [
+        "cheer-lipsync.mp4"
+      ],
+      "metadata_policy": "Lossless RGB WebP with no EXIF or text metadata."
+    },
+    {
+      "file": "cheer-loop.mp4",
+      "kind": "video",
+      "sha256": "bc34dcaf852c5d551986d67697d6b207d2fc1e6302fbe7525fe5a334b413877c",
+      "bytes": 7334501,
+      "source": "Actual local ComfyUI output from cheer-loop-v1",
+      "tool": "ComfyUI + ffmpeg",
+      "source_sha256": "8e5e96e059123b3ed78c034343ca368652cb5d7c2963bcc2a2f670c6b3375651",
+      "run_id": "cheer-loop-v1",
+      "width": 480,
+      "height": 720,
+      "duration_seconds": 30.0,
+      "has_audio": false,
+      "metadata_policy": "MP4 stream copy, private container metadata removed, faststart enabled."
+    },
+    {
+      "file": "cheer-loop-poster.webp",
+      "kind": "image",
+      "sha256": "0e51b6dd03652fa2d9a176535dfcecfded4ef58ea2fe76218fb8cf0a9dbce890",
+      "bytes": 235682,
+      "source": "Frame extracted from the actual published cheer-loop.mp4",
+      "tool": "ffmpeg + Pillow",
+      "width": 480,
+      "height": 720,
+      "derived_from": [
+        "cheer-loop.mp4"
+      ],
+      "metadata_policy": "Lossless RGB WebP with no EXIF or text metadata."
+    },
+    {
+      "file": "cheer-flf.mp4",
+      "kind": "video",
+      "sha256": "98e54fc845971303a33775c42e2ee8e6ce3af31c9a72b8a8659baa91a1ed94d2",
+      "bytes": 1237543,
+      "source": "Actual local ComfyUI output from cheer-flf-v1",
+      "tool": "ComfyUI + ffmpeg",
+      "source_sha256": "686f9c381419a1fef017ec0dba7ffe6474c11e7778ae9d57488423c16c16832d",
+      "run_id": "cheer-flf-v1",
+      "width": 480,
+      "height": 720,
+      "duration_seconds": 5.0625,
+      "has_audio": false,
+      "metadata_policy": "MP4 stream copy, private container metadata removed, faststart enabled."
+    },
+    {
+      "file": "cheer-flf-poster.webp",
+      "kind": "image",
+      "sha256": "2e377867b2fb19b2f2dd891a89943fd990e0cdc2b5873726003bbcd8fad691e8",
+      "bytes": 233928,
+      "source": "Frame extracted from the actual published cheer-flf.mp4",
+      "tool": "ffmpeg + Pillow",
+      "width": 480,
+      "height": 720,
+      "derived_from": [
+        "cheer-flf.mp4"
+      ],
+      "metadata_policy": "Lossless RGB WebP with no EXIF or text metadata."
+    },
+    {
+      "file": "cheer-anime.webp",
+      "kind": "image",
+      "sha256": "b2fbb67f3b3a19bf66b032f7932db5b8c6817b0ae15e7b3fe05c8a524dc9085b",
+      "bytes": 830518,
+      "source": "Actual local ComfyUI output from cheer-anime-v1",
+      "tool": "ComfyUI + Pillow",
+      "source_sha256": "6ef443211b970c8736e29477396520b2518ecedf901742ae9acd9e01ea187634",
+      "run_id": "cheer-anime-v1",
+      "width": 832,
+      "height": 1216,
+      "metadata_policy": "Lossless RGB WebP with no EXIF or text metadata."
     }
   ],
   "runs": [
@@ -2118,6 +2394,1193 @@
         ],
         "max_face_channel_difference": 1,
         "background_changed": true
+      }
+    },
+    {
+      "id": "cheer-face-swap-v1",
+      "feature_id": "face-swap",
+      "status": "success",
+      "executed_at": "2026-10-22T21:17:16.127000+00:00",
+      "duration_seconds": 65.052,
+      "device": "NVIDIA GeForce RTX 5090 (32 GB)",
+      "comfyui_version": "0.37.0",
+      "inputs": [
+        {
+          "file": "cheer-wave.mp4",
+          "sha256": "6e9a2b8d9909c9ed3df9afcf21095ed84d1cfcf72833219a32b4c6bbf5da1472",
+          "slot": "video",
+          "graph_name": "web-demo-cheer-wave.mp4"
+        },
+        {
+          "file": "cheer-instantid-2.webp",
+          "sha256": "907e5732be01e077f7ef31a4c9a1d455f2066b1616e56fdb3aff4c4884b68ef2",
+          "slot": "face",
+          "graph_name": "web-demo-cheer-instantid-2.webp"
+        }
+      ],
+      "outputs": [
+        {
+          "file": "cheer-face-swap.mp4",
+          "sha256": "ad64836147db2fe8321127e887b797ef584171ab25c29e22d34a8868a3f0f824",
+          "kind": "gifs"
+        }
+      ],
+      "settings": {
+        "fps": 12,
+        "maxFrames": 48,
+        "restore": "none",
+        "detection": "retinaface_resnet50",
+        "prefix": "public-web-demo/cheer-face-swap-v1"
+      },
+      "workflow": {
+        "graph": {
+          "1": {
+            "class_type": "VHS_LoadVideo",
+            "inputs": {
+              "video": "web-demo-cheer-wave.mp4",
+              "force_rate": 12.0,
+              "custom_width": 0,
+              "custom_height": 0,
+              "frame_load_cap": 48,
+              "skip_first_frames": 0,
+              "select_every_nth": 1
+            }
+          },
+          "2": {
+            "class_type": "LoadImage",
+            "inputs": {
+              "image": "web-demo-cheer-instantid-2.webp"
+            }
+          },
+          "3": {
+            "class_type": "ReActorFaceSwap",
+            "inputs": {
+              "enabled": true,
+              "input_image": [
+                "1",
+                0
+              ],
+              "source_image": [
+                "2",
+                0
+              ],
+              "swap_model": "inswapper_128.onnx",
+              "facedetection": "retinaface_resnet50",
+              "face_restore_model": "none",
+              "face_restore_visibility": 1.0,
+              "codeformer_weight": 0.5,
+              "detect_gender_input": "no",
+              "detect_gender_source": "no",
+              "input_faces_index": "0",
+              "source_faces_index": "0",
+              "console_log_level": 1
+            }
+          },
+          "4": {
+            "class_type": "VHS_VideoCombine",
+            "inputs": {
+              "images": [
+                "3",
+                0
+              ],
+              "frame_rate": 12,
+              "loop_count": 0,
+              "filename_prefix": "public-web-demo/cheer-face-swap-v1",
+              "format": "video/h264-mp4",
+              "pingpong": false,
+              "save_output": true
+            }
+          }
+        },
+        "sha256": "849a1d4fad64bdec5138ac35f6874a37e3b5f399631ff2edc169bc53631280d0"
+      },
+      "builder": "face_swap_prompt",
+      "builder_source": "webui/server.py",
+      "adjustments": [
+        "Use the uploaded-file VHS_LoadVideo node instead of an absolute-path loader so the recorded graph is portable.",
+        "Save the actual ReActor frames as H.264 MP4 rather than the application default animated WebP."
+      ]
+    },
+    {
+      "id": "cheer-lipsync-v1",
+      "feature_id": "lipsync",
+      "status": "success",
+      "executed_at": "2026-10-22T21:18:29.022000+00:00",
+      "duration_seconds": 5.797,
+      "device": "NVIDIA GeForce RTX 5090 (32 GB)",
+      "comfyui_version": "0.37.0",
+      "inputs": [
+        {
+          "file": "cheer-wave.mp4",
+          "sha256": "6e9a2b8d9909c9ed3df9afcf21095ed84d1cfcf72833219a32b4c6bbf5da1472",
+          "slot": "video",
+          "graph_name": "web-demo-cheer-wave.mp4"
+        },
+        {
+          "file": "warm-welcome.wav",
+          "sha256": "403f56833e254fef82fa88bf0062bff4ac19ab71619942838caa5da52282e977",
+          "slot": "voice",
+          "graph_name": "web-demo-warm-welcome.wav"
+        }
+      ],
+      "outputs": [
+        {
+          "file": "cheer-lipsync.mp4",
+          "sha256": "615afc1562e7d2c601df779c2737b6fc497f0fd5954335442a2f4d79e708ad1e",
+          "kind": "gifs"
+        }
+      ],
+      "settings": {
+        "mode": "repetitive",
+        "maxFrames": 81,
+        "faceBatch": 4,
+        "prefix": "public-web-demo/cheer-lipsync-v1"
+      },
+      "workflow": {
+        "graph": {
+          "1": {
+            "class_type": "VHS_LoadVideo",
+            "inputs": {
+              "video": "web-demo-cheer-wave.mp4",
+              "force_rate": 0.0,
+              "custom_width": 0,
+              "custom_height": 0,
+              "frame_load_cap": 81,
+              "skip_first_frames": 0,
+              "select_every_nth": 1
+            }
+          },
+          "2": {
+            "class_type": "LoadAudio",
+            "inputs": {
+              "audio": "web-demo-warm-welcome.wav"
+            }
+          },
+          "3": {
+            "class_type": "Wav2Lip",
+            "inputs": {
+              "images": [
+                "1",
+                0
+              ],
+              "mode": "repetitive",
+              "face_detect_batch": 4,
+              "audio": [
+                "2",
+                0
+              ]
+            }
+          },
+          "4": {
+            "class_type": "VHS_VideoCombine",
+            "inputs": {
+              "images": [
+                "3",
+                0
+              ],
+              "frame_rate": 30.0,
+              "loop_count": 0,
+              "filename_prefix": "public-web-demo/cheer-lipsync-v1",
+              "format": "video/h264-mp4",
+              "pingpong": false,
+              "save_output": true,
+              "audio": [
+                "3",
+                1
+              ]
+            }
+          }
+        },
+        "sha256": "a20ec374729414979ac8be526aeb45c26fcce42732c21fae2de86a10a558c9e4"
+      },
+      "builder": "lipsync_prompt",
+      "builder_source": "webui/server.py",
+      "adjustments": [
+        "Use the uploaded-file VHS_LoadVideo node instead of an absolute-path loader so the recorded graph is portable."
+      ]
+    },
+    {
+      "id": "cheer-loop-v1",
+      "feature_id": "video-loop",
+      "status": "success",
+      "executed_at": "2026-10-22T21:18:35.411000+00:00",
+      "duration_seconds": 1.312,
+      "device": "CPU media processing on a ComfyUI host; no diffusion or GPU inference required",
+      "comfyui_version": "0.37.0",
+      "inputs": [
+        {
+          "file": "cheer-wave.mp4",
+          "sha256": "6e9a2b8d9909c9ed3df9afcf21095ed84d1cfcf72833219a32b4c6bbf5da1472",
+          "slot": "video",
+          "graph_name": "web-demo-cheer-wave.mp4"
+        }
+      ],
+      "outputs": [
+        {
+          "file": "cheer-loop.mp4",
+          "sha256": "8e5e96e059123b3ed78c034343ca368652cb5d7c2963bcc2a2f670c6b3375651",
+          "kind": "gifs"
+        }
+      ],
+      "settings": {
+        "repeat": 2,
+        "pingpong": true,
+        "maxFrames": 81,
+        "prefix": "public-web-demo/cheer-loop-v1"
+      },
+      "workflow": {
+        "graph": {
+          "1": {
+            "class_type": "VHS_LoadVideo",
+            "inputs": {
+              "video": "web-demo-cheer-wave.mp4",
+              "force_rate": 0.0,
+              "custom_width": 0,
+              "custom_height": 0,
+              "frame_load_cap": 81,
+              "skip_first_frames": 0,
+              "select_every_nth": 1
+            }
+          },
+          "2": {
+            "class_type": "VHS_VideoInfo",
+            "inputs": {
+              "video_info": [
+                "1",
+                3
+              ]
+            }
+          },
+          "3": {
+            "class_type": "VHS_VideoCombine",
+            "inputs": {
+              "images": [
+                "1",
+                0
+              ],
+              "frame_rate": [
+                "2",
+                5
+              ],
+              "loop_count": 2,
+              "filename_prefix": "public-web-demo/cheer-loop-v1",
+              "format": "video/h264-mp4",
+              "pingpong": true,
+              "save_output": true
+            }
+          }
+        },
+        "sha256": "f853329abdef4580392f2bb33cc62fe74fd6d5845f1e4e8eaac7885d656aefcd"
+      },
+      "builder": "video_loop_prompt",
+      "builder_source": "webui/server.py",
+      "adjustments": [
+        "Use the uploaded-file VHS_LoadVideo node instead of an absolute-path loader so the recorded graph is portable."
+      ]
+    },
+    {
+      "id": "cheer-flf-v1",
+      "feature_id": "first-last-frame",
+      "status": "success",
+      "executed_at": "2026-10-22T21:19:40.633000+00:00",
+      "duration_seconds": 61.72,
+      "device": "NVIDIA GeForce RTX 5090 (32 GB)",
+      "comfyui_version": "0.37.0",
+      "inputs": [
+        {
+          "file": "cheer-wave-start.webp",
+          "sha256": "616b6d3dbbf10512809b47c89a1e51af85a9dbcf34d2641b59d4d1b8de6fbcf5",
+          "slot": "start",
+          "graph_name": "web-demo-cheer-wave-start.webp"
+        },
+        {
+          "file": "cheer-wave-end.webp",
+          "sha256": "52a69e6dcb92c6c37edceb799600c3fda81445a71405483335add04a9874094f",
+          "slot": "end",
+          "graph_name": "web-demo-cheer-wave-end.webp"
+        }
+      ],
+      "outputs": [
+        {
+          "file": "cheer-flf.mp4",
+          "sha256": "686f9c381419a1fef017ec0dba7ffe6474c11e7778ae9d57488423c16c16832d",
+          "kind": "gifs"
+        }
+      ],
+      "settings": {
+        "positive": "A fictional adult Taiwanese woman smiles at the camera and gently raises her right hand to wave hello. Natural friendly motion, consistent face and original teal and white baseball jersey, stationary camera, full body, smooth transition between the provided starting and ending poses.",
+        "negative": "distorted face, extra limbs, blurry, text, logo, sudden cut",
+        "width": 480,
+        "height": 720,
+        "length": 81,
+        "fps": 16,
+        "steps": 6,
+        "cfg": 1,
+        "shift": 8,
+        "loraStrength": 1,
+        "seed": 2026102401,
+        "prefix": "public-web-demo/cheer-flf-v1"
+      },
+      "workflow": {
+        "graph": {
+          "1": {
+            "class_type": "UNETLoader",
+            "inputs": {
+              "unet_name": "wan2.1_i2v_480p_14B_fp8_scaled.safetensors",
+              "weight_dtype": "default"
+            }
+          },
+          "2": {
+            "class_type": "LoraLoaderModelOnly",
+            "inputs": {
+              "model": [
+                "1",
+                0
+              ],
+              "lora_name": "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
+              "strength_model": 1.0
+            }
+          },
+          "3": {
+            "class_type": "ModelSamplingSD3",
+            "inputs": {
+              "model": [
+                "2",
+                0
+              ],
+              "shift": 8.0
+            }
+          },
+          "4": {
+            "class_type": "CLIPLoader",
+            "inputs": {
+              "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+              "type": "wan",
+              "device": "default"
+            }
+          },
+          "5": {
+            "class_type": "VAELoader",
+            "inputs": {
+              "vae_name": "wan_2.1_vae.safetensors"
+            }
+          },
+          "6": {
+            "class_type": "CLIPVisionLoader",
+            "inputs": {
+              "clip_name": "clip_vision_h.safetensors"
+            }
+          },
+          "7": {
+            "class_type": "LoadImage",
+            "inputs": {
+              "image": "web-demo-cheer-wave-start.webp"
+            }
+          },
+          "8": {
+            "class_type": "LoadImage",
+            "inputs": {
+              "image": "web-demo-cheer-wave-end.webp"
+            }
+          },
+          "9": {
+            "class_type": "CLIPVisionEncode",
+            "inputs": {
+              "clip_vision": [
+                "6",
+                0
+              ],
+              "image": [
+                "7",
+                0
+              ],
+              "crop": "center"
+            }
+          },
+          "10": {
+            "class_type": "CLIPVisionEncode",
+            "inputs": {
+              "clip_vision": [
+                "6",
+                0
+              ],
+              "image": [
+                "8",
+                0
+              ],
+              "crop": "center"
+            }
+          },
+          "11": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "A fictional adult Taiwanese woman smiles at the camera and gently raises her right hand to wave hello. Natural friendly motion, consistent face and original teal and white baseball jersey, stationary camera, full body, smooth transition between the provided starting and ending poses.",
+              "clip": [
+                "4",
+                0
+              ]
+            }
+          },
+          "12": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "distorted face, extra limbs, blurry, text, logo, sudden cut",
+              "clip": [
+                "4",
+                0
+              ]
+            }
+          },
+          "13": {
+            "class_type": "WanFirstLastFrameToVideo",
+            "inputs": {
+              "positive": [
+                "11",
+                0
+              ],
+              "negative": [
+                "12",
+                0
+              ],
+              "vae": [
+                "5",
+                0
+              ],
+              "width": 480,
+              "height": 720,
+              "length": 81,
+              "batch_size": 1,
+              "clip_vision_start_image": [
+                "9",
+                0
+              ],
+              "clip_vision_end_image": [
+                "10",
+                0
+              ],
+              "start_image": [
+                "7",
+                0
+              ],
+              "end_image": [
+                "8",
+                0
+              ]
+            }
+          },
+          "14": {
+            "class_type": "KSampler",
+            "inputs": {
+              "model": [
+                "3",
+                0
+              ],
+              "seed": 2026102401,
+              "steps": 6,
+              "cfg": 1.0,
+              "sampler_name": "euler",
+              "scheduler": "simple",
+              "positive": [
+                "13",
+                0
+              ],
+              "negative": [
+                "13",
+                1
+              ],
+              "latent_image": [
+                "13",
+                2
+              ],
+              "denoise": 1.0
+            }
+          },
+          "15": {
+            "class_type": "VAEDecode",
+            "inputs": {
+              "samples": [
+                "14",
+                0
+              ],
+              "vae": [
+                "5",
+                0
+              ]
+            }
+          },
+          "16": {
+            "class_type": "VHS_VideoCombine",
+            "inputs": {
+              "images": [
+                "15",
+                0
+              ],
+              "frame_rate": 16,
+              "loop_count": 0,
+              "filename_prefix": "public-web-demo/cheer-flf-v1",
+              "format": "video/h264-mp4",
+              "pingpong": false,
+              "save_output": true
+            }
+          }
+        },
+        "sha256": "6c13d5a20f0c3dbe8a4aad1b6ba315f096002807c068182cd5498eb64eeca2dd"
+      },
+      "builder": "wan_flf_prompt",
+      "builder_source": "webui/server.py",
+      "adjustments": [
+        "Use the installed Wan2.1 I2V 480p checkpoint instead of the application default SCAIL checkpoint; this is a recorded first/last-frame variant, not validation of the SCAIL default.",
+        "Save the actual frames as H.264 MP4 rather than animated WebP."
+      ]
+    },
+    {
+      "id": "cheer-anime-v1",
+      "feature_id": "text2img",
+      "status": "success",
+      "executed_at": "2026-10-22T21:21:26.557000+00:00",
+      "duration_seconds": 9.325,
+      "device": "NVIDIA GeForce RTX 5090 (32 GB)",
+      "comfyui_version": "0.37.0",
+      "inputs": [],
+      "outputs": [
+        {
+          "file": "cheer-anime.webp",
+          "sha256": "6ef443211b970c8736e29477396520b2518ecedf901742ae9acd9e01ea187634",
+          "kind": "images"
+        }
+      ],
+      "settings": {
+        "positive": "Polished Japanese anime character key visual, a wholly fictional adult Taiwanese woman age 26, friendly confident smile, long dark ponytail, original teal and white baseball jersey with modest white sports shorts, full body natural standing pose and white sneakers, empty baseball field and stadium in sunny weather, crisp clean illustration linework, expressive adult face, detailed cel shading, cheerful turquoise warm cream palette, editorial character card composition. No team logos, no lettering, no watermark.",
+        "negative": "child, teen, text, watermark, logo, photorealistic, deformed hands, extra limbs",
+        "width": 832,
+        "height": 1216,
+        "steps": 9,
+        "seed": 2026102402,
+        "batchSize": 1,
+        "prefix": "public-web-demo/cheer-anime-v1"
+      },
+      "workflow": {
+        "graph": {
+          "1": {
+            "class_type": "UNETLoader",
+            "inputs": {
+              "unet_name": "z_image_turbo_bf16.safetensors",
+              "weight_dtype": "default"
+            }
+          },
+          "2": {
+            "class_type": "CLIPLoader",
+            "inputs": {
+              "clip_name": "qwen_3_4b.safetensors",
+              "type": "lumina2",
+              "device": "default"
+            }
+          },
+          "3": {
+            "class_type": "VAELoader",
+            "inputs": {
+              "vae_name": "ae.safetensors"
+            }
+          },
+          "4": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "Polished Japanese anime character key visual, a wholly fictional adult Taiwanese woman age 26, friendly confident smile, long dark ponytail, original teal and white baseball jersey with modest white sports shorts, full body natural standing pose and white sneakers, empty baseball field and stadium in sunny weather, crisp clean illustration linework, expressive adult face, detailed cel shading, cheerful turquoise warm cream palette, editorial character card composition. No team logos, no lettering, no watermark.",
+              "clip": [
+                "2",
+                0
+              ]
+            }
+          },
+          "5": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "child, teen, text, watermark, logo, photorealistic, deformed hands, extra limbs",
+              "clip": [
+                "2",
+                0
+              ]
+            }
+          },
+          "6": {
+            "class_type": "EmptySD3LatentImage",
+            "inputs": {
+              "width": 832,
+              "height": 1216,
+              "batch_size": 1
+            }
+          },
+          "7": {
+            "class_type": "KSampler",
+            "inputs": {
+              "model": [
+                "1",
+                0
+              ],
+              "seed": 2026102402,
+              "steps": 9,
+              "cfg": 1.0,
+              "sampler_name": "res_multistep",
+              "scheduler": "simple",
+              "positive": [
+                "4",
+                0
+              ],
+              "negative": [
+                "5",
+                0
+              ],
+              "latent_image": [
+                "6",
+                0
+              ],
+              "denoise": 1.0
+            }
+          },
+          "9": {
+            "class_type": "VAEDecode",
+            "inputs": {
+              "samples": [
+                "7",
+                0
+              ],
+              "vae": [
+                "3",
+                0
+              ]
+            }
+          },
+          "12": {
+            "class_type": "SaveImage",
+            "inputs": {
+              "images": [
+                "9",
+                0
+              ],
+              "filename_prefix": "public-web-demo/cheer-anime-v1"
+            }
+          }
+        },
+        "sha256": "8a18eb47f3c139edbfb279fedb5336be86b3be42d7f21b20adc1e09442a32f59"
+      },
+      "builder": "zimage_prompt",
+      "builder_source": "webui/server.py"
+    }
+  ],
+  "audio_runs": [
+    {
+      "id": "voxcpm2-warm-welcome",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "warm-welcome",
+        "label": "溫暖迎賓",
+        "file": "warm-welcome.wav",
+        "text": "嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？",
+        "voice_description": "A warm adult woman in her late twenties, speaking natural Taiwan Mandarin with a friendly smile and clear soft mid-range voice.",
+        "full_prompt": "(A warm adult woman in her late twenties, speaking natural Taiwan Mandarin with a friendly smile and clear soft mid-range voice.)嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？",
+        "seed": 241,
+        "sample_rate": 48000,
+        "duration_seconds": 5.6,
+        "render_seconds": 12.417,
+        "sha256": "403f56833e254fef82fa88bf0062bff4ac19ab71619942838caa5da52282e977",
+        "peak": 0.40581247210502625,
+        "rms": 0.05277109146118164,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design"
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "warm-welcome",
+          "expected": "嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？",
+          "transcription": "嗨 歡迎回來今天也辛苦了準備好一起開始新的小冒險了嗎",
+          "audio_sha256": "403f56833e254fef82fa88bf0062bff4ac19ab71619942838caa5da52282e977",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-game-cheer",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "game-cheer",
+        "label": "元氣遊戲",
+        "file": "game-cheer.wav",
+        "text": "各位玩家，準備好了嗎？倒數三、二、一！一起出發，把今天的精彩任務全部完成吧！",
+        "voice_description": "An energetic adult female game host in her twenties, bright and lively Taiwan Mandarin, cheerful crisp articulation and playful confidence.",
+        "full_prompt": "(An energetic adult female game host in her twenties, bright and lively Taiwan Mandarin, cheerful crisp articulation and playful confidence.)各位玩家，準備好了嗎？倒數三、二、一！一起出發，把今天的精彩任務全部完成吧！",
+        "seed": 763,
+        "sample_rate": 48000,
+        "duration_seconds": 7.52,
+        "render_seconds": 15.812,
+        "sha256": "bf8af7f6ce6d9bc42e0304749fdf96e2a56aeb13f6d2c2e5fdf54f7af388e6ab",
+        "peak": 0.9609442949295044,
+        "rms": 0.12486429512500763,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design"
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "game-cheer",
+          "expected": "各位玩家，準備好了嗎？倒數三、二、一！一起出發，把今天的精彩任務全部完成吧！",
+          "transcription": "各位玩家準備好了嗎倒數 3 2 1 一起出發把今天的精彩任務全部完成吧",
+          "audio_sha256": "bf8af7f6ce6d9bc42e0304749fdf96e2a56aeb13f6d2c2e5fdf54f7af388e6ab",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-gentle-story",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "gentle-story",
+        "label": "溫柔故事",
+        "file": "gentle-story.wav",
+        "text": "溫暖的陽光輕輕落在窗邊。她捧起一杯熱茶，翻開書頁，讓忙碌的心慢慢安靜下來。",
+        "full_prompt": "(An adult woman in her thirties with a soft airy low-volume voice, gentle Taiwan Mandarin storytelling, unhurried and soothing.)溫暖的陽光輕輕落在窗邊。她捧起一杯熱茶，翻開書頁，讓忙碌的心慢慢安靜下來。",
+        "seed": 182,
+        "sample_rate": 48000,
+        "duration_seconds": 9.44,
+        "render_seconds": 23.33,
+        "sha256": "2b801fbe1fccee46069cfdd5abb8c7319aca444ad6e346363554444da5ae3b15",
+        "peak": 0.15051914751529694,
+        "rms": 0.02967144548892975,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_description": "An adult woman in her thirties with a soft airy low-volume voice, gentle Taiwan Mandarin storytelling, unhurried and soothing.",
+        "mode": "text-only voice design"
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "gentle-story",
+          "expected": "溫暖的陽光輕輕落在窗邊。她捧起一杯熱茶，翻開書頁，讓忙碌的心慢慢安靜下來。",
+          "audio_sha256": "2b801fbe1fccee46069cfdd5abb8c7319aca444ad6e346363554444da5ae3b15",
+          "transcription": "溫暖的陽光輕輕落在窗邊她捧起一杯熱茶翻開書頁讓忙碌的心慢慢安靜下來",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-mature-announcement",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "mature-announcement",
+        "label": "成熟播報",
+        "file": "mature-announcement.wav",
+        "text": "各位來賓您好，今天的展覽將在十分鐘後開始。請依照現場指示入座，謝謝您的配合。",
+        "voice_description": "A mature adult female announcer in her forties, rich low-pitched voice, composed professional Taiwan Mandarin, measured pacing and precise diction.",
+        "full_prompt": "(A mature adult female announcer in her forties, rich low-pitched voice, composed professional Taiwan Mandarin, measured pacing and precise diction.)各位來賓您好，今天的展覽將在十分鐘後開始。請依照現場指示入座，謝謝您的配合。",
+        "seed": 943,
+        "sample_rate": 48000,
+        "duration_seconds": 7.84,
+        "render_seconds": 16.889,
+        "sha256": "8e656e697584b91fb6114558e445daa2bcdeb9f3bc4609013351bfea898945f2",
+        "peak": 0.4600636065006256,
+        "rms": 0.0508289635181427,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design"
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "mature-announcement",
+          "expected": "各位來賓您好，今天的展覽將在十分鐘後開始。請依照現場指示入座，謝謝您的配合。",
+          "transcription": "各位來賓您好今天的展覽將在 10 分鐘後開始請依照現場指示入座謝謝您的配合",
+          "audio_sha256": "8e656e697584b91fb6114558e445daa2bcdeb9f3bc4609013351bfea898945f2",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-slide-one",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "slide-one",
+        "label": "簡報第一頁",
+        "file": "slide-one.wav",
+        "text": "第一頁，我們先看整體流程。從文字構想開始，選擇圖片與聲音，再把素材整理成一段完整的作品。",
+        "voice_description": "An adult female presenter in her thirties, confident clear mid-low voice, natural Taiwan Mandarin, conversational professional presentation.",
+        "full_prompt": "(An adult female presenter in her thirties, confident clear mid-low voice, natural Taiwan Mandarin, conversational professional presentation.)第一頁，我們先看整體流程。從文字構想開始，選擇圖片與聲音，再把素材整理成一段完整的作品。",
+        "seed": 552,
+        "sample_rate": 48000,
+        "duration_seconds": 7.84,
+        "render_seconds": 16.851,
+        "sha256": "fb981a8fa554205e3434df7541fb1b6fadf0c196d26ca2c9afba8c0a38ddf106",
+        "peak": 0.3990992307662964,
+        "rms": 0.04119712859392166,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_consistency": "Same design and seed across slides; identity consistency is not guaranteed without a reference."
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "slide-one",
+          "expected": "第一頁，我們先看整體流程。從文字構想開始，選擇圖片與聲音，再把素材整理成一段完整的作品。",
+          "transcription": "第一頁我們先看整體流程從文字構想開始選擇圖片與聲音再把素材整理成一段完整的作品",
+          "audio_sha256": "fb981a8fa554205e3434df7541fb1b6fadf0c196d26ca2c9afba8c0a38ddf106",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-slide-two",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "slide-two",
+        "label": "簡報第二頁",
+        "file": "slide-two.wav",
+        "text": "第二頁，重點是保留人物原貌。先辨識主體，再替換背景，最後檢查頭髮與臉部邊緣是否自然。",
+        "full_prompt": "(An adult female presenter in her thirties, confident clear mid-low voice, natural Taiwan Mandarin, conversational professional presentation.)第二頁，重點是保留人物原貌。先辨識主體，再替換背景，最後檢查頭髮與臉部邊緣是否自然。",
+        "seed": 553,
+        "sample_rate": 48000,
+        "duration_seconds": 9.6,
+        "render_seconds": 23.671,
+        "sha256": "4b77593c82889f7130e4bb0653ba1da0c21b0841831fe289d2ba3c7284072643",
+        "peak": 0.5648213028907776,
+        "rms": 0.056760430335998535,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_description": "An adult female presenter in her thirties, confident clear mid-low voice, natural Taiwan Mandarin, conversational professional presentation.",
+        "mode": "text-only voice design"
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "slide-two",
+          "expected": "第二頁，重點是保留人物原貌。先辨識主體，再替換背景，最後檢查頭髮與臉部邊緣是否自然。",
+          "audio_sha256": "4b77593c82889f7130e4bb0653ba1da0c21b0841831fe289d2ba3c7284072643",
+          "transcription": "第二頁重點是保留人物原貌先辨識主體再替換背景最後檢查頭髮與臉部邊緣是否自然",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-slide-three",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "slide-three",
+        "label": "簡報第三頁",
+        "file": "slide-three.wav",
+        "text": "第三頁，完成前請先播放一次。看看畫面、旁白與字幕是否互相配合，再分享你的創作。",
+        "full_prompt": "(An adult female presenter in her thirties, confident clear mid-low voice, natural Taiwan Mandarin, conversational professional presentation.)第三頁，完成前請先播放一次。看看畫面、旁白與字幕是否互相配合，再分享你的創作。",
+        "seed": 552,
+        "sample_rate": 48000,
+        "duration_seconds": 8.48,
+        "render_seconds": 22.92,
+        "sha256": "19dd88066062f9cc26a8219c7b7f7f3cd4e748575612c8ac93930e0ab5209963",
+        "peak": 0.35012418031692505,
+        "rms": 0.035854920744895935,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_description": "An adult female presenter in her thirties, confident clear mid-low voice, natural Taiwan Mandarin, conversational professional presentation.",
+        "mode": "text-only voice design"
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "slide-three",
+          "expected": "第三頁，完成前請先播放一次。看看畫面、旁白與字幕是否互相配合，再分享你的創作。",
+          "audio_sha256": "19dd88066062f9cc26a8219c7b7f7f3cd4e748575612c8ac93930e0ab5209963",
+          "transcription": "第三頁完成前請先播放一次看看畫面旁白與字幕是否互相配合再分享你的創作",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-english-welcome",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "english-welcome",
+        "label": "英文迎賓",
+        "file": "english-welcome.wav",
+        "text": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here.",
+        "voice_description": "An adult woman in her thirties, warm expressive American English, clear mid-range voice and relaxed friendly delivery.",
+        "full_prompt": "(An adult woman in her thirties, warm expressive American English, clear mid-range voice and relaxed friendly delivery.)Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here.",
+        "seed": 427,
+        "sample_rate": 48000,
+        "duration_seconds": 8.16,
+        "render_seconds": 18.206,
+        "sha256": "5aa1c3c46ab71e9054f46086ca900584cff332197976f42f2b20017a4ca67fee",
+        "peak": 0.3565795421600342,
+        "rms": 0.047022074460983276,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design"
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "english-welcome",
+          "expected": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here.",
+          "transcription": "Hello and welcome. Let us turn a simple idea into a story you can see and hear.Your next creation starts here.",
+          "audio_sha256": "5aa1c3c46ab71e9054f46086ca900584cff332197976f42f2b20017a4ca67fee",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-synthetic-clone",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "synthetic-clone",
+        "label": "合成聲音延續",
+        "file": "synthetic-clone.wav",
+        "text": "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！",
+        "full_prompt": "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！",
+        "seed": 622,
+        "sample_rate": 48000,
+        "duration_seconds": 5.6,
+        "render_seconds": 17.615,
+        "sha256": "91c9bccfcdef34fbfa359135aa2b05de51b29c9f1352046e9f2cb5d467a4f04a",
+        "peak": 0.5123624205589294,
+        "rms": 0.05321827158331871,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "mode": "synthetic-reference cloning",
+        "reference_file": "warm-welcome.wav",
+        "reference_sha256": "403f56833e254fef82fa88bf0062bff4ac19ab71619942838caa5da52282e977",
+        "reference_transcript": "嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？"
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "synthetic-clone",
+          "expected": "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！",
+          "transcription": "大家好我是晴晴今天也要帶著笑容一起為喜歡的隊伍加油",
+          "audio_sha256": "91c9bccfcdef34fbfa359135aa2b05de51b29c9f1352046e9f2cb5d467a4f04a",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
       }
     }
   ]

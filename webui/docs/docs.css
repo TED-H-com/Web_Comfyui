@@ -41,3 +41,7 @@
 
 .docs-character-header > div {display: grid; gap: 12px;}
 .docs-character-header h1,.docs-character-header p,.docs-character-workspace > h2,.docs-character-workspace > p,.docs-character-example h3,.docs-character-example p {margin: 0;}
+
+.demo-voice-selection {grid-column: 1 / -1; min-width: 0;}
+.demo-voice-selection audio {width: 100%; max-width: 100%;}
+.demo-voice-selection p {margin: 0; overflow-wrap: anywhere;}

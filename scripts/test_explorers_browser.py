@@ -93,6 +93,7 @@ CHECK = r'''
   check(!recorded.querySelector('.demo-stages .done,.demo-stages .active'),'no pretend GPU stage completion');
   check(await playback,'recorded replay completes');
   check(completed===1&&!recorded.querySelector('.demo-form button').disabled,'single completion restores button');
+  check(getComputedStyle(recorded.querySelector('.demo-progress span')).transitionDuration==='0s','completed result does not precede visible full progress');
   check(recorded.querySelector('.demo-output h4').textContent.includes('Recorded GPU result'),'verified result labeled');
   check(recorded.querySelector('.demo-output img').src.endsWith('/result.webp'),'result distinct from original');
   check(!recorded.querySelector('.demo-stages .done,.demo-stages .active')&&recorded.querySelector('.demo-progress').getAttribute('aria-valuenow')==='100','recorded workflow is a reference, not simulated execution');
@@ -144,6 +145,13 @@ def explorer_server():
                     f'<iframe style="width:{width}px;height:1000px;border:0" src="/case?width={width}"></iframe>'
                     '<script>addEventListener("message",e=>{if(e.origin===location.origin&&e.data.explorerResult)'
                     'document.getElementById("test-result").textContent=e.data.explorerResult})</script></body></html>').encode();mime='text/html'
+            elif path == '/voice.wav':
+                import io, math, struct, wave
+                buffer=io.BytesIO()
+                with wave.open(buffer,'wb') as wav:
+                    wav.setparams((1,2,16000,0,'NONE','not compressed'))
+                    wav.writeframes(b''.join(struct.pack('<h',int(1000*math.sin(i*440*2*math.pi/16000))) for i in range(16000*4)))
+                data=buffer.getvalue();mime='audio/wav'
             elif path in ('/case','/preview'):
                 data=html(path=='/case');mime='text/html'
             elif path in ('/webui/static/styles.css','/webui/docs/explorers.css','/webui/docs/explorers.js','/webui/static/i18n.js','/webui/static/translations-en.js'):
@@ -162,3 +170,58 @@ def test_explorers_browser(tmp_path, explorer_server, width):
     result=subprocess.run([browser,'--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',f'--user-data-dir={tmp_path / "browser"}',f'--window-size={width},1000','--virtual-time-budget=15000','--dump-dom',explorer_server+f'/?width={width}'],capture_output=True,text=True,timeout=40)
     marker=result.stdout.split('id="test-result"')[-1].split('</pre>')[0]
     assert '>PASS' in marker,(marker[-1600:],result.stderr[-500:])
+
+
+@pytest.mark.parametrize('width', [390, 768, 1440])
+def test_prepared_audio_browser(explorer_server, width):
+    playwright = pytest.importorskip('playwright.sync_api')
+    with playwright.sync_playwright() as driver:
+        with driver.chromium.launch(executable_path=shutil.which('chromium'), args=['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required']) as browser:
+            page=browser.new_page(viewport={'width':width,'height':900})
+            page.goto(explorer_server+'/preview')
+            page.evaluate("""() => {
+              window.voice=WebComfyExplorers.demoContent({...fixture.demo,evidence:{kind:'prepared-example'},output:{kind:'audio',audio_tracks:[
+                {src:'/voice.wav',title:'溫暖女聲',title_en:'Warm female voice',style:'輕柔旁白',style_en:'Soft narration',transcript:'歡迎來到海邊。',transcript_en:'Welcome to the coast.'},
+                {src:'/voice.wav?second',title:'清晰女聲',title_en:'Clear female voice'},
+                {src:'https://external.invalid/voice.wav',title:'Rejected remote'},
+                {src:'data:audio/wav;base64,AAAA',title:'Rejected data URL'}]}});
+              document.querySelector('main').replaceChildren(voice);
+            }""")
+            assert page.locator('audio').count()==0
+            page.evaluate("() => {window.voicePending=voice.demo.start('different input');}")
+            page.wait_for_timeout(350)
+            assert page.locator('.demo-progress').is_visible()
+            assert page.locator('audio').count()==0
+            assert page.evaluate('() => window.voicePending')
+            assert page.locator('audio').count()==2
+            assert '非此工作流實測' in page.locator('.demo-disclosure').inner_text()
+            assert page.locator('.demo-run-record').count()==0
+            assert page.locator('.demo-output h4').inner_text()=='預製介面範例 · 非此工作流實測'
+            assert page.locator('audio').first.get_attribute('preload')=='metadata'
+            assert page.locator('audio').first.get_attribute('autoplay') is None
+            page.evaluate("() => WebComfyI18n.setLanguage('en')")
+            assert page.locator('.demo-audio-track h5').first.inner_text()=='Warm female voice'
+            assert page.locator('.demo-audio-style').inner_text()=='Soft narration'
+            page.locator('.demo-audio-transcript summary').click()
+            assert page.locator('.demo-audio-transcript p').inner_text()=='Welcome to the coast.'
+            assert page.evaluate('() => document.documentElement.scrollWidth<=innerWidth+1')
+            page.evaluate("async () => {window.firstAudio=voice.querySelector('audio');await firstAudio.play();}")
+            assert page.evaluate('() => !firstAudio.paused')
+            page.evaluate("async () => {window.secondAudio=voice.querySelectorAll('audio')[1];await secondAudio.play();}")
+            assert page.evaluate('() => firstAudio.paused&&!secondAudio.paused')
+            page.evaluate('() => voice.demo.reset()')
+            assert page.evaluate('() => secondAudio.paused')
+            assert page.locator('audio').count()==0
+            assert page.locator('.demo-output').is_hidden()
+            page.emulate_media(reduced_motion='reduce')
+            assert page.evaluate("() => voice.demo.start('replay')")
+            page.evaluate("async () => {window.removedAudio=voice.querySelector('audio');await removedAudio.play();voice.remove();}")
+            page.wait_for_function('() => removedAudio.paused')
+            page.evaluate("""() => {
+              window.single=WebComfyExplorers.demoContent({...fixture.demo,evidence:{kind:'prepared-example'},output:{kind:'audio',audio:{src:'/voice.wav',title:'Single clip'}}});
+              document.querySelector('main').append(single);
+            }""")
+            assert page.evaluate("() => single.demo.start('single')")
+            assert page.locator('audio').count()==1
+            assert 'not a verified run' in page.locator('.demo-output h4').inner_text()
+            page.evaluate('() => single.demo.dispose()')

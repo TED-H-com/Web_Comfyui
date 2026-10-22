@@ -37,7 +37,7 @@ def test_every_real_feature_and_character_creation_has_bilingual_content(app):
         assert 'not generated from your input' in example['note_en']
 
 
-def test_outputs_require_matching_gpu_evidence(app):
+def test_recorded_outputs_need_evidence_and_prepared_examples_are_distinct(app):
     root = ROOT / 'webui/docs/examples'
     provenance = json.loads((root / 'provenance.json').read_text())
     ledger = {row['file']: row for row in provenance['assets']}
@@ -56,10 +56,21 @@ def test_outputs_require_matching_gpu_evidence(app):
             assert example['inputs'][0]['src'].removeprefix('./assets/examples/') in ledger
             assert 'nothing is saved' in example['note_en']
             continue
-        if output['kind'] == 'unavailable':
-            assert output.get('images', []) == []
-            assert not output.get('video') and not output.get('audio')
-            assert not output.get('run_id')
+        assert output['kind'] != 'unavailable', identifier
+        if example.get('evidence', {}).get('kind') == 'prepared-example':
+            assert not output.get('run_id') and not example['evidence'].get('run_id')
+            assert 'not a verified run of this workflow' in example['note_en']
+            media = output.get('images', []) + output.get('audio_tracks', [])
+            if output.get('video'):
+                media.append(output['video'])
+            assert media or output.get('text'), identifier
+            for item in [*media, *example.get('inputs', [])]:
+                assert item['src'].startswith('./assets/examples/')
+                name = item['src'].removeprefix('./assets/examples/')
+                assert name in ledger
+                if item in output.get('audio_tracks', []):
+                    assert ledger[name]['kind'] == 'audio'
+                    assert item['transcript'] and item['title_en']
             continue
         # Every claimed result must refer to a successful run of THIS feature;
         # generic illustrations, transcripts and pan videos are not evidence.
@@ -87,6 +98,42 @@ def test_outputs_require_matching_gpu_evidence(app):
         assert hashlib.sha256(payload).hexdigest() == record['sha256']
         assert len(payload) == record['bytes']
         assert record['source'] and record['tool']
+
+
+def test_voice_examples_are_original_recorded_audio_with_bound_transcripts():
+    import wave
+
+    root = ROOT / 'webui/docs/examples'
+    provenance = json.loads((root / 'provenance.json').read_text())
+    assets = {row['file']: row for row in provenance['assets']}
+    runs = provenance['audio_runs']
+    assert len(runs) == 9
+    assert len({run['sample']['sha256'] for run in runs}) == 9
+    for run in runs:
+        sample = run['sample']
+        path = root / sample['file']
+        assert run['status'] == 'success' and run['engine'] == 'VoxCPM2'
+        assert run['device'] == 'CPU' and run['settings']['device'] == 'cpu'
+        assert run['model_revision'] and run['code_revision'] and run['license_source']
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == sample['sha256'] == assets[path.name]['sha256']
+        review = run['validation']['transcription_review']
+        assert review['audio_sha256'] == sample['sha256']
+        assert review['expected'] == sample['text'] and review['normalized_content_match'] is True
+        with wave.open(str(path)) as audio:
+            assert audio.getnchannels() == 1 and audio.getsampwidth() == 2
+            assert audio.getframerate() == sample['sample_rate'] == 48000
+            assert audio.getnframes() / audio.getframerate() == pytest.approx(sample['duration_seconds'])
+        assert 0 < sample['rms'] < 1 and sample['peak'] < 1
+        # PCM-only files cannot carry arbitrary tags or embedded personal metadata.
+        data = path.read_bytes()
+        assert data[:4] == b'RIFF' and data[8:12] == b'WAVE'
+        offset = 12
+        while offset < len(data):
+            assert data[offset:offset + 4] in {b'fmt ', b'data'}
+            size = struct.unpack('<I', data[offset + 4:offset + 8])[0]
+            offset += 8 + size + size % 2
+        assert offset == len(data)
+    assert not any(prefix in json.dumps(runs) for prefix in ('/home/', '/mnt/', '/tmp/'))
 
 
 def test_public_run_evidence_is_complete_and_bound_to_assets():

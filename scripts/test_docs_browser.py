@@ -181,9 +181,16 @@ ASSERT = r'''(async () => {
       assert(blend.querySelector('figure:not([data-comparison-before]) img').src!==blend.querySelector('[data-comparison-before] img').src,'subject composite differs from original');
     }
     if(example.output.kind==='unavailable') assert(!form.querySelector('.demo-output img,.demo-output video'),'untested tool has no unrelated media '+entry.id);
+    if (example.output.audio_tracks?.length) {
+      const clips=[...form.querySelectorAll('.demo-output audio')];
+      assert(clips.length===example.output.audio_tracks.length,'all prepared audio clips shown '+entry.id);
+      for(const clip of clips) {clip.load();await until(()=>clip.readyState>=1);assert(clip.duration>0,'audio metadata '+entry.id);assert(!clip.autoplay,'audio requires user playback');}
+      clips[0].muted=true;await clips[0].play();await until(()=>clips[0].currentTime>0);clips[0].pause();
+      assert(!form.querySelector('.voice-lib,.voice-batch-page'),'no competing native upload/batch flow');
+    }
     if(example.evidence?.kind==='local-comfyui') {
       for(const source of example.inputs || []) if(source.slot) {
-        const preview=form.querySelector('[data-upload-id="'+source.slot+'"]')?.closest('.upload-slot')?.querySelector('.demo-input-preview img,.demo-input-preview video') || form.querySelector('[data-upload-id="'+source.slot+'"] .demo-input-preview img,[data-upload-id="'+source.slot+'"] .demo-input-preview video');
+        const preview=form.querySelector('[data-upload-id="'+source.slot+'"]')?.closest('.upload-slot')?.querySelector('.demo-input-preview img,.demo-input-preview video,.demo-input-preview audio') || form.querySelector('[data-upload-id="'+source.slot+'"] .demo-input-preview img,[data-upload-id="'+source.slot+'"] .demo-input-preview video,[data-upload-id="'+source.slot+'"] .demo-input-preview audio');
         assert(preview?.src===source.src,'actual upload slot uses recorded reference '+entry.id+' '+source.slot);
       }
       assert(form.querySelector('.demo-run-record').textContent.includes(example.evidence.prompt),'exact tested prompt '+entry.id);
@@ -192,6 +199,16 @@ ASSERT = r'''(async () => {
       for(const image of form.querySelectorAll('.demo-output img')) await until(()=>image.naturalWidth>0);
       const video=form.querySelector('.demo-output video');
       if(video) {video.preload='metadata';video.load();await until(()=>video.readyState>=1);assert(video.duration>0,'recorded video metadata '+entry.id);video.muted=true;await video.play();await until(()=>video.currentTime>0.1&&video.readyState>=2);video.pause();}
+    }
+    if(entry.id==='voice-library' && example.output.audio_tracks?.length>1) {
+      form.querySelectorAll('[data-voice-actions] button')[3].click();
+      await until(()=>document.querySelector('form[data-demo-id="voice-clone"] [data-demo-voice-selector]'));
+      const selector=document.querySelector('[data-demo-voice-selector]');
+      const transcript=document.querySelector('textarea[data-field-id="sampleText"]');
+      assert(selector.value==='1' && transcript.value===example.output.audio_tracks[1].transcript,'library selection carries exact reference transcript to clone');
+      selector.value='0';selector.dispatchEvent(new Event('change'));
+      assert(transcript.value===example.output.audio_tracks[0].transcript,'changing selected reference updates actual textarea');
+      assert(document.querySelector('.demo-voice-selection audio').src===example.output.audio_tracks[0].src,'reference audition uses selected audio');
     }
   }
   window.matchMedia=originalMatchMedia;
@@ -250,7 +267,7 @@ def test_static_docs_browser(tmp_path, initial_page):
                 if not file.resolve().is_relative_to(output.resolve()) or not file.is_file(): self.send_error(404); return
                 data = file.read_bytes()
                 if initial_page != 'app' and file.name == 'app.js': time.sleep(0.5)
-                mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webp': 'image/webp', '.mp4': 'video/mp4'}.get(file.suffix, 'text/plain')
+                mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webp': 'image/webp', '.mp4': 'video/mp4', '.wav': 'audio/wav'}.get(file.suffix, 'text/plain')
                 if relative == 'demo/index.html': data = data.replace(b'<head>', b'<head><script src="../monitor.js"></script>').replace(b'</body>', b'<script src="../assert.js"></script></body>')
             else: self.send_error(404); return
             self.send_response(200); self.send_header('Content-Type', mime); self.send_header('Content-Length', str(len(data))); self.end_headers(); self.wfile.write(data)

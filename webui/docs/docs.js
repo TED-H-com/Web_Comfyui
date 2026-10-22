@@ -14,10 +14,12 @@
     registry = app; workflows = library;
     for (const item of workflows.items) if (item.download_url) item.download_url = new URL(item.download_url, base).href;
     for (const demo of Object.values(app.demos || {})) {
-      for (const item of [...(demo.inputs || []), ...(demo.output?.images || [])]) {
+      for (const item of [...(demo.inputs || []), ...(demo.output?.images || []), ...(demo.output?.audio_tracks || [])]) {
         item.src = new URL(item.src, base).href;
         if (item.poster) item.poster = new URL(item.poster, base).href;
       }
+      if (typeof demo.output?.audio === 'string') demo.output.audio = new URL(demo.output.audio, base).href;
+      else if (demo.output?.audio?.src) demo.output.audio.src = new URL(demo.output.audio.src, base).href;
       for (const key of ['src', 'poster']) if (demo.output?.video?.[key]) demo.output.video[key] = new URL(demo.output.video[key], base).href;
     }
     // Recorded runs may use dimensions outside the native form presets.
@@ -70,7 +72,8 @@
       case '/api/queue': return reply({jobs: [], terminal: [], recent_errors: [], summary: {running: 0, pending: 0, total: 0, external: 0}});
       case '/api/history': return reply({items: [], has_more: false});
       case '/api/posts': return reply({posts: [], items: []});
-      case '/api/voices': return reply({voices: [], items: []});
+      case '/api/voices': return reply({voices: (registry.demos?.['voice-library']?.output?.audio_tracks || []).map((track, index) => ({id: 'docs-voice-' + index, name: track.title, url: track.src, transcript: track.transcript, source: '預製示範音訊 / Prepared voice sample', canDelete: false})), items: []});
+      case '/api/voiceover/batches': return reply({batches: []});
       case '/api/personas': return reply({personas: []});
       case '/api/voice-batches': return reply({batches: [], items: []});
       case '/api/workflow-library': return reply(workflows);

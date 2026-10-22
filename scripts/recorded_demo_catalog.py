@@ -1,4 +1,4 @@
-"""Reviewed real GPU examples. Run evidence lives in webui/docs/examples/provenance.json."""
+"""Reviewed real ComfyUI examples. Evidence lives in webui/docs/examples/provenance.json."""
 RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
               'title_en': 'Generate an original adult cheer performer',
               'prompt': 'Photorealistic sports editorial full-body photograph of a fictional 26-year-old '
@@ -189,8 +189,8 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
                  'output': {'kind': 'image',
                             'images': [{'src': './assets/examples/cheer-subject-blend.webp',
                                         'alt': 'GPU 分割人物後換背景；保留原圖的臉孔、服裝與姿勢。',
-                                        'alt_en': 'GPU subject segmentation and background replacement; '
-                                                  'the original face, clothing and pose are preserved.'}],
+                                        'alt_en': 'GPU subject segmentation and background replacement; the '
+                                                  'original face, clothing and pose are preserved.'}],
                             'run_id': 'cheer-subject-blend-v4',
                             'comparison': True},
                  'note': 'RTX 5090 實跑：SAM3 '
@@ -524,4 +524,161 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
                       'note': '建立後進入角色工作區，查看預先實跑的換裝、肖像與影片案例。角色暫存於此分頁，重新整理或清除示範後消失；不會上傳照片或訓練模型。',
                       'note_en': 'Creation opens a character workspace with prerecorded outfit, portrait and '
                                  'video examples, not generated from your input. Characters stay in this tab '
-                                 'until refresh or reset; nothing is saved to an account or database.'}}
+                                 'until refresh or reset; nothing is saved to an account or database.'},
+ 'face-swap': {'title': '虛構角色換臉：替換影片中的臉孔',
+               'title_en': 'Fictional face swap: replace the face in a clip',
+               'prompt': '以原創虛構臉孔替換影片中的角色臉部。',
+               'prompt_en': '以原創虛構臉孔替換影片中的角色臉部。',
+               'prefill': {'fps': 12, 'maxFrames': 48, 'restore': 'none', 'detection': 'retinaface_resnet50'},
+               'prefill_en': {'fps': 12,
+                              'maxFrames': 48,
+                              'restore': 'none',
+                              'detection': 'retinaface_resnet50'},
+               'inputs': [{'src': './assets/examples/cheer-wave.mp4',
+                           'kind': 'video',
+                           'slot': 'video',
+                           'alt': 'cheer-wave.mp4',
+                           'alt_en': 'cheer-wave.mp4',
+                           'label': '原始人物影片',
+                           'label_en': 'Original character video',
+                           'poster': './assets/examples/cheer-wave-poster.webp'},
+                          {'src': './assets/examples/cheer-instantid-2.webp',
+                           'kind': 'image',
+                           'slot': 'face',
+                           'alt': 'cheer-instantid-2.webp',
+                           'alt_en': 'cheer-instantid-2.webp',
+                           'label': '目標虛構臉孔',
+                           'label_en': 'Target fictional face'}],
+               'evidence': {'kind': 'local-comfyui',
+                            'run_id': 'cheer-face-swap-v1',
+                            'workflow': 'face_swap_prompt',
+                            'device': 'NVIDIA GeForce RTX 5090 (32 GB)',
+                            'models': ['inswapper_128.onnx'],
+                            'prompt': '以原創虛構臉孔替換影片中的角色臉部。',
+                            'duration_seconds': 65.052,
+                            'executed_at': '2026-10-22T21:17:16.127000+00:00'},
+               'output': {'kind': 'video',
+                          'video': {'src': './assets/examples/cheer-face-swap.mp4',
+                                    'poster': './assets/examples/cheer-face-swap-poster.webp'},
+                          'run_id': 'cheer-face-swap-v1'},
+               'note': '這是已完成的本機 ComfyUI 實跑；此頁只重播固定成果，不會依你的輸入即時生成。人物與聲音皆為原創合成素材。',
+               'note_en': 'Recorded local ComfyUI output, not generated from your input. This page replays a '
+                          'fixed result; people and voices are original synthetic assets.'},
+ 'lipsync': {'title': '晴晴開口說歡迎：女聲對嘴',
+             'title_en': 'Qingqing says welcome: synthetic voice lip sync',
+             'prompt': '嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？',
+             'prompt_en': '嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？',
+             'prefill': {'mode': 'repetitive', 'maxFrames': 81, 'faceBatch': 4},
+             'prefill_en': {'mode': 'repetitive', 'maxFrames': 81, 'faceBatch': 4},
+             'inputs': [{'src': './assets/examples/cheer-wave.mp4',
+                         'kind': 'video',
+                         'slot': 'video',
+                         'alt': 'cheer-wave.mp4',
+                         'alt_en': 'cheer-wave.mp4',
+                         'label': '原始人物影片',
+                         'label_en': 'Original character video',
+                         'poster': './assets/examples/cheer-wave-poster.webp'},
+                        {'src': './assets/examples/warm-welcome.wav',
+                         'kind': 'audio',
+                         'slot': 'voice',
+                         'alt': 'warm-welcome.wav',
+                         'alt_en': 'warm-welcome.wav',
+                         'label': '原創合成女聲',
+                         'label_en': 'Original synthetic female voice'}],
+             'evidence': {'kind': 'local-comfyui',
+                          'run_id': 'cheer-lipsync-v1',
+                          'workflow': 'lipsync_prompt',
+                          'device': 'NVIDIA GeForce RTX 5090 (32 GB)',
+                          'models': ['Wav2Lip local checkpoint'],
+                          'prompt': '嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？',
+                          'duration_seconds': 5.797,
+                          'executed_at': '2026-10-22T21:18:29.022000+00:00'},
+             'output': {'kind': 'video',
+                        'video': {'src': './assets/examples/cheer-lipsync.mp4',
+                                  'poster': './assets/examples/cheer-lipsync-poster.webp'},
+                        'run_id': 'cheer-lipsync-v1'},
+             'note': '這是已完成的本機 ComfyUI 實跑；此頁只重播固定成果，不會依你的輸入即時生成。人物與聲音皆為原創合成素材。',
+             'note_en': 'Recorded local ComfyUI output, not generated from your input. This page replays a '
+                        'fixed result; people and voices are original synthetic assets.'},
+ 'first-last-frame': {'title': '從站姿到揮手：首尾幀影片',
+                      'title_en': 'From standing to waving: first/last-frame video',
+                      'prompt': 'A fictional adult Taiwanese woman smiles at the camera and gently raises '
+                                'her right hand to wave hello. Natural friendly motion, consistent face and '
+                                'original teal and white baseball jersey, stationary camera, full body, '
+                                'smooth transition between the provided starting and ending poses.',
+                      'prompt_en': 'A fictional adult Taiwanese woman smiles at the camera and gently raises '
+                                   'her right hand to wave hello. Natural friendly motion, consistent face '
+                                   'and original teal and white baseball jersey, stationary camera, full '
+                                   'body, smooth transition between the provided starting and ending poses.',
+                      'prefill': {'positive': 'A fictional adult Taiwanese woman smiles at the camera and '
+                                              'gently raises her right hand to wave hello. Natural friendly '
+                                              'motion, consistent face and original teal and white baseball '
+                                              'jersey, stationary camera, full body, smooth transition '
+                                              'between the provided starting and ending poses.',
+                                  'negative': 'distorted face, extra limbs, blurry, text, logo, sudden cut',
+                                  'width': 480,
+                                  'height': 720,
+                                  'length': 81,
+                                  'fps': 16,
+                                  'steps': 6,
+                                  'cfg': 1,
+                                  'shift': 8,
+                                  'loraStrength': 1,
+                                  'seed': 2026102401},
+                      'prefill_en': {'positive': 'A fictional adult Taiwanese woman smiles at the camera and '
+                                                 'gently raises her right hand to wave hello. Natural '
+                                                 'friendly motion, consistent face and original teal and '
+                                                 'white baseball jersey, stationary camera, full body, '
+                                                 'smooth transition between the provided starting and ending '
+                                                 'poses.',
+                                     'negative': 'distorted face, extra limbs, blurry, text, logo, sudden '
+                                                 'cut',
+                                     'width': 480,
+                                     'height': 720,
+                                     'length': 81,
+                                     'fps': 16,
+                                     'steps': 6,
+                                     'cfg': 1,
+                                     'shift': 8,
+                                     'loraStrength': 1,
+                                     'seed': 2026102401},
+                      'inputs': [{'src': './assets/examples/cheer-wave-start.webp',
+                                  'kind': 'image',
+                                  'slot': 'start',
+                                  'alt': 'cheer-wave-start.webp',
+                                  'alt_en': 'cheer-wave-start.webp',
+                                  'label': '首幀：站姿',
+                                  'label_en': 'First frame: standing'},
+                                 {'src': './assets/examples/cheer-wave-end.webp',
+                                  'kind': 'image',
+                                  'slot': 'end',
+                                  'alt': 'cheer-wave-end.webp',
+                                  'alt_en': 'cheer-wave-end.webp',
+                                  'label': '尾幀：揮手',
+                                  'label_en': 'Last frame: waving'}],
+                      'evidence': {'kind': 'local-comfyui',
+                                   'run_id': 'cheer-flf-v1',
+                                   'workflow': 'wan_flf_prompt',
+                                   'device': 'NVIDIA GeForce RTX 5090 (32 GB)',
+                                   'models': ['Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors',
+                                              'clip_vision_h.safetensors',
+                                              'umt5_xxl_fp8_e4m3fn_scaled.safetensors',
+                                              'wan2.1_i2v_480p_14B_fp8_scaled.safetensors',
+                                              'wan_2.1_vae.safetensors'],
+                                   'prompt': 'A fictional adult Taiwanese woman smiles at the camera and '
+                                             'gently raises her right hand to wave hello. Natural friendly '
+                                             'motion, consistent face and original teal and white baseball '
+                                             'jersey, stationary camera, full body, smooth transition '
+                                             'between the provided starting and ending poses.',
+                                   'duration_seconds': 61.72,
+                                   'executed_at': '2026-10-22T21:19:40.633000+00:00'},
+                      'output': {'kind': 'video',
+                                 'video': {'src': './assets/examples/cheer-flf.mp4',
+                                           'poster': './assets/examples/cheer-flf-poster.webp'},
+                                 'run_id': 'cheer-flf-v1'},
+                      'note': '這是已完成的本機 ComfyUI 實跑；此頁只重播固定成果，不會依你的輸入即時生成。人物與聲音皆為原創合成素材。 實跑使用 Wan2.1 I2V 480p '
+                              '首尾幀變體，並非表單原預設 SCAIL 權重。',
+                      'note_en': 'Recorded local ComfyUI output, not generated from your input. This page '
+                                 'replays a fixed result; people and voices are original synthetic assets. '
+                                 'This run used a Wan2.1 I2V 480p first/last-frame variant, not the form’s '
+                                 'original SCAIL weights.'}}
