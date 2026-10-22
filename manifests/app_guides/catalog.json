@@ -1,0 +1,523 @@
+{
+  "schema_version": 1,
+  "description": "Real application feature guides. Form metadata is extracted statically from source; explanatory mappings reviewed against builders.",
+  "features": {
+    "text2img": {
+      "source": "webui/server.py",
+      "symbol": "zimage_prompt",
+      "summary": "文生圖按鈕使用 Z-Image Turbo 程式圖；文字編碼後從空白 latent 採樣，再用 AE 解碼為圖片。預設不套用 LoRA。",
+      "steps": [
+        "輸入畫面描述與比例；預設 1088×1920、8 步、CFG 1。",
+        "載入 Z-Image Turbo、Qwen 3 4B（lumina2）文字編碼器與 AE。",
+        "以 res_multistep / simple 採樣並儲存圖片；勾選 DOPSD 才插入白幕 LoRA。"
+      ],
+      "techniques": [
+        "文字條件擴散",
+        "EmptySD3LatentImage",
+        "VAE 解碼",
+        "可選模型 LoRA"
+      ],
+      "requirements": [
+        "DOPSD 開關預設關閉；開啟才需要額外 LoRA，預設強度 1。",
+        "這個按鈕不讀取同名社群工作流 JSON。"
+      ],
+      "model_notes": {
+        "dopsd_white_zimage_turbo_comfy.safetensors": "optional: useDopsd=true；預設 false，強度預設 1"
+      }
+    },
+    "img2img": {
+      "source": "webui/server.py",
+      "symbol": "flux_kontext_prompt",
+      "summary": "Flux Kontext 以原圖 latent 與文字指令重新生成圖片，不是逐像素修圖。",
+      "steps": [
+        "上傳圖片並輸入修改指令。",
+        "FluxKontextImageScale 縮放原圖；AE 編碼後送入 ReferenceLatent。",
+        "用 FluxGuidance 與擴散採樣產生新畫面，再解碼儲存。"
+      ],
+      "techniques": [
+        "Flux Kontext",
+        "ReferenceLatent",
+        "雙文字編碼器",
+        "FluxGuidance"
+      ],
+      "requirements": [
+        "人物臉孔、服裝細節與透明背景可能改變。"
+      ]
+    },
+    "anime-scene-card": {
+      "source": "webui/server.py",
+      "symbol": "anime_scene_card_prompt",
+      "summary": "把已核准透明角色圖合成到已核准場景；不使用生成模型，也不把角色轉成真人。",
+      "steps": [
+        "從角色入口選擇核准造型與場景。",
+        "讀取角色 alpha 遮罩並反轉為合成遮罩。",
+        "ImageCompositeMasked 合成後存圖。"
+      ],
+      "techniques": [
+        "alpha 遮罩",
+        "直接像素合成"
+      ],
+      "requirements": [
+        "需要透明角色圖及場景資產；無 checkpoint、LoRA 或 VAE。"
+      ]
+    },
+    "image-blend": {
+      "source": "webui/server.py",
+      "symbol": "ip_blend_prompt",
+      "summary": "SDXL 搭配 IPAdapter Plus，依兩至三張參考圖生成新構圖。",
+      "steps": [
+        "上傳至少兩張參考圖，選擇比例與描述。",
+        "載入 SDXL checkpoint、IPAdapter Plus 與 CLIP Vision。",
+        "每張圖依序加入 IPAdapterAdvanced；採樣後用 checkpoint 內附 VAE 解碼。"
+      ],
+      "techniques": [
+        "SDXL",
+        "IPAdapter 參考條件串接",
+        "CLIP Vision"
+      ],
+      "requirements": [
+        "不能保證保留同一張臉、服裝或人物身分；不是精準換裝入口。"
+      ]
+    },
+    "character-angles": {
+      "source": "webui/server.py",
+      "symbol": "instantid_prompt",
+      "summary": "SDXL + InstantID 將真人正臉特徵與 ControlNet 條件用於候選肖像生成。",
+      "steps": [
+        "準備單一、清楚、近正面的真人臉照片。",
+        "InsightFace 分析臉部；InstantID 與 ControlNet 將參考特徵加入 SDXL。",
+        "依場景／角度描述採樣候選圖，使用 checkpoint 內附 VAE。"
+      ],
+      "techniques": [
+        "InstantID",
+        "InsightFace",
+        "ControlNet",
+        "SDXL"
+      ],
+      "requirements": [
+        "動漫、插畫、多人或遮擋臉不適用；需 antelopev2 模型目錄。"
+      ]
+    },
+    "clipmode-character-photoshoot": {
+      "source": "webui/server.py",
+      "symbol": "clipmode_character_photoshoot_prompt",
+      "summary": "角色入口的 SDXL Beta 寫真：真人使用角色原圖做 InstantID 與 ReActor，動漫使用已綁定的角色 LoRA。",
+      "steps": [
+        "由角色頁選擇角色、場景、比例及種子。",
+        "伺服器綁定身份圖片與模型；真人走 InstantID / ReActor，動漫走既有角色 LoRA。",
+        "生成後進行人物與身份檢查，保存符合條件的結果。"
+      ],
+      "techniques": [
+        "伺服器綁定身份",
+        "SDXL",
+        "InstantID + ReActor",
+        "角色 LoRA"
+      ],
+      "requirements": [
+        "需要自行設定角色、身份資料與角色 LoRA；公開範例不提供這些私人資產。",
+        "瀏覽器不能替換身份圖、模型或觸發詞。"
+      ],
+      "model_directories": {
+        "ip-adapter.bin": "instantid",
+        "instantid/diffusion_pytorch_model.safetensors": "controlnet",
+        "inswapper_128.onnx": "insightface",
+        "GFPGANv1.4.pth": "facerestore_models"
+      }
+    },
+    "img2video": {
+      "source": "webui/server.py",
+      "symbol": "wan_i2v_prompt",
+      "summary": "Wan 2.1 I2V 480p 以起始圖、文字與 LightX2V 蒸餾 LoRA 生成短影片。",
+      "steps": [
+        "上傳起始圖片，輸入動態描述與畫面比例。",
+        "CLIP Vision 編碼圖片；WanImageToVideo 建立影像條件，載入 LightX2V LoRA。",
+        "預設 81 幀、16 FPS、6 步；VAE 解碼並組合 MP4。"
+      ],
+      "techniques": [
+        "Wan 2.1 I2V",
+        "CLIP Vision",
+        "LightX2V 蒸餾 LoRA",
+        "ModelSamplingSD3"
+      ],
+      "requirements": [
+        "影片輸出需要 VideoHelperSuite；模型體積與 VRAM 需求需自行確認。"
+      ]
+    },
+    "first-last-frame": {
+      "source": "webui/server.py",
+      "symbol": "wan_flf_prompt",
+      "summary": "保留的 Wan 首尾幀程式圖使用 SCAIL 2 權重與 WanFirstLastFrameToVideo；此舊入口目前停用。",
+      "steps": [
+        "程式圖定義接收首幀與尾幀。",
+        "以首尾圖片條件與 LightX2V LoRA 建立影片 latent。",
+        "採樣並解碼為影片影格。"
+      ],
+      "techniques": [
+        "首尾幀條件",
+        "WanFirstLastFrameToVideo",
+        "LightX2V"
+      ],
+      "requirements": [
+        "不要把這個停用入口當作 H3 首尾格工具；目前可見 H3 功能是獨立實作。"
+      ]
+    },
+    "dance": {
+      "source": "webui/server.py",
+      "symbol": "scail_dance_prompt",
+      "summary": "SCAIL 2 以角色參考圖和動作影片生成舞蹈；SAM3 追蹤、彩色遮罩和姿態條件輔助動作對應。",
+      "steps": [
+        "上傳角色參考圖與動作影片，使用目前唯一公開的 animate 模式。",
+        "SAM3 追蹤角色並建立 SCAIL 彩色遮罩；整理參考圖與動作影格。",
+        "使用 Wan SCAIL、LightX2V 和上下文視窗採樣，解碼後沿用動作影片原音訊。"
+      ],
+      "techniques": [
+        "SAM3 追蹤",
+        "SCAIL2ColoredMask",
+        "WanSCAILToVideo",
+        "上下文視窗",
+        "LightX2V"
+      ],
+      "requirements": [
+        "背景重新生成，不保留動作影片原場景；需 SAM3 與 SCAIL 自訂節點及權重。"
+      ]
+    },
+    "lipsync": {
+      "source": "webui/server.py",
+      "symbol": "lipsync_prompt",
+      "summary": "Wav2Lip 用語音驅動真人影片口型；不替換人物身份。",
+      "steps": [
+        "上傳可清楚辨識臉部的人物影片，選聲音庫或上傳語音。",
+        "讀取影格與音訊，Wav2Lip 依 sequential 或 repetitive 模式對嘴。",
+        "以 30 FPS 合成含驅動音訊的 MP4。"
+      ],
+      "techniques": [
+        "Wav2Lip",
+        "mel／影格對應",
+        "VideoHelperSuite"
+      ],
+      "requirements": [
+        "Wav2Lip 權重由自訂節點管理，registry 未列固定 checkpoint 檔名；需依節點文件安裝。",
+        "不是動漫角色對嘴或身份驗證工具。"
+      ]
+    },
+    "face-swap": {
+      "source": "webui/server.py",
+      "symbol": "face_swap_prompt",
+      "summary": "保留的 ReActor 逐格換臉工具；目前一般選單與生成 API 停用。",
+      "steps": [
+        "程式圖定義接收目標影片與來源臉部圖片。",
+        "ReActor 使用 inswapper_128，可選 GFPGAN / CodeFormer 修復。",
+        "輸出動畫 WebP。"
+      ],
+      "techniques": [
+        "ReActor",
+        "臉部修復",
+        "動畫 WebP"
+      ],
+      "requirements": [
+        "目前不可透過此入口生成；修復模型由所選選項決定。"
+      ]
+    },
+    "video-loop": {
+      "source": "webui/server.py",
+      "symbol": "video_loop_prompt",
+      "summary": "用 VideoHelperSuite 重複或正反播放影片，不使用擴散模型，輸出不保留原音訊。",
+      "steps": [
+        "上傳短片，設定重複次數與是否正反來回。",
+        "讀取原始影格率與影格。",
+        "按原速度合成重複 MP4；略過音訊。"
+      ],
+      "techniques": [
+        "影格重複",
+        "ping-pong",
+        "VideoHelperSuite"
+      ],
+      "requirements": [
+        "不需要 checkpoint、LoRA 或 VAE；需要 FFmpeg 與影片節點。",
+        "正反播放可減少接點跳動，但不保證所有內容完全無縫。"
+      ]
+    },
+    "voice-speak": {
+      "source": "webui/server.py",
+      "symbol": "voice_speak_prompt",
+      "summary": "聲音生成依入口選用已驗證角色聲音或聲音庫克隆；長文分段後合併。",
+      "steps": [
+        "角色頁使用該角色已設定聲音；一般工具選擇聲音庫與正確逐字稿。",
+        "角色聲音以 CastleBreezyVoiceTTS 執行；聲音庫依選項走 BreezyVoice 或 F5 克隆。",
+        "分段生成、加入間隔並合併；可選 ASR 品質檢查。"
+      ],
+      "techniques": [
+        "BreezyVoice",
+        "參考音色克隆",
+        "分段音訊合併"
+      ],
+      "requirements": [
+        "BreezyVoice／聲音庫與可選品質檢查需要額外本機服務；基礎安裝不附角色或聲音。",
+        "模型位置由選用語音服務管理，不是固定 ComfyUI checkpoint。"
+      ],
+      "source_files": [
+        "webui/server.py"
+      ],
+      "related_symbols": [
+        "voice_clone_prompt"
+      ]
+    },
+    "voice-batch": {
+      "source": "webui/server.py",
+      "symbol": null,
+      "summary": "簡報配音是管理員的專用批次流程，未註冊通用 ComfyUI builder；不是按一般生成按鈕就能執行的圖。",
+      "steps": [
+        "準備長文或 PPTX 備忘稿。",
+        "在本機配置 Custom English 語音與批次工具。",
+        "由管理員專用流程生成、檢查與合併各段配音。"
+      ],
+      "techniques": [
+        "批次語音工作",
+        "分段與重作"
+      ],
+      "requirements": [
+        "需要另行配置本機語音後端與管理員權限；公開 Pages 不上傳簡報或執行批次。"
+      ]
+    },
+    "voice-clone": {
+      "source": "webui/server.py",
+      "symbol": "voice_clone_prompt",
+      "summary": "保留的舊聲音克隆入口；F5 或 BreezyVoice 依參考音訊和逐字稿合成新語句。",
+      "steps": [
+        "選擇參考音訊並核對逐字稿。",
+        "F5 路徑選語系模型；台灣腔路徑走 BreezyVoice 服務。",
+        "文字分段合成並串接輸出。"
+      ],
+      "techniques": [
+        "F5-TTS",
+        "BreezyVoice reference clone",
+        "AudioConcat"
+      ],
+      "requirements": [
+        "日常使用「聲音生成」的聲音庫克隆；此舊入口隱藏但仍保留 API。",
+        "模型由語音節點／服務管理，不宣稱 requiredModels 空白代表免模型。"
+      ]
+    },
+    "voxcpm-tts": {
+      "source": "webui/server.py",
+      "symbol": "voxcpm_direct_prompt",
+      "summary": "進階整合語音入口可選 BreezyVoice 或 VoxCPM2；VoxCPM 使用獨立排程工作程序，不是 ComfyUI 圖。",
+      "steps": [
+        "自行配置聲音後端、LoRA profile 與參考音訊。",
+        "選擇 Voice Design、Reference、Ultimate 或本機 LoRA 模式。",
+        "由本機工作程序合成並依設定進行聲紋／ASR 檢查。"
+      ],
+      "techniques": [
+        "VoxCPM2",
+        "LoRA + reference clone",
+        "本機排程工作程序"
+      ],
+      "requirements": [
+        "隱藏的進階工具；公開版本沒有預設可用的自訂聲音、LoRA 或外部服務。",
+        "voxcpm_direct_prompt 明確拒絕當作 ComfyUI graph 使用。"
+      ],
+      "template_role": "路由保護函式；明確拒絕當作 ComfyUI 圖，改由獨立工作程序執行"
+    },
+    "voice-library": {
+      "source": "webui/server.py",
+      "symbol": null,
+      "summary": "聲音庫管理參考音訊及逐字稿，供克隆工具選用；本身不生成聲音。",
+      "steps": [
+        "在本機上傳已取得使用權的參考音訊。",
+        "核對逐字稿與名稱。",
+        "在聲音生成／對嘴表單選取音訊。"
+      ],
+      "techniques": [
+        "本機素材管理"
+      ],
+      "requirements": [
+        "無生成模板或 checkpoint；公開文件不包含任何個人聲音庫。"
+      ]
+    },
+    "post-generator": {
+      "source": "webui/server.py",
+      "symbol": null,
+      "summary": "貼文生成器依平台、語氣和長度呼叫所選文字後端；不是 ComfyUI 模型圖。",
+      "steps": [
+        "輸入主題並選擇平台、語氣、長度及後端。",
+        "Claude／Grok 風格使用本機 Claude CLI；ChatGPT 與 Gemini 使用各自 API。",
+        "校對文案後自行使用；文件頁不會送出 API 請求。"
+      ],
+      "techniques": [
+        "文字提示詞組合",
+        "可設定 API 後端"
+      ],
+      "requirements": [
+        "需自行安裝登入本機 CLI 或設定所選供應商金鑰；Grok 選項是 Claude 風格模擬。",
+        "API 憑證只在自己部署的環境設定，不放進工作流、文件或公開 repo。"
+      ]
+    },
+    "h3-text-video": {
+      "source": "webui/minimax_h3_native.py",
+      "symbol": "build_t2v_prompt",
+      "summary": "MiniMax H3 三段文字生成有聲影片；表單經 product contract 檢查後由原生程式圖編譯，不直接執行下載的官方 JSON。",
+      "steps": [
+        "填寫三段畫面、環境音與配樂描述。",
+        "選擇畫布、合法幀數與加速模式。",
+        "Stock 預設 20 步、res_multistep / simple；分別解碼影片與音訊後以 24 FPS 儲存影片。"
+      ],
+      "techniques": [
+        "MiniMax H3 FL2VA",
+        "原生音畫 latent",
+        "合法 17k+5 幀數",
+        "明確選擇加速模式"
+      ],
+      "requirements": [
+        "Stock 為預設；Sage、EasyCache、TeaCache 需要對應節點與相容環境。",
+        "官方 JSON 為可閱讀參考；應用程式有自己的提示詞、尺寸與輸入驗證。"
+      ],
+      "templates": [
+        {
+          "path": "workflows/minimax_h3/official/video_minimax_h3_t2v.json",
+          "role": "官方參考模板；應用程式使用原生 Python builder"
+        }
+      ],
+      "model_directories": {
+        "minimax_h3_fl2va_pruned_int8_convrot.safetensors": "diffusion_models",
+        "minimax_h3_ref2va_pruned_int8_convrot.safetensors": "diffusion_models",
+        "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors": "text_encoders",
+        "minimax_h3_video_vae_fp16.safetensors": "vae",
+        "minimax_h3_audio_vae_fp32.safetensors": "vae"
+      },
+      "related_symbols": [
+        "_build_graph"
+      ],
+      "source_files": [
+        "webui/minimax_h3_product.py"
+      ]
+    },
+    "h3-image-video": {
+      "source": "webui/minimax_h3_native.py",
+      "symbol": "build_i2v_prompt",
+      "summary": "MiniMax H3 首格／尾格生成有聲影片；表單經 product contract 檢查後由原生程式圖編譯，不直接執行下載的官方 JSON。",
+      "steps": [
+        "填寫三段畫面、環境音與配樂描述。",
+        "選擇畫布、合法幀數與加速模式；I2V 至少一張首格或尾格。",
+        "Stock 預設 20 步、res_multistep / simple；分別解碼影片與音訊後以 24 FPS 儲存影片。"
+      ],
+      "techniques": [
+        "MiniMax H3 FL2VA",
+        "原生音畫 latent",
+        "合法 17k+5 幀數",
+        "明確選擇加速模式"
+      ],
+      "requirements": [
+        "Stock 為預設；Sage、EasyCache、TeaCache 需要對應節點與相容環境。",
+        "官方 JSON 為可閱讀參考；應用程式有自己的提示詞、尺寸與輸入驗證。"
+      ],
+      "templates": [
+        {
+          "path": "workflows/minimax_h3/official/video_minimax_h3_i2v.json",
+          "role": "官方參考模板；應用程式使用原生 Python builder"
+        }
+      ],
+      "model_directories": {
+        "minimax_h3_fl2va_pruned_int8_convrot.safetensors": "diffusion_models",
+        "minimax_h3_ref2va_pruned_int8_convrot.safetensors": "diffusion_models",
+        "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors": "text_encoders",
+        "minimax_h3_video_vae_fp16.safetensors": "vae",
+        "minimax_h3_audio_vae_fp32.safetensors": "vae"
+      },
+      "related_symbols": [
+        "_build_graph"
+      ],
+      "source_files": [
+        "webui/minimax_h3_product.py"
+      ]
+    },
+    "h3-reference-video": {
+      "source": "webui/minimax_h3_native.py",
+      "symbol": "build_ref2va_prompt",
+      "summary": "MiniMax H3 多圖片／影片／音訊參考生成有聲影片；表單經 product contract 檢查後由原生程式圖編譯，不直接執行下載的官方 JSON。",
+      "steps": [
+        "填寫六段提示詞並使 Picture／Video／Audio tags 與素材一致。",
+        "提供最多 9 張圖、3 支影片與 3 段音訊，至少一項。",
+        "Stock 預設 20 步、res_multistep / simple；分別解碼影片與音訊後以 24 FPS 儲存影片。"
+      ],
+      "techniques": [
+        "MiniMax H3 Ref2VA",
+        "原生音畫 latent",
+        "合法 17k+5 幀數",
+        "明確選擇加速模式"
+      ],
+      "requirements": [
+        "Stock 為預設；Sage、EasyCache、TeaCache 需要對應節點與相容環境。",
+        "官方 JSON 為可閱讀參考；應用程式有自己的提示詞、尺寸與輸入驗證。"
+      ],
+      "templates": [
+        {
+          "path": "workflows/minimax_h3/official/video_minimax_h3_r2v.json",
+          "role": "官方參考模板；應用程式使用原生 Python builder"
+        }
+      ],
+      "model_directories": {
+        "minimax_h3_fl2va_pruned_int8_convrot.safetensors": "diffusion_models",
+        "minimax_h3_ref2va_pruned_int8_convrot.safetensors": "diffusion_models",
+        "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors": "text_encoders",
+        "minimax_h3_video_vae_fp16.safetensors": "vae",
+        "minimax_h3_audio_vae_fp32.safetensors": "vae"
+      },
+      "related_symbols": [
+        "_build_graph"
+      ],
+      "source_files": [
+        "webui/minimax_h3_product.py"
+      ]
+    },
+    "qwen21-text2img": {
+      "source": "webui/qwen_image21.py",
+      "symbol": "compile_prompt",
+      "summary": "Qwen-Image 2.1 文生圖使用中文／英文文字條件與原生比例／百萬像素選擇；獨立於 Z-Image 表單。",
+      "steps": [
+        "填寫描述；文字排版內容以引號標示。",
+        "ResolutionSelector 決定畫布；TextEncodeQwenImage21 編碼正負向提示。",
+        "以 euler / simple、預設 25 步 CFG 1 採樣，VAE 解碼 PNG。"
+      ],
+      "techniques": [
+        "Qwen-Image 2.1",
+        "TextEncodeQwenImage21",
+        "圖文條件",
+        "VAE 解碼"
+      ],
+      "requirements": [
+        "需要支援 TextEncodeQwenImage21 的 ComfyUI 版本及對應權重；模型不隨 repo 發布。"
+      ],
+      "templates": [
+        {
+          "path": "workflows/qwen_image21/image_qwen_image_2_1_t2i.json",
+          "role": "官方參考模板；表單使用 Python compile_prompt"
+        }
+      ]
+    },
+    "qwen21-edit": {
+      "source": "webui/qwen_image21.py",
+      "symbol": "compile_prompt",
+      "summary": "Qwen-Image 2.1 指令改圖可依序使用 1–4 張圖片；第一張決定輸出比例。",
+      "steps": [
+        "依序上傳圖片，指令用 <image1> 到 <image4> 指定來源。",
+        "TextEncodeQwenImage21 建立圖片條件與 latent；QwenImage21Cache 包裝模型。",
+        "依選定大小採樣並解碼儲存；不可跳過中間圖片槽。"
+      ],
+      "techniques": [
+        "Qwen-Image 2.1",
+        "TextEncodeQwenImage21",
+        "圖文條件",
+        "VAE 解碼"
+      ],
+      "requirements": [
+        "需要支援 TextEncodeQwenImage21 的 ComfyUI 版本及對應權重；模型不隨 repo 發布。"
+      ],
+      "templates": [
+        {
+          "path": "workflows/qwen_image21/image_qwen_image_2_1_image_edit.json",
+          "role": "官方參考模板；表單使用 Python compile_prompt"
+        }
+      ]
+    }
+  }
+}

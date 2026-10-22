@@ -62,7 +62,7 @@ def test_launcher_first_run_with_fake_comfy(tmp_path):
             with opener.open(base + '/api/workflow-library', timeout=5) as response:
                 catalog = json.load(response)
             assert len(catalog['items']) >= 240
-            assert sum(bool(item.get('available')) for item in catalog['items']) == 40
+            assert sum(bool(item.get('available')) for item in catalog['items']) == 46
             with opener.open(base + '/api/characters', timeout=5) as response:
                 assert json.load(response)['characters'] == []
             assert not any(path.startswith('POST ') for path in requests), 'Startup must not execute a workflow'

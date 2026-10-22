@@ -1,6 +1,6 @@
 # dseditor community workflow attribution
 
-The 18 JSON files in `workflows/community/dseditor/` derive from
+The 24 JSON files in `workflows/community/dseditor/` derive from
 [dseditor/ComfyuiWorkflows](https://github.com/dseditor/ComfyuiWorkflows/tree/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806),
 revision `b2ea26fa602d6eebadb1de1e4ccf1ecc91875806`.
 

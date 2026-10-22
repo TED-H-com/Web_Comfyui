@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import urllib.error
 import urllib.parse
 
 try:
@@ -17,6 +18,32 @@ except ModuleNotFoundError:
 ROOT = Path(__file__).resolve().parents[1]
 MAX_WORKFLOW_BYTES = 8 * 1024 * 1024
 NON_EXECUTABLE = {'Note', 'MarkdownNote', 'Reroute', 'PrimitiveNode'}
+# Only reviewed widget layouts are interpreted. The indices are widget indices,
+# not socket indices (for example CheckpointLoader also has a config widget).
+MODEL_LOADERS = {
+    'CheckpointLoaderSimple': ('checkpoints', {'ckpt_name': 0}),
+    'CheckpointLoader': ('checkpoints', {'ckpt_name': 1}),
+    'UNETLoader': ('diffusion_models', {'unet_name': 0}),
+    'UnetLoaderGGUF': ('diffusion_models', {'unet_name': 0}),
+    'VAELoader': ('vae', {'vae_name': 0}),
+    'LoraLoader': ('loras', {'lora_name': 0}),
+    'LoraLoaderModelOnly': ('loras', {'lora_name': 0}),
+    'CLIPLoader': ('text_encoders', {'clip_name': 0}),
+    'CLIPLoaderGGUF': ('text_encoders', {'clip_name': 0}),
+    'DualCLIPLoader': ('text_encoders', {'clip_name1': 0, 'clip_name2': 1}),
+    'DualCLIPLoaderGGUF': ('text_encoders', {'clip_name1': 0, 'clip_name2': 1}),
+    'CLIPVisionLoader': ('clip_vision', {'clip_name': 0}),
+    'ControlNetLoader': ('controlnet', {'control_net_name': 0}),
+    'DiffControlNetLoader': ('controlnet', {'control_net_name': 0}),
+    'UpscaleModelLoader': ('upscale_models', {'model_name': 0}),
+}
+DIRECTORY_ALIASES = {'diffusion_models': {'diffusion_models', 'unet'},
+                     'text_encoders': {'text_encoders', 'clip'}}
+VAE_BUILTINS = {'pixel_space', 'taesd', 'taesdxl', 'taesd3', 'taef1', 'taef2'}
+
+
+class LibraryRequestError(ValueError):
+    """A deliberate, public-facing validation message, never an upstream error."""
 
 
 def read_json(path):
@@ -38,38 +65,92 @@ def graph_details(graph):
     raise ValueError('不是 ComfyUI visual / API 工作流')
 
 
-def graph_models(graph):
-    """Describe known loader fields, without publishing absolute or opaque paths."""
-    loaders = {
-        'CheckpointLoaderSimple': ('checkpoints', ('ckpt_name',)),
-        'UNETLoader': ('diffusion_models', ('unet_name',)),
-        'UnetLoaderGGUF': ('diffusion_models', ('unet_name',)),
-        'VAELoader': ('vae', ('vae_name',)),
-        'LoraLoader': ('loras', ('lora_name',)),
-        'LoraLoaderModelOnly': ('loras', ('lora_name',)),
-        'CLIPLoader': ('text_encoders', ('clip_name',)),
-        'DualCLIPLoader': ('text_encoders', ('clip_name1', 'clip_name2')),
-    }
-    result, seen = [], set()
+def _model_name(value, kind):
+    if not isinstance(value, str) or len(value) > 240:
+        return None
+    name = value.replace('\\', '/')
+    if kind == 'VAELoader' and name in VAE_BUILTINS:
+        return name
+    if (not re.fullmatch(r'[\w .()/+-]+\.(?:safetensors|ckpt|gguf|pth|pt|bin|sft)', name, re.I)
+        or name.startswith(('/', '~')) or '..' in name.split('/')
+        or re.search(r'(?:sk-|aip_|gh[pousr]_|hf_)[A-Za-z0-9_-]{16,}', name)):
+        return None
+    return name
+
+
+def _model_selections(graph):
+    """Yield known fields, marking connected or unsafe selections as unknown."""
     for node in active_nodes(graph):
         kind = node['type']
-        if kind not in loaders:
+        if kind not in MODEL_LOADERS:
             continue
-        directory, fields = loaders[kind]
+        directory, fields = MODEL_LOADERS[kind]
         raw = node.get('inputs', {}) if node.get('class_type') else node.get('widgets_values', [])
-        for index, field in enumerate(fields):
+        inputs = node.get('inputs', [])
+        connected = {item.get('name') for item in inputs
+                     if isinstance(item, dict) and item.get('link') is not None} if isinstance(inputs, list) else set()
+        for field, index in fields.items():
             value = raw.get(field) if isinstance(raw, dict) else raw[index] if isinstance(raw, list) and index < len(raw) else None
-            if not isinstance(value, str) or len(value) > 240:
-                continue
-            name = value.replace('\\', '/')
-            if (not re.fullmatch(r'[\w .()/+-]+\.(?:safetensors|ckpt|gguf|pth|pt|bin|sft)', name, re.I)
-                or name.startswith(('/', '~')) or '..' in name.split('/')
-                or re.search(r'(?:sk-|aip_|gh[pousr]_|hf_)[A-Za-z0-9_-]{16,}', name)):
-                continue
-            if (directory, name) not in seen:
-                result.append({'name': name, 'node_type': kind, 'directory_hint': directory})
-                seen.add((directory, name))
+            yield directory, kind, field, None if field in connected else _model_name(value, kind)
+
+
+def graph_models(graph):
+    """Describe known loader fields, without publishing absolute or opaque paths."""
+    result, seen = [], set()
+    for directory, kind, _, name in _model_selections(graph):
+        if name is not None and (directory, name) not in seen:
+            result.append({'name': name, 'node_type': kind, 'directory_hint': directory})
+            seen.add((directory, name))
     return result
+
+
+def _model_key(name, directory):
+    """Normalize documented directory aliases, never arbitrary basename matches."""
+    parts = name.replace('\\', '/').split('/')
+    aliases = DIRECTORY_ALIASES.get(directory, {directory})
+    if len(parts) > 2 and parts[0] == 'models' and parts[1] in aliases:
+        parts = parts[1:]
+    if len(parts) > 1 and parts[0] in aliases:
+        parts = parts[1:]
+    return '/'.join(parts)
+
+
+def dependency_checks(entry, graph, object_info):
+    """Check the current node/model inventory; this never certifies execution."""
+    if not isinstance(object_info, dict):
+        raise ValueError('Invalid ComfyUI object inventory')
+    missing, checked, unknown = [], 0, 0
+    seen_missing = set()
+    for directory, kind, field, name in _model_selections(graph):
+        schema = object_info.get(kind, {})
+        inputs = schema.get('input', {}) if isinstance(schema, dict) else {}
+        descriptor = None
+        if isinstance(inputs, dict):
+            for section in ('required', 'optional'):
+                fields = inputs.get(section, {})
+                if isinstance(fields, dict) and field in fields:
+                    descriptor = fields[field]
+                    break
+        choices = descriptor[0] if isinstance(descriptor, (list, tuple)) and descriptor else None
+        if name is None or not isinstance(choices, (list, tuple)) or any(not isinstance(choice, str) for choice in choices):
+            unknown += 1
+            continue
+        checked += 1
+        available = {_model_key(choice, directory) for choice in choices}
+        if _model_key(name, directory) not in available and (kind, directory, name) not in seen_missing:
+            missing.append({'name': name, 'node_type': kind, 'directory_hint': directory})
+            seen_missing.add((kind, directory, name))
+    # Unknown custom loader layouts must not be represented as fully checked.
+    # Their arbitrary widget strings and object_info choices stay private.
+    for node in active_nodes(graph):
+        kind = node['type']
+        if kind not in MODEL_LOADERS and 'loader' in kind.lower():
+            unknown += 1
+    absent_nodes = missing_nodes(entry, object_info)
+    return {'missing_nodes': absent_nodes, 'missing_models': missing,
+            'models_checked': checked, 'model_checks_unknown': unknown,
+            'dependency_status': 'missing' if absent_nodes or missing else 'partial' if unknown else 'present',
+            'gpu_tested': False}
 
 
 def safe_path(relative, root=ROOT):
@@ -83,7 +164,7 @@ def safe_path(relative, root=ROOT):
     return candidate
 
 
-def catalog(root=ROOT, *, include_discovered=True):
+def catalog(root=ROOT, *, include_discovered=True, object_info=None):
     entries = []
     covered = set()
     provenance_path = root / 'manifests/workflow_coverage/imported_sources.json'
@@ -117,6 +198,8 @@ def catalog(root=ROOT, *, include_discovered=True):
                     entry['status'] = 'file-unavailable'
             entry['kind'] = 'workflow'
             entry['guide'] = enrich_entry(entry, graph)
+            if entry['available'] and object_info is not None:
+                entry.update(dependency_checks(entry, graph, object_info))
             entries.append(entry)
     paths = (root / 'workflows').rglob('*.json') if include_discovered else (root / path for path in by_path)
     for path in sorted(paths):
@@ -141,6 +224,8 @@ def catalog(root=ROOT, *, include_discovered=True):
                 'notes': by_path[relative].get('modifications', [])} if relative in by_path else {}),
         }
         entry['guide'] = enrich_entry(entry, graph)
+        if object_info is not None:
+            entry.update(dependency_checks(entry, graph, object_info))
         entries.append(entry)
     recipes_path = root / 'manifests/community_recipes/recipes.json'
     if recipes_path.is_file():
@@ -156,7 +241,7 @@ def catalog(root=ROOT, *, include_discovered=True):
 def selected(entry_id, root=ROOT):
     entry = next((e for e in catalog(root) if e['id'] == entry_id and e.get('available')), None)
     if entry is None:
-        raise ValueError('這個項目是參考資料，沒有可載入的本機 JSON')
+        raise LibraryRequestError('這個項目是參考資料，沒有可載入的本機 JSON')
     return entry, read_json(safe_path(entry['local_path'], root))
 
 
@@ -176,24 +261,26 @@ def handle_get(handler, path, query):
             handler.send_json(graph, cache_control='no-store')
         else:
             server = sys.modules[handler.__class__.__module__]
-            entries = catalog()
+            info = None
             connection = {'checked': False}
             if (params.get('check') or [''])[0] == '1':
                 try:
                     info = server.request_json('/object_info')
-                    for entry in entries:
-                        if entry.get('available'):
-                            entry['missing_nodes'] = missing_nodes(entry, info)
+                    if not isinstance(info, dict):
+                        raise ValueError('Invalid ComfyUI object inventory')
                     connection = {'checked': True, 'connected': True}
                 except Exception:
+                    info = None
                     connection = {'checked': True, 'connected': False, 'error': '無法連線 ComfyUI，請先啟動服務。'}
+            entries = catalog(object_info=info) if info is not None else catalog()
             browser_url = os.environ.get('COMFYUI_BROWSER_URL', 'http://127.0.0.1:8188')
             parsed = urllib.parse.urlsplit(browser_url)
             if parsed.scheme not in {'http', 'https'} or parsed.username or parsed.password:
                 browser_url = 'http://127.0.0.1:8188'
             handler.send_json({'items': entries, 'connection': connection, 'comfy_url': browser_url}, cache_control='no-store')
     except (ValueError, OSError) as error:
-        handler.send_json({'ok': False, 'error': str(error)}, 400)
+        message = str(error) if isinstance(error, LibraryRequestError) else '無法讀取工作流資料；請確認來源檔案與格式後重試。'
+        handler.send_json({'ok': False, 'error': message}, 400)
     return True
 
 
@@ -206,22 +293,35 @@ def handle_post(handler, path):
         body = handler.read_json()
         entry, graph = selected(str(body.get('id', '')))
         if entry.get('format') != 'visual':
-            raise ValueError('API 格式請下載後在 ComfyUI 匯入；原生編輯器支援視覺工作流。')
+            raise LibraryRequestError('API 格式請下載後在 ComfyUI 匯入；原生編輯器支援視覺工作流。')
         server = sys.modules[handler.__class__.__module__]
         digest = hashlib.sha256(json.dumps(graph, sort_keys=True).encode()).hexdigest()[:12]
         filename = 'workflows/webui-library/' + entry['id'] + '-' + digest + '.json'
         # Entry IDs are catalog-controlled, but keep the destination safe for
         # manifests supplied by repository contributors as well.
         if any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for c in entry['id']):
-            raise ValueError('工作流 ID 無效')
+            raise LibraryRequestError('工作流 ID 無效')
         info = server.request_json('/object_info')
-        missing = missing_nodes(entry, info)
-        server.request_json('/userdata/' + urllib.parse.quote(filename, safe='') + '?overwrite=false', graph, method='POST')
-        handler.send_json({'ok': True, 'filename': filename, 'missing_nodes': missing,
-                           'message': '已加入 ComfyUI 的 webui-library 資料夾；請在工作流側欄開啟並檢查模型後執行。'})
+        checks = dependency_checks(entry, graph, info)
+        target = '/userdata/' + urllib.parse.quote(filename, safe='')
+        already_imported = False
+        try:
+            server.request_json(target + '?overwrite=false', graph, method='POST')
+        except urllib.error.HTTPError as error:
+            if error.code != 409:
+                raise
+            existing = server.request_json(target)
+            if json.dumps(existing, sort_keys=True) != json.dumps(graph, sort_keys=True):
+                handler.send_json({'ok': False, 'error': '同名工作流已存在且內容不同；請在 ComfyUI 保留或重新命名既有檔案，再重試。'}, 409)
+                return True
+            already_imported = True
+        handler.send_json({'ok': True, 'filename': filename, **checks,
+                           'already_imported': already_imported,
+                           'message': '相同工作流已在 ComfyUI 的 webui-library 資料夾；請從側欄開啟。' if already_imported else
+                                      '已加入 ComfyUI 的 webui-library 資料夾；請在工作流側欄開啟並檢查模型後執行。'})
     except Exception as error:
         # Upstream failures may include private endpoint details. Return a small
         # deliberate error, never raw credentials, URLs, or HTTP response bodies.
-        message = str(error) if isinstance(error, ValueError) else 'ComfyUI 載入失敗；若已載入，請在 webui-library 資料夾開啟。'
+        message = str(error) if isinstance(error, LibraryRequestError) else 'ComfyUI 載入失敗；請確認服務與工作流仍可用後重試。'
         handler.send_json({'ok': False, 'error': message}, 400)
     return True

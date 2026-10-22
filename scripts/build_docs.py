@@ -25,15 +25,21 @@ from scripts.check_public_release import inspect
 
 MARKER = '.web-comfyui-docs'
 ASSETS = {
-    'webui/docs/index.html': 'index.html',
     'webui/docs/docs.css': 'assets/docs.css',
     'webui/docs/docs.js': 'assets/docs.js',
+    'webui/static/app.js': 'assets/app.js',
+    'webui/static/login-return.js': 'assets/login-return.js',
+    'webui/static/provider-fabric.js': 'assets/provider-fabric.js',
+    'webui/static/provider-fabric.css': 'assets/provider-fabric.css',
+    'webui/static/project-preview.js': 'assets/project-preview.js',
+    'webui/static/project-preview.css': 'assets/project-preview.css',
     'webui/static/styles.css': 'assets/styles.css',
     'webui/static/workflow-library.css': 'assets/workflow-library.css',
     'webui/static/workflow-library.js': 'assets/workflow-library.js',
     'LICENSE': 'licenses/project-GPL-3.0.txt',
     'third_party/community/dseditor/NOTICE.md': 'licenses/dseditor-NOTICE.md',
 }
+HTML_SOURCE = 'webui/static/index.html'
 FIELDS = {'id', 'title', 'category', 'source', 'kind', 'available', 'format', 'tags',
           'node_types', 'node_count', 'models', 'license', 'upstream_url', 'source_urls',
           'status', 'requirements', 'settings', 'validation', 'guide'}
@@ -55,6 +61,20 @@ def source_bytes(root: Path, relative: str) -> bytes:
 
 def source_json(root, relative):
     return json.loads(source_bytes(root, relative))
+
+
+def site_html(root):
+    """Use the real application markup and scripts, with a read-only adapter."""
+    html = source_bytes(root, HTML_SOURCE).decode('utf-8')
+    html = html.replace('/static/', './assets/')
+    html = html.replace('<title>Web ComfyUI</title>', '<title>Web ComfyUI · 互動說明</title>')
+    html = html.replace('class="auth-gate"', 'class="auth-gate hidden"')
+    policy = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
+    html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + policy + '">\n<link rel="stylesheet" href="./assets/docs.css">\n</head>')
+    banner = '<aside class="app-docs-banner" id="docsBanner"><p>互動說明版 · 點功能或生成按鈕，查看實際模型、template 與技巧。</p><button id="docsHelpButton" class="ghost small" type="button">安裝與使用說明</button></aside>'
+    html = html.replace('</header>', '</header>' + banner, 1)
+    html = html.replace('<script src="./assets/login-return.js', '<script src="./assets/docs.js"></script>\n    <script src="./assets/login-return.js', 1)
+    return html.encode('utf-8')
 
 
 def public_url(value):
@@ -85,6 +105,10 @@ def build(root: Path = ROOT, output: Path | None = None) -> dict:
     community = source_json(root, 'manifests/community_workflows/catalog.json')
     coverage = source_json(root, 'manifests/workflow_coverage/imported_sources.json')
     source_json(root, 'manifests/community_recipes/recipes.json')
+    from scripts.app_guide_catalog import SOURCE_FILES, catalog as app_catalog
+    for relative in SOURCE_FILES:
+        source_bytes(root, relative)
+    app_guide = app_catalog(root)
     approved = {}
     records = []
     licenses = {}
@@ -161,6 +185,8 @@ def build(root: Path = ROOT, output: Path | None = None) -> dict:
             path = stage / relative; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
         for source, destination in ASSETS.items():
             write(destination, source_bytes(root, source))
+        write('index.html', site_html(root))
+        write('app-guide.json', (json.dumps(app_guide, ensure_ascii=False, indent=2) + '\n').encode())
         for relative, data in license_bytes.items():
             write('licenses/' + relative + '.txt', data)
         for entry, item in zip(entries, items):

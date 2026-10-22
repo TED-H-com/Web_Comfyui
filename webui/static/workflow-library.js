@@ -34,7 +34,7 @@ window.WorkflowLibrary = (() => {
     const heading = el('div', '', 'workflow-heading');
     const title = el('div');
     title.append(el('h1', '工作庫'), el('p', docsMode ? '先了解用途、執行步驟與技巧，再選擇適合自己的工作流。' : '依用途選擇工作流，檢查模型與節點，再送到自己的 ComfyUI。', 'sub'));
-    const check = el('button', docsMode ? '重新載入' : '檢查 ComfyUI 節點', 'ghost small'); check.type = 'button';
+    const check = el('button', docsMode ? '重新載入' : '檢查 ComfyUI 節點與模型', 'ghost small'); check.type = 'button';
     heading.append(title, check);
     const toolbar = el('div', '', 'catalogue-toolbar');
     const search = el('input'); search.type = 'search'; search.placeholder = '搜尋用途、技巧、模型或節點'; search.setAttribute('aria-label', '搜尋工作流');
@@ -73,6 +73,11 @@ window.WorkflowLibrary = (() => {
       if (guide.evidence) content.append(el('p', guide.evidence, 'workflow-evidence'));
       if (item.models?.length) list(content, '模型需求', item.models.map(model => typeof model === 'string' ? model : `${model.name}${model.directory_hint ? ' → models/' + model.directory_hint : ''}${model.node_type ? '（' + model.node_type + '）' : ''}`));
       if (item.missing_nodes) list(content, '目前缺少的節點', item.missing_nodes);
+      if (item.dependency_status) {
+        const description = item.dependency_status === 'missing' ? '有節點或模型尚未具備，請先補齊下列項目。' : item.dependency_status === 'partial' ? '已確認部分依賴；仍有模型選項需在原生圖中核對。' : '已列出的節點與模型選項都存在；仍需確認素材、版本相容性與 GPU 容量。';
+        content.append(el('p', `${description} 已核對 ${item.models_checked || 0} 個模型選項，${item.model_checks_unknown || 0} 個尚無法確認。`, 'workflow-evidence'));
+        list(content, '目前缺少的模型', (item.missing_models || []).map(model => `${model.name} → models/${model.directory_hint || '請依節點說明放置'}`));
+      }
       const technical = el('details', '', 'workflow-technical'); technical.append(el('summary', '節點、參數與來源資訊'));
       for (const [label, value] of [['來源', item.source || item.source_urls], ['授權', item.license], ['節點需求', item.node_types], ['環境需求', item.requirements], ['方案設定', item.settings], ['驗證紀錄', item.validation]]) {
         if (!value || (Array.isArray(value) && !value.length)) continue;
@@ -123,7 +128,8 @@ window.WorkflowLibrary = (() => {
         card.append(el('span', item.category || 'workflow', 'workflow-category'), el('strong', item.title));
         if (item.guide?.summary) card.append(el('span', item.guide.summary, 'workflow-card-summary'));
         card.append(el('span', item.available ? '已收錄 JSON' : item.kind === 'recipe' ? '方法與參數' : '上游參考', 'workflow-state'), el('small', item.source || '教學整理'));
-        if (item.missing_nodes) card.append(el('small', item.missing_nodes.length ? `缺少 ${item.missing_nodes.length} 個節點` : '節點已具備，模型待確認'));
+        if (item.dependency_status) card.append(el('small', item.dependency_status === 'missing' ? `缺少 ${(item.missing_nodes || []).length} 個節點、${(item.missing_models || []).length} 個模型` : item.dependency_status === 'partial' ? '部分模型仍需核對' : '已核對依賴，GPU 待驗證'));
+        else if (item.missing_nodes) card.append(el('small', item.missing_nodes.length ? `缺少 ${item.missing_nodes.length} 個節點` : '節點已具備，模型待確認'));
         card.onclick = () => details(item, card); grid.append(card);
       }
       if (!filtered.length) grid.append(el('p', '沒有符合條件的工作流。請調整搜尋或分類。'));

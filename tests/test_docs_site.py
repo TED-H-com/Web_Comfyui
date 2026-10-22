@@ -6,6 +6,7 @@ from html.parser import HTMLParser
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 from urllib.parse import urlsplit
 
@@ -13,7 +14,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from scripts import build_docs
+from scripts import app_guide_catalog, build_docs
 
 MANIFESTS = (
     'manifests/community_workflows/catalog.json',
@@ -30,7 +31,7 @@ def read_json(path):
 def source(tmp_path):
     """Copy only the reviewed build inputs into the disk-based pytest fixture."""
     root = tmp_path / 'source'
-    paths = set(build_docs.ASSETS) | set(MANIFESTS)
+    paths = set(build_docs.ASSETS) | set(MANIFESTS) | set(app_guide_catalog.SOURCE_FILES) | {build_docs.HTML_SOURCE}
     community = read_json(ROOT / MANIFESTS[0])
     coverage = read_json(ROOT / MANIFESTS[1])
     for row in community['workflows']:
@@ -65,11 +66,13 @@ def test_artifact_contains_only_reviewed_graphs_assets_and_licenses(source, tmp_
     payload = read_json(output / 'catalog.json')
     records = read_json(output / 'sources.json')['records']
     downloads = [row for row in payload['items'] if row.get('available')]
-    assert result['downloads'] == len(downloads) == len(records) == 40
+    approved = {row['local_path'] for row in read_json(source / MANIFESTS[0])['workflows'] if row.get('local_path')}
+    approved.update(row['destination'] for row in read_json(source / MANIFESTS[1])['records'] if row.get('destination'))
+    assert result['downloads'] == len(downloads) == len(records) == len(approved)
     assert payload['mode'] == 'documentation'
     assert payload['gpu_tested'] is False
     expected = set(build_docs.ASSETS.values()) | {
-        'catalog.json', 'sources.json', 'NOTICE.txt', '.nojekyll', build_docs.MARKER,
+        'index.html', 'app-guide.json', 'catalog.json', 'sources.json', 'NOTICE.txt', '.nojekyll', build_docs.MARKER,
     }
     for record in records:
         graph = record['download_url'].removeprefix('./')
@@ -89,6 +92,10 @@ def test_artifact_contains_only_reviewed_graphs_assets_and_licenses(source, tmp_
         if row.get('source') == 'ecjojo':
             assert not row['available'] and 'download_url' not in row
     assert 'sources.json' in (output / 'NOTICE.txt').read_text()
+    app = read_json(output / 'app-guide.json')
+    assert len(app['features']) == len(app['guides']) == 23
+    assert {row['id'] for row in app['features']} == {row['id'] for row in app['guides']}
+    assert not any(relative.endswith('.py') for relative in artifact_files(output))
 
 
 def test_untracked_workflows_runtime_data_and_extra_metadata_are_excluded(source, tmp_path):
@@ -118,7 +125,7 @@ def test_rebuild_removes_stale_runtime_files(source, tmp_path):
     assert not (output / '.env').exists()
 
 
-@pytest.mark.parametrize('kind', ['graph', 'graph-parent', 'asset', 'license'])
+@pytest.mark.parametrize('kind', ['graph', 'graph-parent', 'asset', 'license', 'app-source', 'app-manifest'])
 def test_symlink_inputs_are_rejected(source, tmp_path, kind):
     row = first_download(source)
     if kind == 'graph':
@@ -126,7 +133,11 @@ def test_symlink_inputs_are_rejected(source, tmp_path, kind):
     elif kind == 'graph-parent':
         path = (source / row['local_path']).parent
     elif kind == 'asset':
-        path = source / 'webui/docs/index.html'
+        path = source / build_docs.HTML_SOURCE
+    elif kind == 'app-source':
+        path = source / 'webui/server.py'
+    elif kind == 'app-manifest':
+        path = source / 'manifests/app_guides/catalog.json'
     else:
         community = read_json(source / MANIFESTS[0])
         path = source / community['sources'][row['source']]['license_local_path']
@@ -145,10 +156,11 @@ def test_graph_hash_mismatch_is_rejected(source, tmp_path):
         build_docs.build(source, tmp_path / 'site')
 
 
-def test_credential_shaped_source_is_rejected_without_echoing_value(source, tmp_path):
+@pytest.mark.parametrize('relative', ['webui/docs/docs.js', 'webui/server.py'])
+def test_credential_shaped_source_is_rejected_without_echoing_value(source, tmp_path, relative):
     synthetic = 'gh' + 'p_' + '0' * 36
-    path = source / 'webui/docs/docs.js'
-    path.write_text(path.read_text() + '\n// fixture: ' + synthetic + '\n')
+    path = source / relative
+    path.write_text(path.read_text() + '\n' + json.dumps(synthetic) + '\n')
     with pytest.raises(ValueError, match='Source failed release scan') as caught:
         build_docs.build(source, tmp_path / 'site')
     assert synthetic not in str(caught.value)
@@ -215,7 +227,7 @@ def test_symlink_output_parent_is_rejected(source, tmp_path):
     assert not list(actual.iterdir())
 
 
-def test_static_shell_uses_project_relative_assets_and_has_no_credentials_form(source, tmp_path):
+def test_static_shell_preserves_app_navigation_and_loads_adapter_first(source, tmp_path):
     output = tmp_path / 'site'
     build_docs.build(source, output)
     class References(HTMLParser):
@@ -223,20 +235,124 @@ def test_static_shell_uses_project_relative_assets_and_has_no_credentials_form(s
             super().__init__()
             self.references = []
             self.tags = []
+            self.views = []
+            self.ids = []
+            self.scripts = []
         def handle_starttag(self, tag, attrs):
             self.tags.append(tag)
+            values = dict(attrs)
+            if 'data-view' in values:
+                self.views.append(values['data-view'])
+            if 'id' in values:
+                self.ids.append(values['id'])
+            if tag == 'script':
+                self.scripts.append(values.get('src'))
             for key, value in attrs:
                 if key in ('src', 'href') and value:
                     self.references.append(value)
     html = (output / 'index.html').read_text()
     parsed = References()
     parsed.feed(html)
-    assert 'form' not in parsed.tags and 'input' not in parsed.tags
+    original = References()
+    original.feed((source / build_docs.HTML_SOURCE).read_text())
+    assert parsed.views == original.views
+    assert set(original.ids) <= set(parsed.ids)
+    assert 'form' in parsed.tags and 'input' in parsed.tags
+    assert 'id="authGate" class="auth-gate hidden"' in html
     for reference in parsed.references:
         if reference.startswith('#') or urlsplit(reference).scheme:
             continue
         assert not reference.startswith('/')
-        assert (output / reference).is_file(), reference
+        assert (output / urlsplit(reference).path).is_file(), reference
     assert "connect-src 'self'" in html
-    assert 'docsMode: true' in (output / 'assets/docs.js').read_text()
-    assert not {'assets/app.js', 'assets/login-return.js', 'assets/provider-fabric.js'} & artifact_files(output)
+    assert "form-action 'none'" in html
+    assert parsed.scripts[0] == './assets/docs.js'
+    assert parsed.scripts[1:] == [url.replace('/static/', './assets/') for url in original.scripts]
+    assert {'assets/app.js', 'assets/login-return.js', 'assets/provider-fabric.js', 'assets/project-preview.js'} <= artifact_files(output)
+
+
+@pytest.mark.parametrize('field', ['source', 'templates', 'source_files'])
+def test_app_guide_manifest_cannot_select_undeclared_source_files(source, tmp_path, field):
+    outside = tmp_path / 'outside.py'
+    outside.write_text('raise AssertionError("Must not read or execute external source")')
+    manifest = source / 'manifests/app_guides/catalog.json'
+    data = read_json(manifest)
+    spec = next(iter(data['features'].values()))
+    spec[field] = str(outside) if field == 'source' else [{'path': str(outside), 'role': 'external'}] if field == 'templates' else [str(outside)]
+    manifest.write_text(json.dumps(data))
+    with pytest.raises(ValueError):
+        build_docs.build(source, tmp_path / 'site')
+    assert not (tmp_path / 'site').exists()
+
+
+def test_server_source_is_parsed_without_execution_or_environment_reads(source, tmp_path, monkeypatch):
+    server = source / 'webui/server.py'
+    server.write_text(server.read_text() + '\nraise AssertionError("SERVER_MUST_NOT_EXECUTE")\n')
+    monkeypatch.setenv('VOICE_SPEAK_MAX_CHARS', 'PRIVATE_ENV_MUST_NOT_BE_READ')
+    monkeypatch.setenv('CASTLE_VOICE_LAB_ENV', str(tmp_path / 'no-such-private-env'))
+    output = tmp_path / 'site'
+    build_docs.build(source, output)
+    assert 'SERVER_MUST_NOT_EXECUTE' not in (output / 'app-guide.json').read_text()
+    assert 'PRIVATE_ENV_MUST_NOT_BE_READ' not in (output / 'app-guide.json').read_text()
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='Node.js is required for adapter isolation checks')
+def test_docs_adapter_rejects_mutations_and_never_fetches_unknown_or_local_urls(source):
+    # A small DOM substitute tests the network boundary itself. Full navigation,
+    # accessibility and event behavior are covered by the browser smoke test.
+    script = r'''
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const calls = [], listeners = {};
+const password = {value: 'synthetic-old-value', disabled: false};
+const app = {studios: [], features: [], guides: []};
+const library = {items: []};
+const window = {fetch: async (url, options) => {
+  calls.push({url: String(url), options});
+  return new Response(JSON.stringify(String(url).endsWith('app-guide.json') ? app : library));
+}};
+for (const key of ['localStorage', 'sessionStorage']) Object.defineProperty(window, key, {
+  configurable: true, get() {throw Error('Persistent storage must not be read');}
+});
+const context = {window, URL, Request, Response, console, setTimeout,
+  location: {href: 'https://example.test/Web_Comfyui/', origin: 'https://example.test', hash: '#/studio/text2img'},
+  document: {documentElement: {}, querySelectorAll: () => [password], getElementById: () => null,
+    addEventListener: (name, callback) => {listeners[name] = callback;}},
+  history: {replaceState() {}}, navigator: {sendBeacon() {throw Error('Native beacon must not run');}},
+  MutationObserver: class {observe() {}}
+};
+vm.runInNewContext(fs.readFileSync(process.argv[1], 'utf8'), context);
+(async () => {
+  await window.WebComfyDocs.ready;
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls.map(call => call.url).sort(), [
+    'https://example.test/Web_Comfyui/app-guide.json', 'https://example.test/Web_Comfyui/catalog.json'
+  ]);
+  assert.ok(calls.every(call => call.options.credentials === 'omit'));
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+    assert.equal((await window.fetch('/api/generate', {method, body: 'synthetic-data'})).status, 405);
+  }
+  assert.equal((await window.fetch(new Request('https://example.test/api/generate', {method: 'POST'}))).status, 405);
+  assert.equal((await window.fetch('/api/unrecognized-private-api')).status, 404);
+  assert.equal((await window.fetch('http://127.0.0.1:8188/object_info')).status, 405);
+  assert.equal((await window.fetch('https://external.example/api')).status, 405);
+  assert.equal((await window.fetch('/api/characters')).status, 200);
+  assert.equal(calls.length, 2);
+  assert.equal(context.navigator.sendBeacon('/api/write', 'data'), false);
+  assert.throws(() => new window.WebSocket('ws://127.0.0.1:8188'));
+  assert.throws(() => new window.XMLHttpRequest().open('POST', '/api/write'));
+  new window.EventSource('/api/events').close();
+  window.localStorage.setItem('draft', 'temporary');
+  assert.equal(window.localStorage.getItem('draft'), 'temporary');
+  assert.equal(window.sessionStorage.getItem('draft'), null);
+  assert.equal(password.disabled, true);
+  assert.equal(password.value, '');
+  let prevented = false;
+  listeners.beforeinput({target: {matches: () => true}, preventDefault() {prevented = true;}, stopImmediatePropagation() {}});
+  assert.equal(prevented, true);
+})().catch(error => {console.error(error); process.exitCode = 1;});
+'''
+    result = subprocess.run(['node', '-e', script, str(source / 'webui/docs/docs.js')],
+                            capture_output=True, text=True, timeout=20)
+    assert result.returncode == 0, result.stderr

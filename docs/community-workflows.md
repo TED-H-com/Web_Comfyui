@@ -1,6 +1,6 @@
 # Community workflows
 
-The collection includes **18 editable, GPL-3.0 licensed workflows** and a searchable
+The collection includes **24 editable, GPL-3.0 licensed workflows** and a searchable
 index of **233 upstream workflows**: 139 from dseditor and 94 from ecjojo. Each
 catalog entry records its source revision, file hash, category, node types and
 explicit model filenames. Style dictionaries and configuration JSON are excluded.
@@ -12,7 +12,7 @@ links, including workflows with configurable external API integrations.
 
 | Source | Pinned commit | Treatment |
 | --- | --- | --- |
-| [dseditor/ComfyuiWorkflows](https://github.com/dseditor/ComfyuiWorkflows/tree/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806) | `b2ea26fa602d6eebadb1de1e4ccf1ecc91875806` | 18 selected GPL-3.0 derivatives; remaining 121 indexed |
+| [dseditor/ComfyuiWorkflows](https://github.com/dseditor/ComfyuiWorkflows/tree/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806) | `b2ea26fa602d6eebadb1de1e4ccf1ecc91875806` | 24 selected GPL-3.0 derivatives; remaining 115 indexed |
 | [ecjojo/ComfyUI-Templates](https://github.com/ecjojo/ComfyUI-Templates/tree/adc9ef7659db315053fd1b9863ca285fa3fcccb1) | `adc9ef7659db315053fd1b9863ca285fa3fcccb1` | 94 source references; no JSON redistribution license found |
 
 Keep [the full GPL license](../third_party/community/dseditor/LICENSE) and
@@ -48,6 +48,20 @@ not GPU qualification.** Models and custom nodes are not installed by this impor
 | `sd15-background-brushnet.json` | Masked background replacement | BrushNet, LayerStyle/BiRefNet and JW resize; SD 1.5 checkpoint and BrushNet weights |
 | `sdxl-object-removal.json` | Segment and remove objects | Florence2, SAM2, essentials, inpaint preprocessors; SDXL and Union ControlNet |
 
+| `sd15-iclight-background.json` | Relight a subject to match a background | Two stages: DreamShaper XL/MistoLine then SD 1.5 RealisticVision/IC-Light; IPAdapter, SAM/GroundingDINO, LayerStyle, Inspire, efficiency and WD14. Input 20 = subject, 153 = background reference; inspect masks; preview-only output |
+| `sd15-pose-clothes-face-detail.json` | Pose and clothing references with face refinement | MajicMix SD 1.5, OpenPose, DWpose, IPAdapter FaceID, YOLO and Impact; input 48 = pose, 132 = face, 173 = garment. Second garment branch is bypassed upstream; inspect it before enabling. Generative reference does not guarantee exact clothing or identity |
+| `sdxl-regional-three-subjects.json` | Assign references to three separate people | RealVisXL Lightning, regional IPAdapter, MistoLine/Advanced ControlNet, YOLO, LayerStyle, Inspire and use-everywhere; input 259 = layout, 77/78/422 = subjects, 183 = background. Verify mask order 0/1/2 and implicit CLIP/VAE routing; preview-only output |
+| `sdxl-lineart-pvc-style.json` | Convert a reference to a PVC figure style while guiding outlines | PVCStyleModelMovable beta27, AnyLine/MistoLine, IPAdapter, Advanced ControlNet, DetailDaemon, AlignYourSteps, PAG and WD14; input 88 drives structure and appearance. Review automatic tags before generation |
+| `flux-fill-subject-detail.json` | Fill a masked edit, then refine cropped subject detail | Flux Fill and Dev Q8, T5 Q8, improved CLIP-L, AE, 8-step LoRA and Nomos upscaler; GGUF, LayerStyle, YOLO/matting, essentials. Upload a masked image, inspect person-region crop and restored edge; not a face-specific detector |
+| `sdxl-prompt-list-comparison.json` | Compare prompt variants with visible image notes | RealVisXL V5 Lightning, Comfyroll prompt list, WAS text/random nodes, FL ImageNotes and custom-scripts; replace prompt list, fix seed and start index for fair comparison. Preview-only output |
+
+These six additions retain their existing catalog IDs, so source-reference links
+continue to resolve after import. Their pinned hashes and `distribution` fields
+are the repeatable selection; no unpinned discovery is used by the importer.
+The line-art coloring source was left reference-only after inspection found a
+stale output link and an opaque hosted checkpoint ID. No graph was repaired by
+silently guessing its checkpoint or removing broken connections.
+
 Exact node IDs and model selections are in each manifest entry. Some older graphs
 do not declare their custom-node package IDs. Their complete `node_types` list is
 authoritative for identifying missing nodes; package names above are setup hints,
@@ -68,7 +82,7 @@ python3 scripts/community_workflows.py validate
 python3 scripts/community_workflows.py import
 ```
 
-`import` fetches only the 18 pinned source JSON files and upstream LICENSE. It
+`import` fetches only the 24 pinned source JSON files and upstream LICENSE. It
 checks source SHA-256, sanitizes deterministically, verifies the expected output
 hash, and refuses to overwrite a locally edited file. For a local pinned source
 checkout, add `--source-dir /path/to/ComfyuiWorkflows`. It never fetches models,

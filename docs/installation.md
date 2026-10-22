@@ -1,6 +1,6 @@
 # Installation and configuration
 
-Start with [the quick start](../README.md) or [繁體中文逐步安裝](../README.zh-TW.md). This page explains environment settings, optional components and troubleshooting. After installation, follow [your first workflow](getting-started.md). The [documentation website](https://ted-h-com.github.io/Web_Comfyui/) hosts guides; it does not host your application or run models.
+Start with [the quick start](../README.md) or [繁體中文逐步安裝](../README.zh-TW.md). This page explains environment settings, optional components and troubleshooting. After installation, follow [your first workflow](getting-started.md). The [documentation website](https://ted-h-com.github.io/Web_Comfyui/) shares the actual app interface with a read-only adapter. Its tool buttons and generation actions open source-backed guides instead of running models. Install locally to perform real work.
 
 ## Supported starting point
 
@@ -113,7 +113,7 @@ H3's authorization helper uses an owner-managed record with a generic `operator`
 
 Open a workflow card in **工作庫** to inspect its required model filenames and node types. Choose a graph matching your existing installation before adding more dependencies. Acquire models from their documented source and place them in the ComfyUI folders specified by that source. Keep model families and variants matched: a LoRA for one architecture is not interchangeable with another.
 
-Install custom-node dependencies using **ComfyUI's Python**, not this checkout's `.venv`. Follow each node pack's instructions and restart ComfyUI when required. **檢查 ComfyUI 節點** checks registered names only; it does not download nodes or weights. See [the workflow walkthrough](getting-started.md) for the difference between loading a graph and running it.
+Install custom-node dependencies using **ComfyUI's Python**, not this checkout's `.venv`. Follow each node pack's instructions and restart ComfyUI when required. **檢查 ComfyUI 節點與模型** compares registered node names and recognized loader selections with model options reported by ComfyUI’s `/object_info`. It distinguishes missing dependencies from unknown checks, including unsupported loaders or connected model selections. It does not download dependencies, validate weight integrity or prove GPU compatibility. See [the workflow walkthrough](getting-started.md) for the difference between loading a graph and running it.
 
 ## Optional advanced provisioner
 
@@ -135,7 +135,7 @@ Before updating, back up `.env`, your persistent application data directory, and
 - **A voice/reel tool reports unavailable helpers:** configure its separate runtime and assets. Those integrations are preserved but not automatically installed.
 - **Port 8190 is in use:** run `.venv/bin/python run.py --port 8192` and open `http://127.0.0.1:8192`.
 - **A loaded workflow did not start rendering:** loading only saves it into ComfyUI's `webui-library` folder. Open it in the native editor, set inputs/models and queue it there.
-- **Loading reports that a file may already exist:** check the native editor's `webui-library` folder before retrying; identical graphs use the same destination filename.
+- **Repeated import or destination conflict:** importing an identical graph again succeeds and points to the existing copy. Different content at the same destination produces a conflict and remains untouched; inspect the saved graph in `webui-library` before deciding how to keep both versions.
 - **No “載入 ComfyUI” button:** the entry may be a recipe, source-only reference or API-format graph, or the current account may not have operator access. Use the entry's available download/source actions.
 - **Temporary directory rejected:** choose a disk-backed path through `WEB_COMFYUI_TMP_DIR`; do not use `/dev/shm` or another tmpfs.
 - **Password/state location:** the launcher stores local authentication under the application data root's `auth` directory. Back up that directory with the rest of your application state.

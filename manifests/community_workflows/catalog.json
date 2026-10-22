@@ -3,7 +3,7 @@
   "gpu_execution_performed": false,
   "model_downloads_performed": false,
   "schema_version": 1,
-  "selection_policy": "Vendored = 18 audited local-inference examples. All other graph JSON files remain indexed with source links, including user-configurable API integrations. ecjojo source is not redistributed without a license grant. Style dictionaries and config JSON are excluded because they are not workflows.",
+  "selection_policy": "Vendored = 24 audited local-inference examples. All other graph JSON files remain indexed with source links, including user-configurable API integrations. ecjojo source is not redistributed without a license grant. Style dictionaries and config JSON are excluded because they are not workflows.",
   "sources": {
     "dseditor": {
       "author": "dseditor",
@@ -1528,10 +1528,12 @@
     {
       "category": "BackgroundChanger",
       "declared_node_packs": [],
-      "distribution": "links-only",
+      "distribution": "vendored",
       "format": "ui",
       "id": "dseditor-backgroundchanger-sd15-iclightv1-73367f0d",
       "integration_node_types": [],
+      "local_path": "workflows/community/dseditor/sd15-iclight-background.json",
+      "local_sha256": "2446d8604d047b0fec1fec44562b4424c863e7c3c670f6b638b8971c4490e491",
       "models": [
         {
           "directory_hint": "checkpoints",
@@ -1597,16 +1599,21 @@
       ],
       "notes": [
         "Model filenames are upstream selections, not installed-model assertions. Model licenses are separate from workflow licenses.",
-        "Custom node names and versions may have changed; graph has not been GPU-qualified."
+        "Custom node names and versions may have changed; graph has not been GPU-qualified.",
+        "Input 20 is the subject; input 153 is the background/style reference. Inspect SAM/GroundingDINO masks before combining.",
+        "Two stages use DreamShaper XL/MistoLine then SD 1.5 RealisticVision/IC-Light; do not interchange their model families. Requires IPAdapter, LayerStyle, Inspire, efficiency, resize, preprocessors and WD14 nodes. PreviewImage outputs require saving from the preview."
       ],
       "source": "dseditor",
-      "status": "reference-not-imported",
+      "status": "static-validated-gpu-untested",
       "tags": [
         "dseditor",
         "backgroundchanger",
-        "local-inference"
+        "local-inference",
+        "relighting",
+        "background",
+        "sd15"
       ],
-      "title": "【SD15】ICLightv1",
+      "title": "IC-Light subject and background relighting",
       "upstream_path": "BackgroundChanger/【SD15】ICLightv1.json",
       "upstream_sha256": "d6e05a040f423d40cadf9293c00f5225d8a01525d89098d7fcb862febb9d8892",
       "upstream_url": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/BackgroundChanger/%E3%80%90SD15%E3%80%91ICLightv1.json"
@@ -1798,10 +1805,12 @@
     {
       "category": "Clothes",
       "declared_node_packs": [],
-      "distribution": "links-only",
+      "distribution": "vendored",
       "format": "ui",
       "id": "dseditor-clothes-twoclothes-e9e6badf",
       "integration_node_types": [],
+      "local_path": "workflows/community/dseditor/sd15-pose-clothes-face-detail.json",
+      "local_sha256": "f03afbba1d5dbb727bd4689ec6cec44a4784fcc1a19587438dd87a8781047fc2",
       "models": [
         {
           "directory_hint": "checkpoints",
@@ -1870,16 +1879,22 @@
       ],
       "notes": [
         "Model filenames are upstream selections, not installed-model assertions. Model licenses are separate from workflow licenses.",
-        "Custom node names and versions may have changed; graph has not been GPU-qualified."
+        "Custom node names and versions may have changed; graph has not been GPU-qualified.",
+        "Active images: 48 pose, 132 face reference, 173 garment reference. Second garment image 174 and encoder/tagger are bypassed upstream; inspect/re-enable this branch deliberately if needed.",
+        "Requires SD 1.5 MajicMix, OpenPose, IPAdapter FaceID/vision weights, DWpose and YOLO face detector plus Impact, IPAdapter Plus, preprocessors, essentials/JW and WD14 nodes. Clothing and identity are generative references, not exact preservation. PreviewImage outputs."
       ],
       "source": "dseditor",
-      "status": "reference-not-imported",
+      "status": "static-validated-gpu-untested",
       "tags": [
         "dseditor",
         "clothes",
-        "local-inference"
+        "local-inference",
+        "pose",
+        "clothing",
+        "face-detail",
+        "sd15"
       ],
-      "title": "twoclothes",
+      "title": "Pose and clothing references with face detail",
       "upstream_path": "Clothes/twoclothes.json",
       "upstream_sha256": "6bbb48b799b7c2bd48b378a317f6ab27d848ce9dd08a76cdae84534a2cb14e8f",
       "upstream_url": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/Clothes/twoclothes.json"
@@ -2096,10 +2111,12 @@
     {
       "category": "Couple",
       "declared_node_packs": [],
-      "distribution": "links-only",
+      "distribution": "vendored",
       "format": "ui",
       "id": "dseditor-couple-3girls-dfdd6bc8",
       "integration_node_types": [],
+      "local_path": "workflows/community/dseditor/sdxl-regional-three-subjects.json",
+      "local_sha256": "141c55a74286fc0e98da4714e6a185862126c6c6dd5f31a841d956048b555e56",
       "models": [
         {
           "directory_hint": "controlnet",
@@ -2149,16 +2166,22 @@
       ],
       "notes": [
         "Model filenames are upstream selections, not installed-model assertions. Model licenses are separate from workflow licenses.",
-        "Custom node names and versions may have changed; graph has not been GPU-qualified."
+        "Custom node names and versions may have changed; graph has not been GPU-qualified.",
+        "Upload layout image 259, subject references 77/78/422 and background reference 183. YOLO selects masks 0/1/2: check that all three detected regions match their intended reference.",
+        "Requires IPAdapter regional conditioning, Advanced ControlNet/MistoLine, LayerStyle YOLO, Inspire, efficiency, WD14 and use-everywhere routing. Some CLIP/VAE inputs are intentionally supplied by Anything Everywhere3; inspect routing in the native editor. PreviewImage output; identity is not guaranteed."
       ],
       "source": "dseditor",
-      "status": "reference-not-imported",
+      "status": "static-validated-gpu-untested",
       "tags": [
         "dseditor",
         "couple",
-        "local-inference"
+        "local-inference",
+        "regional",
+        "composition",
+        "ipadapter",
+        "sdxl"
       ],
-      "title": "3girls",
+      "title": "SDXL regional three-subject composition",
       "upstream_path": "Couple/3girls.json",
       "upstream_sha256": "4898682103b146129c449f3f6b6427b892dc931cba93725bc136665b77b02115",
       "upstream_url": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/Couple/3girls.json"
@@ -3444,10 +3467,12 @@
     {
       "category": "Flux",
       "declared_node_packs": [],
-      "distribution": "links-only",
+      "distribution": "vendored",
       "format": "ui",
       "id": "dseditor-flux-fluxtools-fluxtool-inpaintanddetailer-f237fa28",
       "integration_node_types": [],
+      "local_path": "workflows/community/dseditor/flux-fill-subject-detail.json",
+      "local_sha256": "4621997f97717f40f304e17847266f4e09b6915740f432cba4df496afb6c5e3d",
       "models": [
         {
           "directory_hint": "text_encoders (or clip, depending on node version)",
@@ -3523,16 +3548,21 @@
       ],
       "notes": [
         "Model filenames are upstream selections, not installed-model assertions. Model licenses are separate from workflow licenses.",
-        "Custom node names and versions may have changed; graph has not been GPU-qualified."
+        "Custom node names and versions may have changed; graph has not been GPU-qualified.",
+        "Upload image 17 with a real editable mask; a plain replacement image without a mask does not define the intended edit.",
+        "First stage uses Flux Fill Q8; YOLO then detects the person, crops/refines with Flux Dev Q8 and an 8-step LoRA, restores the crop and upscales. Requires GGUF, LayerStyle, essentials and detector/matting weights. This is person-region detail refinement, not a dedicated face detector."
       ],
       "source": "dseditor",
-      "status": "reference-not-imported",
+      "status": "static-validated-gpu-untested",
       "tags": [
         "dseditor",
         "flux",
-        "local-inference"
+        "local-inference",
+        "inpaint",
+        "detail",
+        "upscale"
       ],
-      "title": "【FluxTool】InpaintAndDetailer",
+      "title": "Flux Fill and cropped subject detail restoration",
       "upstream_path": "Flux/FluxTools/【FluxTool】InpaintAndDetailer.json",
       "upstream_sha256": "b5ee9fe28cf678a697b0ebf79e2feb7941f1f07f2619ad40522069ae669a1529",
       "upstream_url": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/Flux/FluxTools/%E3%80%90FluxTool%E3%80%91InpaintAndDetailer.json"
@@ -6955,10 +6985,12 @@
     {
       "category": "SDXL",
       "declared_node_packs": [],
-      "distribution": "links-only",
+      "distribution": "vendored",
       "format": "ui",
       "id": "dseditor-sdxl-sdxl-pvcworkflownew-adc477eb",
       "integration_node_types": [],
+      "local_path": "workflows/community/dseditor/sdxl-lineart-pvc-style.json",
+      "local_sha256": "2b48b158e0c7e5c000366b1e00245c8655209fce69aa84ef1f5338e6fb972b38",
       "models": [
         {
           "directory_hint": "controlnet",
@@ -7002,16 +7034,21 @@
       ],
       "notes": [
         "Model filenames are upstream selections, not installed-model assertions. Model licenses are separate from workflow licenses.",
-        "Custom node names and versions may have changed; graph has not been GPU-qualified."
+        "Custom node names and versions may have changed; graph has not been GPU-qualified.",
+        "Input 88 supplies both AnyLine structure and IPAdapter appearance. Review WD14-derived tags before sampling.",
+        "Uses PVCStyleModelMovable beta27, MistoLine, IPAdapter Plus, Advanced ControlNet, DetailDaemon, AlignYourSteps, PerturbedAttentionGuidance, WD14, essentials and prompt styling nodes. A specialized figure-style checkpoint is required."
       ],
       "source": "dseditor",
-      "status": "reference-not-imported",
+      "status": "static-validated-gpu-untested",
       "tags": [
         "dseditor",
         "sdxl",
-        "local-inference"
+        "local-inference",
+        "line-art",
+        "style",
+        "ipadapter"
       ],
-      "title": "【SDXL】PVCWorkflowNew",
+      "title": "Line-art guided PVC figure style",
       "upstream_path": "SDXL/【SDXL】PVCWorkflowNew.json",
       "upstream_sha256": "d3b9983f5ca6dd8ac1d3a66ae73d1a4c527bca49bef8a4ab4f177aee89c614d9",
       "upstream_url": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/SDXL/%E3%80%90SDXL%E3%80%91PVCWorkflowNew.json"
@@ -7019,10 +7056,12 @@
     {
       "category": "SDXL",
       "declared_node_packs": [],
-      "distribution": "links-only",
+      "distribution": "vendored",
       "format": "ui",
       "id": "dseditor-sdxl-sdxl-promptlistexample-52ccdad0",
       "integration_node_types": [],
+      "local_path": "workflows/community/dseditor/sdxl-prompt-list-comparison.json",
+      "local_sha256": "fe888a846a82958e7bdf5a515e4691f77c208817f9468c8a784cea9a735afab9",
       "models": [
         {
           "directory_hint": "checkpoints",
@@ -7046,16 +7085,20 @@
       ],
       "notes": [
         "Model filenames are upstream selections, not installed-model assertions. Model licenses are separate from workflow licenses.",
-        "Custom node names and versions may have changed; graph has not been GPU-qualified."
+        "Custom node names and versions may have changed; graph has not been GPU-qualified.",
+        "Replace Text Multiline 27 with your own prompt list. Random Number 35 feeds the list start index; inspect the selected text before comparing runs.",
+        "Uses RealVisXL V5 Lightning, Comfyroll CR Prompt List, WAS Random Number/Text Multiline, FL ImageNotes and custom-scripts ShowText. Fix seed and list index for meaningful A/B comparisons; this graph previews annotated images rather than writing SaveImage files."
       ],
       "source": "dseditor",
-      "status": "reference-not-imported",
+      "status": "static-validated-gpu-untested",
       "tags": [
         "dseditor",
         "sdxl",
-        "local-inference"
+        "local-inference",
+        "prompt-comparison",
+        "batch"
       ],
-      "title": "【SDXL】PromptlistExample",
+      "title": "SDXL prompt-list comparison with image notes",
       "upstream_path": "SDXL/【SDXL】PromptlistExample.json",
       "upstream_sha256": "7114d733136cd3faba5a837d2bba7ff66debe01aef592ac8354c4d1ef55dbf71",
       "upstream_url": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/SDXL/%E3%80%90SDXL%E3%80%91PromptlistExample.json"

@@ -180,3 +180,29 @@ def test_every_catalog_entry_has_a_guide_and_all_local_graphs_work():
         if not entry.get('available') and entry.get('kind') != 'recipe':
             assert 'inventory-only' in guide['evidence']
             assert not guide['parameters']
+
+
+@pytest.mark.parametrize('filename,summary_word,tip_word', [
+    ('sd15-iclight-background', '光照', 'SD 1.5'),
+    ('sdxl-regional-three-subjects', '遮罩區域', '隱式連線'),
+    ('sdxl-prompt-list-comparison', '清單', '起始索引'),
+])
+def test_new_curated_methods_explain_real_graph_constraints(filename, summary_word, tip_word):
+    graph = json.loads((ROOT / 'workflows/community/dseditor' / (filename + '.json')).read_text())
+    guide = enrich_entry({}, graph)
+    assert summary_word in guide['summary']
+    assert any(tip_word in tip for tip in guide['tips'])
+    assert any('預覽節點' in tip for tip in guide['tips'])
+    assert 'inventory-only' not in guide['evidence']
+
+
+def test_crop_restoration_is_region_detail_and_bypassed_inputs_are_not_active():
+    root = ROOT / 'workflows/community/dseditor'
+    fill = json.loads((root / 'flux-fill-subject-detail.json').read_text())
+    guide = enrich_entry({}, fill)
+    assert any(method['name'] == '區域細修' for method in guide['techniques'])
+    assert any(p['name'].endswith(' · denoise') and p['value'] == .5 for p in guide['parameters'])
+    clothes = json.loads((root / 'sd15-pose-clothes-face-detail.json').read_text())
+    image_ids = {n['id'] for n in active_nodes(clothes) if n['type'] == 'LoadImage'}
+    assert image_ids == {48, 132, 173}
+    assert 174 not in image_ids  # Upstream's second garment branch is bypassed.

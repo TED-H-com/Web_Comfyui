@@ -194,6 +194,8 @@ METHODS = {
     'edit': ('指令式影像編輯', '結合原圖與文字修改指令，讓模型依語意調整畫面；原圖保留程度仍取決於模型與採樣設定。'),
     'cascade': ('Stable Cascade 分階段生成', '以不同階段的模型逐步建立潛在表示與細節；各階段模型和條件需要成套匹配。'),
     'realtime': ('即時影像輸入', '由螢幕或即時影像來源取得畫面，再進行重繪或控制；更新頻率與採樣成本會影響延遲。'),
+    'relight': ('IC-Light 光照重建', '將主體、遮罩與背景光照條件帶入 IC-Light 模型，重新協調主體的受光與場景；需檢查邊緣、陰影及模型家族相容性。'),
+    'promptlist': ('提示詞清單比較', '從文字清單選取提示詞並生成候選結果；固定種子與清單索引，才容易分辨文字變更的影響。'),
     'regional': ('區域條件配置', '用區域、色塊或遮罩分配不同文字條件，減少多個主體的描述互相干擾。'),
     'noise': ('噪聲與採樣調整', '使用專用噪聲修正或細節採樣節點改變去噪過程；先與相同種子的基本流程比較效果。'),
     'pixel': ('像素化與輪廓整理', '將輸入圖轉成較粗的像素網格並整理色塊或輪廓；像素化不等於重新生成細節。'),
@@ -223,7 +225,7 @@ def _methods(types, entry):
         'ipadapter': has('ipadapter'),
         'redux': has('redux', 'stylemodelapply'),
         'identity': has('faceid', 'instantid', 'pulid', 'reactor', 'faceswap'),
-        'detail': has('detailer', 'segspaste'),
+        'detail': has('detailer', 'segspaste', 'restorecropbox'),
         'tile': has('tile', 'ttp_image'),
         'upscale': has('upscale', 'superresolution', 'apisr'),
         'lora': has('lora'),
@@ -239,6 +241,8 @@ def _methods(types, entry):
         'edit': has('instructpixtopix', 'textencodeqwenimageedit', 'kontext'),
         'cascade': has('stablecascade'),
         'realtime': has('screenshare', 'floatingvideo', 'webcam'),
+        'relight': has('iclight'),
+        'promptlist': has('cr prompt list', 'easy promptlist'),
         'regional': has('regionalconditioning', 'regionalprompt', 'conditioningcombine'),
         'noise': has('npnet', 'detaildaemon', 'injectnoise'),
         'pixel': has('pixelize', 'pixelart'),
@@ -401,6 +405,12 @@ def enrich_entry(entry, graph=None):
                    '將既有影片影格處理後重新封裝，改善尺寸或流暢度。' if has_video_input and not sampling else
                    '以輸入影像作為起始或條件，生成連續動態影格。' if has_image else
                    '從文字與模型條件建立動態影格，並輸出影片。')
+    elif flags['relight']:
+        summary = '分離主體與背景條件，重新生成並協調主體光照，改善合成圖的受光與邊緣銜接。'
+    elif flags['regional'] and flags['ipadapter']:
+        summary = '把不同人物或背景參考分配到各自遮罩區域，再結合結構控制生成多主體構圖。'
+    elif flags['promptlist']:
+        summary = '以文字清單產生不同提示詞候選，將選取的文字與結果一起預覽，方便比較描述對畫面的影響。'
     elif flags['inpaint']:
         summary = '以遮罩選定修改範圍，進行物件修補、移除或局部內容替換。'
     elif flags['realtime']:
@@ -467,6 +477,16 @@ def enrich_entry(entry, graph=None):
         steps.append('檢查後段細修、分塊、放大或插補結果，特別注意接縫與細節漂移。')
     steps.append('檢查影片影格率、最後影格時長與音畫同步後再封裝。' if flags['video'] else '比較原始素材與預覽結果，確認構圖及需要保留的細節後再儲存。')
     tips = ['先建立不加額外修改的基準，再一次調整一個設定；節點檢查通過不等於 GPU 已驗證。']
+    if flags['relight']:
+        tips.append('先確認主體遮罩與背景參考，再比較光線方向及接縫；多階段圖中的 SDXL 與 SD 1.5 元件不可互換。')
+    if flags['regional'] and flags['ipadapter']:
+        tips.append('逐一預覽區域遮罩與參考圖的對應；偵測順序改變時，人物參考也可能套到錯誤位置。')
+    if flags['promptlist']:
+        tips.append('確認清單起始索引與這次選到的文字；若索引或種子使用隨機值，兩次結果不適合直接作單一變因比較。')
+    if 'anything everywhere3' in text:
+        tips.append('圖中使用 use-everywhere 隱式連線；開啟原生編輯器檢查 CLIP/VAE 等實際路由，不能只看可見連線。')
+    if 'previewimage' in text and not any(t in text for t in ('saveimage', 'savevideo', 'videocombine')):
+        tips.append('目前輸出是預覽節點；確認結果後從預覽儲存，或自行接上儲存節點。')
     if flags['lora']:
         tips.append('LoRA 必須匹配底模與模式；載入後檢查權重鍵和實際 A/B 差異。')
     if flags['remote']:

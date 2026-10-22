@@ -1,0 +1,2948 @@
+{
+  "config": {},
+  "extra": {
+    "community_attribution": {
+      "author": "dseditor",
+      "changes": "Removed cached metadata/media and private paths; replaced input/output filenames; normalized model path separators. Graph topology and sampler settings retained.",
+      "license": "GPL-3.0",
+      "license_file": "third_party/community/dseditor/LICENSE",
+      "modified": "2026-10-22",
+      "source": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/Couple/3girls.json",
+      "source_sha256": "4898682103b146129c449f3f6b6427b892dc931cba93725bc136665b77b02115"
+    }
+  },
+  "groups": [
+    {
+      "bounding": [
+        -30,
+        -650,
+        1090,
+        820
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "locked": false,
+      "title": "Mask"
+    },
+    {
+      "bounding": [
+        0,
+        220,
+        1750,
+        1520
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "locked": false,
+      "title": "Adapter"
+    },
+    {
+      "bounding": [
+        1080,
+        -390,
+        770,
+        560
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "locked": false,
+      "title": "Controlnet"
+    }
+  ],
+  "last_link_id": 940,
+  "last_node_id": 442,
+  "links": [
+    [
+      677,
+      176,
+      0,
+      317,
+      0,
+      "MODEL"
+    ],
+    [
+      795,
+      259,
+      0,
+      310,
+      0,
+      "IMAGE"
+    ],
+    [
+      796,
+      310,
+      0,
+      376,
+      0,
+      "IMAGE"
+    ],
+    [
+      797,
+      376,
+      0,
+      176,
+      2,
+      "INT"
+    ],
+    [
+      798,
+      376,
+      1,
+      176,
+      3,
+      "INT"
+    ],
+    [
+      811,
+      380,
+      0,
+      381,
+      2,
+      "IPADAPTER_PARAMS"
+    ],
+    [
+      812,
+      386,
+      0,
+      381,
+      0,
+      "IPADAPTER_PARAMS"
+    ],
+    [
+      813,
+      382,
+      0,
+      381,
+      1,
+      "IPADAPTER_PARAMS"
+    ],
+    [
+      814,
+      381,
+      0,
+      383,
+      2,
+      "IPADAPTER_PARAMS"
+    ],
+    [
+      817,
+      317,
+      0,
+      383,
+      0,
+      "MODEL"
+    ],
+    [
+      819,
+      317,
+      1,
+      383,
+      1,
+      "IPADAPTER"
+    ],
+    [
+      820,
+      176,
+      2,
+      386,
+      3,
+      "CONDITIONING"
+    ],
+    [
+      821,
+      176,
+      2,
+      382,
+      3,
+      "CONDITIONING"
+    ],
+    [
+      822,
+      176,
+      2,
+      380,
+      3,
+      "CONDITIONING"
+    ],
+    [
+      823,
+      391,
+      0,
+      388,
+      1,
+      "STRING"
+    ],
+    [
+      827,
+      77,
+      0,
+      395,
+      0,
+      "IMAGE"
+    ],
+    [
+      828,
+      183,
+      0,
+      391,
+      0,
+      "IMAGE"
+    ],
+    [
+      829,
+      78,
+      0,
+      392,
+      0,
+      "IMAGE"
+    ],
+    [
+      830,
+      393,
+      0,
+      382,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      831,
+      394,
+      0,
+      386,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      832,
+      176,
+      4,
+      396,
+      0,
+      "VAE"
+    ],
+    [
+      833,
+      176,
+      5,
+      396,
+      1,
+      "CLIP"
+    ],
+    [
+      834,
+      183,
+      0,
+      380,
+      0,
+      "IMAGE"
+    ],
+    [
+      835,
+      78,
+      0,
+      382,
+      0,
+      "IMAGE"
+    ],
+    [
+      836,
+      77,
+      0,
+      386,
+      0,
+      "IMAGE"
+    ],
+    [
+      837,
+      291,
+      0,
+      380,
+      1,
+      "MASK"
+    ],
+    [
+      843,
+      395,
+      0,
+      397,
+      0,
+      "STRING"
+    ],
+    [
+      844,
+      397,
+      0,
+      394,
+      1,
+      "STRING"
+    ],
+    [
+      845,
+      392,
+      0,
+      398,
+      0,
+      "STRING"
+    ],
+    [
+      846,
+      398,
+      0,
+      393,
+      1,
+      "STRING"
+    ],
+    [
+      850,
+      176,
+      2,
+      385,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      853,
+      382,
+      1,
+      384,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      854,
+      386,
+      1,
+      384,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      856,
+      382,
+      2,
+      385,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      857,
+      386,
+      2,
+      385,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      858,
+      310,
+      0,
+      403,
+      0,
+      "IMAGE"
+    ],
+    [
+      865,
+      403,
+      2,
+      411,
+      0,
+      "MASK"
+    ],
+    [
+      866,
+      411,
+      0,
+      412,
+      0,
+      "MASK"
+    ],
+    [
+      867,
+      403,
+      2,
+      413,
+      0,
+      "MASK"
+    ],
+    [
+      868,
+      403,
+      2,
+      414,
+      0,
+      "MASK"
+    ],
+    [
+      869,
+      403,
+      0,
+      291,
+      0,
+      "MASK"
+    ],
+    [
+      870,
+      413,
+      0,
+      415,
+      0,
+      "MASK"
+    ],
+    [
+      871,
+      414,
+      0,
+      416,
+      0,
+      "MASK"
+    ],
+    [
+      872,
+      291,
+      0,
+      417,
+      0,
+      "MASK"
+    ],
+    [
+      873,
+      413,
+      0,
+      382,
+      1,
+      "MASK"
+    ],
+    [
+      876,
+      419,
+      0,
+      418,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      877,
+      418,
+      2,
+      385,
+      3,
+      "CONDITIONING"
+    ],
+    [
+      879,
+      418,
+      0,
+      381,
+      3,
+      "IPADAPTER_PARAMS"
+    ],
+    [
+      880,
+      176,
+      2,
+      418,
+      3,
+      "CONDITIONING"
+    ],
+    [
+      881,
+      420,
+      0,
+      421,
+      0,
+      "STRING"
+    ],
+    [
+      882,
+      421,
+      0,
+      419,
+      1,
+      "STRING"
+    ],
+    [
+      883,
+      422,
+      0,
+      420,
+      0,
+      "IMAGE"
+    ],
+    [
+      884,
+      422,
+      0,
+      418,
+      0,
+      "IMAGE"
+    ],
+    [
+      887,
+      414,
+      0,
+      418,
+      1,
+      "MASK"
+    ],
+    [
+      888,
+      411,
+      0,
+      386,
+      1,
+      "MASK"
+    ],
+    [
+      890,
+      418,
+      1,
+      384,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      891,
+      388,
+      0,
+      384,
+      3,
+      "CONDITIONING"
+    ],
+    [
+      909,
+      429,
+      0,
+      426,
+      2,
+      "CONTROL_NET"
+    ],
+    [
+      918,
+      435,
+      0,
+      426,
+      3,
+      "IMAGE"
+    ],
+    [
+      919,
+      310,
+      0,
+      435,
+      0,
+      "IMAGE"
+    ],
+    [
+      921,
+      437,
+      0,
+      426,
+      7,
+      "CONTROL_NET_WEIGHTS"
+    ],
+    [
+      922,
+      384,
+      0,
+      426,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      923,
+      385,
+      0,
+      426,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      924,
+      438,
+      0,
+      439,
+      0,
+      "LATENT"
+    ],
+    [
+      925,
+      439,
+      0,
+      431,
+      0,
+      "IMAGE"
+    ],
+    [
+      926,
+      383,
+      0,
+      438,
+      0,
+      "MODEL"
+    ],
+    [
+      929,
+      426,
+      0,
+      438,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      930,
+      426,
+      1,
+      438,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      931,
+      176,
+      3,
+      438,
+      3,
+      "LATENT"
+    ],
+    [
+      940,
+      403,
+      0,
+      426,
+      4,
+      "MASK"
+    ]
+  ],
+  "nodes": [
+    {
+      "flags": {},
+      "id": 376,
+      "inputs": [
+        {
+          "link": 796,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 13,
+      "outputs": [
+        {
+          "links": [
+            797
+          ],
+          "name": "width",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "INT"
+        },
+        {
+          "links": [
+            798
+          ],
+          "name": "height",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "INT"
+        }
+      ],
+      "pos": [
+        -340,
+        240
+      ],
+      "properties": {
+        "Node name for S&R": "GetImageSize+"
+      },
+      "size": {
+        "0": 210,
+        "1": 46
+      },
+      "type": "GetImageSize+"
+    },
+    {
+      "bgcolor": "#335",
+      "color": "#223",
+      "flags": {},
+      "id": 291,
+      "inputs": [
+        {
+          "link": 869,
+          "name": "mask",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 21,
+      "outputs": [
+        {
+          "links": [
+            837,
+            872
+          ],
+          "name": "MASK",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        10,
+        -10
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      },
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "type": "InvertMask"
+    },
+    {
+      "flags": {},
+      "id": 400,
+      "inputs": [],
+      "mode": 0,
+      "order": 0,
+      "outputs": [
+        {
+          "links": null,
+          "name": "OPT_CONNECTION",
+          "type": "*"
+        }
+      ],
+      "pos": {
+        "0": -360,
+        "1": -580,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 0,
+        "9": 0
+      },
+      "properties": {
+        "customSortAlphabet": "",
+        "matchColors": "",
+        "matchTitle": "",
+        "showNav": true,
+        "sort": "position",
+        "toggleRestriction": "default"
+      },
+      "size": {
+        "0": 250,
+        "1": 130
+      },
+      "type": "Fast Groups Bypasser (rgthree)"
+    },
+    {
+      "bgcolor": "#353",
+      "color": "#232",
+      "flags": {},
+      "id": 413,
+      "inputs": [
+        {
+          "link": 867,
+          "name": "masks",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 23,
+      "outputs": [
+        {
+          "links": [
+            870,
+            873
+          ],
+          "name": "MASK",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        0,
+        -250
+      ],
+      "properties": {
+        "Node name for S&R": "SelectNthMask //Inspire"
+      },
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "type": "SelectNthMask //Inspire",
+      "widgets_values": [
+        1
+      ]
+    },
+    {
+      "bgcolor": "#3f5159",
+      "color": "#2a363b",
+      "flags": {},
+      "id": 414,
+      "inputs": [
+        {
+          "link": 868,
+          "name": "masks",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 24,
+      "outputs": [
+        {
+          "links": [
+            871,
+            887
+          ],
+          "name": "MASK",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        0,
+        -140
+      ],
+      "properties": {
+        "Node name for S&R": "SelectNthMask //Inspire"
+      },
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "type": "SelectNthMask //Inspire",
+      "widgets_values": [
+        2
+      ]
+    },
+    {
+      "bgcolor": "#533",
+      "color": "#322",
+      "flags": {},
+      "id": 411,
+      "inputs": [
+        {
+          "link": 865,
+          "name": "masks",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 22,
+      "outputs": [
+        {
+          "links": [
+            866,
+            888
+          ],
+          "name": "MASK",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        -10,
+        -360
+      ],
+      "properties": {
+        "Node name for S&R": "SelectNthMask //Inspire"
+      },
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "type": "SelectNthMask //Inspire",
+      "widgets_values": [
+        0
+      ]
+    },
+    {
+      "flags": {},
+      "id": 259,
+      "mode": 0,
+      "order": 1,
+      "outputs": [
+        {
+          "links": [
+            795
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        },
+        {
+          "links": null,
+          "name": "MASK",
+          "shape": 3,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        -390,
+        -180
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "type": "LoadImage",
+      "widgets_values": [
+        "input_259.png",
+        "image"
+      ]
+    },
+    {
+      "bgcolor": "#335",
+      "color": "#223",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 391,
+      "inputs": [
+        {
+          "link": 828,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 10,
+      "outputs": [
+        {
+          "links": [
+            823
+          ],
+          "name": "STRING",
+          "shape": 6,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        640,
+        410
+      ],
+      "properties": {
+        "Node name for S&R": "WD14Tagger|pysssss"
+      },
+      "size": {
+        "0": 280,
+        "1": 220
+      },
+      "type": "WD14Tagger|pysssss",
+      "widgets_values": [
+        "wd-swinv2-tagger-v3",
+        0.35,
+        0.85,
+        false,
+        false,
+        "",
+        "flower, indoors, cup, book, no_humans, window, table, bottle, plant, box, scenery, wooden_floor, clock, potted_plant, lamp, shelf, vase, jar, painting_\\(object\\), carpet, drawer, cabinet, chest_of_drawers, loaded_interior"
+      ]
+    },
+    {
+      "bgcolor": "#335",
+      "color": "#223",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 388,
+      "inputs": [
+        {
+          "link": null,
+          "name": "clip",
+          "type": "CLIP"
+        },
+        {
+          "link": 823,
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 17,
+      "outputs": [
+        {
+          "links": [
+            891
+          ],
+          "name": "CONDITIONING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        620,
+        490
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "size": {
+        "0": 340,
+        "1": 100
+      },
+      "type": "CLIPTextEncode",
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "bgcolor": "#533",
+      "color": "#322",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 395,
+      "inputs": [
+        {
+          "link": 827,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 9,
+      "outputs": [
+        {
+          "links": [
+            843
+          ],
+          "name": "STRING",
+          "shape": 6,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        390,
+        1170
+      ],
+      "properties": {
+        "Node name for S&R": "WD14Tagger|pysssss"
+      },
+      "size": {
+        "0": 290,
+        "1": 230
+      },
+      "type": "WD14Tagger|pysssss",
+      "widgets_values": [
+        "wd-swinv2-tagger-v3",
+        0.35,
+        0.85,
+        false,
+        false,
+        "",
+        "1girl, solo, looking_at_viewer, short_hair, simple_background, shirt, brown_hair, jewelry, bare_shoulders, brown_eyes, white_shirt, upper_body, earrings, parted_lips, sleeveless, collared_shirt, grey_background, lips, sleeveless_shirt, portrait, freckles, nose, realistic"
+      ]
+    },
+    {
+      "bgcolor": "#533",
+      "color": "#322",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 397,
+      "inputs": [
+        {
+          "link": 843,
+          "name": "text_a",
+          "type": "STRING",
+          "widget": {
+            "name": "text_a"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 16,
+      "outputs": [
+        {
+          "links": [
+            844
+          ],
+          "name": "STRING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        390,
+        1240
+      ],
+      "properties": {
+        "Node name for S&R": "StringFunction|pysssss"
+      },
+      "size": {
+        "0": 250,
+        "1": 240
+      },
+      "type": "StringFunction|pysssss",
+      "widgets_values": [
+        "replace",
+        "yes",
+        "",
+        "/(monochrome|greyscale|no_humans|watermark|solo|[a-z0-9\\s_]+background|[0-9]+|\\s+)/",
+        "",
+        "girl,looking_at_viewer,short_hair,shirt,brown_hair,jewelry,bare_shoulders,brown_eyes,white_shirt,upper_body,earrings,parted_lips,sleeveless,collared_shirt,lips,sleeveless_shirt,portrait,freckles,nose,realistic"
+      ]
+    },
+    {
+      "bgcolor": "#533",
+      "color": "#322",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 394,
+      "inputs": [
+        {
+          "link": null,
+          "name": "clip",
+          "type": "CLIP"
+        },
+        {
+          "link": 844,
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 25,
+      "outputs": [
+        {
+          "links": [
+            831
+          ],
+          "name": "CONDITIONING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        390,
+        1310
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "size": {
+        "0": 260,
+        "1": 80
+      },
+      "type": "CLIPTextEncode",
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "bgcolor": "#3f5159",
+      "color": "#2a363b",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 420,
+      "inputs": [
+        {
+          "link": 883,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 11,
+      "outputs": [
+        {
+          "links": [
+            881
+          ],
+          "name": "STRING",
+          "shape": 6,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        360,
+        1450
+      ],
+      "properties": {
+        "Node name for S&R": "WD14Tagger|pysssss"
+      },
+      "size": {
+        "0": 290,
+        "1": 230
+      },
+      "type": "WD14Tagger|pysssss",
+      "widgets_values": [
+        "wd-swinv2-tagger-v3",
+        0.35,
+        0.85,
+        false,
+        false,
+        "",
+        "1girl, solo, looking_at_viewer, short_hair, simple_background, shirt, brown_hair, closed_mouth, jewelry, brown_eyes, collarbone, upper_body, earrings, sleeveless, glasses, grey_background, mole, lips, makeup, round_eyewear, nose, realistic, mole_on_neck, mole_on_cheek, photorealistic"
+      ]
+    },
+    {
+      "bgcolor": "#3f5159",
+      "color": "#2a363b",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 419,
+      "inputs": [
+        {
+          "link": null,
+          "name": "clip",
+          "type": "CLIP"
+        },
+        {
+          "link": 882,
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 26,
+      "outputs": [
+        {
+          "links": [
+            876
+          ],
+          "name": "CONDITIONING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        400,
+        1580
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "size": {
+        "0": 260,
+        "1": 80
+      },
+      "type": "CLIPTextEncode",
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "bgcolor": "#353",
+      "color": "#232",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 392,
+      "inputs": [
+        {
+          "link": 829,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 12,
+      "outputs": [
+        {
+          "links": [
+            845
+          ],
+          "name": "STRING",
+          "shape": 6,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        660,
+        710
+      ],
+      "properties": {
+        "Node name for S&R": "WD14Tagger|pysssss"
+      },
+      "size": {
+        "0": 280,
+        "1": 220
+      },
+      "type": "WD14Tagger|pysssss",
+      "widgets_values": [
+        "wd-swinv2-tagger-v3",
+        0.35,
+        0.85,
+        false,
+        false,
+        "",
+        "1girl, solo, long_hair, looking_at_viewer, brown_hair, black_hair, dress, jewelry, brown_eyes, upper_body, solo_focus, necklace, lips, freckles, realistic, train, railroad_tracks, train_station, photorealistic"
+      ]
+    },
+    {
+      "bgcolor": "#353",
+      "color": "#232",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 393,
+      "inputs": [
+        {
+          "link": null,
+          "name": "clip",
+          "type": "CLIP"
+        },
+        {
+          "link": 846,
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 27,
+      "outputs": [
+        {
+          "links": [
+            830
+          ],
+          "name": "CONDITIONING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        650,
+        780
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "size": {
+        "0": 340,
+        "1": 100
+      },
+      "type": "CLIPTextEncode",
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "bgcolor": "#353",
+      "color": "#232",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 398,
+      "inputs": [
+        {
+          "link": 845,
+          "name": "text_a",
+          "type": "STRING",
+          "widget": {
+            "name": "text_a"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 19,
+      "outputs": [
+        {
+          "links": [
+            846
+          ],
+          "name": "STRING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        650,
+        860
+      ],
+      "properties": {
+        "Node name for S&R": "StringFunction|pysssss"
+      },
+      "size": {
+        "0": 250,
+        "1": 220
+      },
+      "type": "StringFunction|pysssss",
+      "widgets_values": [
+        "replace",
+        "yes",
+        "",
+        "/(monochrome|greyscale|no_humans|watermark|solo|[a-z0-9\\s_]+background|[0-9]+|\\s+)/",
+        "",
+        "girl,long_hair,looking_at_viewer,brown_hair,black_hair,dress,jewelry,brown_eyes,upper_body,_focus,necklace,lips,freckles,realistic,train,railroad_tracks,train_station,photorealistic"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 412,
+      "inputs": [
+        {
+          "link": 866,
+          "name": "mask",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 32,
+      "pos": [
+        400,
+        -520
+      ],
+      "properties": {
+        "Node name for S&R": "MaskPreview+"
+      },
+      "size": {
+        "0": 280,
+        "1": 250
+      },
+      "type": "MaskPreview+"
+    },
+    {
+      "flags": {},
+      "id": 416,
+      "inputs": [
+        {
+          "link": 871,
+          "name": "mask",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 34,
+      "pos": [
+        380,
+        -200
+      ],
+      "properties": {
+        "Node name for S&R": "MaskPreview+"
+      },
+      "size": {
+        "0": 270,
+        "1": 250
+      },
+      "type": "MaskPreview+"
+    },
+    {
+      "flags": {},
+      "id": 415,
+      "inputs": [
+        {
+          "link": 870,
+          "name": "mask",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 33,
+      "pos": [
+        690,
+        -200
+      ],
+      "properties": {
+        "Node name for S&R": "MaskPreview+"
+      },
+      "size": {
+        "0": 280,
+        "1": 250
+      },
+      "type": "MaskPreview+"
+    },
+    {
+      "flags": {},
+      "id": 396,
+      "inputs": [
+        {
+          "color_on": "#FF6E6E",
+          "link": 832,
+          "name": "VAE",
+          "type": "*"
+        },
+        {
+          "color_on": "#FFD500",
+          "link": 833,
+          "name": "CLIP",
+          "type": "*"
+        },
+        {
+          "link": null,
+          "name": "anything",
+          "type": "*"
+        }
+      ],
+      "mode": 0,
+      "order": 29,
+      "pos": [
+        640,
+        590
+      ],
+      "properties": {
+        "Node name for S&R": "Anything Everywhere3",
+        "color_restricted": 0,
+        "group_restricted": 0
+      },
+      "size": {
+        "0": 210,
+        "1": 66
+      },
+      "type": "Anything Everywhere3",
+      "widgets_values": []
+    },
+    {
+      "bgcolor": "#335",
+      "color": "#223",
+      "flags": {},
+      "id": 380,
+      "inputs": [
+        {
+          "link": 834,
+          "name": "image",
+          "type": "IMAGE"
+        },
+        {
+          "link": 837,
+          "name": "mask",
+          "type": "MASK"
+        },
+        {
+          "link": null,
+          "name": "positive",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 822,
+          "name": "negative",
+          "type": "CONDITIONING"
+        }
+      ],
+      "mode": 0,
+      "order": 30,
+      "outputs": [
+        {
+          "links": [
+            811
+          ],
+          "name": "IPADAPTER_PARAMS",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IPADAPTER_PARAMS"
+        },
+        {
+          "links": null,
+          "name": "POSITIVE",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "CONDITIONING"
+        },
+        {
+          "links": null,
+          "name": "NEGATIVE",
+          "shape": 3,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        890,
+        350
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterRegionalConditioning"
+      },
+      "size": {
+        "0": 290,
+        "1": 214
+      },
+      "type": "IPAdapterRegionalConditioning",
+      "widgets_values": [
+        0.7000000000000001,
+        1,
+        "linear",
+        0,
+        1
+      ]
+    },
+    {
+      "bgcolor": "#335",
+      "color": "#223",
+      "flags": {},
+      "id": 317,
+      "inputs": [
+        {
+          "link": 677,
+          "name": "model",
+          "type": "MODEL"
+        },
+        {
+          "link": null,
+          "name": "ipadapter",
+          "type": "IPADAPTER"
+        }
+      ],
+      "mode": 0,
+      "order": 28,
+      "outputs": [
+        {
+          "links": [
+            817
+          ],
+          "name": "model",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MODEL"
+        },
+        {
+          "links": [
+            819
+          ],
+          "name": "ipadapter",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "IPADAPTER"
+        }
+      ],
+      "pos": [
+        1240,
+        350
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterUnifiedLoader"
+      },
+      "size": {
+        "0": 315,
+        "1": 78
+      },
+      "type": "IPAdapterUnifiedLoader",
+      "widgets_values": [
+        "PLUS (high strength)"
+      ]
+    },
+    {
+      "bgcolor": "#533",
+      "color": "#322",
+      "flags": {},
+      "id": 77,
+      "mode": 0,
+      "order": 2,
+      "outputs": [
+        {
+          "links": [
+            827,
+            836
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        },
+        {
+          "links": null,
+          "name": "MASK",
+          "shape": 3,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        10,
+        1070
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "size": {
+        "0": 251.78768920898438,
+        "1": 314
+      },
+      "title": "Load Image(Girl)",
+      "type": "LoadImage",
+      "widgets_values": [
+        "input_77.png",
+        "image"
+      ]
+    },
+    {
+      "bgcolor": "#335",
+      "color": "#223",
+      "flags": {
+        "collapsed": false
+      },
+      "id": 183,
+      "mode": 0,
+      "order": 3,
+      "outputs": [
+        {
+          "links": [
+            828,
+            834
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        },
+        {
+          "links": null,
+          "name": "MASK",
+          "shape": 3,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        20,
+        290
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "size": {
+        "0": 253.39938354492188,
+        "1": 314
+      },
+      "title": "Load Image(background)",
+      "type": "LoadImage",
+      "widgets_values": [
+        "input_183.png",
+        "image"
+      ]
+    },
+    {
+      "bgcolor": "#3f5159",
+      "color": "#2a363b",
+      "flags": {},
+      "id": 418,
+      "inputs": [
+        {
+          "link": 884,
+          "name": "image",
+          "type": "IMAGE"
+        },
+        {
+          "link": 887,
+          "name": "mask",
+          "type": "MASK"
+        },
+        {
+          "link": 876,
+          "name": "positive",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 880,
+          "name": "negative",
+          "type": "CONDITIONING"
+        }
+      ],
+      "mode": 0,
+      "order": 36,
+      "outputs": [
+        {
+          "links": [
+            879
+          ],
+          "name": "IPADAPTER_PARAMS",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IPADAPTER_PARAMS"
+        },
+        {
+          "links": [
+            890
+          ],
+          "name": "POSITIVE",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "CONDITIONING"
+        },
+        {
+          "links": [
+            877
+          ],
+          "name": "NEGATIVE",
+          "shape": 3,
+          "slot_index": 2,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        640,
+        1460
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterRegionalConditioning"
+      },
+      "size": {
+        "0": 290,
+        "1": 214
+      },
+      "type": "IPAdapterRegionalConditioning",
+      "widgets_values": [
+        1,
+        1,
+        "weak input",
+        0,
+        1
+      ]
+    },
+    {
+      "bgcolor": "#533",
+      "color": "#322",
+      "flags": {},
+      "id": 386,
+      "inputs": [
+        {
+          "link": 836,
+          "name": "image",
+          "type": "IMAGE"
+        },
+        {
+          "link": 888,
+          "name": "mask",
+          "type": "MASK"
+        },
+        {
+          "link": 831,
+          "name": "positive",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 820,
+          "name": "negative",
+          "type": "CONDITIONING"
+        }
+      ],
+      "mode": 0,
+      "order": 35,
+      "outputs": [
+        {
+          "links": [
+            812
+          ],
+          "name": "IPADAPTER_PARAMS",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IPADAPTER_PARAMS"
+        },
+        {
+          "links": [
+            854
+          ],
+          "name": "POSITIVE",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "CONDITIONING"
+        },
+        {
+          "links": [
+            857
+          ],
+          "name": "NEGATIVE",
+          "shape": 3,
+          "slot_index": 2,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        620,
+        1160
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterRegionalConditioning"
+      },
+      "size": {
+        "0": 290,
+        "1": 214
+      },
+      "type": "IPAdapterRegionalConditioning",
+      "widgets_values": [
+        1,
+        1,
+        "weak input",
+        0,
+        1
+      ]
+    },
+    {
+      "bgcolor": "#353",
+      "color": "#232",
+      "flags": {},
+      "id": 382,
+      "inputs": [
+        {
+          "link": 835,
+          "name": "image",
+          "type": "IMAGE"
+        },
+        {
+          "link": 873,
+          "name": "mask",
+          "type": "MASK"
+        },
+        {
+          "link": 830,
+          "name": "positive",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 821,
+          "name": "negative",
+          "type": "CONDITIONING"
+        }
+      ],
+      "mode": 0,
+      "order": 37,
+      "outputs": [
+        {
+          "links": [
+            813
+          ],
+          "name": "IPADAPTER_PARAMS",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IPADAPTER_PARAMS"
+        },
+        {
+          "links": [
+            853
+          ],
+          "name": "POSITIVE",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "CONDITIONING"
+        },
+        {
+          "links": [
+            856
+          ],
+          "name": "NEGATIVE",
+          "shape": 3,
+          "slot_index": 2,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        880,
+        690
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterRegionalConditioning"
+      },
+      "size": {
+        "0": 290,
+        "1": 214
+      },
+      "type": "IPAdapterRegionalConditioning",
+      "widgets_values": [
+        1,
+        1,
+        "weak input",
+        0,
+        1
+      ]
+    },
+    {
+      "bgcolor": "#3f5159",
+      "color": "#2a363b",
+      "flags": {
+        "collapsed": true
+      },
+      "id": 421,
+      "inputs": [
+        {
+          "link": 881,
+          "name": "text_a",
+          "type": "STRING",
+          "widget": {
+            "name": "text_a"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 18,
+      "outputs": [
+        {
+          "links": [
+            882
+          ],
+          "name": "STRING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        390,
+        1510
+      ],
+      "properties": {
+        "Node name for S&R": "StringFunction|pysssss"
+      },
+      "size": {
+        "0": 220,
+        "1": 220
+      },
+      "type": "StringFunction|pysssss",
+      "widgets_values": [
+        "replace",
+        "yes",
+        "",
+        "/(monochrome|greyscale|no_humans|watermark|solo|[a-z0-9\\s_]+background|[0-9]+|\\s+)/",
+        "",
+        "girl,looking_at_viewer,short_hair,shirt,brown_hair,closed_mouth,jewelry,brown_eyes,collarbone,upper_body,earrings,sleeveless,glasses,mole,lips,makeup,round_eyewear,nose,realistic,mole_on_neck,mole_on_cheek,photorealistic"
+      ]
+    },
+    {
+      "bgcolor": "#3f5159",
+      "color": "#2a363b",
+      "flags": {},
+      "id": 422,
+      "mode": 0,
+      "order": 4,
+      "outputs": [
+        {
+          "links": [
+            883,
+            884
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        },
+        {
+          "links": null,
+          "name": "MASK",
+          "shape": 3,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        10,
+        1430
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "size": [
+        250,
+        310
+      ],
+      "type": "LoadImage",
+      "widgets_values": [
+        "input_422.png",
+        "image"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 437,
+      "inputs": [
+        {
+          "link": null,
+          "name": "cn_extras",
+          "type": "CN_WEIGHTS_EXTRAS"
+        }
+      ],
+      "mode": 0,
+      "order": 5,
+      "outputs": [
+        {
+          "links": [
+            921
+          ],
+          "name": "CN_WEIGHTS",
+          "shape": 3,
+          "type": "CONTROL_NET_WEIGHTS"
+        },
+        {
+          "links": null,
+          "name": "TK_SHORTCUT",
+          "shape": 3,
+          "type": "TIMESTEP_KEYFRAME"
+        }
+      ],
+      "pos": [
+        1510,
+        -250
+      ],
+      "properties": {
+        "Node name for S&R": "ScaledSoftControlNetWeights"
+      },
+      "size": {
+        "0": 315,
+        "1": 126
+      },
+      "type": "ScaledSoftControlNetWeights",
+      "widgets_values": [
+        0.825,
+        false,
+        1
+      ]
+    },
+    {
+      "flags": {},
+      "id": 429,
+      "mode": 0,
+      "order": 6,
+      "outputs": [
+        {
+          "links": [
+            909
+          ],
+          "name": "CONTROL_NET",
+          "shape": 3,
+          "type": "CONTROL_NET"
+        }
+      ],
+      "pos": [
+        1100,
+        70
+      ],
+      "properties": {
+        "Node name for S&R": "ControlNetLoader"
+      },
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "type": "ControlNetLoader",
+      "widgets_values": [
+        "mistoLine_rank256.safetensors"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 435,
+      "inputs": [
+        {
+          "link": 919,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 15,
+      "outputs": [
+        {
+          "links": [
+            918
+          ],
+          "name": "image",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        }
+      ],
+      "pos": [
+        730,
+        130
+      ],
+      "properties": {
+        "Node name for S&R": "AnyLinePreprocessor"
+      },
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "type": "AnyLinePreprocessor"
+    },
+    {
+      "flags": {},
+      "id": 381,
+      "inputs": [
+        {
+          "link": 812,
+          "name": "params_1",
+          "type": "IPADAPTER_PARAMS"
+        },
+        {
+          "link": 813,
+          "name": "params_2",
+          "type": "IPADAPTER_PARAMS"
+        },
+        {
+          "link": 811,
+          "name": "params_3",
+          "type": "IPADAPTER_PARAMS"
+        },
+        {
+          "link": 879,
+          "name": "params_4",
+          "type": "IPADAPTER_PARAMS"
+        },
+        {
+          "link": null,
+          "name": "params_5",
+          "type": "IPADAPTER_PARAMS"
+        }
+      ],
+      "mode": 0,
+      "order": 38,
+      "outputs": [
+        {
+          "links": [
+            814
+          ],
+          "name": "IPADAPTER_PARAMS",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IPADAPTER_PARAMS"
+        }
+      ],
+      "pos": [
+        950,
+        990
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterCombineParams"
+      },
+      "size": {
+        "0": 240,
+        "1": 110
+      },
+      "type": "IPAdapterCombineParams"
+    },
+    {
+      "flags": {},
+      "id": 384,
+      "inputs": [
+        {
+          "link": 890,
+          "name": "conditioning_1",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 853,
+          "name": "conditioning_2",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 854,
+          "name": "conditioning_3",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 891,
+          "name": "conditioning_4",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": null,
+          "name": "conditioning_5",
+          "type": "CONDITIONING"
+        }
+      ],
+      "mode": 0,
+      "order": 39,
+      "outputs": [
+        {
+          "links": [
+            922
+          ],
+          "name": "CONDITIONING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        950,
+        1170
+      ],
+      "properties": {
+        "Node name for S&R": "ConditioningCombineMultiple+"
+      },
+      "size": {
+        "0": 342.5999755859375,
+        "1": 106
+      },
+      "title": "🔧 Conditionings Combine Multiple (POS)",
+      "type": "ConditioningCombineMultiple+"
+    },
+    {
+      "flags": {},
+      "id": 385,
+      "inputs": [
+        {
+          "link": 850,
+          "name": "conditioning_1",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 856,
+          "name": "conditioning_2",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 857,
+          "name": "conditioning_3",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 877,
+          "name": "conditioning_4",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": null,
+          "name": "conditioning_5",
+          "type": "CONDITIONING"
+        }
+      ],
+      "mode": 0,
+      "order": 40,
+      "outputs": [
+        {
+          "links": [
+            923
+          ],
+          "name": "CONDITIONING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        950,
+        1370
+      ],
+      "properties": {
+        "Node name for S&R": "ConditioningCombineMultiple+"
+      },
+      "size": {
+        "0": 342.5999755859375,
+        "1": 106
+      },
+      "title": "🔧 Conditionings Combine Multiple (NEG)",
+      "type": "ConditioningCombineMultiple+"
+    },
+    {
+      "flags": {},
+      "id": 431,
+      "inputs": [
+        {
+          "link": 925,
+          "name": "images",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 45,
+      "pos": [
+        1780,
+        750
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "size": {
+        "0": 980,
+        "1": 1020
+      },
+      "type": "PreviewImage"
+    },
+    {
+      "flags": {},
+      "id": 383,
+      "inputs": [
+        {
+          "link": 817,
+          "name": "model",
+          "type": "MODEL"
+        },
+        {
+          "link": 819,
+          "name": "ipadapter",
+          "type": "IPADAPTER"
+        },
+        {
+          "link": 814,
+          "name": "ipadapter_params",
+          "type": "IPADAPTER_PARAMS"
+        },
+        {
+          "link": null,
+          "name": "image_negative",
+          "type": "IMAGE"
+        },
+        {
+          "link": null,
+          "name": "clip_vision",
+          "type": "CLIP_VISION"
+        }
+      ],
+      "mode": 0,
+      "order": 41,
+      "outputs": [
+        {
+          "links": [
+            926
+          ],
+          "name": "MODEL",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MODEL"
+        }
+      ],
+      "pos": [
+        1240,
+        480
+      ],
+      "properties": {
+        "Node name for S&R": "IPAdapterFromParams"
+      },
+      "size": {
+        "0": 315,
+        "1": 162
+      },
+      "type": "IPAdapterFromParams",
+      "widgets_values": [
+        "concat",
+        "K+mean(V) w/ C penalty"
+      ]
+    },
+    {
+      "bgcolor": "#553355",
+      "color": "#332233",
+      "flags": {
+        "collapsed": false
+      },
+      "id": 176,
+      "inputs": [
+        {
+          "link": null,
+          "name": "lora_stack",
+          "type": "LORA_STACK"
+        },
+        {
+          "link": null,
+          "name": "cnet_stack",
+          "slot_index": 1,
+          "type": "CONTROL_NET_STACK"
+        },
+        {
+          "link": 797,
+          "name": "empty_latent_width",
+          "type": "INT",
+          "widget": {
+            "name": "empty_latent_width"
+          }
+        },
+        {
+          "link": 798,
+          "name": "empty_latent_height",
+          "type": "INT",
+          "widget": {
+            "name": "empty_latent_height"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 20,
+      "outputs": [
+        {
+          "links": [
+            677
+          ],
+          "name": "MODEL",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MODEL"
+        },
+        {
+          "links": [],
+          "name": "CONDITIONING+",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "CONDITIONING"
+        },
+        {
+          "links": [
+            820,
+            821,
+            822,
+            850,
+            880
+          ],
+          "name": "CONDITIONING-",
+          "shape": 3,
+          "slot_index": 2,
+          "type": "CONDITIONING"
+        },
+        {
+          "links": [
+            931
+          ],
+          "name": "LATENT",
+          "shape": 3,
+          "slot_index": 3,
+          "type": "LATENT"
+        },
+        {
+          "links": [
+            832
+          ],
+          "name": "VAE",
+          "shape": 3,
+          "slot_index": 4,
+          "type": "VAE"
+        },
+        {
+          "links": [
+            833
+          ],
+          "name": "CLIP",
+          "shape": 3,
+          "slot_index": 5,
+          "type": "CLIP"
+        },
+        {
+          "links": null,
+          "name": "DEPENDENCIES",
+          "shape": 3,
+          "type": "DEPENDENCIES"
+        }
+      ],
+      "pos": [
+        310,
+        470
+      ],
+      "properties": {
+        "Node name for S&R": "Efficient Loader"
+      },
+      "shape": 1,
+      "size": {
+        "0": 280,
+        "1": 440
+      },
+      "type": "Efficient Loader",
+      "widgets_values": [
+        "realvisxlV40_v40LightningBakedvae.safetensors",
+        "Baked VAE",
+        -1,
+        "None",
+        0.7000000000000001,
+        1,
+        "",
+        "NSFW,(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch), text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, cropped, zoomed in, deformed arms, long hair, bra, bad hands, extra hands, bad fingers, paintings, sketches, (worst quality:2), (low quality:2), (normal quality:2), lowres, normal quality, ((monochrome)), ((grayscale)), skin spots, acnes, skin blemishes, age spot, glans, multiple characters, (big breasts:1.1), ",
+        "length+mean",
+        "comfy++",
+        512,
+        704,
+        1
+      ]
+    },
+    {
+      "flags": {},
+      "id": 439,
+      "inputs": [
+        {
+          "link": 924,
+          "name": "samples",
+          "type": "LATENT"
+        },
+        {
+          "link": null,
+          "name": "vae",
+          "type": "VAE"
+        }
+      ],
+      "mode": 0,
+      "order": 44,
+      "outputs": [
+        {
+          "links": [
+            925
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        }
+      ],
+      "pos": [
+        1370,
+        1550
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "size": {
+        "0": 210,
+        "1": 46
+      },
+      "type": "VAEDecode"
+    },
+    {
+      "flags": {},
+      "id": 438,
+      "inputs": [
+        {
+          "link": 926,
+          "name": "model",
+          "type": "MODEL"
+        },
+        {
+          "link": 929,
+          "name": "positive",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 930,
+          "name": "negative",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 931,
+          "name": "latent_image",
+          "type": "LATENT"
+        },
+        {
+          "link": null,
+          "name": "noise_opt",
+          "type": "NOISE"
+        }
+      ],
+      "mode": 0,
+      "order": 43,
+      "outputs": [
+        {
+          "links": [
+            924
+          ],
+          "name": "LATENT",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "LATENT"
+        }
+      ],
+      "pos": [
+        1330,
+        950
+      ],
+      "properties": {
+        "Node name for S&R": "KSamplerAdvanced //Inspire"
+      },
+      "size": {
+        "0": 315,
+        "1": 474
+      },
+      "type": "KSamplerAdvanced //Inspire",
+      "widgets_values": [
+        true,
+        109933311155382,
+        "randomize",
+        6,
+        2,
+        "dpmpp_sde",
+        "AYS SDXL",
+        0,
+        10000,
+        "GPU(=A1111)",
+        false,
+        "incremental",
+        0,
+        0,
+        "linear"
+      ]
+    },
+    {
+      "bgcolor": "#353",
+      "color": "#232",
+      "flags": {},
+      "id": 78,
+      "mode": 0,
+      "order": 7,
+      "outputs": [
+        {
+          "links": [
+            829,
+            835
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        },
+        {
+          "links": null,
+          "name": "MASK",
+          "shape": 3,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        20,
+        700
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "size": {
+        "0": 244.199951171875,
+        "1": 314
+      },
+      "title": "Load Image(boy)",
+      "type": "LoadImage",
+      "widgets_values": [
+        "input_78.png",
+        "image"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 310,
+      "inputs": [
+        {
+          "link": 795,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 8,
+      "outputs": [
+        {
+          "links": [
+            796,
+            858,
+            919
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        }
+      ],
+      "pos": [
+        -380,
+        -350
+      ],
+      "properties": {
+        "Node name for S&R": "JWImageResizeByLongerSide"
+      },
+      "size": {
+        "0": 315,
+        "1": 82
+      },
+      "type": "JWImageResizeByLongerSide",
+      "widgets_values": [
+        1024,
+        "bicubic"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 417,
+      "inputs": [
+        {
+          "link": 872,
+          "name": "mask",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 31,
+      "pos": [
+        700,
+        -510
+      ],
+      "properties": {
+        "Node name for S&R": "MaskPreview+"
+      },
+      "size": {
+        "0": 240,
+        "1": 250
+      },
+      "type": "MaskPreview+"
+    },
+    {
+      "flags": {},
+      "id": 403,
+      "inputs": [
+        {
+          "link": 858,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 14,
+      "outputs": [
+        {
+          "links": [
+            869,
+            940
+          ],
+          "name": "mask",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MASK"
+        },
+        {
+          "links": [],
+          "name": "yolo_plot_image",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "IMAGE"
+        },
+        {
+          "links": [
+            865,
+            867,
+            868
+          ],
+          "name": "yolo_masks",
+          "shape": 3,
+          "slot_index": 2,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        10,
+        -550
+      ],
+      "properties": {
+        "Node name for S&R": "LayerMask: YoloV8Detect"
+      },
+      "size": {
+        "0": 315,
+        "1": 122
+      },
+      "type": "LayerMask: YoloV8Detect",
+      "widgets_values": [
+        "person_yolov8m-seg.pt",
+        "all"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 426,
+      "inputs": [
+        {
+          "link": 922,
+          "name": "positive",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 923,
+          "name": "negative",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 909,
+          "name": "control_net",
+          "slot_index": 2,
+          "type": "CONTROL_NET"
+        },
+        {
+          "link": 918,
+          "name": "image",
+          "type": "IMAGE"
+        },
+        {
+          "link": 940,
+          "name": "mask_optional",
+          "type": "MASK"
+        },
+        {
+          "link": null,
+          "name": "timestep_kf",
+          "type": "TIMESTEP_KEYFRAME"
+        },
+        {
+          "link": null,
+          "name": "latent_kf_override",
+          "slot_index": 6,
+          "type": "LATENT_KEYFRAME"
+        },
+        {
+          "link": 921,
+          "name": "weights_override",
+          "slot_index": 7,
+          "type": "CONTROL_NET_WEIGHTS"
+        },
+        {
+          "link": null,
+          "name": "model_optional",
+          "type": "MODEL"
+        }
+      ],
+      "mode": 0,
+      "order": 42,
+      "outputs": [
+        {
+          "links": [
+            929
+          ],
+          "name": "positive",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "CONDITIONING"
+        },
+        {
+          "links": [
+            930
+          ],
+          "name": "negative",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "CONDITIONING"
+        },
+        {
+          "links": null,
+          "name": "model_opt",
+          "shape": 3,
+          "type": "MODEL"
+        }
+      ],
+      "pos": [
+        1100,
+        -270
+      ],
+      "properties": {
+        "Node name for S&R": "ACN_AdvancedControlNetApply"
+      },
+      "size": {
+        "0": 355.20001220703125,
+        "1": 266
+      },
+      "type": "ACN_AdvancedControlNetApply",
+      "widgets_values": [
+        0.75,
+        0,
+        1
+      ]
+    }
+  ],
+  "version": 0.4
+}

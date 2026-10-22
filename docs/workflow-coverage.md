@@ -2,6 +2,8 @@
 
 WebUI features and downloadable ComfyUI graphs are separate interfaces. The feature registry contains 23 entries, including library/editor tools and intentionally hidden modes. Most generation features construct their API graphs in Python; they do not depend on a recovered JSON file with a matching display name. Missing a model, custom node or runtime still blocks generation.
 
+The [online site](https://ted-h-com.github.io/Web_Comfyui/) uses the actual app shell and forms with a read-only documentation adapter. Tool names, **查看流程與模型** and generation actions open 23 source-backed feature guides. These identify the real Python builder, required models and form defaults; downloadable reference JSONs are explicitly labelled. The public workflow library separately contains 248 entries, including 46 downloadable graphs: 24 curated community imports plus the 22 baseline examples audited below.
+
 | Feature group | Implementation | Downloadable examples |
 | --- | --- | --- |
 | Z-Image, Flux Kontext, image composition, IPAdapter, InstantID | API builders in `webui/server.py` | Optional source-attributed examples in the workflow library; models remain user-installed. |
@@ -35,3 +37,5 @@ The source index links each reviewed revision. To obtain a source-only graph for
 ## Verification boundary
 
 This audit fetched JSON/license files only. It verified pinned hashes, parsed graphs, checked top-level links, scanned for credential/private-path patterns, and confirmed that all distributed paths and license files exist. Native official templates retain their upstream subgraphs; the checks do not prove installed node-schema compatibility inside them. No model download, service restart, GPU load or image/video generation was performed. Before calling a feature ready, install its compatible dependencies and run a short, user-owned-input qualification.
+
+The local **檢查 ComfyUI 節點與模型** action checks active referenced subgraphs and compares recognized model-loader selections with ComfyUI’s reported options. Missing and unknown dependencies remain distinct. A matching option is not proof of weight integrity, runtime compatibility or GPU quality. Importing identical visual JSON again succeeds; different content at the same destination is a conflict and is not overwritten.

@@ -640,6 +640,7 @@ function parseRoute() {
   if (parts[0] === "dance-library") return { view: "dance-library" };
   if (parts[0] === "projects") return { view: "projects" };
   if (parts[0] === "workflows") return { view: "workflows" };
+  if (window.WebComfyDocs && parts[0] === "workflow" && parts[1]) return { view: "workflows" };
   if (parts[0] === "resources") return { view: "resources" };
   if (parts[0] === "orchestrator") {
     if (parts[1] === "runs" && parts[2]) return { view: "orchestrator", pane: "detail", runId: parts[2] };
@@ -1022,6 +1023,7 @@ function isOperator() {
 function setServiceStatus(ok, text) {
   const pill = $("servicePill");
   if (!pill) return;
+  if (window.WebComfyDocs) { pill.textContent = "互動說明"; pill.className = "service-pill"; return; }
   pill.textContent = text || (ok ? "服務正常" : "服務連線異常");
   pill.className = `service-pill ${ok ? "ok" : "error"}`;
 }
@@ -2168,6 +2170,7 @@ async function refreshActiveCharacterCapabilities() {
 
 // ---- sidebar (grouped tools) ----------------------------------------------
 function statusDot(feature) {
+  if (window.WebComfyDocs) return h("span", { class: "tool-dot tool" });
   let cls = "muted";
   if (feature.runnable) cls = interactiveReady(feature) ? "ok" : "missing";
   else if (feature.kind === "storage" || feature.kind === "text") cls = "tool";
@@ -2214,6 +2217,7 @@ function selectFeature(id) {
   currentFeatureId = feature.id;
   currentStudio = feature.studio;
   navigate(studioRoute(feature.id));
+  window.WebComfyDocs?.openFeature(feature.id, document.getElementById(`studio-side-tool-${feature.id}`));
 }
 
 // ---- view switching -------------------------------------------------------
@@ -2254,7 +2258,7 @@ function renderWorkspace() {
   else if (currentView === "resources") renderProviderFabricView();
   else if (currentView === "workflows") {
     const ws = beginWorkspaceRender();
-    window.WorkflowLibrary.mount(ws, {openSheet, canLoad: isOperator()});
+    window.WorkflowLibrary.mount(ws, window.WebComfyDocs ? window.WebComfyDocs.libraryOptions(openSheet) : {openSheet, canLoad: isOperator()});
   }
   else if (currentView === "dance-library") {
     if (isOperator()) renderDanceLibraryManager();
@@ -8237,6 +8241,7 @@ function resetGetters() {
 }
 
 function readinessPill(feature) {
+  if (window.WebComfyDocs) return { cls: "neutral", label: "功能說明" };
   if (interactiveReady(feature)) return { cls: "ok", label: "就緒" };
   if (feature.runnable) return { cls: "missing", label: "缺件" };
   if (feature.kind === "storage") return { cls: "neutral", label: "工具" };
@@ -8463,6 +8468,7 @@ function renderFeaturePanel(feature) {
 
   const versionSelector = renderStudioVersionSelector(feature);
   if (versionSelector) panel.appendChild(versionSelector);
+  if (window.WebComfyDocs) panel.appendChild(window.WebComfyDocs.featureButton(feature.id));
 
   if (feature.note) {
     panel.appendChild(h("div", { class: "panel-note" }, [

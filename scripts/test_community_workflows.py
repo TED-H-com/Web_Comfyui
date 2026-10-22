@@ -21,7 +21,7 @@ def selected(catalog):
 def test_entire_vendored_collection_and_reference_policy(catalog):
     assert len(catalog["workflows"]) == 233
     vendored = [e for e in catalog["workflows"] if e["distribution"] == "vendored"]
-    assert len(vendored) == 18
+    assert len(vendored) == 24
     for entry in vendored:
         assert cw.validate_entry(cw.ROOT, entry, catalog["sources"][entry["source"]]) == []
     for entry in catalog["workflows"]:

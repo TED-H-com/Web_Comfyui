@@ -12,50 +12,62 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.build_docs import build, ROOT
 
-ASSERT = r'''
-(async () => {
+ASSERT = r'''(async () => {
  const result = document.createElement('pre'); result.id = 'docs-test-result'; document.body.append(result);
  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
  const until = async fn => {for (let i = 0; i < 300; i++) {if(fn())return; await wait(20);}throw Error('timeout');};
  const assert = (value, message) => {if(!value)throw Error(message);};
+ const visible = selector => [...document.querySelectorAll(selector)].find(node => node.getBoundingClientRect().width > 0);
+ const close = async () => {document.querySelector('.sheet-close').click(); await until(()=>!document.querySelector('[role="dialog"]'));};
+ const feature = async name => {
+  document.getElementById('studioToolTrigger').click();
+  await until(()=>document.querySelector('.studio-tool-sheet-row'));
+  const row=[...document.querySelectorAll('.studio-tool-sheet-row')].find(node=>node.textContent.includes(name));
+  assert(row && row.getBoundingClientRect().height >= 44, 'real visible tool button '+name);row.click();
+  await until(()=>document.querySelector('.app-feature-guide'));
+ };
  try {
-  await until(() => document.querySelectorAll('.workflow-card').length);
+  await until(() => document.getElementById('studioToolTrigger'));
   assert(document.documentElement.scrollWidth <= innerWidth + 1, 'horizontal overflow');
-  for(const nav of document.querySelectorAll('[data-page]')) {
-   const bounds = nav.getBoundingClientRect();
-   assert(bounds.height >= 44 && bounds.width > 0, 'navigation visible and touch sized');
-  }
+  assert(document.querySelector('.gen-form textarea'), 'actual app generation form');
+  assert(document.querySelector('.topbar .brand').textContent === 'Web ComfyUI', 'actual app brand');
+  assert(visible('[data-view="characters"]') && visible('[data-view="studio"]') && visible('[data-view="workflows"]'), 'same app navigation');
+  assert(document.getElementById('servicePill').textContent==='互動說明','no fake live service');
   if(new URLSearchParams(location.search).has('screenshot')) {result.textContent = 'SCREENSHOT READY'; return;}
+  document.querySelector('.app-guide-button button').click();
+  await until(()=>document.querySelector('.app-feature-guide'));
+  let detail = document.querySelector('.app-feature-guide');
+  for(const text of ['z_image_turbo_bf16.safetensors','qwen_3_4b.safetensors','ae.safetensors','zimage_prompt','會怎麼跑','使用什麼技巧']) assert(detail.textContent.includes(text),'actual text2img source '+text);
+  assert(!detail.textContent.includes('sd_xl_base_1.0'),'unrelated checkpoint not attributed');
+  await close();
+  document.querySelector('.generate-btn').click();await until(()=>document.querySelector('.app-feature-guide'));await close();
+  await feature('AI 指令改圖');
+  detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors'),'actual editing checkpoint');await close();
+  assert(location.hash.includes('img2img'), 'feature route matches selected button');
+  const resourceTab=visible('[data-view="resources"]');
+  if(resourceTab) resourceTab.click();
+  else {document.getElementById('moreMenuBtn').click();await until(()=>document.querySelector('.shell-menu-row'));[...document.querySelectorAll('.shell-menu-row')].find(row=>row.textContent==='角色創作資源中心').click();}
+  await until(()=>document.querySelector('.provider-fabric-host'));
+  assert([...document.querySelectorAll('input[type="password"]')].every(node=>node.disabled),'credentials disabled');
+  visible('[data-view="characters"]').click();await until(()=>document.body.dataset.view==='characters');
+  visible('[data-view="workflows"]').click();await until(()=>document.querySelectorAll('.workflow-card').length);
   const mode = document.querySelector('[aria-label="收錄狀態"]'); mode.value = 'local'; mode.dispatchEvent(new Event('change'));
-  const cards = [...document.querySelectorAll('.workflow-card')]; assert(cards.length > 0, 'downloadable workflows');
-  cards[0].click(); await until(() => document.querySelector('dialog[open]'));
-  assert(location.hash.startsWith('#/workflow/'), 'shareable workflow link');
-  const idHash = location.hash;
-  const detail = document.querySelector('.workflow-details');
-  for(const heading of ['先準備什麼','會怎麼跑','使用什麼技巧']) assert(detail.textContent.includes(heading), 'guide section '+heading);
+  document.querySelector('.workflow-card').click();await until(()=>document.querySelector('.workflow-details'));
+  detail=document.querySelector('.workflow-details');
   assert(!detail.textContent.includes('載入 ComfyUI') && !detail.textContent.includes('開啟 ComfyUI'), 'no runtime actions');
-  assert(document.activeElement.classList.contains('sheet-close'), 'focus enters dialog');
-  const download = [...detail.querySelectorAll('a')].find(a=>a.textContent==='下載 JSON');
-  assert(download.pathname.startsWith('/Web_Comfyui/downloads/'), 'subpath download');
-  const response = await fetch(download.href); assert(response.ok, 'download exists');
-  const graph = await response.json(); assert(graph.nodes || Object.values(graph).some(v=>v?.class_type), 'actual workflow graph');
-  document.querySelector('.sheet-close').click(); assert(!document.querySelector('dialog[open]'), 'close dialog');
-  assert(document.activeElement.classList.contains('workflow-card'), 'focus restored');
-  location.hash = idHash; await until(() => document.querySelector('dialog[open]'));
-  document.querySelector('dialog').dispatchEvent(new Event('cancel', {cancelable:true}));
-  assert(!document.querySelector('dialog[open]'), 'escape/cancel closes dialog');
-  document.querySelector('[data-page="start"]').click(); await until(() => !document.getElementById('startPage').hidden);
-  assert(document.getElementById('workflowPage').hidden, 'start route hides library');
-  document.querySelector('[data-page="about"]').click(); await until(() => !document.getElementById('aboutPage').hidden);
-  document.querySelector('[data-page="workflows"]').click(); await until(() => !document.getElementById('workflowPage').hidden);
-  const search = document.querySelector('[aria-label="搜尋工作流"]');search.value='no-such-workflow-xyz';search.dispatchEvent(new Event('input'));
-  assert(document.querySelectorAll('.workflow-card').length === 0, 'empty search');
-  search.value='';search.dispatchEvent(new Event('input'));
-  document.querySelector('.workflow-heading button').click();await until(()=>!document.querySelector('.workflow-heading button').disabled);
-  assert(!document.querySelector('input[type="password"]'), 'no credential input');
-  assert(document.documentElement.scrollWidth <= innerWidth + 1, 'final overflow');
-  result.textContent = 'PASS';
- } catch(error) {result.textContent='FAIL '+error.message;}
+  const download=[...detail.querySelectorAll('a')].find(node=>node.textContent==='下載 JSON');assert(download.pathname.startsWith('/Web_Comfyui/downloads/'),'subpath download');
+  const response=await fetch(download.href);assert(response.ok,'approved download works');
+  const graph=await response.json();assert(graph.nodes || Object.values(graph).some(v=>v?.class_type),'actual graph');
+  await close();
+  const search=document.querySelector('[aria-label="搜尋工作流"]');search.value='no-such-workflow-xyz';search.dispatchEvent(new Event('input'));
+  assert(document.querySelectorAll('.workflow-card').length===0,'empty search');search.value='';search.dispatchEvent(new Event('input'));
+  const blocked=await fetch('/api/generate',{method:'POST',body:'PRIVATE_TEST_INPUT'});assert(blocked.status===405,'writes blocked in memory');
+  const external=await fetch('https://example.invalid/api');assert(external.status===405,'external calls blocked');
+  assert((await fetch('/api/unlisted')).status===404,'unknown endpoint fails closed');
+  assert(document.documentElement.scrollWidth<=innerWidth+1,'final overflow');
+  assert(window.__docsErrors.length===0,window.__docsErrors.join(';'));
+  result.textContent='PASS';
+ }catch(error){result.textContent='FAIL '+error.message;}
 })();
 '''
 
@@ -71,7 +83,9 @@ def test_static_docs_browser(tmp_path):
         def do_GET(self):
             requests.append(self.path)
             path = unquote(urlsplit(self.path).path)
-            if path == '/Web_Comfyui/assert.js':
+            if path == '/Web_Comfyui/monitor.js':
+                data = b"window.__docsErrors=[];addEventListener('error',e=>__docsErrors.push(e.message));addEventListener('unhandledrejection',e=>__docsErrors.push(String(e.reason)));"; mime='text/javascript'
+            elif path == '/Web_Comfyui/assert.js':
                 data = ASSERT.encode(); mime = 'text/javascript'
             elif path.startswith('/Web_Comfyui/'):
                 relative = path.removeprefix('/Web_Comfyui/') or 'index.html'
@@ -79,7 +93,7 @@ def test_static_docs_browser(tmp_path):
                 if not file.resolve().is_relative_to(output.resolve()) or not file.is_file(): self.send_error(404); return
                 data = file.read_bytes()
                 mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json'}.get(file.suffix, 'text/plain')
-                if file.name == 'index.html': data = data.replace(b'</body>', b'<script src="./assert.js"></script></body>')
+                if file.name == 'index.html': data = data.replace(b'<head>', b'<head><script src="./monitor.js"></script>').replace(b'</body>', b'<script src="./assert.js"></script></body>')
             else: self.send_error(404); return
             self.send_response(200); self.send_header('Content-Type', mime); self.send_header('Content-Length', str(len(data))); self.end_headers(); self.wfile.write(data)
         def do_POST(self):
