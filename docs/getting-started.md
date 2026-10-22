@@ -1,6 +1,6 @@
 # Your first workflow
 
-Start after [installing Web_Comfyui](installation.md). Keep ComfyUI open at `http://127.0.0.1:8188` and Web_Comfyui at `http://127.0.0.1:8190`. The [online guides](https://ted-h-com.github.io/Web_Comfyui/) use the same app interface with prepared demonstrations; your local application performs real work. Both have a top-right **繁中 / English** language control. For installation steps in Traditional Chinese, see [README.zh-TW.md](../README.zh-TW.md).
+Start after [installing Web_Comfyui](installation.md). Keep ComfyUI open at `http://127.0.0.1:8188` and Web_Comfyui at `http://127.0.0.1:8190`. The [project homepage](https://ted-h-com.github.io/Web_Comfyui/) explains the project and installation. Its separate [interactive demo](https://ted-h-com.github.io/Web_Comfyui/demo/) uses the same app interface with prepared examples and is not a live service; your installed application performs real work. Both have a top-right **繁中 / English** language control. For installation steps in Traditional Chinese, see [README.zh-TW.md](../README.zh-TW.md).
 
 ## 1. Sign in and choose a starting point
 
@@ -20,6 +20,8 @@ Before installing models, explore the online **創作** page. Its two help butto
 Each of the 23 tools, plus character creation, has a prefilled example. Edit the text or click/drop a supported local file to preview your own input in the browser. Press the existing **Generate** button to see a short simulated sequence followed by the fixed prepared result in the form. Nothing is uploaded, queued or sent to a provider. Changed inputs do not generate a different result.
 
 The demo set contains four fictional illustrations and two four-second silent pan/fade animations, approximately 1.68 MiB in total. Video previews animate prepared stills; they do not demonstrate model-generated motion or lip sync. Voice examples show transcripts only. [Prompts, derivations and hashes](../webui/docs/examples/provenance.json) identify the six approved public assets, which are separate from runtime and personal media. The [site maintenance guide](site.md) explains the publication checks.
+
+The demo hardware selector offers no NVIDIA GPU and common VRAM tiers (8/12/16/24/32 GB), plus two 24 GB cards. Treat its labels as planning estimates, not benchmarks or proven minimums. Two 24 GB cards do not become one 48 GB device. The selector changes only the demo; it never disables or configures your installed app. Choose **AutoIP** to explore all 23 prepared demonstrations, while checking real provider support separately. The optional registration link and QR code use referral code `TEDH2FND`; [cloud/demo boundaries and referral disclosure](autoip-cloud-demo.md) explain the distinction.
 
 Most actual generation forms build their own API graphs in Python. A community JSON with a similar title is a separate example, not automatically the form’s template.
 

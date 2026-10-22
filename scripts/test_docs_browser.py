@@ -76,6 +76,8 @@ ASSERT = r'''(async () => {
   const lang=document.getElementById('languageSelect');lang.value='en';lang.dispatchEvent(new Event('change'));
   await until(()=>document.documentElement.lang==='en' && visible('[data-view="characters"]').textContent.includes('Characters'));
   assert(document.querySelector('.experimental-create-form button[type=submit]').textContent.includes('demo'),'English native demo action');
+  assert(document.documentElement.scrollWidth<=innerWidth+1,'English hardware header overflow');
+  assert(document.querySelector('.topbar .brand').getBoundingClientRect().width>70,'English brand remains visible');
   location.hash='#/studio/img2img';await until(()=>document.querySelector('form[data-demo-id="img2img"]'));
   const englishForm=document.querySelector('form[data-demo-id="img2img"]');
   const edited=englishForm.querySelector('textarea');edited.value='My unchanged prompt 文生圖';edited.dispatchEvent(new Event('input',{bubbles:true}));
@@ -110,6 +112,21 @@ ASSERT = r'''(async () => {
     if(entry.id==='img2video') assert(form.querySelector('.demo-output video')?.src.includes('coastal-pan.mp4'),'prepared video is playable media');
   }
   window.matchMedia=originalMatchMedia;
+  const hardware=document.getElementById('hardwareSelect');assert(hardware,'hardware selector');
+  const chooseHardware=async id=>{hardware.value=id;hardware.dispatchEvent(new Event('change'));await wait(60);};
+  location.hash='#/studio/text2img';await until(()=>document.querySelector('form[data-demo-id="text2img"]'));
+  const hardwareForm=document.querySelector('form[data-demo-id="text2img"]');
+  const hardwarePrompt=hardwareForm.querySelector('textarea');hardwarePrompt.value='Preserve this hardware-switch input';
+  await chooseHardware('none');
+  assert(!WebComfyHardware.canUse('text2img')&&hardwareForm.querySelector('.generate-btn').disabled,'no GPU disables generation');
+  assert(await WebComfyTour.start(hardwareForm)===false,'direct generation also blocked');
+  if(innerWidth>=1280)assert(document.getElementById('studio-side-tool-text2img').getAttribute('aria-disabled')==='true','sidebar indicates unavailable workflow');
+  if(innerWidth>=1280)for(const card of document.querySelectorAll('.side-tool'))for(const child of card.children)assert(!child.getBoundingClientRect().width||child.getBoundingClientRect().right<=card.getBoundingClientRect().right+1,'hardware status stays inside sidebar');
+  await chooseHardware('vram-24');assert(WebComfyHardware.canUse('text2img')&&!WebComfyHardware.canUse('dance'),'24 GB planning threshold');
+  await chooseHardware('dual-24');assert(!WebComfyHardware.canUse('dance'),'dual GPUs do not pool VRAM');
+  await chooseHardware('autoip');assert(features.every(entry=>WebComfyHardware.canUse(entry.id)),'AutoIP opens every demonstration');
+  assert(!hardwareForm.querySelector('.generate-btn').disabled&&hardwarePrompt.value==='Preserve this hardware-switch input','mode switch restores action and preserves inputs');
+  await chooseHardware('vram-32');
   const blocked=await fetch('/api/generate',{method:'POST',body:'PRIVATE_TEST_INPUT'});assert(blocked.status===405,'writes blocked in memory');
   const external=await fetch('https://example.invalid/api');assert(external.status===405,'external calls blocked');
   assert((await fetch('/api/unlisted')).status===404,'unknown endpoint fails closed');
@@ -144,13 +161,14 @@ def test_static_docs_browser(tmp_path, initial_page):
             elif path == '/Web_Comfyui/assert.js':
                 data = ASSERT.encode(); mime = 'text/javascript'
             elif path.startswith('/Web_Comfyui/'):
-                relative = path.removeprefix('/Web_Comfyui/') or 'index.html'
+                relative = path.removeprefix('/Web_Comfyui/')
+                if not relative or relative.endswith('/'): relative += 'index.html'
                 file = output / relative
                 if not file.resolve().is_relative_to(output.resolve()) or not file.is_file(): self.send_error(404); return
                 data = file.read_bytes()
                 if initial_page != 'app' and file.name == 'app.js': time.sleep(0.5)
                 mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webp': 'image/webp', '.mp4': 'video/mp4'}.get(file.suffix, 'text/plain')
-                if file.name == 'index.html': data = data.replace(b'<head>', b'<head><script src="./monitor.js"></script>').replace(b'</body>', b'<script src="./assert.js"></script></body>')
+                if relative == 'demo/index.html': data = data.replace(b'<head>', b'<head><script src="../monitor.js"></script>').replace(b'</body>', b'<script src="../assert.js"></script></body>')
             else: self.send_error(404); return
             self.send_response(200); self.send_header('Content-Type', mime); self.send_header('Content-Length', str(len(data))); self.end_headers(); self.wfile.write(data)
         def do_POST(self):
@@ -164,7 +182,7 @@ def test_static_docs_browser(tmp_path, initial_page):
                     route = {'app': '', 'feature': '?slowguide#/studio/text2img?guide=1', 'help': '?helptest#/start'}[initial_page]
                     with instance.new_context(viewport={'width': width, 'height': 900}) as context:
                         page = context.new_page()
-                        page.goto(f'http://127.0.0.1:{server.server_port}/Web_Comfyui/{route}')
+                        page.goto(f'http://127.0.0.1:{server.server_port}/Web_Comfyui/demo/{route}')
                         assert page.evaluate('innerWidth') == width
                         for _ in range(600):
                             if page.locator('#docs-test-result').count() and page.locator('#docs-test-result').inner_text().startswith(('PASS', 'FAIL')):

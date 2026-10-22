@@ -2,13 +2,15 @@
 
 在自己的電腦上，用網頁介面操作 ComfyUI 生圖、影片、工作流、角色、聲音與素材。公開文件站與安裝後的 WebUI 都可用右上角 **繁中 / English** 切換介面語言。角色、帳號與素材庫從空白開始，需要 API 的功能可設定自己的帳號與金鑰。
 
-[線上文件與工作流指南](https://ted-h-com.github.io/Web_Comfyui/) · [English](README.md) · [安裝設定完整參考](docs/installation.md)
+[專案介紹](https://ted-h-com.github.io/Web_Comfyui/) · [互動示範](https://ted-h-com.github.io/Web_Comfyui/demo/) · [English](README.md) · [安裝設定完整參考](docs/installation.md)
 
-線上文件站使用與本機 WebUI 相同的介面、導覽與表單。每個工具有兩個說明按鈕：**查看流程與模型** 說明實際組圖程式、模型與預設值；**查看 ComfyUI 範本與節點** 開啟節點圖。圖中會區分可對照的 ComfyUI 圖結構與服務處理流程示意，不把流程示意當成可執行節點圖。
+網站首頁是專案介紹與安裝入口；**`./demo/` 是互動示範，不是實際生成服務**。示範使用與本機 WebUI 相同的介面、導覽與表單。每個工具有兩個說明按鈕：**查看流程與模型** 說明實際組圖程式、模型與預設值；**查看 ComfyUI 範本與節點** 開啟節點圖。圖中會區分可對照的 ComfyUI 圖結構與服務處理流程示意，不把流程示意當成可執行節點圖。
 
-23 項工具與建立角色都有預填範例。可修改文字，或點選／拖入自己的檔案，只在瀏覽器預覽；按原有的 **開始生成（示範）**，短暫展示處理階段後，會在同一張表單內顯示預先準備的圖片、影片或文字。修改輸入不會改變這份固定成果。網站不排入生成佇列、不執行 GPU 模型生成、不上傳素材、不呼叫供應商 API；真正的模型與生成工作在你的電腦執行。
+23 項工具與建立角色都有預填範例。可修改文字，或點選／拖入自己的檔案，只在瀏覽器預覽；按原有的 **開始生成（示範）**，短暫展示處理階段後，會在同一張表單內顯示預先準備的圖片、影片或文字。修改輸入不會改變這份固定成果。網站不排入生成佇列、不執行 GPU 模型生成、不上傳素材、不呼叫供應商 API；真正的生成需自行安裝本機環境，或使用已支援的雲端服務。
 
 公開示範素材共六份、約 **1.68 MiB**：四張原創虛構 WebP 插圖，以及由插圖製作的兩支四秒無聲鏡頭縮放／淡入淡出動畫。語音範例只有逐字稿，不播放合成或克隆人聲。這些素材不是所列模型的實際輸出或效能／品質基準。[示範來源紀錄](webui/docs/examples/provenance.json) 保留提示詞、工具、衍生方式與雜湊；發布只對指定路徑與固定雜湊開放這六份素材，個人與執行期媒體仍不納入。詳見 [文件站說明](docs/site.md)。
+
+示範的硬體選單提供無 NVIDIA GPU、8／12／16／24／32 GB 常見顯存級距，以及雙 24 GB 顯卡。這是規劃估計，不是最低需求實測或效能測試；雙 24 GB 不視為合併的 48 GB。切換只影響示範中的可用性提示，不偵測顯卡，也不更動安裝後 WebUI 的設定或停用本機功能。選 **AutoIP** 可探索全部 23 項預製示範，不代表每個本機節點、訓練器或功能都已有雲端 API 對應。選用的註冊連結與 QR code 帶推薦碼 `TEDH2FND`；服務界線與聯盟推薦揭露見 [AutoIP 雲端與示範說明](docs/autoip-cloud-demo.md)。
 
 ## 先準備兩套環境
 
@@ -134,4 +136,4 @@ COMFYUI_BROWSER_URL=http://127.0.0.1:8188
 
 平常只要先啟動 ComfyUI，再從 Web_Comfyui 目錄執行 `.venv/bin/python run.py`；不用每次重新建立 venv 或複製 `.env`。修改 `.env` 後重啟 WebUI。關閉 WebUI 終端機的 Ctrl+C 不會停止另一個 ComfyUI 服務。
 
-遇到問題先看 [安裝與疑難排解](docs/installation.md#troubleshooting)。進階主題集中在 [線上指南](https://ted-h-com.github.io/Web_Comfyui/)、[KohakuMoss LoRA](docs/moss-training.md) 與 [H3／RTX／本機 LLM](docs/rtx-video-research.md)。
+遇到問題先看 [安裝與疑難排解](docs/installation.md#troubleshooting)。進階主題集中在 [互動指南](https://ted-h-com.github.io/Web_Comfyui/demo/)、[KohakuMoss LoRA](docs/moss-training.md) 與 [H3／RTX／本機 LLM](docs/rtx-video-research.md)。

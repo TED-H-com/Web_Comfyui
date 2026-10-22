@@ -2,14 +2,23 @@
 (() => {
   'use strict';
   const nativeFetch = window.fetch.bind(window);
-  const base = new URL('./', location.href);
+  const base = new URL('../', location.href);
+  const demoBase = new URL('./', location.href);
   const reply = (data, status = 200) => new Response(JSON.stringify(data), {status, headers: {'Content-Type': 'application/json'}});
   let registry = null, workflows = null;
   const ready = Promise.all(['app-guide.json', 'catalog.json'].map(async path => {
     const response = await nativeFetch(new URL(path, base), {credentials: 'omit', cache: 'no-cache'});
     if (!response.ok) throw Error('說明資料載入失敗，請重新整理頁面。');
     return response.json();
-  })).then(([app, library]) => {registry = app; workflows = library; return app;});
+  })).then(([app, library]) => {
+    registry = app; workflows = library;
+    for (const item of workflows.items) if (item.download_url) item.download_url = new URL(item.download_url, base).href;
+    for (const demo of Object.values(app.demos || {})) {
+      for (const item of demo.output?.images || []) item.src = new URL(item.src, base).href;
+      for (const key of ['src', 'poster']) if (demo.output?.video?.[key]) demo.output.video[key] = new URL(demo.output.video[key], base).href;
+    }
+    return app;
+  });
   // Keep the application's draft/preferences APIs in memory on the docs origin.
   for (const name of ['localStorage', 'sessionStorage']) {
     const values = new Map();
@@ -133,7 +142,7 @@
     const sources = el('div', '', 'workflow-actions');
     for (const file of guide.source_files || []) {const source = link('', sourceLink(file));source.append(label('查看 ', 'View '), el('code', file));sources.append(source);}
     sources.append(link('安裝自己的 WebUI', sourceLink('README.zh-TW.md')));
-    const share = link('分享這個功能的說明', new URL('./#/studio/' + encodeURIComponent(id) + '?guide=1', base).href); sources.append(share);
+    const share = link('分享這個功能的說明', new URL('./#/studio/' + encodeURIComponent(id) + '?guide=1', demoBase).href); sources.append(share);
     content.append(sources);
     titledSheet({id: 'app-feature-guide', opener, content, className: 'catalogue-detail-sheet'}, `${feature.title} · 流程與模型`, `${english(feature.title)} · Workflow and models`);
   }
@@ -239,7 +248,13 @@
   });
   const showLoadError = () => {const message = document.getElementById('docsBanner'); if(message) message.textContent = '說明資料載入失敗，請重新整理頁面。';};
   const initialGuide = callback => Promise.all([ready, appLoaded]).then(() => callback()).catch(showLoadError);
-  initialGuide(() => {window.WebComfyI18n?.register(registry.translations || {}); window.WebComfyTour?.install(registry);});
+  initialGuide(() => {
+    window.WebComfyI18n?.register(registry.translations || {});
+    const requestedLanguage = new URLSearchParams(location.search).get('lang');
+    if (['en', 'zh-Hant'].includes(requestedLanguage)) window.WebComfyI18n?.setLanguage(requestedLanguage);
+    window.WebComfyHardware?.install(registry);
+    window.WebComfyTour?.install(registry);
+  });
   if (!location.hash || location.hash === '#/') history.replaceState(null, '', '#/studio/text2img');
   // Keep former static help links useful; workflow deep links remain supported.
   if (['#/start', '#/about'].includes(location.hash)) {history.replaceState(null, '', '#/studio/text2img');initialGuide(openHelp);}

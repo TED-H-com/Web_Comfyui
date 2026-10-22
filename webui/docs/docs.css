@@ -1,6 +1,9 @@
 /* The app owns layout and tokens. These are documentation-only annotations. */
 .app-docs-banner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) var(--space-5); border-bottom: 1px solid var(--line); background: var(--blue-soft); color: var(--ink); font-size: var(--text-sm); line-height: 1.6; }
 .app-docs-banner p { margin: 0; }
+.app-docs-banner > div { flex: 1 1 36rem; }
+.app-docs-banner nav { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.app-docs-banner strong { color: var(--blue-dark); }
 .app-guide-button { padding: var(--space-3) var(--space-5) 0; display:flex; flex-wrap:wrap; gap:var(--space-2); }
 .demo-prefill-bar { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); padding:var(--space-3); border:1px solid var(--line); background:var(--blue-soft); font-size:var(--text-sm); line-height:1.6; }
 .demo-prefill-bar span { flex:1 1 18rem; }

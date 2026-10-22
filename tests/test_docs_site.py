@@ -32,7 +32,7 @@ def read_json(path):
 def source(tmp_path):
     """Copy only the reviewed build inputs into the disk-based pytest fixture."""
     root = tmp_path / 'source'
-    paths = set(build_docs.ASSETS) | set(MANIFESTS) | set(app_guide_catalog.SOURCE_FILES) | {build_docs.HTML_SOURCE}
+    paths = set(build_docs.ASSETS) | set(MANIFESTS) | set(app_guide_catalog.SOURCE_FILES) | {build_docs.HTML_SOURCE, build_docs.LANDING_SOURCE}
     community = read_json(ROOT / MANIFESTS[0])
     coverage = read_json(ROOT / MANIFESTS[1])
     for row in community['workflows']:
@@ -73,7 +73,7 @@ def test_artifact_contains_only_reviewed_graphs_assets_and_licenses(source, tmp_
     assert payload['mode'] == 'documentation'
     assert payload['gpu_tested'] is False
     expected = set(build_docs.ASSETS.values()) | {
-        'index.html', 'app-guide.json', 'catalog.json', 'sources.json', 'NOTICE.txt', '.nojekyll', build_docs.MARKER,
+        'index.html', 'demo/index.html', 'app-guide.json', 'catalog.json', 'sources.json', 'NOTICE.txt', '.nojekyll', build_docs.MARKER,
     }
     for record in records:
         graph = record['download_url'].removeprefix('./')
@@ -252,7 +252,7 @@ def test_static_shell_preserves_app_navigation_and_loads_adapter_first(source, t
             for key, value in attrs:
                 if key in ('src', 'href') and value:
                     self.references.append(value)
-    html = (output / 'index.html').read_text()
+    html = (output / 'demo/index.html').read_text()
     parsed = References()
     parsed.feed(html)
     original = References()
@@ -265,13 +265,30 @@ def test_static_shell_preserves_app_navigation_and_loads_adapter_first(source, t
         if reference.startswith('#') or urlsplit(reference).scheme:
             continue
         assert not reference.startswith('/')
-        assert (output / urlsplit(reference).path).is_file(), reference
+        path = output / 'demo' / urlsplit(reference).path
+        assert path.is_file() or (path / 'index.html').is_file(), reference
     assert "connect-src 'self'" in html
     assert "form-action 'none'" in html
-    assert parsed.scripts[0] == './assets/docs.js'
-    assert parsed.scripts[1:3] == ['./assets/explorers.js', './assets/tour.js']
-    assert parsed.scripts[3:] == [url.replace('/static/', './assets/') for url in original.scripts]
+    assert parsed.scripts[0] == '../assets/docs.js'
+    assert parsed.scripts[1:4] == ['../assets/explorers.js', '../assets/hardware.js', '../assets/tour.js']
+    assert parsed.scripts[4:] == [url.replace('/static/', '../assets/') for url in original.scripts]
     assert {'assets/app.js', 'assets/login-return.js', 'assets/provider-fabric.js', 'assets/project-preview.js'} <= artifact_files(output)
+
+
+def test_project_homepage_is_separate_from_simulated_app(source, tmp_path):
+    output = tmp_path / 'site'; build_docs.build(source, output)
+    home = (output / 'index.html').read_text()
+    demo = (output / 'demo/index.html').read_text()
+    assert 'href="./demo/"' in home
+    assert 'id="workspace"' not in home
+    assert 'assets/app.js' not in home and 'assets/docs.js' not in home
+    assert "connect-src 'none'" in home
+    assert 'TEDH2FND' in home and 'rel="sponsored noopener noreferrer"' in home
+    assert 'autoip-referral.svg' in home
+    assert '介面示範 · 非實際服務' in demo and 'Not a live service' in demo
+    assert 'href="../"' in demo
+    hardware = read_json(output / 'app-guide.json')['hardware']
+    assert hardware and 'none' in {profile['id'] for profile in hardware['profiles']}
 
 
 @pytest.mark.parametrize('field', ['source', 'templates', 'source_files'])
@@ -319,7 +336,7 @@ for (const key of ['localStorage', 'sessionStorage']) Object.defineProperty(wind
   configurable: true, get() {throw Error('Persistent storage must not be read');}
 });
 const context = {window, URL, Request, Response, console, setTimeout,
-  location: {href: 'https://example.test/Web_Comfyui/', origin: 'https://example.test', hash: '#/studio/text2img'},
+  location: {href: 'https://example.test/Web_Comfyui/demo/', origin: 'https://example.test', hash: '#/studio/text2img'},
   document: {documentElement: {}, querySelectorAll: () => [password], getElementById: () => null,
     addEventListener: (name, callback) => {listeners[name] = callback;}},
   history: {replaceState() {}}, navigator: {sendBeacon() {throw Error('Native beacon must not run');}},

@@ -1,8 +1,8 @@
 # 維護 GitHub Pages 互動說明
 
-公開網站：https://ted-h-com.github.io/Web_Comfyui/
+公開首頁：[專案介紹與安裝入口](https://ted-h-com.github.io/Web_Comfyui/)。互動示範：[https://ted-h-com.github.io/Web_Comfyui/demo/](https://ted-h-com.github.io/Web_Comfyui/demo/)。首頁與示範分開；`./demo/` 不是實際生成服務，真正使用請依 [安裝指南](installation.md) 設定自己的環境。
 
-網站使用真正的 `webui/static/index.html`、`app.js`、樣式與工作庫元件，保留本機 WebUI 的導覽、工具按鈕與表單。公開文件站與安裝後的 WebUI 都可用右上角 **繁中 / English** 切換介面語言。`webui/docs/docs.js` 提供靜態資料、封鎖 API 寫入；網站不連接本機 ComfyUI 或供應商。角色、素材與任務清單從空白開始，文件模式的合成登入狀態不建立真實帳戶。
+示範頁使用真正的 `webui/static/index.html`、`app.js`、樣式與工作庫元件，保留本機 WebUI 的導覽、工具按鈕與表單。公開文件站與安裝後的 WebUI 都可用右上角 **繁中 / English** 切換介面語言。`webui/docs/docs.js` 提供靜態資料、封鎖 API 寫入；網站不連接本機 ComfyUI 或供應商。角色、素材與任務清單從空白開始，文件模式的合成登入狀態不建立真實帳戶。
 
 每個工具有兩個說明按鈕：**查看流程與模型** 顯示真正使用的組圖程式、checkpoint／編碼器／VAE／LoRA、預設參數、操作步驟與前置需求；**查看 ComfyUI 範本與節點** 開啟可互動的節點檢視。可抽取的 ComfyUI 節點與連線會依來源呈現；語音、API 或其他服務流程使用明確標示的處理流程示意，不宣稱它們是可執行的 ComfyUI 圖。23 項功能說明對應實際 registry；隱藏、停用或角色限定的旗標仍保留。
 
@@ -16,6 +16,12 @@
 
 **工作庫** 則提供獨立的社群流程、參考來源與方法配方。目前公開目錄共 248 項，包含 46 份可下載 JSON（24 份精選社群流程、22 份基礎範例）。大部分創作表單使用 Python 直接組圖；不把名稱相近的社群 JSON 當作該表單的實際模板。
 
+## 硬體選單與雲端示範
+
+硬體選單提供無 NVIDIA GPU、8／12／16／24／32 GB，以及雙 24 GB 等規劃級距。顯存需求是依預設 builder 整理的估計，不是偵測結果、最低需求實測或效能基準；解析度、精度、影格數、參考素材、卸載方式及系統記憶體都會影響實際需求。這些 builder 沒有自動跨卡切分模型，雙 24 GB 以單卡 24 GB 計，不加總成 48 GB。
+
+選擇只影響靜態示範中的操作提示與範例可用性，不修改安裝後 WebUI 的設定、不啟用原本停用的 API，也不因選擇無 GPU 而停用使用者的本機服務。**AutoIP** 選項開放全部 23 項預製範例供探索；不代表供應商已支援每個本機工作流、節點或訓練器。實際雲端能力與目前七項已實作 API 整合分開核對。首頁的選用註冊連結與 QR code 使用聯盟推薦碼 `TEDH2FND`，詳見 [服務界線與推薦揭露](autoip-cloud-demo.md)。
+
 ## 本機預覽
 
 ```bash
@@ -24,9 +30,9 @@ python3 scripts/check_public_release.py --root .site
 python3 -m http.server 8000 --bind 127.0.0.1 --directory .site
 ```
 
-開啟 `http://127.0.0.1:8000`。`.site` 是可重新產生的忽略目錄；建置器只會替換帶有自己建置標記的目錄，避免誤刪其他資料。
+開啟 `http://127.0.0.1:8000/` 查看專案首頁；互動示範位於 **`http://127.0.0.1:8000/demo/`**。`.site` 是可重新產生的忽略目錄；建置器只會替換帶有自己建置標記的目錄，避免誤刪其他資料。
 
-功能說明可用 `#/studio/text2img?guide=1` 這類連結分享；工作流使用 `#/workflow/<catalog-id>`。舊的 `#/start` 與 `#/about` 會開啟安裝／文件說明。所有網站資源使用相對路徑，可部署在 GitHub Pages 的 repo 子路徑下。
+功能說明可用 `demo/#/studio/text2img?guide=1` 這類連結分享；工作流使用 `demo/#/workflow/<catalog-id>`。舊的 `#/start` 與 `#/about` 會開啟安裝／文件說明。所有網站資源使用相對路徑，可部署在 GitHub Pages 的 repo 子路徑下。
 
 ## 資料如何產生
 
@@ -51,7 +57,7 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory .site
 pytest-disktmp uv run --python 3.12 --with pytest --with Pillow --with playwright pytest -q scripts/test_app_guide_catalog.py scripts/test_app_graph_catalog.py scripts/test_demo_catalog.py tests/test_demo_publication.py tests/test_docs_site.py scripts/test_docs_browser.py scripts/test_workflow_library_browser.py
 ```
 
-瀏覽器測試需要 `chromium`；整站測試另用 Playwright 設定真實的 390、768、1440px viewport，驗證 `/Web_Comfyui/` 子路徑。整站測試也支援 `uv run --with playwright playwright install chromium` 安裝的瀏覽器。缺少瀏覽器或 Playwright 時會標示略過；不能把略過視為已完成視覺驗證。檢查兩個說明按鈕、節點檢視、原有生成按鈕的行內結果、角色建立、語言切換、預覽檔案不外送、重設／離頁取消，以及工作庫導覽。媒體測試另外核對固定雜湊、路徑、EXIF／文字中繼資料與 symlink 拒絕行為。
+瀏覽器測試需要 `chromium`；整站測試另用 Playwright 設定真實的 390、768、1440px viewport，驗證 `/Web_Comfyui/` 專案首頁與 `/Web_Comfyui/demo/` 示範子路徑。整站測試也支援 `uv run --with playwright playwright install chromium` 安裝的瀏覽器。缺少瀏覽器或 Playwright 時會標示略過；不能把略過視為已完成視覺驗證。檢查兩個說明按鈕、節點檢視、原有生成按鈕的行內結果、角色建立、語言切換、預覽檔案不外送、重設／離頁取消，以及工作庫導覽。媒體測試另外核對固定雜湊、路徑、EXIF／文字中繼資料與 symlink 拒絕行為。
 
 `.github/workflows/pages.yml` 在 `main` 更新時先檢查來源、執行發布邊界測試、建立 `.site` 並檢查產物，再上傳至 GitHub Pages。首次設定需在 repo 的 Pages 設定選擇 **GitHub Actions**；後續由 workflow 自動部署。
 

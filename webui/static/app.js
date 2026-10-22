@@ -2188,6 +2188,7 @@ function renderSidebar() {
       tools.appendChild(
         h("button", {
           id: `studio-side-tool-${feature.id}`,
+          "data-hardware-feature": feature.id,
           class: `side-tool${feature.id === currentFeatureId && currentView === "studio" ? " active" : ""}`,
           type: "button",
           onclick: () => selectFeature(feature.id),
@@ -8273,6 +8274,7 @@ function openStudioToolPicker(opener) {
       const pill = readinessPill(feature);
       const row = h("button", {
         class: `studio-tool-sheet-row${feature.id === currentFeatureId ? " active" : ""}`,
+        "data-hardware-feature": feature.id,
         type: "button",
         "aria-current": feature.id === currentFeatureId ? "true" : null,
         dataset: { search: `${studioToolTitle(feature)} ${studioToolSubtitle(feature) || ""} ${studio.title || ""}`.toLocaleLowerCase("zh-Hant") },

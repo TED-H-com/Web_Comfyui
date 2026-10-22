@@ -26,6 +26,11 @@ from scripts.public_demo_assets import PUBLIC_DEMO_ASSETS
 
 MARKER = '.web-comfyui-docs'
 ASSETS = {
+    'webui/docs/landing.css': 'assets/landing.css',
+    'webui/docs/landing.js': 'assets/landing.js',
+    'webui/docs/hardware.js': 'assets/hardware.js',
+    'webui/docs/hardware.css': 'assets/hardware.css',
+    'webui/docs/autoip-referral.svg': 'assets/autoip-referral.svg',
     'webui/docs/docs.css': 'assets/docs.css',
     'webui/docs/docs.js': 'assets/docs.js',
     'webui/docs/explorers.js': 'assets/explorers.js',
@@ -50,6 +55,7 @@ ASSETS = {
 }
 ASSETS.update({'webui/docs/examples/' + name: 'assets/examples/' + name for name in PUBLIC_DEMO_ASSETS})
 HTML_SOURCE = 'webui/static/index.html'
+LANDING_SOURCE = 'webui/docs/landing.html'
 FIELDS = {'id', 'title', 'category', 'source', 'kind', 'available', 'format', 'tags',
           'node_types', 'node_count', 'models', 'license', 'upstream_url', 'source_urls',
           'status', 'requirements', 'settings', 'validation', 'guide'}
@@ -76,14 +82,21 @@ def source_json(root, relative):
 def site_html(root):
     """Use the real application markup and scripts, with a read-only adapter."""
     html = source_bytes(root, HTML_SOURCE).decode('utf-8')
-    html = html.replace('/static/', './assets/')
-    html = html.replace('<title>Web ComfyUI</title>', '<title>Web ComfyUI · 互動說明</title>')
+    html = html.replace('/static/', '../assets/')
+    html = html.replace('<title>Web ComfyUI</title>', '<title>Web ComfyUI · 介面示範</title>')
     html = html.replace('class="auth-gate"', 'class="auth-gate hidden"')
     policy = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
-    html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + policy + '">\n<link rel="stylesheet" href="./assets/docs.css">\n<link rel="stylesheet" href="./assets/explorers.css">\n</head>')
-    banner = '<aside class="app-docs-banner" id="docsBanner"><p>互動說明版 · 點功能或生成按鈕，查看實際模型、template 與技巧。</p><button id="docsHelpButton" class="ghost small" type="button">安裝與使用說明</button></aside>'
+    html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + policy + '">\n<link rel="stylesheet" href="../assets/docs.css">\n<link rel="stylesheet" href="../assets/explorers.css">\n<link rel="stylesheet" href="../assets/hardware.css">\n</head>')
+    banner = '''<aside class="app-docs-banner" id="docsBanner"><div><strong data-i18n-zh="介面示範 · 非實際服務" data-i18n-en="Interface demo · Not a live service">介面示範 · 非實際服務</strong><p data-i18n-zh="生成按鈕只展示預製成果，不執行模型、不上傳檔案。實際創作請自行安裝 WebUI，或使用 AutoIP 支援的雲端服務。" data-i18n-en="Generate shows prepared examples. No models run and no files are uploaded. Install the WebUI for real work, or use supported AutoIP cloud services.">生成按鈕只展示預製成果，不執行模型、不上傳檔案。實際創作請自行安裝 WebUI，或使用 AutoIP 支援的雲端服務。</p></div><nav aria-label="Demo information"><a class="ghost small workflow-link" href="../" data-i18n-zh="專案介紹" data-i18n-en="Project overview">專案介紹</a><button id="docsHelpButton" class="ghost small" type="button">安裝與使用說明</button><a class="ghost small workflow-link" href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND" target="_blank" rel="sponsored noopener noreferrer" data-i18n-zh="沒有顯卡？AutoIP 推薦連結" data-i18n-en="No GPU? AutoIP referral">沒有顯卡？AutoIP 推薦連結</a></nav></aside>'''
     html = html.replace('</header>', '</header>' + banner, 1)
-    html = html.replace('<script src="./assets/login-return.js', '<script src="./assets/docs.js"></script>\n    <script src="./assets/explorers.js"></script>\n    <script src="./assets/tour.js"></script>\n    <script src="./assets/login-return.js', 1)
+    html = html.replace('<script src="../assets/login-return.js', '<script src="../assets/docs.js"></script>\n    <script src="../assets/explorers.js"></script>\n    <script src="../assets/hardware.js"></script>\n    <script src="../assets/tour.js"></script>\n    <script src="../assets/login-return.js', 1)
+    return html.encode('utf-8')
+
+
+def landing_html(root):
+    html = source_bytes(root, LANDING_SOURCE).decode('utf-8')
+    policy = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + policy + '">\n</head>')
     return html.encode('utf-8')
 
 
@@ -126,6 +139,8 @@ def build(root: Path = ROOT, output: Path | None = None) -> dict:
     app_guide['graphs'] = graphs(root, app_guide)
     app_guide['demos'] = demos(app_guide)
     app_guide['translations'] = source_json(root, 'manifests/app_guides/en.json')
+    from scripts.hardware_catalog import catalog as hardware_catalog
+    app_guide['hardware'] = hardware_catalog(app_guide)
     approved = {}
     records = []
     licenses = {}
@@ -202,7 +217,8 @@ def build(root: Path = ROOT, output: Path | None = None) -> dict:
             path = stage / relative; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
         for source, destination in ASSETS.items():
             write(destination, source_bytes(root, source))
-        write('index.html', site_html(root))
+        write('index.html', landing_html(root))
+        write('demo/index.html', site_html(root))
         write('app-guide.json', (json.dumps(app_guide, ensure_ascii=False, indent=2) + '\n').encode())
         for relative, data in license_bytes.items():
             write('licenses/' + relative + '.txt', data)

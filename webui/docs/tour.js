@@ -58,11 +58,12 @@
       }
     }
     for (const control of state.form.querySelectorAll('.generate-btn,button[type=submit]')) {
-      control.disabled = false; control.dataset.demoSubmit = 'true';
+      control.disabled = state.running; control.dataset.demoSubmit = 'true';
       const zh = state.id === 'character-create' ? '建立角色（示範）' : '開始生成（示範）';
       const en = state.id === 'character-create' ? 'Create character (demo)' : 'Generate (demo)';
       control.dataset.i18nZh = zh; control.dataset.i18nEn = en; control.textContent = language() === 'en' ? en : zh;
     }
+    window.WebComfyHardware?.decorate(state.id, state.form);
   }
   function mediaPreview(host, item) {
     host.replaceChildren();
@@ -140,11 +141,12 @@
   }
   async function start(form) {
     const state = mounted.get(form); if (!state || state.running) return false;
+    if (window.WebComfyHardware && !window.WebComfyHardware.canUse(state.id)) return false;
     state.running = true;
     const buttons = [...form.querySelectorAll('[data-demo-submit]')]; buttons.forEach(button => {button.disabled = true;});
     state.result.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest'});
     try {await state.result.demo.start(readPrompt(state));}
-    finally {state.running = false; buttons.forEach(button => {button.disabled = false;});}
+    finally {state.running = false; buttons.forEach(button => {button.disabled = false;}); window.WebComfyHardware?.decorate(state.id, form);}
     return true;
   }
   function localFile(input, file) {
@@ -163,6 +165,12 @@
     if (slot.url) {URL.revokeObjectURL(slot.url); state.urls.delete(slot.url); slot.url = null;}
   }
   window.addEventListener('webcomfy:language', () => {for (const state of mounted.values()) fill(state);});
+  window.addEventListener('webcomfy:hardware', () => {
+    for (const state of mounted.values()) {
+      if (!window.WebComfyHardware.canUse(state.id)) state.result.demo.reset();
+      window.WebComfyHardware.decorate(state.id, state.form);
+    }
+  });
   document.addEventListener('change', event => {
     if (event.target.matches('input[type=file][data-demo-upload]')) {event.stopImmediatePropagation(); localFile(event.target, event.target.files?.[0]);}
   }, true);

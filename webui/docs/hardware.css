@@ -1,0 +1,42 @@
+/* Reuse the actual app's controls, spacing and status colors. */
+.hardware-control { display: flex; align-items: center; gap: var(--space-2); min-width: 0; margin: 0; }
+.hardware-control-label { font-size: var(--text-xs); white-space: nowrap; }
+#hardwareSelect { width: 180px; max-width: 100%; min-height: var(--tap-min); min-width: 0; border: 1px solid var(--line); border-radius: var(--space-2); background: var(--panel); color: var(--ink); font: inherit; font-size: var(--text-xs); padding: var(--space-2); }
+.hardware-unavailable { opacity: .6; }
+.hardware-availability { display: block; grid-column: 1 / -1; white-space: normal; font-size: var(--text-xs); color: var(--muted); }
+.hardware-availability[hidden] { display: none; }
+.hardware-feature-status { border: 1px solid var(--line); border-left: var(--space-1) solid var(--blue); background: var(--panel); border-radius: var(--space-2); padding: var(--space-3); font-size: var(--text-sm); line-height: 1.5; margin-bottom: var(--space-3); overflow-wrap: anywhere; }
+.hardware-feature-status.hardware-blocked { border-left-color: var(--amber); }
+.hardware-feature-status p { margin: 0 0 var(--space-2); }
+.hardware-feature-status summary { cursor: pointer; min-height: var(--tap-min); display: flex; align-items: center; color: var(--blue-dark); }
+.hardware-sources { display: flex; flex-wrap: wrap; gap: var(--space-2); font-size: var(--text-xs); }
+.hardware-control select:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+@media (min-width: 768px) and (max-width: 1279px) { .hardware-control-label { display: none; } #hardwareSelect { width: 164px; } }
+@media (max-width: 767px) {
+  html.has-hardware-selector { --topbar-h: calc(var(--tap-min) * 2 + var(--space-2) + var(--space-3)); }
+  .has-hardware-selector #appTopbar { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: var(--space-2); }
+  .has-hardware-selector #appTopbar > .top-actions { display: contents; }
+  .has-hardware-selector #appTopbar > .brand { grid-column: 1; grid-row: 1; }
+  .has-hardware-selector #languageSelect { grid-column: 2; grid-row: 1; }
+  .has-hardware-selector #statusPill { grid-column: 3; grid-row: 1; }
+  .hardware-control { grid-column: 1 / -1; grid-row: 2; justify-content: flex-end; width: 100%; }
+  #hardwareSelect { width: min(100%, 280px); font-size: var(--text-md); flex: 1 1 auto; }
+}
+
+/* Feature status occupies its own row; never widens the sidebar's grid track. */
+.side-tool[data-hardware-feature] { display: grid; grid-template-columns: var(--space-5) minmax(0,1fr) var(--space-2); min-width: 0; max-width: 100%; column-gap: var(--space-2); row-gap: var(--space-1); }
+.side-tool[data-hardware-feature] > .side-tool-ico { grid-column: 1; grid-row: 1; }
+.side-tool[data-hardware-feature] > .side-tool-name { grid-column: 2; grid-row: 1; }
+.side-tool[data-hardware-feature] > .tool-dot { grid-column: 3; grid-row: 1; }
+.side-tool[data-hardware-feature] > .hardware-availability { grid-column: 2 / -1; grid-row: 2; min-width: 0; overflow-wrap: anywhere; }
+.studio-tool-sheet-row[data-hardware-feature] > .hardware-availability { grid-column: 2 / -1; min-width: 0; overflow-wrap: anywhere; }
+.hardware-unavailable .tool-dot { background: var(--muted); }
+.hardware-cloud-option { font-size: var(--text-xs); }
+.hardware-cloud-option[hidden] { display: none; }
+@media (min-width: 1280px) and (max-width: 1799px) {
+  html.has-hardware-selector { --topbar-h: calc(var(--tap-min) * 2 + var(--space-2) + var(--space-3)); }
+  .has-hardware-selector #appTopbar { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: var(--space-2); }
+  .has-hardware-selector #appTopbar > .brand { grid-column: 1; grid-row: 1; }
+  .has-hardware-selector #appTopbar > .top-actions { grid-column: 2; grid-row: 1; }
+  .has-hardware-selector #appTopbar > .view-nav { grid-column: 1 / -1; grid-row: 2; width: 100%; flex-wrap: wrap; }
+}

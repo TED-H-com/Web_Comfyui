@@ -2,15 +2,17 @@
 
 A local front end for your own ComfyUI: image and video forms, a searchable workflow library, generation queues, and user-managed character, voice and media collections. Use the top-right **繁中 / English** control to switch the interface language on the documentation site or in the installed app.
 
-[Documentation & workflow guides](https://ted-h-com.github.io/Web_Comfyui/) · [繁體中文安裝與操作](README.zh-TW.md) · [First workflow](docs/getting-started.md)
+[Project overview](https://ted-h-com.github.io/Web_Comfyui/) · [Interactive demo](https://ted-h-com.github.io/Web_Comfyui/demo/) · [Install locally](docs/installation.md) · [繁體中文安裝與操作](README.zh-TW.md)
 
-The documentation website uses the **same interface and forms as the app**, with 23 source-backed feature guides. Each tool has two help buttons: **查看流程與模型** explains its actual builder, models and defaults; **查看 ComfyUI 範本與節點** opens its node diagram. Diagrams distinguish actual ComfyUI graph structure from explanatory service-process diagrams.
+The website root introduces the project and installation choices. Its **`./demo/` interactive demo is not a live generation service**: it uses the same interface and forms as the app, with 23 source-backed feature guides. Each tool has two help buttons: **查看流程與模型** explains its actual builder, models and defaults; **查看 ComfyUI 範本與節點** opens its node diagram. Diagrams distinguish actual ComfyUI graph structure from explanatory service-process diagrams.
 
 Try the prefilled forms and use the existing **Generate** button to reveal a prepared result inline after a short simulated sequence. All 23 tools and character creation have examples. Editing the prompt or choosing a file changes the input preview; the prepared result stays fixed. Click or drop a supported local file to preview it in your browser without uploading it. The site does not queue work, run models, or call providers.
 
 The six public demo assets total approximately **1.68 MiB**: four fictional WebP illustrations and two silent, four-second camera pan/fade animations derived from those illustrations. Voice examples contain transcripts only. These examples are not outputs or benchmarks of the named workflows. Their prompts, tools, derivations and hashes are recorded in [demo provenance](webui/docs/examples/provenance.json). Publication permits only the explicitly pinned demo bytes and paths; personal/runtime media remains excluded. See [the site guide](docs/site.md).
 
 The working application runs on **your computer**, with a separately installed ComfyUI. Models, custom nodes, accounts, personal media and API credentials are not bundled.
+
+The demo's hardware selector offers no NVIDIA GPU, common 8/12/16/24/32 GB VRAM tiers, and two 24 GB cards. These are planning estimates, not measured minimums or benchmarks; two 24 GB cards are not treated as a pooled 48 GB device. Selecting a profile changes only the static demo's availability hints, never your installed app's configuration or permissions. Choosing **AutoIP** enables all 23 prepared demos for exploration; real cloud support remains limited to available provider services and implemented integrations. The [cloud/demo guide](docs/autoip-cloud-demo.md) explains those boundaries and discloses referral code `TEDH2FND` used by the optional AutoIP registration link and QR code.
 
 ## Start locally
 

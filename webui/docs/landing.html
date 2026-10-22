@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Web ComfyUI：整合角色、素材與工作流的本機創作介面。先試用互動示範，再安裝到自己的 ComfyUI 環境。">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Web ComfyUI — 角色、素材與工作流">
+  <meta property="og:description" content="Explore the interface demo, inspect workflows, and install the WebUI beside your own ComfyUI.">
+  <title>Web ComfyUI — 角色、素材與工作流</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+  <link rel="stylesheet" href="./assets/i18n.css">
+  <link rel="stylesheet" href="./assets/landing.css">
+</head>
+<body class="project-landing">
+  <a class="landing-skip" href="#main" data-i18n-zh="跳到主要內容" data-i18n-en="Skip to content">跳到主要內容</a>
+  <header class="landing-header">
+    <div class="landing-shell landing-header-row">
+      <a class="landing-brand" href="./" aria-label="Web ComfyUI">Web ComfyUI</a>
+      <nav class="landing-nav" aria-label="專案導覽" data-label-zh="專案導覽" data-label-en="Project navigation">
+        <a href="#features" data-i18n-zh="功能" data-i18n-en="Features">功能</a>
+        <a href="#install" data-i18n-zh="下載與安裝" data-i18n-en="Install">下載與安裝</a>
+        <a href="https://github.com/TED-H-com/Web_Comfyui">GitHub</a>
+      </nav>
+      <select id="languageSelect" class="language-select" aria-label="Language / 語言" data-i18n-ignore><option value="zh-Hant">繁中</option><option value="en">English</option></select>
+    </div>
+  </header>
+  <main id="main">
+    <section class="landing-shell landing-hero" aria-labelledby="hero-title">
+      <div class="landing-hero-copy">
+        <p class="landing-eyebrow" data-i18n-zh="開源專案 · 連接你自己的 ComfyUI" data-i18n-en="Open source · Connect your own ComfyUI">開源專案 · 連接你自己的 ComfyUI</p>
+        <h1 id="hero-title" data-i18n-zh="角色、素材與工作流，在同一個創作介面。" data-i18n-en="Your characters, media and workflows. One creative workspace.">角色、素材與工作流，在同一個創作介面。</h1>
+        <p class="landing-lead" data-i18n-zh="用表單操作圖片、影片、聲音與文字工具；需要深入調整時，查看實際模型、節點與範本。Web ComfyUI 安裝在你的電腦上，連接獨立運行的 ComfyUI。" data-i18n-en="Use forms for image, video, voice and text tools. Inspect the actual models, nodes and templates when you need more control. Web ComfyUI runs on your computer, alongside a separately installed ComfyUI.">用表單操作圖片、影片、聲音與文字工具；需要深入調整時，查看實際模型、節點與範本。Web ComfyUI 安裝在你的電腦上，連接獨立運行的 ComfyUI。</p>
+        <div class="landing-actions">
+          <a class="landing-button landing-primary" href="./demo/" data-i18n-zh="進入介面示範 →" data-i18n-en="Explore the interface demo →">進入介面示範 →</a>
+          <a class="landing-button landing-secondary" href="#install" data-i18n-zh="安裝到自己的電腦" data-i18n-en="Install on your computer">安裝到自己的電腦</a>
+        </div>
+        <p class="landing-note" data-i18n-zh="此網站提供專案介紹與模擬示範。示範使用預製成果，不會依輸入即時生成，也不會上傳你選取的本機檔案。" data-i18n-en="This website is a project introduction and simulated demo. Examples are prepared in advance: your input does not generate new media, and selected local files are not uploaded.">此網站提供專案介紹與模擬示範。示範使用預製成果，不會依輸入即時生成，也不會上傳你選取的本機檔案。</p>
+      </div>
+      <figure class="landing-preview">
+        <div class="landing-preview-label"><span data-i18n-zh="示範素材" data-i18n-en="Prepared example">示範素材</span><span>IMAGE / VIDEO / VOICE / TEXT</span></div>
+        <img src="./assets/examples/mountain-teahouse.webp" width="768" height="512" alt="雲霧山間的虛構茶屋插畫" data-alt-zh="雲霧山間的虛構茶屋插畫" data-alt-en="Fictional mountain teahouse illustration" fetchpriority="high">
+        <figcaption><strong data-i18n-zh="從想法開始，了解每一步如何運作。" data-i18n-en="Start with an idea. Understand each step.">從想法開始，了解每一步如何運作。</strong><span data-i18n-zh="示範中的固定範例僅用來說明操作，不代表本機模型已通過驗證。" data-i18n-en="Fixed examples explain the interaction. They do not establish that a local model is ready to run.">示範中的固定範例僅用來說明操作，不代表本機模型已通過驗證。</span></figcaption>
+      </figure>
+    </section>
+
+    <section class="landing-shell landing-facts" aria-label="專案內容" data-label-zh="專案內容" data-label-en="Project contents">
+      <div><strong>248</strong><span data-i18n-zh="工作庫條目" data-i18n-en="Library entries">工作庫條目</span></div>
+      <div><strong>46</strong><span data-i18n-zh="可下載 JSON 工作流" data-i18n-en="Downloadable JSON graphs">可下載 JSON 工作流</span></div>
+      <div><strong>23</strong><span data-i18n-zh="工具說明，另含建立角色" data-i18n-en="Tool guides, plus character creation">工具說明，另含建立角色</span></div>
+    </section>
+
+    <section id="features" class="landing-shell landing-section" aria-labelledby="features-title">
+      <div class="landing-section-head"><p class="landing-eyebrow" data-i18n-zh="從操作到原理" data-i18n-en="From interaction to understanding">從操作到原理</p><h2 id="features-title" data-i18n-zh="先看用途，再決定要跑什麼。" data-i18n-en="Understand the purpose before you run it.">先看用途，再決定要跑什麼。</h2></div>
+      <div class="landing-feature-list">
+        <article><span class="landing-index" aria-hidden="true">01</span><div><h3 data-i18n-zh="角色與素材，一起管理" data-i18n-en="Keep characters and media together">角色與素材，一起管理</h3><p data-i18n-zh="建立角色，整理圖片、影片與聲音，從角色工作區進入創作工具。安裝版本使用你自己的素材與本機資料。" data-i18n-en="Create characters, organize images, video and voice, and open tools from the character workspace. The installed app uses your own media and local data.">建立角色，整理圖片、影片與聲音，從角色工作區進入創作工具。安裝版本使用你自己的素材與本機資料。</p></div></article>
+        <article><span class="landing-index" aria-hidden="true">02</span><div><h3 data-i18n-zh="表單背後的模型，看得見" data-i18n-en="See the models behind the forms">表單背後的模型，看得見</h3><p data-i18n-zh="每個工具說明用途、執行步驟與技巧，並區分實際 ComfyUI 節點圖和服務流程示意。示範沿用原介面，輸入提示詞後可觀看模擬進度與預製結果。" data-i18n-en="Each tool explains its purpose, steps and techniques, distinguishing actual ComfyUI graphs from service-process diagrams. The demo uses the app interface, with prompt input, simulated progress and prepared results.">每個工具說明用途、執行步驟與技巧，並區分實際 ComfyUI 節點圖和服務流程示意。示範沿用原介面，輸入提示詞後可觀看模擬進度與預製結果。</p></div></article>
+        <article><span class="landing-index" aria-hidden="true">03</span><div><h3 data-i18n-zh="工作流有來源，也有需求清單" data-i18n-en="Workflows with sources and prerequisites">工作流有來源，也有需求清單</h3><p data-i18n-zh="工作庫分開標示可下載 JSON、方法與參數、上游參考。先讀模型、節點與授權，再下載或載入自己的 ComfyUI；表單工具與社群 JSON 不會因名稱相近就被視為同一套流程。" data-i18n-en="The library separates downloadable JSON, recipes and upstream references. Review models, nodes and licenses before downloading or loading a graph into your ComfyUI. A similar name does not make a community graph the template used by an app form.">工作庫分開標示可下載 JSON、方法與參數、上游參考。先讀模型、節點與授權，再下載或載入自己的 ComfyUI；表單工具與社群 JSON 不會因名稱相近就被視為同一套流程。</p></div></article>
+      </div>
+      <a class="landing-text-link" href="./demo/#/workflows" data-i18n-zh="瀏覽工作流說明 →" data-i18n-en="Browse workflow guides →">瀏覽工作流說明 →</a>
+    </section>
+
+    <section id="install" class="landing-install-band" aria-labelledby="install-title"><div class="landing-shell landing-section">
+      <div class="landing-section-head"><p class="landing-eyebrow" data-i18n-zh="下載與本機安裝" data-i18n-en="Download and install locally">下載與本機安裝</p><h2 id="install-title" data-i18n-zh="實際生成，使用你自己的環境。" data-i18n-en="Run real generation in your own environment.">實際生成，使用你自己的環境。</h2><p data-i18n-zh="建議從一個符合現有模型與硬體的工作流開始，不必一次裝齊所有進階工具。" data-i18n-en="Start with a workflow that fits your existing models and hardware. You do not need every advanced integration installed at once.">建議從一個符合現有模型與硬體的工作流開始，不必一次裝齊所有進階工具。</p></div>
+      <div class="landing-install-grid">
+        <aside class="landing-requirements"><h3 data-i18n-zh="開始前需要" data-i18n-en="Before you begin">開始前需要</h3><ul><li>Linux / WSL2 · Python 3.11+</li><li data-i18n-zh="獨立安裝並運行的 ComfyUI" data-i18n-en="A separately installed, running ComfyUI">獨立安裝並運行的 ComfyUI</li><li data-i18n-zh="工作流對應的模型、節點與足夠硬體資源" data-i18n-en="The workflow’s models, nodes and suitable hardware">工作流對應的模型、節點與足夠硬體資源</li><li data-i18n-zh="影音處理與聲音工具另有選用依賴" data-i18n-en="Optional dependencies for media processing and voice tools">影音處理與聲音工具另有選用依賴</li></ul><p class="landing-note" data-i18n-zh="WSL2 請讓兩個程式運行於同一 Linux 環境。目前啟動器不支援原生 Windows 或 macOS。" data-i18n-en="Under WSL2, run both apps in the same Linux environment. This launcher does not support native Windows or macOS.">WSL2 請讓兩個程式運行於同一 Linux 環境。目前啟動器不支援原生 Windows 或 macOS。</p><a class="landing-button landing-secondary" href="https://github.com/TED-H-com/Web_Comfyui/archive/refs/heads/main.zip" data-i18n-zh="下載原始碼 ZIP" data-i18n-en="Download source ZIP">下載原始碼 ZIP</a><a class="landing-text-link" href="https://github.com/TED-H-com/Web_Comfyui/blob/main/docs/installation.md" data-i18n-zh="完整安裝與排錯指南 →" data-i18n-en="Installation and troubleshooting →">完整安裝與排錯指南 →</a></aside>
+        <div class="landing-install-steps">
+          <article><h3 data-i18n-zh="1. 先啟動 ComfyUI" data-i18n-en="1. Start ComfyUI first">1. 先啟動 ComfyUI</h3><p data-i18n-zh="在 ComfyUI 自己的 Python 環境中執行，確認節點編輯器可於 127.0.0.1:8188 開啟，並保持運行。" data-i18n-en="Run this in ComfyUI’s own Python environment. Confirm its node editor opens at 127.0.0.1:8188, and leave it running.">在 ComfyUI 自己的 Python 環境中執行，確認節點編輯器可於 127.0.0.1:8188 開啟，並保持運行。</p><pre><code>python main.py --listen 127.0.0.1 --port 8188</code></pre><a class="landing-text-link" href="https://docs.comfy.org/installation/manual_install" data-i18n-zh="ComfyUI 官方安裝指南 ↗" data-i18n-en="Official ComfyUI installation ↗">ComfyUI 官方安裝指南 ↗</a></article>
+          <article><div class="landing-step-heading"><h3 data-i18n-zh="2. 另開終端機，安裝 WebUI" data-i18n-en="2. Install WebUI in another terminal">2. 另開終端機，安裝 WebUI</h3><button type="button" class="landing-copy" data-copy="install-commands" data-i18n-zh="複製指令" data-i18n-en="Copy commands">複製指令</button></div><pre><code id="install-commands">git clone https://github.com/TED-H-com/Web_Comfyui.git
+cd Web_Comfyui
+python3 --version
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-webui.txt
+cp .env.example .env
+chmod 600 .env</code></pre><p class="landing-note" data-i18n-zh="首次安裝才複製 .env；更新時保留原本設定。模型、API 金鑰與個人素材不隨原始碼提供。" data-i18n-en="Copy .env only on first installation; keep existing settings when updating. Models, API keys and personal media are not bundled.">首次安裝才複製 .env；更新時保留原本設定。模型、API 金鑰與個人素材不隨原始碼提供。</p></article>
+          <article><h3 data-i18n-zh="3. 設定路徑，檢查並啟動" data-i18n-en="3. Configure the path, check and start">3. 設定路徑，檢查並啟動</h3><p data-i18n-zh="編輯 .env 的 COMFY_HOME，使它指向你的 ComfyUI 目錄。啟動後開啟 http://127.0.0.1:8190，建立至少 8 碼的本機管理員密碼。" data-i18n-en="Set COMFY_HOME in .env to your ComfyUI directory. After starting, open http://127.0.0.1:8190 and create a local administrator password with at least 8 characters.">編輯 .env 的 COMFY_HOME，使它指向你的 ComfyUI 目錄。啟動後開啟 http://127.0.0.1:8190，建立至少 8 碼的本機管理員密碼。</p><pre><code>.venv/bin/python run.py --check
+.venv/bin/python run.py</code></pre><p class="landing-note" data-i18n-zh="檢查只確認基本依賴與連線，不會下載模型或執行生成；通過檢查不代表所有工作流都能在你的 GPU 上運行。" data-i18n-en="The check verifies basic dependencies and connectivity. It does not download models or generate media; passing does not qualify every workflow for your GPU.">檢查只確認基本依賴與連線，不會下載模型或執行生成；通過檢查不代表所有工作流都能在你的 GPU 上運行。</p></article>
+        </div>
+      </div>
+    </div></section>
+
+    <section id="cloud" class="landing-shell landing-section landing-cloud" aria-labelledby="cloud-title">
+      <div><p class="landing-eyebrow" data-i18n-zh="選用雲端服務" data-i18n-en="Optional cloud service">選用雲端服務</p><h2 id="cloud-title" data-i18n-zh="沒有本地顯卡，也有其他選擇。" data-i18n-en="No local GPU? Consider a cloud option.">沒有本地顯卡，也有其他選擇。</h2><p data-i18n-zh="沒有本地顯卡，可使用 AutoIP 的支援 API 或其 Web 介面；實際服務依模型、額度及串接支援。" data-i18n-en="Without a local GPU, you can use AutoIP’s supported APIs or its web interface. Availability depends on the model, account credits and integration support.">沒有本地顯卡，可使用 AutoIP 的支援 API 或其 Web 介面；實際服務依模型、額度及串接支援。</p><p data-i18n-zh="這不表示每個 WebUI 工具、社群工作流或訓練流程都能直接透過 AutoIP 執行。API 整合需使用你自己的帳號與設定；此介紹頁不收集金鑰。" data-i18n-en="This does not mean every WebUI tool, community workflow or training process runs directly through AutoIP. API integrations require your own account and configuration; this page does not collect keys.">這不表示每個 WebUI 工具、社群工作流或訓練流程都能直接透過 AutoIP 執行。API 整合需使用你自己的帳號與設定；此介紹頁不收集金鑰。</p></div>
+      <aside class="landing-referral"><h3>AutoIP</h3><a class="landing-qr" href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND" rel="sponsored noopener noreferrer"><img src="./assets/autoip-referral.svg" width="144" height="144" alt="AutoIP 推薦註冊連結 QR Code" data-alt-zh="AutoIP 推薦註冊連結 QR Code" data-alt-en="QR code for the AutoIP referral registration link" loading="lazy"><span data-i18n-zh="掃描推薦連結" data-i18n-en="Scan the referral link">掃描推薦連結</span></a><p class="landing-referral-code"><span data-i18n-zh="推薦碼" data-i18n-en="Referral code">推薦碼</span><code>TEDH2FND</code></p><a class="landing-button landing-secondary" href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND" rel="sponsored noopener noreferrer" data-i18n-zh="透過推薦連結前往 AutoIP ↗" data-i18n-en="Visit AutoIP via referral ↗">透過推薦連結前往 AutoIP ↗</a><p class="landing-note" data-i18n-zh="推薦連結：註冊或消費可能使推薦者獲得獎勵。服務費用、點數與優惠以 AutoIP 當下公告為準。" data-i18n-en="Referral disclosure: registration or purchases may reward the referrer. Service fees, credits and offers are determined by AutoIP’s current terms.">推薦連結：註冊或消費可能使推薦者獲得獎勵。服務費用、點數與優惠以 AutoIP 當下公告為準。</p><a class="landing-text-link" href="https://github.com/TED-H-com/Web_Comfyui/blob/main/docs/autoip-api.md" data-i18n-zh="查看 API 串接範圍 →" data-i18n-en="Review supported API integration →">查看 API 串接範圍 →</a></aside>
+    </section>
+  </main>
+  <footer class="landing-footer"><div class="landing-shell"><strong>Web ComfyUI</strong><p data-i18n-zh="WebUI 程式碼採 GPL-3.0；第三方工作流、模型與執行環境各自適用原授權。" data-i18n-en="WebUI code uses GPL-3.0. Third-party workflows, models and runtimes retain their own licenses.">WebUI 程式碼採 GPL-3.0；第三方工作流、模型與執行環境各自適用原授權。</p><nav aria-label="專案連結" data-label-zh="專案連結" data-label-en="Project links"><a href="https://github.com/TED-H-com/Web_Comfyui">GitHub</a><a href="https://github.com/TED-H-com/Web_Comfyui/blob/main/NOTICE.md" data-i18n-zh="來源與授權" data-i18n-en="Sources and licenses">來源與授權</a><a href="https://github.com/TED-H-com/Web_Comfyui/blob/main/docs/getting-started.md" data-i18n-zh="第一個工作流" data-i18n-en="Your first workflow">第一個工作流</a><a href="./demo/" data-i18n-zh="介面示範" data-i18n-en="Interface demo">介面示範</a></nav></div></footer>
+  <p id="landing-copy-status" class="landing-status" role="status" aria-live="polite"></p>
+  <script src="./assets/landing.js"></script>
+  <script src="./assets/i18n.js"></script>
+</body>
+</html>
