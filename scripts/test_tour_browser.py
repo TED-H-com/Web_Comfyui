@@ -1,5 +1,6 @@
 """Verify recorded-run form prefills and reference selection without a GPU."""
 from pathlib import Path
+import shutil
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -9,7 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_recorded_inputs(tmp_path, width):
     playwright = pytest.importorskip('playwright.sync_api')
     with playwright.sync_playwright() as driver:
-        with driver.chromium.launch(args=['--no-sandbox', '--disable-dev-shm-usage']) as browser:
+        executable = shutil.which('chromium') or shutil.which('google-chrome')
+        with driver.chromium.launch(executable_path=executable,
+                                    args=['--no-sandbox', '--disable-dev-shm-usage']) as browser:
             page = browser.new_page(viewport={'width': width, 'height': 900})
             page.set_content('''<div id="workspace"><section class="feature-panel">
               <button data-guide-feature="sample"></button><form>
