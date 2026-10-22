@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-22",
+  "feature": "KohakuMoss training integration",
+  "status": "cpu-wrapper-tested; GPU qualification pending",
+  "trainer": {
+    "repository": "https://github.com/KohakuBlueleaf/KohakuMossTrainer.git",
+    "revision": "da5dd97e15492e4dfb3caa171f023388004884ff",
+    "license": "KohakuMoss License 1.0 (Apache-2.0 plus Section 10 naming requirement)",
+    "license_sha256": "2e63789e1bd0f581c88e2cb66dbb3d68a6bdee80740e4e3a59a134630a1b3bc0",
+    "python": ">=3.10; upstream installer uses 3.12",
+    "torch": ">=2.13,<2.15",
+    "recipe": "configs/moss/recipes/recipes_lora_24g_bf16.py"
+  },
+  "models": {
+    "repository": "Comfy-Org/MOSS-Image",
+    "revision": "24147db865fcdc207270f844777587223fed8d6e",
+    "license_metadata": "apache-2.0",
+    "files": [
+      {
+        "path": "diffusion_models/moss_image_base_int8_convrot.safetensors",
+        "bytes": 5413698958,
+        "sha256": "f601c1e1161915fb3fea003da0c1782e374dd960fbb3978bc0e4e3fa1f2d8e6f",
+        "optional": false
+      },
+      {
+        "path": "diffusion_models/moss_image_sft_int8_convrot.safetensors",
+        "bytes": 5413698958,
+        "sha256": "b4d1475bc7eeffd7b809e82ea13a1fba1fb85c4e18365af3813722faa5c0fe4f",
+        "optional": true
+      },
+      {
+        "path": "text_encoders/qwen3.5_9b_int8_convrot.safetensors",
+        "bytes": 9748121532,
+        "sha256": "32e3787472f708fa5f83624acbf5ef23f7fc89c439e05065ea57cfe5a97f025a",
+        "optional": false
+      },
+      {
+        "path": "vae/flux2-vae_small.safetensors",
+        "bytes": 249521340,
+        "sha256": "d8d52ba036475f5fb07c8b435e176d3d97ebfa82f0d1a1c317f9cc1e25bd013b",
+        "optional": false
+      }
+    ]
+  },
+  "sources": [
+    "https://dslab.tw/moss-image-lora",
+    "https://github.com/KohakuBlueleaf/KohakuMossTrainer",
+    "https://huggingface.co/Comfy-Org/MOSS-Image"
+  ],
+  "qualification": {
+    "training_executed": false,
+    "models_downloaded": false,
+    "comfy_load_tested": false
+  }
+}

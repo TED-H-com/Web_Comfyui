@@ -1,0 +1,23 @@
+diff --git a/nodes.py b/nodes.py
+index fe921a1..eeb92b3 100644
+--- a/nodes.py
++++ b/nodes.py
+@@ -61,6 +61,18 @@ class MiniMaxH3TeaCacheNode:
+             }
+         }
+ 
++    @classmethod
++    def IS_CHANGED(cls, *args, **kwargs):
++        """Rebuild the wrapper state for every queued prompt.
++
++        ComfyUI caches MODEL patch-node outputs across prompts when their
++        inputs do not change.  TeaCacheState is sampling-run state, so reusing
++        that patched MODEL could carry step counters and cached tensors into a
++        later run.  A NaN fingerprint is deliberately self-unequal and is the
++        V1-node mechanism ComfyUI uses to force re-execution.
++        """
++        return float("nan")
++
+     RETURN_TYPES = ("MODEL",)
+     FUNCTION = "apply"
+     CATEGORY = "advanced/model"

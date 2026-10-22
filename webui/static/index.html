@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web ComfyUI</title>
+    <link rel="stylesheet" href="/static/styles.css?v=20261009-lightbox-v1" />
+    <link rel="stylesheet" href="/static/provider-fabric.css?v=20260819-reliability-v1" />
+    <link rel="stylesheet" href="/static/workflow-library.css" />
+    <link rel="stylesheet" href="/static/project-preview.css?v=20260819-routing-v2" />
+  </head>
+  <body>
+    <div id="authGate" class="auth-gate">
+      <div class="auth-hero" aria-hidden="true">
+        <div class="auth-brand-glow">Web ComfyUI</div>
+        <p>進入角色工作室，讓每一次生成都有清楚身分與安全邊界。</p>
+      </div>
+      <form id="authForm" class="auth-panel">
+        <div class="auth-panel-head">
+          <div class="auth-kicker">Web ComfyUI</div>
+          <h1 id="authTitle">設定密碼</h1>
+          <p id="authText">第一次進入先綁定這個介面的密碼。</p>
+          <div id="authIdentity" class="auth-identity hidden"></div>
+        </div>
+        <div id="authFields" class="auth-fields">
+          <label class="field">
+            <span>密碼</span>
+            <input id="authPassword" type="password" autocomplete="current-password" minlength="8" required />
+          </label>
+          <label id="authConfirmWrap" class="field hidden">
+            <span>再次確認</span>
+            <input id="authPasswordConfirm" type="password" autocomplete="new-password" minlength="8" />
+          </label>
+        </div>
+        <button id="authSubmit" class="primary" type="submit">進入</button>
+        <div id="authMessage" class="auth-message" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <div class="app">
+      <header id="appTopbar" class="topbar">
+        <div class="brand">Web ComfyUI</div>
+        <nav id="viewNav" class="view-nav" aria-label="主要導覽">
+          <button class="view-tab active" type="button" data-view="characters">角色</button>
+          <button class="view-tab" type="button" data-view="studio">創作</button>
+          <button class="view-tab project-authorized hidden" type="button" data-view="projects">專案</button>
+          <button class="view-tab" type="button" data-view="library">媒體庫</button>
+          <button class="view-tab" type="button" data-view="workflows">工作庫</button>
+          <button class="view-tab" type="button" data-view="resources">資源</button>
+        </nav>
+        <div class="top-actions">
+          <span id="servicePill" class="service-pill ok shell-service-status">服務正常</span>
+          <button id="statusPill" class="status-pill idle" type="button" aria-label="開啟任務，0 個進行中" aria-haspopup="dialog" aria-expanded="false">
+            <span aria-hidden="true">任務</span>
+            <span id="taskCount" aria-live="polite">0</span>
+            <span id="taskUnreadDot" class="task-unread-dot hidden" aria-hidden="true"></span>
+          </button>
+          <button id="managementMenuBtn" class="shell-menu-btn admin-only hidden" type="button" aria-haspopup="dialog" aria-expanded="false">管理 <span aria-hidden="true">▾</span></button>
+          <button id="identityChip" class="identity-chip hidden" type="button" aria-haspopup="dialog" aria-expanded="false"></button>
+        </div>
+      </header>
+
+      <div id="alert" class="alert hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+      <section id="queuePanel" class="queue-panel hidden" aria-live="polite"></section>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <div id="sidebarGroups" class="sidebar-groups"></div>
+        </aside>
+        <main id="workspace" class="workspace"></main>
+      </div>
+
+      <footer id="stickyGenerateHost" class="sticky-generate-host hidden" aria-live="polite"></footer>
+
+      <nav id="phoneTabBar" class="phone-tabbar" aria-label="主要導覽">
+        <button class="phone-tab active" type="button" data-view="characters" aria-label="角色">
+          <span class="phone-tab-icon" aria-hidden="true">♟</span><span>角色</span>
+        </button>
+        <button class="phone-tab" type="button" data-view="studio" aria-label="創作">
+          <span class="phone-tab-icon" aria-hidden="true">✦</span><span>創作</span>
+        </button>
+        <button class="phone-tab" type="button" data-view="library" aria-label="媒體庫">
+          <span class="phone-tab-icon" aria-hidden="true">▦</span><span>媒體庫</span>
+        </button>
+        <button class="phone-tab project-authorized hidden" type="button" data-view="projects" aria-label="專案">
+          <span class="phone-tab-icon" aria-hidden="true">▤</span><span>專案</span>
+        </button>
+        <button class="phone-tab" type="button" data-view="workflows" aria-label="工作庫"><span class="phone-tab-icon" aria-hidden="true">▤</span><span>工作庫</span></button>
+        <button id="moreMenuBtn" class="phone-tab" type="button" aria-label="更多" aria-haspopup="dialog" aria-expanded="false">
+          <span class="phone-tab-icon" aria-hidden="true">•••</span><span>更多</span>
+        </button>
+      </nav>
+    </div>
+    <div id="sheetLayer" class="sheet-layer"></div>
+    <script src="/static/login-return.js?v=20260718-reel-review-binding-v2"></script>
+    <script src="/static/provider-fabric.js?v=20260822-imported-character-wall-v2"></script>
+    <script src="/static/project-preview.js?v=20260819-routing-v2"></script>
+    <script src="/static/workflow-library.js"></script>
+    <script src="/static/app.js?v=20261009-lightbox-v1"></script>
+  </body>
+</html>

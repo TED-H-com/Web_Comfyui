@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "artifact_set": "minimax-h3-official-workflows",
+  "source": {
+    "provider": "github",
+    "repository": "Comfy-Org/workflow_templates",
+    "revision": "c74863f87d56b57265cfce844ab00b127c32e137",
+    "download_url_template": "https://raw.githubusercontent.com/{repository}/{revision}/{path}",
+    "documentation": "https://docs.comfy.org/tutorials/video/minimax/minimax-h3"
+  },
+  "required_object_info_nodes": [
+    "BasicGuider",
+    "BasicScheduler",
+    "CLIPLoader",
+    "CreateVideo",
+    "KSamplerSelect",
+    "MiniMaxH3ImageToVideo",
+    "MiniMaxH3ReferenceToVideo",
+    "RandomNoise",
+    "SamplerCustomAdvanced",
+    "SaveVideo",
+    "UNETLoader",
+    "VAEDecode",
+    "VAEDecodeAudio",
+    "VAELoader"
+  ],
+  "files": [
+    {
+      "path": "templates/video_minimax_h3_t2v.json",
+      "destination": "video_minimax_h3_t2v.json",
+      "bytes": 42197,
+      "sha256": "31ab33fdb053a7834cc866bd7aa08b887518fc656e4a796c89779c6b5e1786e6"
+    },
+    {
+      "path": "templates/video_minimax_h3_i2v.json",
+      "destination": "video_minimax_h3_i2v.json",
+      "bytes": 44684,
+      "sha256": "bb71aecdd3c0b62e56eafe03acb14d1cfeabec7072eaed9cbdf473c2aaf73009"
+    },
+    {
+      "path": "templates/video_minimax_h3_r2v.json",
+      "destination": "video_minimax_h3_r2v.json",
+      "bytes": 27576,
+      "sha256": "099d24eda6263854818975c7209db6f29ebfd0339936c928f12293d5ab029ffb"
+    }
+  ]
+}

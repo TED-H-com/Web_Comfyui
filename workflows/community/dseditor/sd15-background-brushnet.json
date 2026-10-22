@@ -1,0 +1,689 @@
+{
+  "config": {},
+  "extra": {
+    "community_attribution": {
+      "author": "dseditor",
+      "changes": "Removed cached metadata/media and private paths; replaced input/output filenames; normalized model path separators. Graph topology and sampler settings retained.",
+      "license": "GPL-3.0",
+      "license_file": "third_party/community/dseditor/LICENSE",
+      "modified": "2026-10-22",
+      "source": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/BackgroundChanger/%E3%80%90background%E3%80%91brushnet.json",
+      "source_sha256": "b3023c25cea871ca25b78ded36ce29e96536ef4050fbf26df267281736d6ed23"
+    }
+  },
+  "groups": [],
+  "last_link_id": 102,
+  "last_node_id": 55,
+  "links": [
+    [
+      60,
+      31,
+      0,
+      32,
+      0,
+      "IMAGE"
+    ],
+    [
+      73,
+      1,
+      0,
+      46,
+      0,
+      "IMAGE"
+    ],
+    [
+      80,
+      46,
+      0,
+      48,
+      0,
+      "IMAGE"
+    ],
+    [
+      81,
+      48,
+      1,
+      49,
+      0,
+      "MASK"
+    ],
+    [
+      82,
+      49,
+      0,
+      31,
+      0,
+      "MASK"
+    ],
+    [
+      84,
+      24,
+      0,
+      50,
+      3,
+      "BRMODEL"
+    ],
+    [
+      90,
+      52,
+      0,
+      50,
+      0,
+      "MODEL"
+    ],
+    [
+      91,
+      52,
+      1,
+      50,
+      1,
+      "CLIP"
+    ],
+    [
+      92,
+      52,
+      2,
+      50,
+      2,
+      "VAE"
+    ],
+    [
+      94,
+      52,
+      1,
+      53,
+      0,
+      "CLIP"
+    ],
+    [
+      96,
+      52,
+      1,
+      54,
+      0,
+      "CLIP"
+    ],
+    [
+      97,
+      54,
+      0,
+      55,
+      4,
+      "CONDITIONING"
+    ],
+    [
+      98,
+      53,
+      0,
+      55,
+      3,
+      "CONDITIONING"
+    ],
+    [
+      99,
+      50,
+      0,
+      55,
+      0,
+      "BRPL"
+    ],
+    [
+      100,
+      48,
+      0,
+      55,
+      1,
+      "IMAGE"
+    ],
+    [
+      101,
+      49,
+      0,
+      55,
+      2,
+      "MASK"
+    ],
+    [
+      102,
+      55,
+      0,
+      12,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "nodes": [
+    {
+      "flags": {},
+      "id": 46,
+      "inputs": [
+        {
+          "link": 73,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 6,
+      "outputs": [
+        {
+          "links": [
+            80
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        }
+      ],
+      "pos": [
+        100,
+        890
+      ],
+      "properties": {
+        "Node name for S&R": "JWImageResizeByLongerSide"
+      },
+      "size": {
+        "0": 315,
+        "1": 82
+      },
+      "type": "JWImageResizeByLongerSide",
+      "widgets_values": [
+        1200,
+        "bicubic"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 32,
+      "inputs": [
+        {
+          "link": 60,
+          "name": "images",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 11,
+      "pos": [
+        610,
+        800
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "size": {
+        "0": 210,
+        "1": 246
+      },
+      "type": "PreviewImage"
+    },
+    {
+      "flags": {},
+      "id": 31,
+      "inputs": [
+        {
+          "link": 82,
+          "name": "mask",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 9,
+      "outputs": [
+        {
+          "links": [
+            60
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        }
+      ],
+      "pos": [
+        610,
+        710
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      },
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "type": "MaskToImage"
+    },
+    {
+      "flags": {},
+      "id": 12,
+      "inputs": [
+        {
+          "link": 102,
+          "name": "images",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 12,
+      "pos": [
+        940,
+        440
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "size": {
+        "0": 523.5944213867188,
+        "1": 547.4853515625
+      },
+      "type": "PreviewImage"
+    },
+    {
+      "flags": {},
+      "id": 24,
+      "mode": 0,
+      "order": 0,
+      "outputs": [
+        {
+          "links": [
+            84
+          ],
+          "name": "BrushNet",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "BRMODEL"
+        }
+      ],
+      "pos": [
+        170,
+        200
+      ],
+      "properties": {
+        "Node name for S&R": "BrushNetLoader"
+      },
+      "size": {
+        "0": 354.79998779296875,
+        "1": 61.60003662109375
+      },
+      "type": "BrushNetLoader",
+      "widgets_values": [
+        "brushnet/random_mask_brushnet_ckpt/diffusion_pytorch_model.safetensors"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 52,
+      "mode": 0,
+      "order": 1,
+      "outputs": [
+        {
+          "links": [
+            90
+          ],
+          "name": "MODEL",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MODEL"
+        },
+        {
+          "links": [
+            91,
+            94,
+            96
+          ],
+          "name": "CLIP",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "CLIP"
+        },
+        {
+          "links": [
+            92
+          ],
+          "name": "VAE",
+          "shape": 3,
+          "slot_index": 2,
+          "type": "VAE"
+        }
+      ],
+      "pos": [
+        340,
+        -30
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "size": {
+        "0": 315,
+        "1": 98
+      },
+      "type": "CheckpointLoaderSimple",
+      "widgets_values": [
+        "ayumu_I.safetensors"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 1,
+      "mode": 0,
+      "order": 2,
+      "outputs": [
+        {
+          "links": [
+            73
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        },
+        {
+          "links": null,
+          "name": "MASK",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        30,
+        340
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "size": {
+        "0": 520,
+        "1": 470
+      },
+      "type": "LoadImage",
+      "widgets_values": [
+        "input_1.png",
+        "image"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 54,
+      "inputs": [
+        {
+          "link": 96,
+          "name": "clip",
+          "type": "CLIP"
+        }
+      ],
+      "mode": 0,
+      "order": 4,
+      "outputs": [
+        {
+          "links": [
+            97
+          ],
+          "name": "CONDITIONING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        930,
+        10
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "size": {
+        "0": 380,
+        "1": 100
+      },
+      "type": "CLIPTextEncode",
+      "widgets_values": [
+        "text,human"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 53,
+      "inputs": [
+        {
+          "link": 94,
+          "name": "clip",
+          "type": "CLIP"
+        }
+      ],
+      "mode": 0,
+      "order": 3,
+      "outputs": [
+        {
+          "links": [
+            98
+          ],
+          "name": "CONDITIONING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "CONDITIONING"
+        }
+      ],
+      "pos": [
+        940,
+        -140
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "size": [
+        380,
+        100
+      ],
+      "type": "CLIPTextEncode",
+      "widgets_values": [
+        "a garden,masterpiece,photorealistic,hdr photo,"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 50,
+      "inputs": [
+        {
+          "link": 90,
+          "name": "model",
+          "type": "MODEL"
+        },
+        {
+          "link": 91,
+          "name": "clip",
+          "type": "CLIP"
+        },
+        {
+          "link": 92,
+          "name": "vae",
+          "type": "VAE"
+        },
+        {
+          "link": 84,
+          "name": "brushnet",
+          "type": "BRMODEL"
+        }
+      ],
+      "mode": 0,
+      "order": 5,
+      "outputs": [
+        {
+          "links": [
+            99
+          ],
+          "name": "BRPL",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "BRPL"
+        }
+      ],
+      "pos": [
+        680,
+        -20
+      ],
+      "properties": {
+        "Node name for S&R": "BrushNetPipeline"
+      },
+      "size": {
+        "0": 210,
+        "1": 86
+      },
+      "type": "BrushNetPipeline"
+    },
+    {
+      "flags": {},
+      "id": 48,
+      "inputs": [
+        {
+          "link": 80,
+          "name": "image",
+          "type": "IMAGE"
+        }
+      ],
+      "mode": 0,
+      "order": 7,
+      "outputs": [
+        {
+          "links": [
+            100
+          ],
+          "name": "image",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        },
+        {
+          "links": [
+            81
+          ],
+          "name": "mask",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        590,
+        380
+      ],
+      "properties": {
+        "Node name for S&R": "LayerMask: BiRefNetUltra"
+      },
+      "size": {
+        "0": 315,
+        "1": 198
+      },
+      "type": "LayerMask: BiRefNetUltra",
+      "widgets_values": [
+        "VITMatte",
+        6,
+        6,
+        0.01,
+        0.99,
+        true
+      ]
+    },
+    {
+      "flags": {},
+      "id": 49,
+      "inputs": [
+        {
+          "link": 81,
+          "name": "mask",
+          "type": "MASK"
+        }
+      ],
+      "mode": 0,
+      "order": 8,
+      "outputs": [
+        {
+          "links": [
+            82,
+            101
+          ],
+          "name": "MASK",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        610,
+        630
+      ],
+      "properties": {
+        "Node name for S&R": "InvertMask"
+      },
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "type": "InvertMask"
+    },
+    {
+      "flags": {},
+      "id": 55,
+      "inputs": [
+        {
+          "link": 99,
+          "name": "BRPL",
+          "type": "BRPL"
+        },
+        {
+          "link": 100,
+          "name": "image",
+          "type": "IMAGE"
+        },
+        {
+          "link": 101,
+          "name": "mask",
+          "type": "MASK"
+        },
+        {
+          "link": 98,
+          "name": "positive",
+          "type": "CONDITIONING"
+        },
+        {
+          "link": 97,
+          "name": "negative",
+          "type": "CONDITIONING"
+        }
+      ],
+      "mode": 0,
+      "order": 10,
+      "outputs": [
+        {
+          "links": [
+            102
+          ],
+          "name": "image",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "IMAGE"
+        }
+      ],
+      "pos": [
+        1000,
+        160
+      ],
+      "properties": {
+        "Node name for S&R": "BrushNetInpaint"
+      },
+      "size": {
+        "0": 315,
+        "1": 210
+      },
+      "type": "BrushNetInpaint",
+      "widgets_values": [
+        722591570255365,
+        "randomize",
+        25,
+        1
+      ]
+    }
+  ],
+  "version": 0.4
+}

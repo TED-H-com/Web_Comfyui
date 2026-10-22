@@ -1,0 +1,24 @@
+diff --git a/__init__.py b/__init__.py
+index e4e9159..5a4cb6b 100644
+--- a/__init__.py
++++ b/__init__.py
+@@ -2,7 +2,15 @@ from .src.spectrum_node import SpectrumSDXL
+ from .src.calibrated_spectrum_node import SpectrumSDXLCalibrated
+ 
+ 
+-NODE_CLASS_MAPPINGS = {"SpectrumSDXL": SpectrumSDXL, "CalibratedSpectrumSDXL": SpectrumSDXLCalibrated}
+-NODE_DISPLAY_NAME_MAPPINGS = {"SpectrumSDXL": "Spectrum Adaptive Forecaster (SDXL)", "CalibratedSpectrumSDXL": "Calibrated Spectrum Adaptive Forecaster (SDXL)"}
++NODE_CLASS_MAPPINGS = {
++    "SpectrumSDXL": SpectrumSDXL,
++    "SpectrumSDXLBatch": SpectrumSDXL,
++    "CalibratedSpectrumSDXL": SpectrumSDXLCalibrated,
++}
++NODE_DISPLAY_NAME_MAPPINGS = {
++    "SpectrumSDXL": "Spectrum Adaptive Forecaster (SDXL)",
++    "SpectrumSDXLBatch": "Spectrum Adaptive Forecaster (SDXL, Batch Alias)",
++    "CalibratedSpectrumSDXL": "Calibrated Spectrum Adaptive Forecaster (SDXL)",
++}
+ 
+-__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
+\ No newline at end of file
++__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

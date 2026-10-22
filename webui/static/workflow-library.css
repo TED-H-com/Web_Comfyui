@@ -1,0 +1,26 @@
+body[data-view="workflows"] .sidebar { display: none; }
+body[data-view="workflows"] .layout { grid-template-columns: minmax(0,1fr); }
+.workflow-library { padding: var(--space-5); }
+.workflow-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-5); }
+.workflow-heading h1 { margin: 0 0 var(--space-2); font-size: var(--text-xl); }
+.workflow-heading p { margin: 0; font-size: var(--text-sm); }
+.workflow-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: var(--space-3); }
+.workflow-card { display: flex; align-items: flex-start; flex-direction: column; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--catalogue-radius); background: var(--panel); color: var(--ink); text-align: left; min-width: 0; min-height: var(--tap-min); }
+.workflow-card:hover { border-color: var(--blue); }
+.workflow-card:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: var(--space-1); }
+.workflow-card strong { font-size: var(--text-sm); line-height: 1.5; overflow-wrap: anywhere; }
+.workflow-card small, .workflow-category { color: var(--muted); font-size: var(--text-xs); }
+.workflow-state { font-size: var(--text-xs); color: var(--ink); }
+.workflow-details { padding: var(--space-5); min-width: 0; }
+.workflow-details h3 { font-size: var(--text-md); }
+.workflow-details pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-sm); background: var(--bg); padding: var(--space-3); border-radius: var(--space-2); max-height: 320px; overflow-y: auto; }
+.workflow-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.workflow-link { display: inline-flex; align-items: center; min-height: var(--tap-min); text-decoration: none; color: var(--blue-dark); }
+@media(max-width:767px) {
+  .workflow-library { padding: var(--space-4); }
+  .workflow-heading { align-items: flex-start; flex-direction: column; }
+  .workflow-library .catalogue-toolbar { flex-wrap: wrap; }
+  .workflow-library .catalogue-toolbar input { flex-basis: 100%; font-size: var(--text-md); }
+  .workflow-library .catalogue-toolbar select { flex: 1; min-width: 120px; max-width: none; font-size: var(--text-md); }
+  .workflow-grid { grid-template-columns: minmax(0,1fr); }
+}

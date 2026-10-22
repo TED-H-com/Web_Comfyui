@@ -1,0 +1,459 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-22",
+  "recipes": [
+    {
+      "status": "recipe_only",
+      "validation": {
+        "static_review": true,
+        "gpu_tested": false,
+        "auto_install": false,
+        "cpu_wrapper_tests": true
+      },
+      "documentation": "docs/moss-training.md",
+      "id": "moss-character-pilot",
+      "title": "KohakuMoss character LoRA pilot",
+      "category": "Training",
+      "description": "Prepare a separate 30-step MOSS-Image adapter pilot, validate its inputs, then qualify the exported adapter in ComfyUI.",
+      "tags": [
+        "moss",
+        "lora",
+        "training",
+        "kohaku"
+      ],
+      "source_urls": [
+        "https://dslab.tw/moss-image-lora",
+        "https://github.com/KohakuBlueleaf/KohakuMossTrainer"
+      ],
+      "settings": {
+        "command": "python3 scripts/moss_trainer.py plan",
+        "config_command": "python3 scripts/moss_trainer.py config",
+        "preflight_command": "python3 scripts/moss_trainer.py preflight",
+        "steps": 30,
+        "rank": 32,
+        "learning_rate": 0.0001,
+        "variant": "base",
+        "export_format": "comfy",
+        "periodic_samples": false
+      },
+      "requirements": {
+        "model_family": "MOSS-Image",
+        "trainer_lock": "manifests/moss/upstream.lock.json",
+        "environment": "Separate trainer venv; upstream torch >=2.13,<2.15",
+        "license": "KohakuMoss License 1.0; preserve Kohaku branding",
+        "comfy_loader": "LoraLoaderModelOnly with native MOSS-Image support"
+      }
+    },
+    {
+      "status": "recipe_only",
+      "validation": {
+        "static_review": true,
+        "gpu_tested": false,
+        "auto_install": false,
+        "cpu_wrapper_tests": true
+      },
+      "documentation": "docs/rtx-video-research.md",
+      "id": "local-llm-h3-director",
+      "title": "Local or API H3 prompt director",
+      "category": "Prompting",
+      "description": "Draft structured H3 prompts through a user-selected compatible API, then review them before generation.",
+      "tags": [
+        "llm",
+        "h3",
+        "api",
+        "local"
+      ],
+      "source_urls": [
+        "https://dslab.tw/rtx-spark-llm",
+        "https://dslab.tw/rtx-spark-video",
+        "https://dslab.tw/lesson-h3"
+      ],
+      "settings": {
+        "api": {
+          "base_url": "http://127.0.0.1:8080/v1",
+          "model": "",
+          "credential_reference": "user-configured",
+          "provider_locked": false
+        },
+        "prompt_fields": [
+          "integrated_multimodal_description",
+          "overall_soundscape",
+          "non_diegetic_music"
+        ],
+        "review_before_queue": true,
+        "automatic_unload": false,
+        "reference_images_optional": true,
+        "evaluation": [
+          "task_success",
+          "total_latency",
+          "cold_warm_latency",
+          "rerolls",
+          "cost_per_accepted_clip"
+        ]
+      },
+      "requirements": {
+        "endpoint": "User-configured local or remote OpenAI-compatible API",
+        "vision": "Image requests require a matching multimodal model/projector",
+        "memory": "Serialize LLM/video stages when sharing a device; do not force-unload another user session"
+      }
+    },
+    {
+      "status": "recipe_only",
+      "validation": {
+        "static_review": true,
+        "gpu_tested": false,
+        "auto_install": false,
+        "cpu_wrapper_tests": true
+      },
+      "documentation": "docs/rtx-video-research.md",
+      "id": "h3-two-pass-1080p",
+      "title": "H3 staged resolution to 1080 delivery",
+      "category": "Video",
+      "description": "A source-reported two-pass H3 recipe with optional RTX frame upscaling; qualify model-specific inputs before enabling execution.",
+      "tags": [
+        "h3",
+        "video",
+        "two-pass",
+        "upscale"
+      ],
+      "source_urls": [
+        "https://dslab.tw/rtx-spark-video"
+      ],
+      "settings": {
+        "first_pass": {
+          "width": 736,
+          "height": 416,
+          "scheduler": "beta",
+          "total_steps": 8,
+          "split_step": 4
+        },
+        "latent_upscale": {
+          "scale": 1.3,
+          "target_width": 960,
+          "target_height": 544
+        },
+        "second_pass": {
+          "remaining_steps": 4,
+          "continue_sigma_sequence": true
+        },
+        "frames": 260,
+        "fps": 24,
+        "rtx_scale": 2,
+        "intermediate_dimensions": [
+          1920,
+          1088
+        ],
+        "delivery_crop": "user-select to exact 1920x1080",
+        "preserve_source_audio": true,
+        "hdr": false
+      },
+      "requirements": {
+        "model": "H3 Singularity v1.3 Pruned w4a8 in source experiment; exact artifact needs selection",
+        "loras": [
+          "matching ref2v turbo adapter"
+        ],
+        "nodes": [
+          "H3 latent upscaler",
+          "RTXVideoSuperResolution"
+        ],
+        "attention": "Source used sol-attn; platform qualification required",
+        "frame_count": "Verify current model grid; source value is not silently normalized"
+      }
+    },
+    {
+      "status": "recipe_only",
+      "validation": {
+        "static_review": true,
+        "gpu_tested": false,
+        "auto_install": false,
+        "cpu_wrapper_tests": true
+      },
+      "documentation": "docs/rtx-video-research.md",
+      "id": "rtx-video-super-resolution",
+      "title": "RTX video super resolution",
+      "category": "Postprocessing",
+      "description": "Upscale decoded frames while preserving source timing and audio. New VFX options require an isolated runtime upgrade. ",
+      "tags": [
+        "rtx",
+        "nvidia",
+        "upscale",
+        "video"
+      ],
+      "source_urls": [
+        "https://github.com/Comfy-Org/ComfyUI_Nvidia_VFX_Nodes/tree/38d790ded00650681fa3645362efe28c8560cf40"
+      ],
+      "settings": {
+        "node_id": "RTXVideoSuperResolution",
+        "resize_type": "scale by multiplier",
+        "resize_type.scale": 2.0,
+        "quality": "ULTRA",
+        "strength": 1.0,
+        "image_encoding": "8-bit RGB",
+        "preserve_audio": true,
+        "preserve_fps": true
+      },
+      "requirements": {
+        "current_node_pin": "892515e3eb9a4920a131a502a047e47adca9eb0d",
+        "reviewed_upgrade_pin": "38d790ded00650681fa3645362efe28c8560cf40",
+        "new_runtime": "nvidia-vfx>=0.2; PyTorch cu130+; NVIDIA RTX",
+        "compatibility": "Current pin supports basic scaling/quality only; do not send new fields to old schema",
+        "license": "Apache-2.0 nodes; separate NVIDIA runtime license"
+      }
+    },
+    {
+      "status": "recipe_only",
+      "validation": {
+        "static_review": true,
+        "gpu_tested": false,
+        "auto_install": false,
+        "cpu_wrapper_tests": true
+      },
+      "documentation": "docs/rtx-video-research.md",
+      "id": "rtx-video-hdr",
+      "title": "RTX HDR finishing",
+      "category": "Postprocessing",
+      "description": "Optional HDR conversion with explicit HDR-capable encoding; do not save HDR pixels through an ordinary SDR encoder.",
+      "tags": [
+        "rtx",
+        "hdr",
+        "color",
+        "video"
+      ],
+      "source_urls": [
+        "https://github.com/Comfy-Org/ComfyUI_Nvidia_VFX_Nodes/tree/38d790ded00650681fa3645362efe28c8560cf40"
+      ],
+      "settings": {
+        "node_id": "RTXTrueHDR",
+        "contrast": 100,
+        "saturation": 100,
+        "middle_gray": 50,
+        "luminance": 650,
+        "debanding": true,
+        "output_colorspace": "HDR PQ",
+        "delivery": {
+          "bit_depth": 10,
+          "primaries": "bt2020",
+          "transfer": "smpte2084",
+          "encoder": "user-selected HDR-capable encoder"
+        }
+      },
+      "requirements": {
+        "nodes": [
+          "RTXTrueHDR"
+        ],
+        "node_pin": "38d790ded00650681fa3645362efe28c8560cf40",
+        "runtime": "nvidia-vfx>=0.2; PyTorch cu130+",
+        "qualification": "Validate encoded color metadata and actual playback; old pinned pack lacks this node"
+      }
+    },
+    {
+      "status": "recipe_only",
+      "validation": {
+        "static_review": true,
+        "gpu_tested": false,
+        "auto_install": false,
+        "cpu_wrapper_tests": true
+      },
+      "documentation": "docs/rtx-video-research.md",
+      "id": "rtx-video-frame-generation",
+      "title": "RTX frame interpolation",
+      "category": "Postprocessing",
+      "description": "Optional interpolation for smoother delivery; frame timestamps and audio synchronization need separate verification.",
+      "tags": [
+        "rtx",
+        "interpolation",
+        "fps",
+        "video"
+      ],
+      "source_urls": [
+        "https://github.com/Comfy-Org/ComfyUI_Nvidia_VFX_Nodes/tree/38d790ded00650681fa3645362efe28c8560cf40"
+      ],
+      "settings": {
+        "node_id": "RTXVideoFrameGeneration",
+        "generation_type": "frame rate multiplier",
+        "generation_type.multiplier": 2,
+        "mode": "MEDIUM",
+        "automatic_shot_change_detection": true,
+        "shot_change": false,
+        "image_encoding": "8-bit RGB",
+        "delivery_fps_multiplier": 2,
+        "preserve_audio": true
+      },
+      "requirements": {
+        "nodes": [
+          "RTXVideoFrameGeneration"
+        ],
+        "node_pin": "38d790ded00650681fa3645362efe28c8560cf40",
+        "gpu": "NVIDIA RTX 40-series or later",
+        "runtime": "nvidia-vfx>=0.2; PyTorch cu130+",
+        "qualification": "Verify final-frame duration policy and audio sync; old pinned pack lacks this node"
+      }
+    },
+    {
+      "status": "recipe_only",
+      "validation": {
+        "static_review": true,
+        "gpu_tested": false,
+        "auto_install": false,
+        "cpu_wrapper_tests": true
+      },
+      "documentation": "docs/rtx-video-research.md",
+      "id": "h3-course-basics",
+      "title": "H3 reference and audio basics",
+      "category": "Learning",
+      "description": "Choose explicit first/last-frame or multi-reference conditioning and distinguish a voice reference from exact source audio.",
+      "tags": [
+        "h3",
+        "course",
+        "audio",
+        "references"
+      ],
+      "source_urls": [
+        "https://dslab.tw/lesson-h3"
+      ],
+      "settings": {
+        "mode": "user-select FL2VA or Ref2VA",
+        "reference_roles": [
+          "identity",
+          "wardrobe",
+          "scene"
+        ],
+        "audio_intent": "user-select voice-reference or exact-source-audio",
+        "prompt_assistance": "optional user-selected local/API endpoint",
+        "baseline": "official-node workflow before adding adapters"
+      },
+      "requirements": {
+        "assets": "User-provided reference image/audio",
+        "workflow": "Choose a compatible imported graph; source cloud examples do not guarantee local dependencies",
+        "model": "Mode-matched H3 checkpoint and video/audio VAEs"
+      }
+    },
+    {
+      "status": "recipe_only",
+      "validation": {
+        "static_review": true,
+        "gpu_tested": false,
+        "auto_install": false,
+        "cpu_wrapper_tests": true
+      },
+      "documentation": "docs/rtx-video-research.md",
+      "id": "h3-lora-catalog",
+      "title": "H3 adapter selection guide",
+      "category": "Learning",
+      "description": "Browse source author cards by purpose; select a mode-matched adapter before building a combined workflow.",
+      "tags": [
+        "h3",
+        "lora",
+        "camera",
+        "style",
+        "motion"
+      ],
+      "source_urls": [
+        "https://dslab.tw/lesson-h3-adv3"
+      ],
+      "settings": {
+        "loader": "LoraLoaderModelOnly where author format supports ComfyUI",
+        "stacking": "Qualify one adapter at a time",
+        "unknown_mode_policy": "Do not assume compatibility",
+        "download": "Explicit user acquisition; no bundled weights",
+        "author_cards": [
+          {
+            "title": "360 Orbit",
+            "url": "https://huggingface.co/pablodawson/MiniMax-H3-360-Orbit-LoRA",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Camera Motion",
+            "url": "https://huggingface.co/Jojocodex/minimax-h3-Camera-Motion-lora",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Headmounted FPV",
+            "url": "https://huggingface.co/neph1/minimax_h3_headmounted_fpv_cam",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Equirectangular 360",
+            "url": "https://huggingface.co/shamanic/minimax-h3-equi360-lora",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Transformation",
+            "url": "https://huggingface.co/Ashmotv/transformation_lora",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Turnaround",
+            "url": "https://huggingface.co/matlod/minimax-h3-turnaround",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Keyframe Animation",
+            "url": "https://huggingface.co/alvdansen/h3-keyframe-animation",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Character Swap",
+            "url": "https://huggingface.co/akatz-ai/MiniMax-H3-Character-Swap-LoRA",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Person Remover",
+            "url": "https://huggingface.co/akatz-ai/MiniMax-H3-Person-Remover-LoRA",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Natural Face and Speech",
+            "url": "https://huggingface.co/vpakarinen/natural-face-speech-h3-lora",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Motion Continuity Repair",
+            "url": "https://huggingface.co/JOKER141/MiniMax-H3-General-Motion-Continuity-Repair",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Combat Base V2",
+            "url": "https://huggingface.co/JOKER141/MiniMax-H3-Combat-Base-V2",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Weapon Combat",
+            "url": "https://huggingface.co/JOKER141/MiniMax-H3-Weapon-Combat-LoRA",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Spatial Physics",
+            "url": "https://huggingface.co/Jojocodex/minimax-h3-spatial-physics-lora",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Anime Slider",
+            "url": "https://huggingface.co/adf99/H3_Ref2V_Anime_Slider_v1",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "Lineart Anime",
+            "url": "https://huggingface.co/DiffSynth-Studio/MiniMax-H3-LoRA-LineartAnime",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "3D Animation Style",
+            "url": "https://huggingface.co/SOLRICKS/3D-Animation-Style-MiniMax-H3",
+            "status": "source_reference; artifact/license qualification required"
+          },
+          {
+            "title": "H3 Video Upsampler",
+            "url": "https://github.com/dntpi/ComfyUI-H3-Video-Upsampler",
+            "status": "source_reference; artifact/license qualification required"
+          }
+        ]
+      },
+      "requirements": {
+        "model": "H3 variant matching the adapter",
+        "license": "Review each author card and base-model terms; gated downloads remain gated",
+        "qualification": "Unconverted adapters may match zero model keys; verify key loading and A/B output"
+      }
+    }
+  ]
+}

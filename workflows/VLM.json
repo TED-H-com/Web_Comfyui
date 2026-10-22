@@ -1,0 +1,687 @@
+{
+  "config": {},
+  "extra": {
+    "community_attribution": {
+      "author": "dseditor",
+      "changes": "Sanitized public upstream metadata, media and paths and filenames; replaced sample prompt text and cached text outputs. Topology, models and sampler settings retained.",
+      "license": "GPL-3.0",
+      "license_file": "third_party/community/dseditor/LICENSE",
+      "modified": "2026-10-22",
+      "source": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/VLM.json",
+      "source_sha256": "d0494630db4080cb806aea6aa7bb63a0c47a9abd63b067e6952810c4072317d9"
+    }
+  },
+  "groups": [
+    {
+      "bounding": [
+        1135,
+        84,
+        733,
+        491
+      ],
+      "color": "#a1309b",
+      "font_size": 24,
+      "locked": false,
+      "title": "LLM"
+    },
+    {
+      "bounding": [
+        623,
+        607,
+        720,
+        427
+      ],
+      "color": "#b58b2a",
+      "font_size": 24,
+      "locked": false,
+      "title": "Sound"
+    }
+  ],
+  "last_link_id": 63,
+  "last_node_id": 51,
+  "links": [
+    [
+      36,
+      30,
+      0,
+      29,
+      1,
+      "CUSTOM"
+    ],
+    [
+      37,
+      31,
+      0,
+      30,
+      0,
+      "CUSTOM"
+    ],
+    [
+      38,
+      32,
+      0,
+      29,
+      2,
+      "STRING"
+    ],
+    [
+      39,
+      33,
+      0,
+      29,
+      0,
+      "IMAGE"
+    ],
+    [
+      40,
+      30,
+      0,
+      34,
+      0,
+      "CUSTOM"
+    ],
+    [
+      41,
+      35,
+      0,
+      34,
+      2,
+      "STRING"
+    ],
+    [
+      42,
+      29,
+      0,
+      34,
+      1,
+      "STRING"
+    ],
+    [
+      44,
+      34,
+      0,
+      37,
+      0,
+      "STRING"
+    ],
+    [
+      45,
+      38,
+      0,
+      37,
+      1,
+      "STRING"
+    ],
+    [
+      53,
+      37,
+      0,
+      43,
+      0,
+      "COMBO"
+    ],
+    [
+      54,
+      37,
+      1,
+      43,
+      1,
+      "INT"
+    ],
+    [
+      62,
+      29,
+      0,
+      50,
+      0,
+      "STRING"
+    ],
+    [
+      63,
+      34,
+      0,
+      51,
+      0,
+      "STRING"
+    ]
+  ],
+  "nodes": [
+    {
+      "bgcolor": "#353",
+      "color": "#232",
+      "flags": {},
+      "id": 32,
+      "mode": 0,
+      "order": 0,
+      "outputs": [
+        {
+          "links": [
+            38
+          ],
+          "name": "STRING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        439.6340175903321,
+        452.3240056098937
+      ],
+      "properties": {
+        "Node name for S&R": "SimpleText"
+      },
+      "size": {
+        "0": 318.79754638671875,
+        "1": 82.05603790283203
+      },
+      "type": "SimpleText",
+      "widgets_values": [
+        "A quiet mountain village at sunrise, soft natural light, detailed scenery."
+      ]
+    },
+    {
+      "bgcolor": "#533",
+      "color": "#322",
+      "flags": {},
+      "id": 38,
+      "mode": 0,
+      "order": 1,
+      "outputs": [
+        {
+          "links": [
+            45
+          ],
+          "name": "STRING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        632.84347265625,
+        950.9180853527837
+      ],
+      "properties": {
+        "Node name for S&R": "SimpleText"
+      },
+      "size": {
+        "0": 318.79754638671875,
+        "1": 82.05603790283203
+      },
+      "type": "SimpleText",
+      "widgets_values": [
+        "A quiet mountain village at sunrise, soft natural light, detailed scenery."
+      ]
+    },
+    {
+      "flags": {},
+      "id": 37,
+      "inputs": [
+        {
+          "link": 44,
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          }
+        },
+        {
+          "link": 45,
+          "name": "negative_prompt",
+          "slot_index": 1,
+          "type": "STRING",
+          "widget": {
+            "name": "negative_prompt"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 9,
+      "outputs": [
+        {
+          "links": [
+            53
+          ],
+          "name": "wave_form",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "*"
+        },
+        {
+          "links": [
+            54
+          ],
+          "name": "sample_rate",
+          "shape": 3,
+          "slot_index": 1,
+          "type": "INT"
+        }
+      ],
+      "pos": [
+        651.2000732421875,
+        665.0001220703125
+      ],
+      "properties": {
+        "Node name for S&R": "AudioLDM2Node"
+      },
+      "size": {
+        "0": 315,
+        "1": 222
+      },
+      "type": "AudioLDM2Node",
+      "widgets_values": [
+        "",
+        "",
+        10,
+        3.5,
+        230,
+        "randomize",
+        3,
+        16000,
+        "mp3"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 31,
+      "mode": 0,
+      "order": 2,
+      "outputs": [
+        {
+          "links": [
+            37
+          ],
+          "name": "clip",
+          "shape": 3,
+          "type": "CUSTOM"
+        }
+      ],
+      "pos": [
+        439.6340175903321,
+        172.3240056098938
+      ],
+      "properties": {
+        "Node name for S&R": "LlavaClipLoader"
+      },
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "type": "LlavaClipLoader",
+      "widgets_values": [
+        "llava-1.6-mistral-7b-gguf/mmproj-model-f16.gguf"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 30,
+      "inputs": [
+        {
+          "link": 37,
+          "name": "clip",
+          "slot_index": 0,
+          "type": "CUSTOM"
+        }
+      ],
+      "mode": 0,
+      "order": 5,
+      "outputs": [
+        {
+          "links": [
+            36,
+            40
+          ],
+          "name": "model",
+          "shape": 3,
+          "type": "CUSTOM"
+        }
+      ],
+      "pos": [
+        440,
+        270
+      ],
+      "properties": {
+        "Node name for S&R": "LLava Loader Simple"
+      },
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "type": "LLava Loader Simple",
+      "widgets_values": [
+        "llava-1.6-mistral-7b-gguf/llava-v1.6-mistral-7b.Q4_K_M.gguf",
+        2048,
+        100,
+        2
+      ]
+    },
+    {
+      "flags": {},
+      "id": 43,
+      "inputs": [
+        {
+          "link": 53,
+          "name": "wave_form",
+          "type": "COMBO",
+          "widget": {
+            "name": "wave_form"
+          }
+        },
+        {
+          "link": 54,
+          "name": "sample_rate",
+          "type": "INT",
+          "widget": {
+            "name": "sample_rate"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 11,
+      "outputs": [
+        {
+          "links": [],
+          "name": "*",
+          "shape": 6,
+          "slot_index": 0,
+          "type": "*"
+        }
+      ],
+      "pos": [
+        1018,
+        680
+      ],
+      "properties": {
+        "Node name for S&R": "PlayMusic"
+      },
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "type": "PlayMusic",
+      "widgets_values": [
+        "always",
+        0.5,
+        null,
+        0
+      ]
+    },
+    {
+      "flags": {},
+      "id": 33,
+      "mode": 0,
+      "order": 3,
+      "outputs": [
+        {
+          "links": [
+            39
+          ],
+          "name": "IMAGE",
+          "shape": 3,
+          "type": "IMAGE"
+        },
+        {
+          "links": null,
+          "name": "MASK",
+          "shape": 3,
+          "type": "MASK"
+        }
+      ],
+      "pos": [
+        100,
+        172
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "size": {
+        "0": 328.0104675292969,
+        "1": 361.09918212890625
+      },
+      "type": "LoadImage",
+      "widgets_values": [
+        "input_33.png",
+        "image"
+      ]
+    },
+    {
+      "bgcolor": "#353",
+      "color": "#232",
+      "flags": {},
+      "id": 35,
+      "mode": 0,
+      "order": 4,
+      "outputs": [
+        {
+          "links": [
+            41
+          ],
+          "name": "STRING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        1140,
+        160
+      ],
+      "properties": {
+        "Node name for S&R": "SimpleText"
+      },
+      "size": {
+        "0": 378.79046630859375,
+        "1": 186.27911376953125
+      },
+      "type": "SimpleText",
+      "widgets_values": [
+        "A quiet mountain village at sunrise, soft natural light, detailed scenery."
+      ]
+    },
+    {
+      "flags": {},
+      "id": 29,
+      "inputs": [
+        {
+          "link": 39,
+          "name": "image",
+          "slot_index": 0,
+          "type": "IMAGE"
+        },
+        {
+          "link": 36,
+          "name": "model",
+          "slot_index": 1,
+          "type": "CUSTOM"
+        },
+        {
+          "link": 38,
+          "name": "prompt",
+          "slot_index": 2,
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 6,
+      "outputs": [
+        {
+          "links": [
+            42,
+            62
+          ],
+          "name": "STRING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        770,
+        180
+      ],
+      "properties": {
+        "Node name for S&R": "LLavaSamplerSimple"
+      },
+      "size": {
+        "0": 315,
+        "1": 102
+      },
+      "type": "LLavaSamplerSimple",
+      "widgets_values": [
+        "",
+        0.1
+      ]
+    },
+    {
+      "flags": {},
+      "id": 50,
+      "inputs": [
+        {
+          "link": 62,
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 8,
+      "outputs": [
+        {
+          "links": null,
+          "name": "STRING",
+          "shape": 6,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        780,
+        340
+      ],
+      "properties": {
+        "Node name for S&R": "ShowText|pysssss"
+      },
+      "size": [
+        315,
+        58
+      ],
+      "type": "ShowText|pysssss",
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "flags": {},
+      "id": 34,
+      "inputs": [
+        {
+          "link": 40,
+          "name": "model",
+          "slot_index": 0,
+          "type": "CUSTOM"
+        },
+        {
+          "link": 42,
+          "name": "prompt",
+          "slot_index": 1,
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          }
+        },
+        {
+          "link": 41,
+          "name": "system_msg",
+          "type": "STRING",
+          "widget": {
+            "name": "system_msg"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 7,
+      "outputs": [
+        {
+          "links": [
+            44,
+            63
+          ],
+          "name": "STRING",
+          "shape": 3,
+          "slot_index": 0,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        1536,
+        193
+      ],
+      "properties": {
+        "Node name for S&R": "LLMSampler"
+      },
+      "size": {
+        "0": 315,
+        "1": 298
+      },
+      "type": "LLMSampler",
+      "widgets_values": [
+        "You are an assistant who perfectly describes images.",
+        "",
+        512,
+        0.1,
+        0.95,
+        40,
+        0,
+        0,
+        1.1,
+        1379,
+        "randomize"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 51,
+      "inputs": [
+        {
+          "link": 63,
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "mode": 0,
+      "order": 10,
+      "outputs": [
+        {
+          "links": null,
+          "name": "STRING",
+          "shape": 6,
+          "type": "STRING"
+        }
+      ],
+      "pos": [
+        1160,
+        400
+      ],
+      "properties": {
+        "Node name for S&R": "ShowText|pysssss"
+      },
+      "size": [
+        315,
+        58
+      ],
+      "type": "ShowText|pysssss",
+      "widgets_values": [
+        ""
+      ]
+    }
+  ],
+  "version": 0.4
+}

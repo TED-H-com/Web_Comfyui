@@ -1,0 +1,2831 @@
+{
+  "schema_version": 1,
+  "artifact_set": "minimax-h3-operator-tutorial-stack",
+  "baseline_model_manifest": "manifests/minimax_h3/models.lock.json",
+  "baseline_workflow_manifest": "manifests/minimax_h3/workflows.lock.json",
+  "runtime": {
+    "comfyui_repository": "https://github.com/comfyanonymous/ComfyUI",
+    "comfyui_revision": "c2bcbecd82ec5ae66594340b395c24ef0217b238",
+    "comfyui_version": "0.32.0",
+    "python": "3.12.13",
+    "cuda": "12.8",
+    "gpu_arch": "sm_120"
+  },
+  "profiles": {
+    "stock": {
+      "baseline_families": [
+        "fl",
+        "ref"
+      ]
+    },
+    "servasyy_cache": {
+      "baseline_families": [
+        "fl"
+      ]
+    },
+    "larry": {
+      "baseline_families": [
+        "fl"
+      ]
+    },
+    "javawock": {
+      "baseline_families": [
+        "fl",
+        "ref"
+      ]
+    },
+    "face_refine": {
+      "baseline_families": [
+        "fl"
+      ]
+    },
+    "motion": {
+      "baseline_families": [
+        "fl",
+        "ref"
+      ]
+    },
+    "native_audio": {
+      "baseline_families": [
+        "fl",
+        "ref"
+      ]
+    },
+    "comparison": {
+      "baseline_families": [
+        "fl"
+      ],
+      "description": "Pinned fixed-seed official INT8 versus Qrusher 10Eros test4 INT8 comparison using the verified Sage-only lane."
+    },
+    "saganaki_experimental": {
+      "baseline_families": [
+        "fl"
+      ],
+      "description": "Isolated record of the pinned Saganaki Sol experiment; intentionally blocked on the pinned Triton runtime and never used by the runnable comparison profile."
+    },
+    "article_exact_source": {
+      "baseline_families": [],
+      "source_only": true,
+      "description": "Immutable Servasyy RunningHub exports and provenance; not asserted runnable."
+    },
+    "article_adapted_current": {
+      "baseline_families": [
+        "fl",
+        "ref"
+      ],
+      "default_precision": "official-int8-convrot",
+      "release_blocking": true,
+      "description": "Runnable current-runtime derivatives with explicit substitutions."
+    },
+    "article_blackwell": {
+      "baseline_families": [
+        "fl",
+        "ref"
+      ],
+      "default_precision": "official-int8-convrot",
+      "release_blocking": true,
+      "legacy_alias_for": "article_adapted_current",
+      "description": "Backward-compatible profile name; article parity is required and NVFP4 DiTs remain optional A/B assets."
+    }
+  },
+  "source_checkouts": [
+    {
+      "id": "facebook-sam2",
+      "root": "comfy_home",
+      "path": ".build/sam2-src",
+      "repository": "https://github.com/facebookresearch/sam2",
+      "revision": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+      "build": "SAM2_BUILD_CUDA=0; optional connected-components extension omitted",
+      "profiles": [
+        "face_refine"
+      ]
+    }
+  ],
+  "custom_nodes": [
+    {
+      "id": "impact-pack",
+      "destination": "ComfyUI-Impact-Pack",
+      "repository": "https://github.com/ltdrdata/ComfyUI-Impact-Pack",
+      "revision": "429d0159ad429e64d2b3916e6e7be9c22d025c3c",
+      "profiles": [
+        "javawock",
+        "face_refine"
+      ]
+    },
+    {
+      "id": "impact-subpack",
+      "destination": "ComfyUI-Impact-Subpack",
+      "repository": "https://github.com/ltdrdata/ComfyUI-Impact-Subpack",
+      "revision": "50c7b71a6a224734cc9b21963c6d1926816a97f1",
+      "profiles": [
+        "javawock",
+        "face_refine"
+      ]
+    },
+    {
+      "id": "video-helper-suite",
+      "destination": "ComfyUI-VideoHelperSuite",
+      "repository": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite",
+      "revision": "4ee72c065db22c9d96c2427954dc69e7b908444b",
+      "profiles": [
+        "javawock",
+        "face_refine"
+      ]
+    },
+    {
+      "id": "kj-nodes",
+      "destination": "ComfyUI-KJNodes",
+      "repository": "https://github.com/kijai/ComfyUI-KJNodes",
+      "revision": "6ab7e8130e449ed2c0037589bcf84146ceb7fc9c",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "icyoung-h3-teacache",
+      "destination": "ComfyUI-MiniMaxH3-TeaCache",
+      "repository": "https://github.com/Icyoung/ComfyUI-MiniMaxH3-TeaCache",
+      "revision": "4cbb50d69c73a19a5d6ec42c5aec1989d5a04b6f",
+      "license": "MIT",
+      "profiles": [
+        "servasyy_cache"
+      ]
+    },
+    {
+      "id": "lihaoyun6-h3-cache-disabled",
+      "destination": "ComfyUI-MiniMaxH3-Cache.disabled",
+      "repository": "https://github.com/lihaoyun6/ComfyUI-MiniMaxH3-Cache",
+      "revision": "8a45e096a2a05c140dd4d909eb74e4279b673819",
+      "license": "GPL-3.0",
+      "status": "disabled-incompatible-global-core-patch",
+      "profiles": [
+        "servasyy_cache"
+      ],
+      "required": false
+    },
+    {
+      "id": "rgthree",
+      "destination": "rgthree-comfy",
+      "repository": "https://github.com/rgthree/rgthree-comfy",
+      "revision": "6b76ee6f2c5a007710b5a16f97c94330d6ecc871",
+      "profiles": [
+        "javawock",
+        "motion"
+      ]
+    },
+    {
+      "id": "larry-turbo",
+      "destination": "ComfyUI-MiniMax-H3-Turbo",
+      "repository": "https://github.com/Larryvrh/ComfyUI-MiniMax-H3-Turbo",
+      "revision": "546b5028f4934f5129eb6c7142c2f3e461dfddbf",
+      "profiles": [
+        "larry",
+        "motion",
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "motion-context",
+      "destination": "ComfyUI-H3-Motion-Context",
+      "repository": "https://github.com/NikoDemon80/ComfyUI-H3-Motion-Context",
+      "revision": "658ba11ae91737391a247cf9758d0063c43491b3",
+      "profiles": [
+        "motion"
+      ]
+    },
+    {
+      "id": "spectrum-h3",
+      "destination": "ComfyUI-Spectrum-MiniMax-H3",
+      "repository": "https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3",
+      "revision": "0ada18b3830b33cb6635f7e142831fcf779959fc",
+      "profiles": [
+        "javawock",
+        "motion",
+        "native_audio"
+      ]
+    },
+    {
+      "id": "spectrum-sdxl-article",
+      "destination": "ComfyUI-Spectrum-SDXL",
+      "repository": "https://github.com/ruwwww/ComfyUI-Spectrum-SDXL",
+      "revision": "cea3aa85f77daf4852a450c09e50ee0cdd242d43",
+      "license": "MIT (declared by the same author in subsequent repository commit c6e685e705e940da49eb1c25ef78760e4dd1e560)",
+      "security_review": "Torch-only per-model clone/wrapper; no subprocess, network, file writes, dynamic evaluation, or global ComfyUI core monkeypatch.",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "h3-latent-upscaler",
+      "destination": "ComfyUI-MiniMaxH3_LatentUpscaler",
+      "repository": "https://github.com/Tr1dae/ComfyUI-MiniMaxH3_LatentUpscaler",
+      "revision": "2b4f7d6e2edf5ac3c1c553efac9d373aeafa59bd",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "h3-face-refine",
+      "destination": "ComfyUI-H3-FaceRefine",
+      "repository": "https://github.com/Carasibana/ComfyUI-H3-FaceRefine",
+      "revision": "79a97ce5ee4b393ce26313bd1280b706fe8b4f2c",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "easy-use",
+      "destination": "ComfyUI-Easy-Use",
+      "repository": "https://github.com/yolain/ComfyUI-Easy-Use",
+      "revision": "595e0738a9e3f8d0d9c4d875461b2d2c9e7559c7",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "audio-tools",
+      "destination": "ComfyUI-AudioTools",
+      "repository": "https://github.com/Urabewe/ComfyUI-AudioTools",
+      "revision": "8763c3ec71d4d05278b53386cec57a06e1d99417",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "what-dreams-cost",
+      "destination": "WhatDreamsCost-ComfyUI",
+      "repository": "https://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI",
+      "revision": "a3c809c8b593a74c2ddcd6c1f83ad85ebebe3c64",
+      "profiles": [
+        "javawock",
+        "face_refine"
+      ]
+    },
+    {
+      "id": "nvidia-rtx-nodes",
+      "destination": "Nvidia_RTX_Nodes_ComfyUI",
+      "repository": "https://github.com/Comfy-Org/Nvidia_RTX_Nodes_ComfyUI",
+      "revision": "892515e3eb9a4920a131a502a047e47adca9eb0d",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "kijai-sol-attn",
+      "destination": "ComfyUI-SolAttn_triton",
+      "repository": "https://github.com/kijai/ComfyUI-SolAttn_triton",
+      "revision": "842c4eaa7d91dbaef3fee3ccdbf36a39521e82fc",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "saganaki-sol-attn",
+      "destination": "ComfyUI-sol-attn",
+      "repository": "https://github.com/Saganaki22/ComfyUI-sol-attn",
+      "revision": "930a4d6e432ff8b8ed5e30ff2f72519b92d69bdf",
+      "profiles": [
+        "saganaki_experimental"
+      ],
+      "required": false
+    },
+    {
+      "id": "ollama-nodes",
+      "destination": "ComfyUI-Ollama",
+      "repository": "https://github.com/stavsap/comfyui-ollama",
+      "revision": "6db7560576e5a59488708e6be13e07b5aba2432a",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "native-audio-lock",
+      "destination": "ComfyUI-H3-NativeAudioLock",
+      "repository": "https://github.com/Shrek3OnVH5/MiniMax-H3-NativeAudio-MusicVideo-Workflow",
+      "revision": "11a95f623b98496923714db99da0aecec672cbd4",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "h3-multishot",
+      "destination": "ComfyUI-H3-Multishot",
+      "repository": "https://github.com/Shrek3OnVH5/MiniMax-H3-NativeAudio-MusicVideo-Workflow",
+      "revision": "11a95f623b98496923714db99da0aecec672cbd4",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "frame-interpolation",
+      "destination": "ComfyUI-Frame-Interpolation",
+      "repository": "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation",
+      "revision": "26545cc2dd95bc3d27f056016300673bdeee78f5",
+      "profiles": [
+        "native_audio"
+      ]
+    }
+  ],
+  "model_assets": [
+    {
+      "id": "larry-v4-step600-ema",
+      "source": "larryvrh/MiniMax-H3-Turbo-Lora@43a74557ac3f6539db8e0f2a959d03feb7a81480",
+      "source_path": "minimax_h3_turbo_v4_step600_ema.safetensors",
+      "destination": "loras/H3/minimax_h3_turbo_v4_step600_ema.safetensors",
+      "bytes": 779849816,
+      "sha256": "5f3a626cd72c93a8b9318d6760c510bc5092d2ab13aaba1f932c5bab07a416d3",
+      "profiles": [
+        "larry",
+        "motion"
+      ]
+    },
+    {
+      "id": "lightx2v-4step-v0.1-comfy-exact",
+      "source": "Kijai/MiniMax-H3_comfy@2dc3cedb9b58b0e448d9e950f794f25bf28dbbb5",
+      "source_path": "loras/minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors",
+      "destination": "loras/H3/minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors",
+      "bytes": 1956171984,
+      "sha256": "fc9b6500f0331fe925b004738baaa31bd34104741c8bf9334816f9ac3005c8c1",
+      "upstream_raw": {
+        "source": "lightx2v/Minimax-h3-Turbo@797b284f774ff0bda805f7dd5917624670d5c4e0",
+        "source_path": "minimax_h3_fl2v_turbo_4step_v0.1.safetensors",
+        "bytes": 1383677888,
+        "sha256": "5ff4a12c8b4599fec716e1b15a45e504e0d1129111896bdcde5ac4a15e395b29",
+        "role": "Diffusers PEFT source provenance; not the filename or fused Comfy key layout bound by the article workflow."
+      },
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "required": true,
+      "release_blocking": true
+    },
+    {
+      "id": "lightx2v-4step-v1",
+      "source": "lightx2v/Minimax-h3-Turbo@5d1d4829fe614c1b93fcfd9cc7718e9ba71f73e1",
+      "source_path": "minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
+      "destination": "loras/H3/minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
+      "bytes": 1956192992,
+      "sha256": "c396a9a06f58399e9df9754b18299818d84a2ddd371724ba48fe4a41221437dc",
+      "profiles": [
+        "javawock",
+        "face_refine"
+      ]
+    },
+    {
+      "id": "lightx2v-4step-v1-article-fallback",
+      "source": "lightx2v/Minimax-h3-Turbo@5d1d4829fe614c1b93fcfd9cc7718e9ba71f73e1",
+      "source_path": "minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
+      "destination": "loras/H3/minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
+      "bytes": 1956192992,
+      "sha256": "c396a9a06f58399e9df9754b18299818d84a2ddd371724ba48fe4a41221437dc",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "required": false
+    },
+    {
+      "id": "lightx2v-8step-v1",
+      "source": "lightx2v/Minimax-h3-Turbo@5d1d4829fe614c1b93fcfd9cc7718e9ba71f73e1",
+      "source_path": "minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors",
+      "destination": "loras/H3/minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors",
+      "bytes": 1956193000,
+      "sha256": "2339acdf19bfe123f46b971ea35d367a84adb85de43627e1eceafa5a5b2b111e",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "kijai-ref-rank256",
+      "source": "Kijai/MiniMax-H3-experimental@a3e7d8da4ae7ba8df0779094cf5ab9d6ee855fe4",
+      "source_path": "loras/minimax_h3_ref_lora_rank_256_bf16.safetensors",
+      "destination": "loras/H3/minimax_h3_ref_lora_rank_256_bf16.safetensors",
+      "bytes": 2577687536,
+      "sha256": "7979fb9e5ac8f8c165cfe78b2c57d471cc5dbd0f62dac5ebd07f864b404a9c87",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "kijai-video-vae-int8",
+      "source": "Kijai/MiniMax-H3-experimental@a3e7d8da4ae7ba8df0779094cf5ab9d6ee855fe4",
+      "source_path": "minimax_h3_video_vae_int8_convrot.safetensors",
+      "destination": "vae/minimax_h3_video_vae_int8_convrot.safetensors",
+      "bytes": 3171670912,
+      "sha256": "9bb2d96f218c76babd85e0611b85ca8fb330a90546c01a0005e8a58a59593410",
+      "profiles": [
+        "javawock",
+        "face_refine"
+      ]
+    },
+    {
+      "id": "taeh3",
+      "source": "Kijai/MiniMax-H3-TAE@a213ac8bf2f148b4f32372279a7f207846978900",
+      "source_path": "taeh3.safetensors",
+      "destination": "vae_approx/taeh3.safetensors",
+      "bytes": 9791388,
+      "sha256": "f0f60fa072089997f817402098c2fd90777cb2660dd79cf5df42fc1e3e08e527",
+      "profiles": [
+        "javawock",
+        "face_refine"
+      ]
+    },
+    {
+      "id": "anzhc-face-seg-v4-y11n",
+      "source": "Anzhc/Anzhcs_YOLOs@f5a2306d7fed4f3cfc26c25ff1ab2e3f3cfce855",
+      "source_path": "Anzhc Face seg 640 v4 y11n.pt",
+      "destination": "ultralytics/segm/Anzhc_Face_seg_640_v4_y11n.pt",
+      "bytes": 6020644,
+      "sha256": "1e77ad7bd349babd8a4a90478bfc965348642b63a8d95d3b43ee13db42fd0a64",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "sam21-hiera-large",
+      "source": "facebook/sam2.1-hiera-large@665f8e2ad61cf5f53d65644ff27c8ee525124610",
+      "source_path": "sam2.1_hiera_large.pt",
+      "destination": "sams/sam2.1_hiera_large.pt",
+      "bytes": 898083611,
+      "sha256": "2647878d5dfa5098f2f8649825738a9345572bae2d4350a2468587ece47dd318",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "face-yolov8n",
+      "source": "Bingsu/adetailer@53cc19de382014514d9d4038601d261a7faa9b7b",
+      "source_path": "face_yolov8n.pt",
+      "destination": "ultralytics/bbox/face_yolov8n.pt",
+      "bytes": 6230011,
+      "sha256": "70b640f8f60b1cf0dcc72f30caf3da9495eb2fb6509da48c53374ad6806e6a9c",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "10eros-test4-int8",
+      "source": "QrusherZA/10Eros-Max-int8-convrot@658072dd8f6481664dc9027def160cfaf85ecbe0",
+      "source_path": "10Eros_Max_h3_fl2va_int8_convrot_test4_pruned.safetensors",
+      "destination": "diffusion_models/H3/10Eros_Max_h3_fl2va_int8_convrot_test4_pruned.safetensors",
+      "bytes": 20970365904,
+      "sha256": "68babdec8c39afae1218ba6808fdd97ebfed0e233a6b31189c40494bbffe8814",
+      "profiles": [
+        "comparison"
+      ],
+      "required": true
+    },
+    {
+      "id": "article-blackwell-fl2va-pruned-nvfp4",
+      "source": "lilcheaty/MiniMax-H3-NVFP4@8c5abfed61e1b6a170240792b65253fba1a65b7b",
+      "source_path": "minimax_h3_fl2va_pruned_nvfp4.safetensors",
+      "destination": "diffusion_models/H3/minimax_h3_fl2va_pruned_nvfp4.safetensors",
+      "bytes": 12528636800,
+      "sha256": "72fa9269ce551fb63ff42a32d9b46d0c122e84b4b2c511e22fa698287b088f70",
+      "profiles": [
+        "article_blackwell"
+      ],
+      "task": "fl2va",
+      "required": false,
+      "release_blocking": false,
+      "status": "planned-not-downloading"
+    },
+    {
+      "id": "article-blackwell-ref2va-pruned-nvfp4",
+      "source": "lilcheaty/MiniMax-H3-NVFP4@8c5abfed61e1b6a170240792b65253fba1a65b7b",
+      "source_path": "minimax_h3_ref2va_pruned_nvfp4.safetensors",
+      "destination": "diffusion_models/H3/minimax_h3_ref2va_pruned_nvfp4.safetensors",
+      "bytes": 12528636800,
+      "sha256": "c813c5eabd85e275daccbf45e6f8ac4d9d14a1827d425e5be5070c92c60b78ac",
+      "profiles": [
+        "article_blackwell"
+      ],
+      "task": "ref2va",
+      "required": false,
+      "release_blocking": false,
+      "status": "planned-not-downloading"
+    }
+  ],
+  "optional_download_plans": [
+    {
+      "id": "article-blackwell-nvfp4-sequential",
+      "profiles": [
+        "article_blackwell"
+      ],
+      "required": false,
+      "release_blocking": false,
+      "status": "planned-not-started",
+      "mode": "strictly-sequential",
+      "start_after_verified": [
+        "ollama-qwen35-9b-model-layer",
+        "10eros-test4-int8"
+      ],
+      "artifacts": [
+        "article-blackwell-fl2va-pruned-nvfp4",
+        "article-blackwell-ref2va-pruned-nvfp4"
+      ],
+      "range_lanes": 4,
+      "integrity": "pinned revision, stable entity probes, exact bytes, SHA-256, fsync, atomic publish",
+      "staging_policy": "owner-only resumable ranges retained through final audit",
+      "failure_policy": "stop on non-transient error; never delete another active download stage"
+    }
+  ],
+  "host_artifacts": [
+    {
+      "id": "ollama-0.32.11-binary",
+      "source": "ollama/ollama@v0.32.11",
+      "root": "home",
+      "path": ".local/opt/ollama-0.32.11/bin/ollama",
+      "bytes": 39085520,
+      "sha256": "1dd9261372e31cd0c6b42e2b6b7df2322883be396b17ab4deb43f0f38e4fbced",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "ollama-0.32.11-linux-amd64-archive",
+      "source": "ollama/ollama@v0.32.11",
+      "root": "home",
+      "path": ".cache/ollama-install/ollama-linux-amd64-v0.32.11.tar.zst",
+      "bytes": 1421984062,
+      "sha256": "873258110663ff4e72bed8549b9e86589e1c07d99646cac257b71a4a6a72dcc7",
+      "profiles": [
+        "javawock"
+      ],
+      "required": false
+    },
+    {
+      "id": "ollama-qwen35-9b-model-layer",
+      "source": "registry.ollama.ai/vaultbox/qwen3.5-uncensored:9b",
+      "root": "home",
+      "path": ".local/share/ollama/models/blobs/sha256-616d2ebad2b415434c1a6a0f4f43f51fddd23d8a38df6c804fe56eac28cc7efb",
+      "bytes": 6690889568,
+      "sha256": "616d2ebad2b415434c1a6a0f4f43f51fddd23d8a38df6c804fe56eac28cc7efb",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "ollama-qwen35-9b-config-layer",
+      "source": "registry.ollama.ai/vaultbox/qwen3.5-uncensored:9b",
+      "root": "home",
+      "path": ".local/share/ollama/models/blobs/sha256-d0e89cdfd58c87eff55a252bce99ad0f4f5598cf67889f04bb90e22d6123ff73",
+      "bytes": 455,
+      "sha256": "d0e89cdfd58c87eff55a252bce99ad0f4f5598cf67889f04bb90e22d6123ff73",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "ollama-qwen35-9b-template-layer",
+      "source": "registry.ollama.ai/vaultbox/qwen3.5-uncensored:9b",
+      "root": "home",
+      "path": ".local/share/ollama/models/blobs/sha256-b507b9c2f6ca642bffcd06665ea7c91f235fd32daeefdf875a0f938db05fb315",
+      "bytes": 13,
+      "sha256": "b507b9c2f6ca642bffcd06665ea7c91f235fd32daeefdf875a0f938db05fb315",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "ollama-qwen35-9b-parameters-layer",
+      "source": "registry.ollama.ai/vaultbox/qwen3.5-uncensored:9b",
+      "root": "home",
+      "path": ".local/share/ollama/models/blobs/sha256-9371364b27a52acac9d87f88bd93c9db1174d8d6ec57f6888925cdc1788871ff",
+      "bytes": 65,
+      "sha256": "9371364b27a52acac9d87f88bd93c9db1174d8d6ec57f6888925cdc1788871ff",
+      "profiles": [
+        "javawock"
+      ]
+    }
+  ],
+  "live_services": [
+    {
+      "id": "ollama-qwen35-9b",
+      "kind": "ollama_tag",
+      "url": "http://127.0.0.1:11434",
+      "tag": "vaultbox/qwen3.5-uncensored:9b",
+      "manifest_digest": "c16b17fe1d89c3a34126e32c39165f2ab5f6568bb538a40ddee12dcc7390e693",
+      "profiles": [
+        "javawock"
+      ]
+    }
+  ],
+  "documented_assets": [
+    {
+      "id": "t8-standalone-step600-convert",
+      "source": "t8star/minimax-h3-4step-turbo-loras-comfyui-exp@daf9dc88ea667729c962cf3e1a49d844bc240e98",
+      "source_path": "minimax_h3_turbo_v4_step600_comfyui_T8-convert.safetensors",
+      "intended_destination": "loras/H3/minimax_h3_turbo_v4_step600_comfyui_T8-convert.safetensors",
+      "bytes": 779858903,
+      "sha256": "4f67370c6c4dbbec0733830ce33a67d2807f88545dddd2f21e162f25625ad952",
+      "required": false,
+      "status": "not-installed-license-unverified"
+    },
+    {
+      "id": "t8-standalone-4step",
+      "source": "t8star/minimax-h3-4step-turbo-loras-comfyui-exp@daf9dc88ea667729c962cf3e1a49d844bc240e98",
+      "source_path": "minimax_h3_turbo_4步加速_comfyui.safetensors",
+      "intended_destination": "loras/H3/minimax_h3_turbo_4步加速_comfyui.safetensors",
+      "bytes": 779858752,
+      "sha256": "35946f9f2957c2766e28b627c88169535249dd07a3040ce3c2c8c99951fdbc7b",
+      "required": false,
+      "status": "not-installed-license-unverified"
+    },
+    {
+      "id": "t8-standalone-4step-ema",
+      "source": "t8star/minimax-h3-4step-turbo-loras-comfyui-exp@daf9dc88ea667729c962cf3e1a49d844bc240e98",
+      "source_path": "minimax_h3_turbo_4步加速ema_comfyui.safetensors",
+      "intended_destination": "loras/H3/minimax_h3_turbo_4步加速ema_comfyui.safetensors",
+      "bytes": 779858752,
+      "sha256": "b07ab477437c6a525dfdaf11107722aad609975ac172f3b577a7a87b228ff7b3",
+      "required": false,
+      "status": "not-installed-license-unverified"
+    },
+    {
+      "id": "t8-10eros-4step-hybrid",
+      "source": "t8star/minimax_h3_turbo_4step_10ErosMax_test4_pruned_curveproj1025_T8@fcd42cc417a6490146331e851fa1ef7d62c12b72",
+      "source_path": "minimax_h3_turbo_4step_10ErosMax_test4_pruned_curveproj1025_exp_v001-T8.safetensors",
+      "intended_destination": "loras/H3/minimax_h3_turbo_4step_10ErosMax_test4_pruned_curveproj1025_exp_v001-T8.safetensors",
+      "bytes": 794888696,
+      "sha256": "6c2f38d45dfa3fc282a48de3171b6946a5e6d46e13f832c43b93734f6d12edf5",
+      "required": false,
+      "status": "not-runnable-exact-bf16-base-missing",
+      "required_base": {
+        "source_path": "10Eros_Max_h3_fl2va_bf16_test4_pruned.safetensors",
+        "bytes": 40225724112,
+        "sha256": "f82cc3f723b080e7ae94a7c98f95aa989e387618d0bdc940133dfbd9f432c062"
+      }
+    },
+    {
+      "id": "t8-10eros-8step-hybrid",
+      "source": "t8star/minimax_h3_turbo_4step_10ErosMax_test4_pruned_curveproj1025_T8@fcd42cc417a6490146331e851fa1ef7d62c12b72",
+      "source_path": "minimax_h3_fl2v_turbo_8step_v1.0_10ErosMax_beta1_pruned_compat_v001_T8.safetensors",
+      "intended_destination": "loras/H3/minimax_h3_fl2v_turbo_8step_v1.0_10ErosMax_beta1_pruned_compat_v001_T8.safetensors",
+      "bytes": 1956194364,
+      "sha256": "0dd7a2b22254f033f7bf36f5178bc4eaf06e3d8da4b67832788fa6a87681b0d3",
+      "required": false,
+      "status": "not-runnable-exact-bf16-base-missing"
+    }
+  ],
+  "build_artifacts": [
+    {
+      "id": "sageattention-2.2.0-sm120-wheel",
+      "source": "thu-ml/SageAttention@eb615cf6cf4d221338033340ee2de1c37fbdba4a",
+      "toolchain": "nvcc 12.8.61, GCC 13.4.0, TORCH_CUDA_ARCH_LIST=12.0",
+      "root": "comfy_home",
+      "path": ".build/SageAttention/dist/sageattention-2.2.0-cp312-cp312-linux_x86_64.whl",
+      "bytes": 14501649,
+      "sha256": "eb9351dd37a27f51313cf97bf9d20d2eb31f14fa86a59a76999694ba62f36b60",
+      "profiles": [
+        "larry",
+        "javawock",
+        "face_refine",
+        "motion",
+        "servasyy_cache",
+        "comparison",
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "sageattention-qattn-sm80-extension",
+      "root": "comfy_home",
+      "path": ".venv/lib/python3.12/site-packages/sageattention/_qattn_sm80.cpython-312-x86_64-linux-gnu.so",
+      "bytes": 12185496,
+      "sha256": "008682f4248da11ccc144e8ae6794b0b196bb594eb0e188e5df41500357958b1",
+      "profiles": [
+        "larry",
+        "javawock",
+        "face_refine",
+        "motion",
+        "servasyy_cache",
+        "comparison",
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "sageattention-qattn-sm89-extension",
+      "root": "comfy_home",
+      "path": ".venv/lib/python3.12/site-packages/sageattention/_qattn_sm89.cpython-312-x86_64-linux-gnu.so",
+      "bytes": 27527448,
+      "sha256": "110d0bdb5428d07920050f2373fea7d4811fa5342a5c1b56f711c4e30ba54733",
+      "profiles": [
+        "larry",
+        "javawock",
+        "face_refine",
+        "motion",
+        "servasyy_cache",
+        "comparison",
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "sageattention-fused-extension",
+      "root": "comfy_home",
+      "path": ".venv/lib/python3.12/site-packages/sageattention/_fused.cpython-312-x86_64-linux-gnu.so",
+      "bytes": 10319712,
+      "sha256": "fe48d587ed9e1be28e56d472c49f0edb53ecc42edd1b534710d0dc7e07fec2de",
+      "profiles": [
+        "larry",
+        "javawock",
+        "face_refine",
+        "motion",
+        "servasyy_cache",
+        "comparison",
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "rife47-checkpoint",
+      "source": "marduk191/rife@70fef46b392cf712a6d18cd9bd0505e40f1175f0",
+      "source_path": "rife47.pth",
+      "root": "comfy_home",
+      "path": "custom_nodes/ComfyUI-Frame-Interpolation/ckpts/rife/rife47.pth",
+      "bytes": 21344827,
+      "sha256": "6a8a825ab2750558bdd20dcced386fd82b7222c7ba58c11d3b611d9c44f1be63",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "icyoung-h3-teacache-fresh-state-overlay",
+      "source": "Icyoung/ComfyUI-MiniMaxH3-TeaCache@4cbb50d69c73a19a5d6ec42c5aec1989d5a04b6f",
+      "overlay": "patches/minimax-h3-teacache-fresh-state.patch",
+      "root": "comfy_home",
+      "path": "custom_nodes/ComfyUI-MiniMaxH3-TeaCache/nodes.py",
+      "bytes": 3649,
+      "sha256": "9e274b45c345df31c6a48251c3f8432330f6b1089d66593abc592adff02e0a81",
+      "profiles": [
+        "servasyy_cache"
+      ]
+    },
+    {
+      "id": "spectrum-sdxl-batch-alias-overlay",
+      "source": "ruwwww/ComfyUI-Spectrum-SDXL@cea3aa85f77daf4852a450c09e50ee0cdd242d43",
+      "overlay": "patches/spectrum-sdxl-batch-alias.patch",
+      "overlay_sha256": "ff08c3697818699c81513826ce192b36d421fe9ebaa6bc091f02afedaaf1e014",
+      "root": "comfy_home",
+      "path": "custom_nodes/ComfyUI-Spectrum-SDXL/__init__.py",
+      "bytes": 578,
+      "sha256": "3fd5915b72e843b3b91df1c079919c25de3f9d0891f32dd3b41be2c789b4d351",
+      "compatibility": "Exports the historical SpectrumSDXLBatch name as an alias of the already batch-safe SpectrumSDXL implementation; numerical code unchanged.",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "id": "larry-600ema-6step",
+      "path": "workflows/minimax_h3/castle/h3-t2v-larry-600ema-6step.json",
+      "bytes": 23180,
+      "sha256": "5fb79f3870c7b5bbd3323df53438c1d5f22942e1657544163bebfe78d6f6478f",
+      "profiles": [
+        "larry"
+      ]
+    },
+    {
+      "id": "servasyy-sage-only-short-ab",
+      "path": "workflows/minimax_h3/castle/h3-t2v-servasyy-sage-only.json",
+      "bytes": 43347,
+      "sha256": "b712226b68f2f6882b82636cc55f7ef727fbd9702e2fa1ddd1fbda5d86a24e00",
+      "profiles": [
+        "servasyy_cache"
+      ]
+    },
+    {
+      "id": "servasyy-article-r2v-exact-source",
+      "path": "workflows/minimax_h3/community/servasyy_article/h3-r2v-runninghub-2084127823018946561.json",
+      "bytes": 46387,
+      "sha256": "8ac489422009fab42c720c402c3f4c859aa8a8ec5b28556f2162fd49eae8ef3f",
+      "profiles": [
+        "article_exact_source",
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "immutable-exact-source",
+      "workflow_id": "2084127823018946561"
+    },
+    {
+      "id": "servasyy-article-i2v-flf-exact-source",
+      "path": "workflows/minimax_h3/community/servasyy_article/h3-i2v-flf-runninghub-2084620086811410433.json",
+      "bytes": 51567,
+      "sha256": "a49039b0ebaaa4f19cd6509b7b5ba129ac220b4dafe35df8b9c7499a225c7222",
+      "profiles": [
+        "article_exact_source",
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "immutable-exact-source",
+      "workflow_id": "2084620086811410433"
+    },
+    {
+      "id": "servasyy-article-t2v-exact-source",
+      "path": "workflows/minimax_h3/community/servasyy_article/h3-t2v-runninghub-2084626786919878657.json",
+      "bytes": 34648,
+      "sha256": "8b190846243edfc58ab45b82dc73a73d9163e98cf200168a602555b847059d82",
+      "profiles": [
+        "article_exact_source",
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "immutable-exact-source",
+      "workflow_id": "2084626786919878657"
+    },
+    {
+      "id": "servasyy-article-r2v-exact-browser-copy",
+      "path": "workflows/MiniMAX-H3/Article/Source-Exact/h3-r2v-runninghub-2084127823018946561.json",
+      "bytes": 46387,
+      "sha256": "8ac489422009fab42c720c402c3f4c859aa8a8ec5b28556f2162fd49eae8ef3f",
+      "profiles": [
+        "article_exact_source",
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "byte-identical-browser-copy"
+    },
+    {
+      "id": "servasyy-article-i2v-flf-exact-browser-copy",
+      "path": "workflows/MiniMAX-H3/Article/Source-Exact/h3-i2v-flf-runninghub-2084620086811410433.json",
+      "bytes": 51567,
+      "sha256": "a49039b0ebaaa4f19cd6509b7b5ba129ac220b4dafe35df8b9c7499a225c7222",
+      "profiles": [
+        "article_exact_source",
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "byte-identical-browser-copy"
+    },
+    {
+      "id": "servasyy-article-t2v-exact-browser-copy",
+      "path": "workflows/MiniMAX-H3/Article/Source-Exact/h3-t2v-runninghub-2084626786919878657.json",
+      "bytes": 34648,
+      "sha256": "8b190846243edfc58ab45b82dc73a73d9163e98cf200168a602555b847059d82",
+      "profiles": [
+        "article_exact_source",
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "byte-identical-browser-copy"
+    },
+    {
+      "id": "servasyy-article-r2v-adapted-current",
+      "path": "workflows/minimax_h3/castle/servasyy_article/h3-r2v-servasyy-article-adapted-current.json",
+      "bytes": 58430,
+      "sha256": "b350c4b096db4d016bc3ff907f5a7bbcbae2f7149f80e3481e8a7a0a8591afd1",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "adapted-current",
+      "required": true,
+      "release_blocking": true
+    },
+    {
+      "id": "servasyy-article-i2v-flf-adapted-current",
+      "path": "workflows/minimax_h3/castle/servasyy_article/h3-i2v-flf-servasyy-article-adapted-current.json",
+      "bytes": 60837,
+      "sha256": "39b8ca3ab3d5fed8e98c4bb4d6f09154c6e397cd8bd669c29f9b71c800029029",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "adapted-current",
+      "required": true,
+      "release_blocking": true
+    },
+    {
+      "id": "servasyy-article-i2v-flf-fallback-v1",
+      "path": "workflows/minimax_h3/castle/servasyy_article/h3-i2v-flf-servasyy-article-fallback-v1.json",
+      "bytes": 60898,
+      "sha256": "7b6eda4ae7dbcc656ff8cc39ee871ecda35b993d4710a0225cc8ff5c00cdf455",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "explicit-v1-comparison-fallback",
+      "required": false,
+      "release_blocking": false
+    },
+    {
+      "id": "servasyy-article-t2v-adapted-current",
+      "path": "workflows/minimax_h3/castle/servasyy_article/h3-t2v-servasyy-article-adapted-current.json",
+      "bytes": 44024,
+      "sha256": "56bd9eb90bdbc8f6176471599b0fb740c9dd0b665912e4bc6fe46f40445c6b08",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "adapted-current",
+      "required": true,
+      "release_blocking": true
+    },
+    {
+      "id": "servasyy-article-r2v-adapted-browser-copy",
+      "path": "workflows/MiniMAX-H3/Article/Adapted-Current/h3-r2v-servasyy-article-adapted-current.json",
+      "bytes": 58430,
+      "sha256": "b350c4b096db4d016bc3ff907f5a7bbcbae2f7149f80e3481e8a7a0a8591afd1",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "byte-identical-browser-copy"
+    },
+    {
+      "id": "servasyy-article-i2v-flf-adapted-browser-copy",
+      "path": "workflows/MiniMAX-H3/Article/Adapted-Current/h3-i2v-flf-servasyy-article-adapted-current.json",
+      "bytes": 60837,
+      "sha256": "39b8ca3ab3d5fed8e98c4bb4d6f09154c6e397cd8bd669c29f9b71c800029029",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "byte-identical-browser-copy"
+    },
+    {
+      "id": "servasyy-article-i2v-flf-fallback-v1-browser-copy",
+      "path": "workflows/MiniMAX-H3/Article/Adapted-Current/h3-i2v-flf-servasyy-article-fallback-v1.json",
+      "bytes": 60898,
+      "sha256": "7b6eda4ae7dbcc656ff8cc39ee871ecda35b993d4710a0225cc8ff5c00cdf455",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "byte-identical-explicit-v1-fallback-copy",
+      "required": false,
+      "release_blocking": false
+    },
+    {
+      "id": "servasyy-article-t2v-adapted-browser-copy",
+      "path": "workflows/MiniMAX-H3/Article/Adapted-Current/h3-t2v-servasyy-article-adapted-current.json",
+      "bytes": 44024,
+      "sha256": "56bd9eb90bdbc8f6176471599b0fb740c9dd0b665912e4bc6fe46f40445c6b08",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "role": "byte-identical-browser-copy"
+    },
+    {
+      "id": "article-blackwell-fl-official-int8-control",
+      "path": "workflows/minimax_h3/castle/h3-t2v-article-blackwell-official-int8-control.json",
+      "bytes": 43343,
+      "sha256": "3f9dd28727c309e845af345c89eb4dc66f90d06eb03ef848a3da13c3a962dc76",
+      "profiles": [
+        "article_blackwell"
+      ],
+      "role": "official-int8-control",
+      "required": false,
+      "release_blocking": false
+    },
+    {
+      "id": "article-blackwell-fl-nvfp4-sage-only",
+      "path": "workflows/minimax_h3/castle/h3-t2v-article-blackwell-nvfp4-sage-only.json",
+      "bytes": 44069,
+      "sha256": "eeea5fd983c0728512873cbf330baa96c3c76e79a5779d137efe9fac0ed34cde",
+      "profiles": [
+        "article_blackwell"
+      ],
+      "role": "optional-blackwell-candidate",
+      "required": false,
+      "release_blocking": false
+    },
+    {
+      "id": "article-blackwell-r2v-official-int8-control",
+      "path": "workflows/minimax_h3/castle/h3-r2v-article-blackwell-official-int8-control.json",
+      "bytes": 28773,
+      "sha256": "8b864b05d398355364898876858ee7b97ab1b9e7e6a819438f8bf8075681619d",
+      "profiles": [
+        "article_blackwell"
+      ],
+      "role": "official-int8-control",
+      "required": false,
+      "release_blocking": false
+    },
+    {
+      "id": "article-blackwell-r2v-nvfp4",
+      "path": "workflows/minimax_h3/castle/h3-r2v-article-blackwell-nvfp4.json",
+      "bytes": 29383,
+      "sha256": "ab0324a17029edcb126e59e3c967463981cc7b0262c2b6785b15d8899d999c2a",
+      "profiles": [
+        "article_blackwell"
+      ],
+      "role": "optional-blackwell-candidate",
+      "required": false,
+      "release_blocking": false
+    },
+    {
+      "id": "comparison-official-int8-control",
+      "path": "workflows/minimax_h3/castle/h3-t2v-article-blackwell-official-int8-control.json",
+      "bytes": 43343,
+      "sha256": "3f9dd28727c309e845af345c89eb4dc66f90d06eb03ef848a3da13c3a962dc76",
+      "profiles": [
+        "comparison"
+      ],
+      "role": "fixed-seed-official-int8-control",
+      "required": true
+    },
+    {
+      "id": "comparison-official-int8-control-browser-copy",
+      "path": "workflows/MiniMAX-H3/Comparison/h3-t2v-article-blackwell-official-int8-control.json",
+      "bytes": 43343,
+      "sha256": "3f9dd28727c309e845af345c89eb4dc66f90d06eb03ef848a3da13c3a962dc76",
+      "profiles": [
+        "comparison"
+      ],
+      "role": "byte-identical-browser-copy",
+      "required": true
+    },
+    {
+      "id": "qrusher-10eros-test4-int8-sage-only",
+      "path": "workflows/minimax_h3/castle/h3-t2v-qrusher-10eros-test4-int8-sage-only.json",
+      "bytes": 44048,
+      "sha256": "77c14641be4f8c951085cb6174f54777547f20a72358bda18404e359770bb2f7",
+      "profiles": [
+        "comparison"
+      ],
+      "role": "fixed-seed-sage-only-candidate",
+      "required": true
+    },
+    {
+      "id": "qrusher-10eros-test4-int8-sage-only-browser-copy",
+      "path": "workflows/MiniMAX-H3/Comparison/h3-t2v-qrusher-10eros-test4-int8-sage-only.json",
+      "bytes": 44048,
+      "sha256": "77c14641be4f8c951085cb6174f54777547f20a72358bda18404e359770bb2f7",
+      "profiles": [
+        "comparison"
+      ],
+      "role": "byte-identical-browser-copy",
+      "required": true
+    },
+    {
+      "id": "servasyy-sage-easycache-0.1-short-ab",
+      "path": "workflows/minimax_h3/castle/h3-t2v-servasyy-sage-easycache-0.1.json",
+      "bytes": 45534,
+      "sha256": "8e65134b53f61eda8d7dfff64de06b42d8f8b3abd9f04340c7971b62660ed098",
+      "profiles": [
+        "servasyy_cache"
+      ]
+    },
+    {
+      "id": "servasyy-sage-teacache-0.15-short-ab",
+      "path": "workflows/minimax_h3/castle/h3-t2v-servasyy-sage-teacache-0.15.json",
+      "bytes": 45614,
+      "sha256": "e705258c9b91123f19933129568cc003f7b76bda6c45ebf9541d92ce07977dd5",
+      "profiles": [
+        "servasyy_cache"
+      ]
+    },
+    {
+      "id": "javawock-i2v",
+      "path": "workflows/minimax_h3/castle/h3-i2v-javawock-2608.9.json",
+      "bytes": 281815,
+      "sha256": "a257e096954be8c9acd71d0a5814f9b05775e9ef4c42340f932cd17900d89eec",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "javawock-r2v",
+      "path": "workflows/minimax_h3/castle/h3-r2v-javawock-2608.16.json",
+      "bytes": 311014,
+      "sha256": "9bc8a6747e2aafdca57e8cb7b9e7c1d48b00faea4368286a3abe25ccb8b64e90",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "javawock-tts-fast",
+      "path": "workflows/minimax_h3/castle/h3-tts-javawock-2608.1.json",
+      "bytes": 44082,
+      "sha256": "c7d9a8919fcc3f6aae76edbd8bdc258755555168e6ca3954b8499b909ad370e7",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "javawock-tts-precision-20step",
+      "path": "workflows/minimax_h3/castle/h3-tts-javawock-precision-20step.json",
+      "bytes": 44101,
+      "sha256": "ea25cad37f6a567110a5766e47e250dbd147bc0a1182335ed051044df79e3550",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "javawock-face-refine",
+      "path": "workflows/minimax_h3/castle/h3-face-refine-javawock-2608.1.json",
+      "bytes": 110799,
+      "sha256": "057b5137b274408b0a22571599f4b90e92c96d5f6c06fe4c5ec9dc5c6753312c",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "motion-context",
+      "path": "workflows/minimax_h3/castle/h3-motion-context-fl-ref.json",
+      "bytes": 119156,
+      "sha256": "6655db215c18b64fc07b8f7145c962b434abcad9ec5cea26766e8443004f4cad",
+      "profiles": [
+        "motion"
+      ]
+    },
+    {
+      "id": "native-audio-music-video",
+      "path": "workflows/minimax_h3/castle/h3-native-audio-music-video-synced.json",
+      "bytes": 30185,
+      "sha256": "a321c9cea5968113fe310eb31990e17892a7c4b4f1a66d018c226d65bb93fd1d",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "native-audio-rife",
+      "path": "workflows/minimax_h3/community/native_audio/RIFE_WAN_Method_Interpolation_TEMPLATE.json",
+      "bytes": 3230,
+      "sha256": "b2b4ee40e4e5b6aec8157c0454faa914cb823d227651859c0c02d9cee6e3387b",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "multishot-05",
+      "path": "workflows/minimax_h3/castle/h3-native-audio-05-chained-spectrum-off.json",
+      "bytes": 9305,
+      "sha256": "4aa9fd5cfd9f7ad2311c5931023afd39b5e9da8841a475bb60842172d3baa9db",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "multishot-06-audio-lock",
+      "path": "workflows/minimax_h3/castle/h3-native-audio-06-chained-audio-lock-spectrum-off.json",
+      "bytes": 10088,
+      "sha256": "4df2577c19a428a9687bda65da017855e96120a9ca6a012852b46dc00a4170f6",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "multishot-07-ref-image",
+      "path": "workflows/minimax_h3/castle/h3-native-audio-07-chained-ref-image-spectrum-off.json",
+      "bytes": 10543,
+      "sha256": "f8f778cd6e15625350174393880b09824cf6e85b275b96f474bf42be9ec253dc",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "multishot-08-ref-image-audio-lock",
+      "path": "workflows/minimax_h3/castle/h3-native-audio-08-chained-ref-image-audio-lock-spectrum-off.json",
+      "bytes": 11324,
+      "sha256": "2dd016339b856b7d1463f8c3dfbc0d85cd534518a648e473babda7480208521f",
+      "profiles": [
+        "native_audio"
+      ]
+    }
+  ],
+  "provenance_files": [],
+  "workflow_contracts": [
+    {
+      "id": "javawock-i2v-sage-only-contract",
+      "path": "workflows/minimax_h3/castle/h3-i2v-javawock-2608.9.json",
+      "profiles": [
+        "javawock"
+      ],
+      "recursive_node_counts": {
+        "MiniMaxH3MemoryEfficientSageAttentionPatch": 1,
+        "SolAttnPatch": 0,
+        "SolAttnBlockProbe": 0
+      },
+      "workflow_subset": {
+        "extra": {
+          "castle_javawock": {
+            "kind": "stable-core",
+            "attention_path": "sage-only",
+            "sol_attn": "removed-unavailable-on-pinned-triton",
+            "exact_source_preserved": "community/javawock/MiniMax_int8_I2V-javano2608.9.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "javawock-r2v-sage-only-contract",
+      "path": "workflows/minimax_h3/castle/h3-r2v-javawock-2608.16.json",
+      "profiles": [
+        "javawock"
+      ],
+      "recursive_node_counts": {
+        "MiniMaxH3MemoryEfficientSageAttentionPatch": 1,
+        "SolAttnPatch": 0,
+        "SolAttnBlockProbe": 0
+      },
+      "workflow_subset": {
+        "extra": {
+          "castle_javawock": {
+            "kind": "stable-core",
+            "attention_path": "sage-only",
+            "sol_attn": "removed-unavailable-on-pinned-triton",
+            "exact_source_preserved": "community/javawock/MiniMax_int8_R2V-javano2608.16.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "servasyy-article-t2v-exact-contract",
+      "path": "workflows/minimax_h3/community/servasyy_article/h3-t2v-runninghub-2084626786919878657.json",
+      "profiles": [
+        "article_exact_source",
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "nodes": [
+        {
+          "id": 127,
+          "type": "UNETLoader",
+          "mode": 0,
+          "widgets_values": [
+            "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+            "default"
+          ]
+        },
+        {
+          "id": 128,
+          "type": "CLIPLoader",
+          "mode": 0,
+          "widgets_values": [
+            "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+            "minimax",
+            "default"
+          ]
+        },
+        {
+          "id": 124,
+          "type": "BasicScheduler",
+          "mode": 0,
+          "widgets_values": [
+            "simple",
+            20,
+            1
+          ]
+        },
+        {
+          "id": 123,
+          "type": "KSamplerSelect",
+          "mode": 0,
+          "widgets_values": [
+            "res_multistep"
+          ]
+        },
+        {
+          "id": 115,
+          "type": "ResolutionSelector",
+          "mode": 0,
+          "widgets_values": [
+            "16:9 (Widescreen)",
+            0.8,
+            32
+          ]
+        },
+        {
+          "id": 133,
+          "type": "PrimitiveFloat",
+          "mode": 0,
+          "widgets_values": [
+            5
+          ]
+        },
+        {
+          "id": 135,
+          "type": "PathchSageAttentionKJ",
+          "mode": 0,
+          "widgets_values": [
+            "auto",
+            false
+          ]
+        },
+        {
+          "id": 134,
+          "type": "SpectrumSDXL",
+          "mode": 0,
+          "widgets_values": [
+            0.3,
+            3,
+            0.1,
+            2,
+            0.25,
+            6,
+            16
+          ]
+        }
+      ],
+      "links": [
+        [
+          246,
+          133,
+          0,
+          132,
+          0,
+          "FLOAT"
+        ],
+        [
+          243,
+          132,
+          1,
+          131,
+          7,
+          "INT"
+        ],
+        [
+          252,
+          127,
+          0,
+          135,
+          0,
+          "MODEL"
+        ],
+        [
+          249,
+          135,
+          0,
+          134,
+          0,
+          "MODEL"
+        ],
+        [
+          250,
+          134,
+          0,
+          124,
+          0,
+          "MODEL"
+        ],
+        [
+          251,
+          134,
+          0,
+          126,
+          0,
+          "MODEL"
+        ]
+      ]
+    },
+    {
+      "id": "servasyy-article-r2v-exact-contract",
+      "path": "workflows/minimax_h3/community/servasyy_article/h3-r2v-runninghub-2084127823018946561.json",
+      "profiles": [
+        "article_exact_source",
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "nodes": [
+        {
+          "id": 127,
+          "type": "UNETLoader",
+          "mode": 0,
+          "widgets_values": [
+            "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+            "default"
+          ]
+        },
+        {
+          "id": 128,
+          "type": "CLIPLoader",
+          "mode": 0,
+          "widgets_values": [
+            "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+            "minimax",
+            "default"
+          ]
+        },
+        {
+          "id": 124,
+          "type": "BasicScheduler",
+          "mode": 0,
+          "widgets_values": [
+            "simple",
+            25,
+            1
+          ]
+        },
+        {
+          "id": 123,
+          "type": "KSamplerSelect",
+          "mode": 0,
+          "widgets_values": [
+            "res_multistep"
+          ]
+        },
+        {
+          "id": 115,
+          "type": "ResolutionSelector",
+          "mode": 0,
+          "widgets_values": [
+            "16:9 (Widescreen)",
+            0.4,
+            32
+          ]
+        },
+        {
+          "id": 132,
+          "type": "PrimitiveFloat",
+          "mode": 0,
+          "widgets_values": [
+            10
+          ]
+        },
+        {
+          "id": 146,
+          "type": "ModelPatchTorchSettings",
+          "mode": 0,
+          "widgets_values": [
+            true
+          ]
+        },
+        {
+          "id": 147,
+          "type": "PathchSageAttentionKJ",
+          "mode": 0,
+          "widgets_values": [
+            "auto",
+            true
+          ]
+        },
+        {
+          "id": 148,
+          "type": "SpectrumSDXLBatch",
+          "mode": 0,
+          "widgets_values": [
+            0.30000000000000004,
+            3,
+            0.1,
+            2,
+            0.25000000000000006,
+            8,
+            20
+          ]
+        }
+      ],
+      "links": [
+        [
+          261,
+          132,
+          0,
+          131,
+          0,
+          "FLOAT"
+        ],
+        [
+          275,
+          131,
+          1,
+          136,
+          15,
+          "INT"
+        ],
+        [
+          278,
+          137,
+          0,
+          136,
+          3,
+          "IMAGE"
+        ],
+        [
+          282,
+          139,
+          0,
+          136,
+          4,
+          "IMAGE"
+        ],
+        [
+          283,
+          142,
+          0,
+          136,
+          5,
+          "IMAGE"
+        ],
+        [
+          284,
+          143,
+          0,
+          136,
+          9,
+          "AUDIO"
+        ],
+        [
+          285,
+          144,
+          0,
+          136,
+          10,
+          "AUDIO"
+        ],
+        [
+          290,
+          127,
+          0,
+          147,
+          0,
+          "MODEL"
+        ],
+        [
+          287,
+          147,
+          0,
+          146,
+          0,
+          "MODEL"
+        ],
+        [
+          293,
+          146,
+          0,
+          148,
+          0,
+          "MODEL"
+        ],
+        [
+          291,
+          148,
+          0,
+          124,
+          0,
+          "MODEL"
+        ],
+        [
+          292,
+          148,
+          0,
+          126,
+          0,
+          "MODEL"
+        ]
+      ]
+    },
+    {
+      "id": "servasyy-article-i2v-flf-exact-contract",
+      "path": "workflows/minimax_h3/community/servasyy_article/h3-i2v-flf-runninghub-2084620086811410433.json",
+      "profiles": [
+        "article_exact_source",
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "nodes": [
+        {
+          "id": 129,
+          "type": "UNETLoader",
+          "mode": 0,
+          "widgets_values": [
+            "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+            "default"
+          ]
+        },
+        {
+          "id": 130,
+          "type": "CLIPLoader",
+          "mode": 0,
+          "widgets_values": [
+            "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+            "minimax",
+            "default"
+          ]
+        },
+        {
+          "id": 115,
+          "type": "ResolutionSelector",
+          "mode": 0,
+          "widgets_values": [
+            "9:16 (Portrait Widescreen)",
+            1,
+            32
+          ]
+        },
+        {
+          "id": 135,
+          "type": "PrimitiveFloat",
+          "mode": 0,
+          "widgets_values": [
+            5
+          ]
+        },
+        {
+          "id": 140,
+          "type": "LoraLoaderModelOnly",
+          "mode": 0,
+          "widgets_values": [
+            "minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors",
+            0.7000000000000002
+          ]
+        },
+        {
+          "id": 137,
+          "type": "PathchSageAttentionKJ",
+          "mode": 0,
+          "widgets_values": [
+            "auto",
+            false
+          ]
+        },
+        {
+          "id": 141,
+          "type": "MiniMaxH3MemoryEfficientSageAttentionPatch",
+          "mode": 0,
+          "widgets_values": null
+        },
+        {
+          "id": 147,
+          "type": "SpectrumSDXL",
+          "mode": 0,
+          "widgets_values": [
+            0.30000000000000004,
+            3,
+            0.15000000000000002,
+            2,
+            0.25,
+            5,
+            12
+          ]
+        },
+        {
+          "id": 143,
+          "type": "MiniMaxH3MultiRateSamplerEXPT8",
+          "mode": 0,
+          "widgets_values": [
+            4,
+            12,
+            12,
+            3
+          ]
+        },
+        {
+          "id": 126,
+          "type": "BasicScheduler",
+          "mode": 4,
+          "widgets_values": [
+            "simple",
+            10,
+            1
+          ]
+        },
+        {
+          "id": 125,
+          "type": "KSamplerSelect",
+          "mode": 4,
+          "widgets_values": [
+            "res_multistep"
+          ]
+        },
+        {
+          "id": 138,
+          "type": "EasyCache",
+          "mode": 4,
+          "widgets_values": [
+            0.2,
+            0.15,
+            0.95,
+            false
+          ]
+        },
+        {
+          "id": 144,
+          "type": "SolAttnPatch",
+          "mode": 4,
+          "widgets_values": [
+            1.2,
+            0.2,
+            0.9,
+            4096,
+            false,
+            "exact_kv",
+            true,
+            "3d",
+            false
+          ]
+        },
+        {
+          "id": 145,
+          "type": "MiniMaxH3BlockCacheT8",
+          "mode": 4,
+          "widgets_values": [
+            0.12,
+            0.3500000000000001,
+            0.9000000000000001,
+            2,
+            "gpu",
+            8,
+            false
+          ]
+        }
+      ],
+      "links": [
+        [
+          248,
+          135,
+          0,
+          134,
+          0,
+          "FLOAT"
+        ],
+        [
+          245,
+          134,
+          1,
+          133,
+          7,
+          "INT"
+        ],
+        [
+          244,
+          114,
+          0,
+          133,
+          2,
+          "IMAGE"
+        ],
+        [
+          257,
+          129,
+          0,
+          140,
+          0,
+          "MODEL"
+        ],
+        [
+          256,
+          140,
+          0,
+          137,
+          0,
+          "MODEL"
+        ],
+        [
+          273,
+          137,
+          0,
+          141,
+          0,
+          "MODEL"
+        ],
+        [
+          282,
+          144,
+          0,
+          147,
+          0,
+          "MODEL"
+        ],
+        [
+          281,
+          147,
+          0,
+          143,
+          0,
+          "MODEL"
+        ]
+      ]
+    },
+    {
+      "id": "servasyy-article-t2v-adapted-contract",
+      "path": "workflows/minimax_h3/castle/servasyy_article/h3-t2v-servasyy-article-adapted-current.json",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "metadata_kind": "adapted-current",
+      "nodes": [
+        {
+          "id": 127,
+          "type": "UNETLoader",
+          "mode": 0,
+          "widgets_values": [
+            "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+            "default"
+          ]
+        },
+        {
+          "id": 124,
+          "type": "BasicScheduler",
+          "mode": 0,
+          "widgets_values": [
+            "simple",
+            20,
+            1
+          ]
+        },
+        {
+          "id": 115,
+          "type": "ResolutionSelector",
+          "mode": 0,
+          "widgets_values": [
+            "16:9 (Widescreen)",
+            0.8,
+            32
+          ]
+        },
+        {
+          "id": 133,
+          "type": "PrimitiveFloat",
+          "mode": 0,
+          "widgets_values": [
+            5
+          ]
+        },
+        {
+          "id": 135,
+          "type": "PathchSageAttentionKJ",
+          "mode": 0,
+          "widgets_values": [
+            "auto",
+            false
+          ]
+        },
+        {
+          "id": 134,
+          "type": "SpectrumSDXL",
+          "mode": 0,
+          "widgets_values": [
+            0.3,
+            3,
+            0.1,
+            2,
+            0.25,
+            6,
+            16,
+            20
+          ]
+        }
+      ],
+      "links": [
+        [
+          246,
+          133,
+          0,
+          132,
+          0,
+          "FLOAT"
+        ],
+        [
+          243,
+          132,
+          1,
+          131,
+          7,
+          "INT"
+        ],
+        [
+          252,
+          127,
+          0,
+          135,
+          0,
+          "MODEL"
+        ],
+        [
+          249,
+          135,
+          0,
+          134,
+          0,
+          "MODEL"
+        ],
+        [
+          250,
+          134,
+          0,
+          124,
+          0,
+          "MODEL"
+        ],
+        [
+          251,
+          134,
+          0,
+          126,
+          0,
+          "MODEL"
+        ]
+      ]
+    },
+    {
+      "id": "servasyy-article-r2v-adapted-contract",
+      "path": "workflows/minimax_h3/castle/servasyy_article/h3-r2v-servasyy-article-adapted-current.json",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "metadata_kind": "adapted-current",
+      "nodes": [
+        {
+          "id": 127,
+          "type": "UNETLoader",
+          "mode": 0,
+          "widgets_values": [
+            "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+            "default"
+          ]
+        },
+        {
+          "id": 124,
+          "type": "BasicScheduler",
+          "mode": 0,
+          "widgets_values": [
+            "simple",
+            25,
+            1
+          ]
+        },
+        {
+          "id": 115,
+          "type": "ResolutionSelector",
+          "mode": 0,
+          "widgets_values": [
+            "16:9 (Widescreen)",
+            0.4,
+            32
+          ]
+        },
+        {
+          "id": 132,
+          "type": "PrimitiveFloat",
+          "mode": 0,
+          "widgets_values": [
+            10
+          ]
+        },
+        {
+          "id": 146,
+          "type": "ModelPatchTorchSettings",
+          "mode": 0,
+          "widgets_values": [
+            true
+          ]
+        },
+        {
+          "id": 147,
+          "type": "PathchSageAttentionKJ",
+          "mode": 0,
+          "widgets_values": [
+            "auto",
+            true
+          ]
+        },
+        {
+          "id": 148,
+          "type": "SpectrumSDXLBatch",
+          "mode": 0,
+          "widgets_values": [
+            0.3,
+            3,
+            0.1,
+            2,
+            0.25,
+            8,
+            20,
+            25
+          ]
+        }
+      ],
+      "links": [
+        [
+          261,
+          132,
+          0,
+          131,
+          0,
+          "FLOAT"
+        ],
+        [
+          275,
+          131,
+          1,
+          136,
+          15,
+          "INT"
+        ],
+        [
+          278,
+          137,
+          0,
+          136,
+          3,
+          "IMAGE"
+        ],
+        [
+          282,
+          139,
+          0,
+          136,
+          4,
+          "IMAGE"
+        ],
+        [
+          283,
+          142,
+          0,
+          136,
+          5,
+          "IMAGE"
+        ],
+        [
+          284,
+          143,
+          0,
+          136,
+          9,
+          "AUDIO"
+        ],
+        [
+          285,
+          144,
+          0,
+          136,
+          10,
+          "AUDIO"
+        ],
+        [
+          290,
+          127,
+          0,
+          147,
+          0,
+          "MODEL"
+        ],
+        [
+          287,
+          147,
+          0,
+          146,
+          0,
+          "MODEL"
+        ],
+        [
+          293,
+          146,
+          0,
+          148,
+          0,
+          "MODEL"
+        ],
+        [
+          291,
+          148,
+          0,
+          124,
+          0,
+          "MODEL"
+        ],
+        [
+          292,
+          148,
+          0,
+          126,
+          0,
+          "MODEL"
+        ]
+      ]
+    },
+    {
+      "id": "servasyy-article-i2v-flf-adapted-contract",
+      "path": "workflows/minimax_h3/castle/servasyy_article/h3-i2v-flf-servasyy-article-adapted-current.json",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "metadata_kind": "adapted-current",
+      "forbidden_node_types": [
+        "MiniMaxH3MultiRateSamplerEXPT8",
+        "MiniMaxH3BlockCacheT8"
+      ],
+      "nodes": [
+        {
+          "id": 129,
+          "type": "UNETLoader",
+          "mode": 0,
+          "widgets_values": [
+            "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+            "default"
+          ]
+        },
+        {
+          "id": 140,
+          "type": "LoraLoaderModelOnly",
+          "mode": 0,
+          "widgets_values": [
+            "H3/minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors",
+            0.7
+          ]
+        },
+        {
+          "id": 126,
+          "type": "BasicScheduler",
+          "mode": 0,
+          "widgets_values": [
+            "simple",
+            12,
+            1
+          ]
+        },
+        {
+          "id": 125,
+          "type": "KSamplerSelect",
+          "mode": 0,
+          "widgets_values": [
+            "res_multistep"
+          ]
+        },
+        {
+          "id": 115,
+          "type": "ResolutionSelector",
+          "mode": 0,
+          "widgets_values": [
+            "9:16 (Portrait Widescreen)",
+            1,
+            32
+          ]
+        },
+        {
+          "id": 135,
+          "type": "PrimitiveFloat",
+          "mode": 0,
+          "widgets_values": [
+            5
+          ]
+        },
+        {
+          "id": 137,
+          "type": "PathchSageAttentionKJ",
+          "mode": 0,
+          "widgets_values": [
+            "auto",
+            false
+          ]
+        },
+        {
+          "id": 141,
+          "type": "MiniMaxH3MemoryEfficientSageAttentionPatch",
+          "mode": 0,
+          "widgets_values": null
+        },
+        {
+          "id": 147,
+          "type": "SpectrumSDXL",
+          "mode": 0,
+          "widgets_values": [
+            0.3,
+            3,
+            0.15,
+            2,
+            0.25,
+            5,
+            12,
+            12
+          ]
+        },
+        {
+          "id": 138,
+          "type": "EasyCache",
+          "mode": 4,
+          "widgets_values": [
+            0.2,
+            0.15,
+            0.95,
+            false
+          ]
+        },
+        {
+          "id": 144,
+          "type": "SolAttnPatch",
+          "mode": 4,
+          "widgets_values": [
+            1.2,
+            0.2,
+            0.9,
+            4096,
+            false,
+            "exact_kv",
+            true,
+            "3d",
+            false
+          ]
+        }
+      ],
+      "links": [
+        [
+          248,
+          135,
+          0,
+          134,
+          0,
+          "FLOAT"
+        ],
+        [
+          245,
+          134,
+          1,
+          133,
+          7,
+          "INT"
+        ],
+        [
+          244,
+          114,
+          0,
+          133,
+          2,
+          "IMAGE"
+        ],
+        [
+          263,
+          147,
+          0,
+          128,
+          0,
+          "MODEL"
+        ],
+        [
+          264,
+          125,
+          0,
+          127,
+          2,
+          "SAMPLER"
+        ],
+        [
+          265,
+          126,
+          0,
+          127,
+          3,
+          "SIGMAS"
+        ],
+        [
+          280,
+          147,
+          0,
+          126,
+          0,
+          "MODEL"
+        ]
+      ]
+    },
+    {
+      "id": "servasyy-article-i2v-flf-fallback-v1-contract",
+      "path": "workflows/minimax_h3/castle/servasyy_article/h3-i2v-flf-servasyy-article-fallback-v1.json",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "metadata_kind": "adapted-current-fallback-v1",
+      "required": false,
+      "forbidden_node_types": [
+        "MiniMaxH3MultiRateSamplerEXPT8",
+        "MiniMaxH3BlockCacheT8"
+      ],
+      "nodes": [
+        {
+          "id": 140,
+          "type": "LoraLoaderModelOnly",
+          "mode": 0,
+          "widgets_values": [
+            "H3/minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
+            0.7
+          ]
+        },
+        {
+          "id": 126,
+          "type": "BasicScheduler",
+          "mode": 0,
+          "widgets_values": [
+            "simple",
+            12,
+            1
+          ]
+        },
+        {
+          "id": 125,
+          "type": "KSamplerSelect",
+          "mode": 0,
+          "widgets_values": [
+            "res_multistep"
+          ]
+        },
+        {
+          "id": 147,
+          "type": "SpectrumSDXL",
+          "mode": 0,
+          "widgets_values": [
+            0.3,
+            3,
+            0.15,
+            2,
+            0.25,
+            5,
+            12,
+            12
+          ]
+        }
+      ],
+      "links": [
+        [
+          263,
+          147,
+          0,
+          128,
+          0,
+          "MODEL"
+        ],
+        [
+          264,
+          125,
+          0,
+          127,
+          2,
+          "SAMPLER"
+        ],
+        [
+          265,
+          126,
+          0,
+          127,
+          3,
+          "SIGMAS"
+        ],
+        [
+          280,
+          147,
+          0,
+          126,
+          0,
+          "MODEL"
+        ]
+      ]
+    }
+  ],
+  "capability_contracts": [
+    {
+      "id": "javawock-sol-kernel-unavailable",
+      "kind": "python_module_absent",
+      "module": "triton.tools.tensor_descriptor",
+      "profiles": [
+        "javawock"
+      ],
+      "reason": "Both pinned H3 Sol implementations require this module, which Triton 3.3.1 does not provide; Castle Javawock derivatives must remain Sage-only."
+    }
+  ],
+  "python_packages": [
+    {
+      "id": "torch-cu128",
+      "distribution": "torch",
+      "version": "2.7.1+cu128",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "triton",
+      "distribution": "triton",
+      "version": "3.3.1",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "sageattention-sm120",
+      "distribution": "sageattention",
+      "version": "2.2.0",
+      "source": "thu-ml/SageAttention@eb615cf6cf4d221338033340ee2de1c37fbdba4a",
+      "profiles": [
+        "larry",
+        "javawock",
+        "face_refine",
+        "motion",
+        "servasyy_cache",
+        "comparison",
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "facebook-sam2",
+      "distribution": "SAM-2",
+      "version": "1.0",
+      "source": "facebookresearch/sam2@2b90b9f5ceec907a1c18123530e92e794ad901a4",
+      "direct_url_path": ".build/sam2-src",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "nvidia-vfx",
+      "distribution": "nvidia-vfx",
+      "version": "0.1.0.1",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "ollama-python",
+      "distribution": "ollama",
+      "version": "0.6.0",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "dotenv",
+      "distribution": "dotenv",
+      "version": "0.9.9",
+      "profiles": [
+        "javawock"
+      ]
+    }
+  ],
+  "required_node_classes": [
+    {
+      "id": "BasicGuider",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "BasicScheduler",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "CLIPLoader",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "CreateVideo",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "MiniMaxH3ImageToVideo",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "MiniMaxH3ReferenceToVideo",
+      "profiles": [
+        "stock",
+        "javawock",
+        "motion",
+        "native_audio",
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "SaveVideo",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "UNETLoader",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "VAEDecodeAudio",
+      "profiles": [
+        "all"
+      ]
+    },
+    {
+      "id": "PathchSageAttentionKJ",
+      "profiles": [
+        "servasyy_cache",
+        "comparison",
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "EasyCache",
+      "profiles": [
+        "servasyy_cache"
+      ]
+    },
+    {
+      "id": "MiniMaxH3TeaCache",
+      "profiles": [
+        "servasyy_cache"
+      ]
+    },
+    {
+      "id": "MiniMaxH3MemoryEfficientSageAttentionPatch",
+      "profiles": [
+        "larry",
+        "javawock",
+        "face_refine",
+        "motion",
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "MiniMaxH3TurboLoRA",
+      "profiles": [
+        "larry",
+        "motion"
+      ]
+    },
+    {
+      "id": "MiniMaxH3TurboSampler",
+      "profiles": [
+        "larry"
+      ]
+    },
+    {
+      "id": "MiniMaxH3MotionContext",
+      "profiles": [
+        "motion"
+      ]
+    },
+    {
+      "id": "MiniMaxH3MotionContextTrim",
+      "profiles": [
+        "motion"
+      ]
+    },
+    {
+      "id": "MiniMaxH3MotionContextSaveLatent",
+      "profiles": [
+        "motion"
+      ]
+    },
+    {
+      "id": "MiniMaxH3MotionContextLoadLatent",
+      "profiles": [
+        "motion"
+      ]
+    },
+    {
+      "id": "SpectrumApplyMiniMaxH3",
+      "profiles": [
+        "javawock",
+        "motion",
+        "native_audio"
+      ]
+    },
+    {
+      "id": "SpectrumSDXL",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "required_inputs": [
+        "model",
+        "w",
+        "m",
+        "lam",
+        "window_size",
+        "flex_window",
+        "warmup_steps",
+        "stop_caching_step",
+        "steps"
+      ],
+      "input_defaults": {
+        "w": 0.6,
+        "m": 4,
+        "lam": 0.1,
+        "window_size": 3,
+        "flex_window": 0.75,
+        "warmup_steps": 5,
+        "stop_caching_step": -1,
+        "steps": 30
+      }
+    },
+    {
+      "id": "SpectrumSDXLBatch",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ],
+      "required_inputs": [
+        "model",
+        "w",
+        "m",
+        "lam",
+        "window_size",
+        "flex_window",
+        "warmup_steps",
+        "stop_caching_step",
+        "steps"
+      ],
+      "input_defaults": {
+        "w": 0.6,
+        "m": 4,
+        "lam": 0.1,
+        "window_size": 3,
+        "flex_window": 0.75,
+        "warmup_steps": 5,
+        "stop_caching_step": -1,
+        "steps": 30
+      }
+    },
+    {
+      "id": "ModelPatchTorchSettings",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "LoraLoaderModelOnly",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "LoadAudio",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "LoadImage",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "ResolutionSelector",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "MiniMaxH3LatentUpscaleCombined",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "H3FaceTrackCrop",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "H3FaceMaskSAM",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "H3FaceStitch",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "SAMLoader",
+      "profiles": [
+        "face_refine"
+      ]
+    },
+    {
+      "id": "easy forLoopStart",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "easy forLoopEnd",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "AudioEnhancementNode",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "LoadAudioUI",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "LoadVideoUI",
+      "profiles": [
+        "javawock",
+        "face_refine"
+      ]
+    },
+    {
+      "id": "SpeechLengthCalculator",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "RTXVideoSuperResolution",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "SolAttnPatch",
+      "profiles": [
+        "article_adapted_current",
+        "article_blackwell"
+      ]
+    },
+    {
+      "id": "OllamaConnectivityV2",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "OllamaOptionsV2",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "OllamaGenerateV2",
+      "profiles": [
+        "javawock"
+      ]
+    },
+    {
+      "id": "MiniMaxH3NativeAudioLock",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "H3MultishotSampler",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "H3MultishotMemorySampler",
+      "profiles": [
+        "native_audio"
+      ]
+    },
+    {
+      "id": "RIFE VFI",
+      "profiles": [
+        "native_audio"
+      ]
+    }
+  ],
+  "declared_blockers": [
+    {
+      "id": "t8-lora-license",
+      "status": "not-installed",
+      "reason": "Pinned T8 repository has no declared license or model-card license; no checkpoint bytes are redistributed into the runtime."
+    },
+    {
+      "id": "t8star-hybrid-base",
+      "status": "not-runnable",
+      "reason": "The pinned hybrid recipe requires a specific BF16 test4 base absent from the pinned Qrusher repository."
+    },
+    {
+      "id": "saganaki-h3-attention",
+      "status": "alternate-attention-unavailable",
+      "reason": "Pinned Triton 3.3.1 lacks triton.tools.tensor_descriptor, so neither pinned Sol kernel is asserted runnable. Saganaki H3 ChunkFeedForward and FusedModulation remain installed, but this experimental Sol lane is isolated from the Sage-only comparison.",
+      "profiles": [
+        "saganaki_experimental"
+      ]
+    },
+    {
+      "id": "public-unqualified",
+      "status": "requires-local-qualification",
+      "reason": "This public distribution includes no private runtime receipts, sample outputs, voice references, or prior qualification evidence. Qualify the configured installation before production use."
+    }
+  ]
+}

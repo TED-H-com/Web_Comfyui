@@ -1,0 +1,495 @@
+{
+  "config": {},
+  "extra": {
+    "community_attribution": {
+      "author": "dseditor",
+      "changes": "Removed cached metadata/media and private paths; replaced input/output filenames; normalized model path separators. Graph topology and sampler settings retained.",
+      "license": "GPL-3.0",
+      "license_file": "third_party/community/dseditor/LICENSE",
+      "modified": "2026-10-22",
+      "source": "https://github.com/dseditor/ComfyuiWorkflows/blob/b2ea26fa602d6eebadb1de1e4ccf1ecc91875806/LocalVideoModel/HunyuanVideo/%E3%80%90FastT2V%E3%80%91HunyuanVideo.json",
+      "source_sha256": "23736abee1f0394c5ed01a9e918d071fb2864160cfc7d5594e2243c5b408266d"
+    }
+  },
+  "groups": [
+    {
+      "bounding": [
+        -390,
+        -70,
+        1522.83935546875,
+        724.9199829101562
+      ],
+      "color": "#3f789e",
+      "flags": {},
+      "font_size": 24,
+      "id": 3,
+      "title": "FastVIdeoT2V"
+    }
+  ],
+  "last_link_id": 101,
+  "last_node_id": 73,
+  "links": [
+    [
+      87,
+      63,
+      0,
+      64,
+      1,
+      "LATENT"
+    ],
+    [
+      88,
+      7,
+      0,
+      64,
+      0,
+      "VAE"
+    ],
+    [
+      89,
+      65,
+      0,
+      63,
+      1,
+      "HYVIDEMBEDS"
+    ],
+    [
+      90,
+      1,
+      0,
+      63,
+      0,
+      "HYVIDEOMODEL"
+    ],
+    [
+      91,
+      16,
+      0,
+      65,
+      0,
+      "HYVIDTEXTENCODER"
+    ],
+    [
+      92,
+      59,
+      0,
+      65,
+      1,
+      "PROMPT_TEMPLATE"
+    ],
+    [
+      101,
+      64,
+      0,
+      66,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "nodes": [
+    {
+      "flags": {},
+      "id": 64,
+      "inputs": [
+        {
+          "link": 88,
+          "name": "vae",
+          "type": "VAE"
+        },
+        {
+          "link": 87,
+          "name": "samples",
+          "type": "LATENT"
+        }
+      ],
+      "mode": 0,
+      "order": 6,
+      "outputs": [
+        {
+          "links": [
+            101
+          ],
+          "name": "images",
+          "slot_index": 0,
+          "type": "IMAGE"
+        }
+      ],
+      "pos": [
+        400,
+        450
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoDecode"
+      },
+      "size": [
+        345.4285888671875,
+        150
+      ],
+      "type": "HyVideoDecode",
+      "widgets_values": [
+        true,
+        8,
+        256,
+        true
+      ]
+    },
+    {
+      "flags": {},
+      "id": 63,
+      "inputs": [
+        {
+          "link": 90,
+          "name": "model",
+          "type": "HYVIDEOMODEL"
+        },
+        {
+          "link": 89,
+          "name": "hyvid_embeds",
+          "type": "HYVIDEMBEDS"
+        },
+        {
+          "link": null,
+          "name": "samples",
+          "shape": 7,
+          "type": "LATENT"
+        },
+        {
+          "link": null,
+          "name": "stg_args",
+          "shape": 7,
+          "type": "STGARGS"
+        },
+        {
+          "link": null,
+          "name": "context_options",
+          "shape": 7,
+          "type": "COGCONTEXT"
+        }
+      ],
+      "mode": 0,
+      "order": 5,
+      "outputs": [
+        {
+          "links": [
+            87
+          ],
+          "name": "samples",
+          "slot_index": 0,
+          "type": "LATENT"
+        }
+      ],
+      "pos": [
+        440,
+        30
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoSampler"
+      },
+      "size": [
+        280,
+        354
+      ],
+      "type": "HyVideoSampler",
+      "widgets_values": [
+        720,
+        480,
+        81,
+        6,
+        9,
+        17,
+        730331111800843,
+        "randomize",
+        1,
+        1
+      ]
+    },
+    {
+      "flags": {},
+      "id": 1,
+      "inputs": [
+        {
+          "link": null,
+          "name": "compile_args",
+          "shape": 7,
+          "type": "COMPILEARGS"
+        },
+        {
+          "link": null,
+          "name": "block_swap_args",
+          "shape": 7,
+          "type": "BLOCKSWAPARGS"
+        },
+        {
+          "link": null,
+          "name": "lora",
+          "shape": 7,
+          "type": "HYVIDLORA"
+        }
+      ],
+      "mode": 0,
+      "order": 0,
+      "outputs": [
+        {
+          "links": [
+            90
+          ],
+          "name": "model",
+          "slot_index": 0,
+          "type": "HYVIDEOMODEL"
+        }
+      ],
+      "pos": [
+        40,
+        30
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoModelLoader"
+      },
+      "size": [
+        385.40118408203125,
+        194
+      ],
+      "type": "HyVideoModelLoader",
+      "widgets_values": [
+        "hunyuan_video_FastVideo_720_fp8_e4m3fn.safetensors",
+        "bf16",
+        "fp8_e4m3fn",
+        "offload_device",
+        "sageattn_varlen"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 59,
+      "inputs": [],
+      "mode": 0,
+      "order": 1,
+      "outputs": [
+        {
+          "links": [
+            92
+          ],
+          "name": "hyvid_prompt_template",
+          "slot_index": 0,
+          "type": "PROMPT_TEMPLATE"
+        }
+      ],
+      "pos": [
+        -380,
+        20
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoCustomPromptTemplate"
+      },
+      "size": [
+        410,
+        220
+      ],
+      "type": "HyVideoCustomPromptTemplate",
+      "widgets_values": [
+        "<|start_header_id|>system<|end_header_id|>\n\nDescribe the video by detailing the following aspects: 1. The main content and theme of the video.2. The color, shape, size, texture, quantity, text, and spatial relationships of the objects.3. Actions, events, behaviors temporal relationships, physical movement changes of the objects.4. background environment, light, style and atmosphere.5. camera angles, movements, and transitions used in the video:<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{}<|eot_id|>",
+        95,
+        true
+      ]
+    },
+    {
+      "flags": {},
+      "id": 16,
+      "inputs": [],
+      "mode": 0,
+      "order": 2,
+      "outputs": [
+        {
+          "links": [
+            91
+          ],
+          "name": "hyvid_text_encoder",
+          "slot_index": 0,
+          "type": "HYVIDTEXTENCODER"
+        }
+      ],
+      "pos": [
+        -360,
+        290
+      ],
+      "properties": {
+        "Node name for S&R": "DownloadAndLoadHyVideoTextEncoder"
+      },
+      "size": [
+        362.2120361328125,
+        178
+      ],
+      "type": "DownloadAndLoadHyVideoTextEncoder",
+      "widgets_values": [
+        "Kijai/llava-llama-3-8b-text-encoder-tokenizer",
+        "openai/clip-vit-large-patch14",
+        "fp16",
+        false,
+        2,
+        "disabled"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 7,
+      "inputs": [
+        {
+          "link": null,
+          "name": "compile_args",
+          "shape": 7,
+          "type": "COMPILEARGS"
+        }
+      ],
+      "mode": 0,
+      "order": 3,
+      "outputs": [
+        {
+          "links": [
+            88
+          ],
+          "name": "vae",
+          "slot_index": 0,
+          "type": "VAE"
+        }
+      ],
+      "pos": [
+        40,
+        280
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoVAELoader"
+      },
+      "size": [
+        379.166748046875,
+        82
+      ],
+      "type": "HyVideoVAELoader",
+      "widgets_values": [
+        "Kvae/hunyuan_video_vae_bf16.safetensors",
+        "bf16"
+      ]
+    },
+    {
+      "flags": {},
+      "id": 66,
+      "inputs": [
+        {
+          "link": 101,
+          "name": "images",
+          "type": "IMAGE"
+        },
+        {
+          "link": null,
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO"
+        },
+        {
+          "link": null,
+          "name": "meta_batch",
+          "shape": 7,
+          "type": "VHS_BatchManager"
+        },
+        {
+          "link": null,
+          "name": "vae",
+          "shape": 7,
+          "type": "VAE"
+        }
+      ],
+      "mode": 0,
+      "order": 7,
+      "outputs": [
+        {
+          "links": null,
+          "name": "Filenames",
+          "type": "VHS_FILENAMES"
+        }
+      ],
+      "pos": [
+        760,
+        20
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_VideoCombine"
+      },
+      "size": [
+        330,
+        554.6666870117188
+      ],
+      "type": "VHS_VideoCombine",
+      "widgets_values": {
+        "crf": 19,
+        "filename_prefix": "community/dseditor-hunyuan-fast-text-to-video",
+        "format": "video/h264-mp4",
+        "frame_rate": 16,
+        "loop_count": 0,
+        "pingpong": false,
+        "pix_fmt": "yuv420p",
+        "save_metadata": true,
+        "save_output": true,
+        "trim_to_audio": false
+      }
+    },
+    {
+      "flags": {},
+      "id": 65,
+      "inputs": [
+        {
+          "link": 91,
+          "name": "text_encoders",
+          "type": "HYVIDTEXTENCODER"
+        },
+        {
+          "link": 92,
+          "name": "custom_prompt_template",
+          "shape": 7,
+          "type": "PROMPT_TEMPLATE"
+        },
+        {
+          "link": null,
+          "name": "clip_l",
+          "shape": 7,
+          "type": "CLIP"
+        },
+        {
+          "link": null,
+          "name": "hyvid_cfg",
+          "shape": 7,
+          "type": "HYVID_CFG"
+        }
+      ],
+      "mode": 0,
+      "order": 4,
+      "outputs": [
+        {
+          "links": [
+            89
+          ],
+          "name": "hyvid_embeds",
+          "slot_index": 0,
+          "type": "HYVIDEMBEDS"
+        }
+      ],
+      "pos": [
+        70,
+        420
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoTextEncode"
+      },
+      "size": [
+        300,
+        209
+      ],
+      "type": "HyVideoTextEncode",
+      "widgets_values": [
+        "anime style anime girl with massive fennec ears and one big fluffy tail, she has blonde hair long hair blue eyes wearing a pink sweater and a long blue skirt walking in a beautiful outdoor scenery with snow mountains in the background",
+        "bad quality video",
+        "video",
+        true
+      ]
+    }
+  ],
+  "version": 0.4
+}

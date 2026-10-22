@@ -1,0 +1,3 @@
+# Required for server import, image validation, thumbnails, and profile previews.
+# GPU/voice/model packages belong in separate worker environments.
+Pillow>=10

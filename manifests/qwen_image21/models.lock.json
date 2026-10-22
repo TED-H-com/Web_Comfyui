@@ -1,0 +1,34 @@
+{
+  "repository": "Comfy-Org/Qwen-Image-2.1",
+  "revision": "ace0edeb3791a594ddfa36ed5f41a178a394e921",
+  "guide": "https://docs.comfy.org/zh/tutorials/image/qwen/qwen-image-2-1",
+  "template_revision": "371a7b7171bbd11e9cc92ef615ba5ad223d7e5b4",
+  "comfyui_revision": "c194dd00cd42aa18d9dbf27d977bf6b85d9ea565",
+  "models": [
+    {
+      "path": "diffusion_models/qwen_image_2.1_int8_convrot.safetensors",
+      "bytes": 7256783064,
+      "sha256": "cb74113cb03faecd79611b01fd7fd642f0aa60d6f0b95086abee214d75eaa57d"
+    },
+    {
+      "path": "text_encoders/qwen3vl_8b_int8_convrot.safetensors",
+      "bytes": 9350798360,
+      "sha256": "8bfd0f6e12abf2d2d697ecc888e5e90b0d6741d6708f05799f53afa560452e8f"
+    },
+    {
+      "path": "vae/qwen_image_2.1_vae_bf16.safetensors",
+      "bytes": 675509688,
+      "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9"
+    }
+  ],
+  "templates": [
+    {
+      "path": "workflows/qwen_image21/image_qwen_image_2_1_t2i.json",
+      "sha256": "d33a6b36d530756e26ef4e25beb17d950daaea09d295475cd65f97f5d0af3b41"
+    },
+    {
+      "path": "workflows/qwen_image21/image_qwen_image_2_1_image_edit.json",
+      "sha256": "d6dd8695469c20ca5e77b4bddf981b898ee0e034f0cfc5840c86f15b812ca081"
+    }
+  ]
+}

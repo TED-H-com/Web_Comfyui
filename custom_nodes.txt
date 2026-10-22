@@ -1,0 +1,73 @@
+# ComfyUI custom_nodes — recovered from the old Pinokio install (NAS backup).
+# install.sh git-clones each into ComfyUI/custom_nodes/ then pip-installs requirements.
+# Format: <name> <git-url> [commit]
+# A commit is optional for the recovered legacy set.  The MiniMax H3 tutorial
+# stack is pinned because its workflows depend on exact node IDs and patch ABIs.
+
+ComfyUI-Manager            https://github.com/ltdrdata/ComfyUI-Manager
+ComfyUI-Impact-Pack        https://github.com/ltdrdata/ComfyUI-Impact-Pack 429d0159ad429e64d2b3916e6e7be9c22d025c3c
+ComfyUI-Impact-Subpack     https://github.com/ltdrdata/ComfyUI-Impact-Subpack 50c7b71a6a224734cc9b21963c6d1926816a97f1
+ComfyUI-Inspire-Pack       https://github.com/ltdrdata/ComfyUI-Inspire-Pack
+ComfyUI-KJNodes            https://github.com/kijai/ComfyUI-KJNodes 6ab7e8130e449ed2c0037589bcf84146ceb7fc9c
+ComfyUI-WanVideoWrapper    https://github.com/kijai/ComfyUI-WanVideoWrapper
+ComfyUI-VideoHelperSuite   https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite 4ee72c065db22c9d96c2427954dc69e7b908444b
+ComfyUI-FluxTrainer        https://github.com/kijai/ComfyUI-FluxTrainer
+ComfyUI_IPAdapter_plus     https://github.com/cubiq/ComfyUI_IPAdapter_plus
+ComfyUI_InstantID          https://github.com/cubiq/ComfyUI_InstantID
+PuLID_ComfyUI              https://github.com/cubiq/PuLID_ComfyUI
+comfyui_controlnet_aux     https://github.com/Fannovel16/comfyui_controlnet_aux
+rgthree-comfy              https://github.com/rgthree/rgthree-comfy 6b76ee6f2c5a007710b5a16f97c94330d6ecc871
+efficiency-nodes-comfyui   https://github.com/jags111/efficiency-nodes-comfyui
+ComfyUI-Custom-Scripts     https://github.com/pythongosssss/ComfyUI-Custom-Scripts
+ComfyUI-WD14-Tagger        https://github.com/pythongosssss/ComfyUI-WD14-Tagger
+ComfyUI_LayerStyle         https://github.com/chflame163/ComfyUI_LayerStyle
+comfyui-various            https://github.com/jamesWalker55/comfyui-various
+ComfyUI_Comfyroll_CustomNodes https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes
+sdxl_prompt_styler         https://github.com/twri/sdxl_prompt_styler
+comfyui-inpaint-nodes      https://github.com/Acly/comfyui-inpaint-nodes
+ComfyUI-Advanced-ControlNet https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet
+cg-use-everywhere          https://github.com/chrisgoringe/cg-use-everywhere
+comfyui-mixlab-nodes       https://github.com/MixLabPro/comfyui-mixlab-nodes
+ComfyUI_VLM_nodes          https://github.com/gokayfem/ComfyUI_VLM_nodes
+ComfyUI-Gemini             https://github.com/Visionatrix/ComfyUI-Gemini
+style_aligned_comfy        https://github.com/brianfitzgerald/style_aligned_comfy
+ComfyUI-Image-Saver        https://github.com/alexopus/ComfyUI-Image-Saver
+ComfyUI-layerdiffuse       https://github.com/huchenlei/ComfyUI-layerdiffuse
+rembg-comfyui-node         https://github.com/Jcd1230/rembg-comfyui-node
+was-node-suite-comfyui     https://github.com/WASasquatch/was-node-suite-comfyui
+
+# MiniMax H3 tutorial + Javawock workflow stack (verified 2026-08-14).
+ComfyUI-MiniMax-H3-Turbo   https://github.com/Larryvrh/ComfyUI-MiniMax-H3-Turbo 546b5028f4934f5129eb6c7142c2f3e461dfddbf
+ComfyUI-MiniMaxH3-TeaCache https://github.com/Icyoung/ComfyUI-MiniMaxH3-TeaCache 4cbb50d69c73a19a5d6ec42c5aec1989d5a04b6f
+# Disabled on ComfyUI 0.32.0: this revision's import-time H3 core monkeypatch
+# calls the absent comfy.ldm.minimax.model.time_shift_slope symbol at runtime.
+ComfyUI-MiniMaxH3-Cache.disabled https://github.com/lihaoyun6/ComfyUI-MiniMaxH3-Cache 8a45e096a2a05c140dd4d909eb74e4279b673819
+# Pinned for exact-source/article provenance. Both H3 Sol kernels require the
+# absent triton.tools.tensor_descriptor under Triton 3.3.1; maintained Castle
+# Javawock I2V/R2V derivatives remove their Sol lane and run Sage-only.
+ComfyUI-sol-attn           https://github.com/Saganaki22/ComfyUI-sol-attn 930a4d6e432ff8b8ed5e30ff2f72519b92d69bdf
+ComfyUI-SolAttn_triton     https://github.com/kijai/ComfyUI-SolAttn_triton 842c4eaa7d91dbaef3fee3ccdbf36a39521e82fc
+ComfyUI-H3-Motion-Context  https://github.com/NikoDemon80/ComfyUI-H3-Motion-Context 658ba11ae91737391a247cf9758d0063c43491b3
+ComfyUI-Spectrum-MiniMax-H3 https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3 0ada18b3830b33cb6635f7e142831fcf779959fc
+# Servasyy's article workflows were authored against this exact Spectrum
+# revision. Castle applies the audited Batch-class compatibility overlay below
+# via install.sh; the upstream checkout remains pinned and otherwise unchanged.
+ComfyUI-Spectrum-SDXL      https://github.com/ruwwww/ComfyUI-Spectrum-SDXL cea3aa85f77daf4852a450c09e50ee0cdd242d43
+ComfyUI-MiniMaxH3_LatentUpscaler https://github.com/Tr1dae/ComfyUI-MiniMaxH3_LatentUpscaler 2b4f7d6e2edf5ac3c1c553efac9d373aeafa59bd
+ComfyUI-H3-FaceRefine     https://github.com/Carasibana/ComfyUI-H3-FaceRefine 79a97ce5ee4b393ce26313bd1280b706fe8b4f2c
+ComfyUI-Easy-Use          https://github.com/yolain/ComfyUI-Easy-Use 595e0738a9e3f8d0d9c4d875461b2d2c9e7559c7
+ComfyUI-AudioTools        https://github.com/Urabewe/ComfyUI-AudioTools 8763c3ec71d4d05278b53386cec57a06e1d99417
+WhatDreamsCost-ComfyUI    https://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI a3c809c8b593a74c2ddcd6c1f83ad85ebebe3c64
+Nvidia_RTX_Nodes_ComfyUI  https://github.com/Comfy-Org/Nvidia_RTX_Nodes_ComfyUI 892515e3eb9a4920a131a502a047e47adca9eb0d
+ComfyUI-Ollama            https://github.com/stavsap/comfyui-ollama 6db7560576e5a59488708e6be13e07b5aba2432a
+ComfyUI-Frame-Interpolation https://github.com/Fannovel16/ComfyUI-Frame-Interpolation 26545cc2dd95bc3d27f056016300673bdeee78f5
+MiniMax-H3-NativeAudio-MusicVideo-Workflow.disabled https://github.com/Shrek3OnVH5/MiniMax-H3-NativeAudio-MusicVideo-Workflow 11a95f623b98496923714db99da0aecec672cbd4
+
+# Disabled/legacy notes:
+# - Gourieff/comfyui-reactor-node is disabled on GitHub; Gourieff/ComfyUI-ReActor
+#   cloned locally but disabled because it auto-downloads a large model and wanted
+#   CUDA 13 onnxruntime-gpu on this CUDA 12.8 host.
+# - ComfyUI_LayerStyle_Advance cloned locally but disabled because its vendored
+#   sam2 shadows Impact Pack's sam2 import path.
+# - ComfyUI-ListHelper, ComfyUI-ScheduledTask, and ComfyUI-FunAudioBreezyVoice
+#   old recovered URLs returned repository-not-found.
