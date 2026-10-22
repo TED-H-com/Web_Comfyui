@@ -1023,9 +1023,9 @@ function isOperator() {
 function setServiceStatus(ok, text) {
   const pill = $("servicePill");
   if (!pill) return;
-  if (window.WebComfyDocs) { pill.textContent = "互動說明"; pill.className = "service-pill"; return; }
+  if (window.WebComfyDocs) { pill.textContent = "互動說明"; pill.className = "service-pill shell-service-status"; return; }
   pill.textContent = text || (ok ? "服務正常" : "服務連線異常");
-  pill.className = `service-pill ${ok ? "ok" : "error"}`;
+  pill.className = `service-pill shell-service-status ${ok ? "ok" : "error"}`;
 }
 
 function renderAdminChrome() {
@@ -1892,8 +1892,8 @@ function studioBaseFeatures(studioId = "") {
   if (contextId && !character) return [];
   return features.filter((feature) => (
     (!studioId || feature.studio === studioId)
-    && !feature.uiHidden
-    && (!feature.characterOnly || Boolean(character))
+    && (!feature.uiHidden || (window.WebComfyDocs && currentRoute.featureId === feature.id))
+    && (!feature.characterOnly || Boolean(character) || (window.WebComfyDocs && currentRoute.featureId === feature.id))
     && (!feature.operatorOnly || isOperator())
   ));
 }
@@ -2390,6 +2390,7 @@ function actionFeature(action, character) {
 }
 
 async function createCharacter() {
+  if (window.WebComfyDocs) { window.WebComfyDocs.createCharacterDemo(); return; }
   const session = captureSessionContext();
   const name = window.prompt("角色名稱", "");
   if (name === null) return;
@@ -4605,8 +4606,8 @@ function renderWorkspaceHeader(character) {
       h("button", { class: "back-link", type: "button", text: "← 角色", "aria-label": "回角色卡片牆", onclick: () => navigate({ view: "characters" }) }),
       profilePicNode(character, "workspace-avatar"),
       h("div", { class: "workspace-title" }, [
-        h("h1", { text: character.name }),
-        h("p", { text: character.tagline || character.profile || character.origin || "" }),
+        h("h1", { "data-i18n-ignore": "", text: character.name }),
+        h("p", { "data-i18n-ignore": "", text: character.tagline || character.profile || character.origin || "" }),
       ]),
       h("button", {
         id: "characterSwitcherTrigger",
@@ -4726,7 +4727,7 @@ function renderWorkspaceOverlay() {
       h("div", { class: "editor-modal-head" }, [
         h("div", {}, [
           h("h2", { text: "角色設定" }),
-          h("p", { text: character.name }),
+          h("p", { "data-i18n-ignore": "", text: character.name }),
         ]),
         h("button", { class: "ghost small", type: "button", text: "關閉", onclick: () => { editorOverlayCharacterId = ""; renderWorkspaceOverlay(); } }),
       ]),
@@ -5564,7 +5565,7 @@ function renderDanceManagerRow(item, categories) {
         ? h("details", { class: "dance-manager-variants wide" }, [
             h("summary", { text: `原始檔版本（${item.variants.length}）` }),
             h("div", {}, item.variants.map((variant) => h("div", { class: "dance-manager-variant" }, [
-              h("strong", { text: String(variant.filename || variant.name || "未命名檔案") }),
+              h("strong", { "data-i18n-ignore": "", text: String(variant.filename || variant.name || "未命名檔案") }),
               h("span", {
                 text: [
                   variant.codec,
@@ -8387,7 +8388,7 @@ function renderActiveCharacterBanner(character) {
   ].filter(Boolean).join("・");
   return h("div", { class: "character-context" }, [
     h("div", { class: "character-context-main" }, [
-      h("div", { class: "character-context-title", text: `目前角色：${character.name}` }),
+      h("div", { class: "character-context-title" }, [h("span", { text: "目前角色：" }), h("span", { "data-i18n-ignore": "", text: character.name })]),
       h("div", { class: "character-context-sub", text: meta || "角色 context 會寫入這次生成。" }),
     ]),
     h("div", { class: "character-context-actions" }, [
@@ -8879,7 +8880,7 @@ function renderVoiceSpeakForm(feature, capability = null) {
   } else if (pathOptions.length === 1) {
     form.appendChild(h("div", { class: "field role-bound-summary" }, [
       h("span", { class: "field-label", text: "聲音方式" }),
-      h("div", { class: "bound-value", text: pathOptions[0][1] }),
+      h("div", { class: "voice-path-label", text: pathOptions[0][1] }),
       renderHint(pathOptions[0][2]),
     ]));
   }
@@ -9916,6 +9917,13 @@ function clearDropzoneSelection(up, input = up && fileInputs[up.id]) {
 
 // ---- field renderers ------------------------------------------------------
 function renderField(field) {
+  const node = renderFieldControl(field);
+  node.dataset.fieldId = field.id;
+  node.querySelectorAll('input,textarea,select').forEach(input => { input.dataset.fieldId = field.id; });
+  return node;
+}
+
+function renderFieldControl(field) {
   const id = field.id;
 
   if (field.type === "checkbox") {
@@ -10575,6 +10583,7 @@ async function loadVoiceOptions(sel, preferred = "") {
       const label = voice.source ? `${voice.name} ・ ${voice.source}` : voice.name;
       const option = h("option", {
         value: voice.id,
+        "data-i18n-ignore": "",
         text: label,
         dataset: {
           transcript: voice.transcript || "",
@@ -10611,6 +10620,7 @@ async function loadCharacterVoiceOptions(sel, character, preferred = "", emptyMe
       if (!boundIds.has(String(voice.id))) continue;
       const option = h("option", {
         value: voice.id,
+        "data-i18n-ignore": "",
         text: voice.name || voice.id,
         dataset: {
           transcript: voice.transcript || "",
@@ -11470,7 +11480,7 @@ function renderGlobalLibraryFilters() {
     onchange: (event) => navigateLibraryFilter(event.target.value),
   }, [
     h("option", { value: "", text: "全部角色", selected: !selected }),
-    ...availableCharacters.map((character) => h("option", { value: character.id, text: character.name, selected: selected === character.id })),
+    ...availableCharacters.map((character) => h("option", { value: character.id, "data-i18n-ignore": "", text: character.name, selected: selected === character.id })),
     h("option", { value: "_unassigned", text: "未標示角色", selected: selected === "_unassigned" }),
     libraryContentCount("_removed") > 0 ? h("option", { value: "_removed", text: "已移除角色", selected: selected === "_removed" }) : null,
   ]);
@@ -12017,7 +12027,7 @@ function renderDetailMedia(item) {
 function detailRow(label, value) {
   return h("div", { class: "detail-row" }, [
     h("span", { class: "detail-label", text: label }),
-    h("span", { class: "detail-value", text: value || "—" }),
+    h("span", { class: "detail-value", "data-i18n-ignore": "", text: value || "—" }),
   ]);
 }
 

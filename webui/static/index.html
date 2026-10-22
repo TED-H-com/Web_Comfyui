@@ -8,9 +8,14 @@
     <link rel="stylesheet" href="/static/provider-fabric.css?v=20260819-reliability-v1" />
     <link rel="stylesheet" href="/static/workflow-library.css" />
     <link rel="stylesheet" href="/static/project-preview.css?v=20260819-routing-v2" />
+    <link rel="stylesheet" href="/static/i18n.css" />
   </head>
   <body>
     <div id="authGate" class="auth-gate">
+      <select id="authLanguageSelect" class="language-select auth-language-select" aria-label="介面語言" data-i18n-ignore>
+        <option value="zh-Hant">繁中</option>
+        <option value="en">English</option>
+      </select>
       <div class="auth-hero" aria-hidden="true">
         <div class="auth-brand-glow">Web ComfyUI</div>
         <p>進入角色工作室，讓每一次生成都有清楚身分與安全邊界。</p>
@@ -49,6 +54,10 @@
           <button class="view-tab" type="button" data-view="resources">資源</button>
         </nav>
         <div class="top-actions">
+          <select id="languageSelect" class="language-select" aria-label="介面語言" data-i18n-ignore>
+            <option value="zh-Hant">繁中</option>
+            <option value="en">English</option>
+          </select>
           <span id="servicePill" class="service-pill ok shell-service-status">服務正常</span>
           <button id="statusPill" class="status-pill idle" type="button" aria-label="開啟任務，0 個進行中" aria-haspopup="dialog" aria-expanded="false">
             <span aria-hidden="true">任務</span>
@@ -93,6 +102,9 @@
     </div>
     <div id="sheetLayer" class="sheet-layer"></div>
     <script src="/static/login-return.js?v=20260718-reel-review-binding-v2"></script>
+    <script src="/static/translations-en.js"></script>
+    <script src="/static/i18n.js"></script>
+    <script src="/static/guide-translations-en.js"></script>
     <script src="/static/provider-fabric.js?v=20260822-imported-character-wall-v2"></script>
     <script src="/static/project-preview.js?v=20260819-routing-v2"></script>
     <script src="/static/workflow-library.js"></script>

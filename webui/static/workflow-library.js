@@ -28,7 +28,7 @@ window.WorkflowLibrary = (() => {
     if (!response.ok) throw Error(data.error || '讀取失敗');
     return data;
   }
-  function mount(host, {openSheet, canLoad = false, docsMode = false, catalogUrl = './catalog.json', onSelect = () => {}} = {}) {
+  function mount(host, {openSheet, canLoad = false, docsMode = false, catalogUrl = './catalog.json', onSelect = () => {}, onGraph = null} = {}) {
     let items = [], page = 0, comfyUrl = 'http://127.0.0.1:8188';
     const panel = el('section', '', 'panel workflow-library');
     const heading = el('div', '', 'workflow-heading');
@@ -85,6 +85,10 @@ window.WorkflowLibrary = (() => {
       }
       content.append(technical);
       const actions = el('div', '', 'workflow-actions');
+      if (docsMode && onGraph) {
+        const graph = el('button', item.available ? '查看 ComfyUI 範本與節點' : '查看流程示意', 'ghost small'); graph.type = 'button';
+        graph.onclick = () => onGraph(item, graph); actions.append(graph);
+      }
       const result = el('p', '', 'catalogue-status'); result.setAttribute('role', 'status');
       if (item.available) {
         const download = link('下載 JSON', docsMode ? item.download_url : '/api/workflow-library/file?id=' + encodeURIComponent(item.id));

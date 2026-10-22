@@ -2,7 +2,6 @@
 import json
 from pathlib import Path
 import shutil
-import subprocess
 import sys
 import threading
 import time
@@ -16,7 +15,7 @@ from scripts.build_docs import build, ROOT
 ASSERT = r'''(async () => {
  const result = document.createElement('pre'); result.id = 'docs-test-result'; document.body.append(result);
  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
- const until = async fn => {for (let i = 0; i < 300; i++) {if(fn())return; await wait(20);}throw Error('timeout');};
+ const until = async fn => {for (let i = 0; i < 300; i++) {if(fn())return; await wait(20);}throw Error('timeout: '+fn.toString());};
  const assert = (value, message) => {if(!value)throw Error(message);};
  const visible = selector => [...document.querySelectorAll(selector)].find(node => node.getBoundingClientRect().width > 0);
  const close = async () => {document.querySelector('.sheet-close').click(); await until(()=>!document.querySelector('[role="dialog"]'));};
@@ -29,11 +28,14 @@ ASSERT = r'''(async () => {
  };
  try {
   await until(() => document.getElementById('studioToolTrigger'));
+  await until(() => document.querySelector('[data-demo-id="text2img"]'));
   assert(document.documentElement.scrollWidth <= innerWidth + 1, 'horizontal overflow');
   assert(document.querySelector('.gen-form textarea'), 'actual app generation form');
   assert(document.querySelector('.topbar .brand').textContent === 'Web ComfyUI', 'actual app brand');
   assert(visible('[data-view="characters"]') && visible('[data-view="studio"]') && visible('[data-view="workflows"]'), 'same app navigation');
   assert(document.getElementById('servicePill').textContent==='互動說明','no fake live service');
+  assert(document.querySelectorAll('.app-guide-button button').length===2,'two guide actions, no separate example button');
+  assert(document.querySelector('[data-field-id="positive"] textarea')?.value || document.querySelector('textarea[data-field-id="positive"]').value, 'real form prefilled');
   if (new URLSearchParams(location.search).has('helptest')) {
     await until(()=>document.querySelector('[role="dialog"]'));
     assert(document.querySelector('[role="dialog"]').textContent.includes('互動說明與安裝'),'legacy help link');
@@ -46,16 +48,43 @@ ASSERT = r'''(async () => {
   for(const text of ['z_image_turbo_bf16.safetensors','qwen_3_4b.safetensors','ae.safetensors','zimage_prompt','會怎麼跑','使用什麼技巧']) assert(detail.textContent.includes(text),'actual text2img source '+text);
   assert(!detail.textContent.includes('sd_xl_base_1.0'),'unrelated checkpoint not attributed');
   await close();
-  document.querySelector('.generate-btn').click();await until(()=>document.querySelector('.app-feature-guide'));await close();
+  document.querySelector('[data-action="view-graph"]').click();await until(()=>document.querySelector('.app-node-graph'));
+  assert(document.querySelectorAll('.graph-node').length===9,'actual Z-Image builder graph');
+  document.querySelector('.graph-node').click();assert(document.querySelector('.graph-inspector').textContent.includes('z_image_turbo_bf16.safetensors'),'source model on node');await close();
+  document.querySelector('.generate-btn').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
+  assert(document.querySelector('.demo-output img') && !document.querySelector('[role="dialog"]'),'prepared output appears in original form');
+  await until(()=>document.querySelector('.demo-output img').naturalWidth>0);
   await feature('AI 指令改圖');
   detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors'),'actual editing checkpoint');await close();
   assert(location.hash.includes('img2img'), 'feature route matches selected button');
+  await until(()=>document.querySelector('[data-demo-id="img2img"]'));
+  const upload=document.querySelector('input[type=file][data-demo-upload]');
+  const transfer=new DataTransfer();transfer.items.add(new File(['synthetic local input'],'local-example.png',{type:'image/png'}));upload.files=transfer.files;upload.dispatchEvent(new Event('change',{bubbles:true}));
+  assert(document.querySelector('.demo-input-preview img').src.startsWith('blob:'),'selected file preview remains local');
+  const revoked=[],originalRevoke=URL.revokeObjectURL;URL.revokeObjectURL=url=>{revoked.push(url);originalRevoke.call(URL,url);};
+  upload.dispatchEvent(new Event('change',{bubbles:true}));assert(revoked.length===1,'old preview URL released');
+  const drop=new Event('drop',{bubbles:true,cancelable:true});Object.defineProperty(drop,'dataTransfer',{value:transfer});upload.closest('label').dispatchEvent(drop);assert(revoked.length===2,'drag and drop replaces local preview');
   const resourceTab=visible('[data-view="resources"]');
   if(resourceTab) resourceTab.click();
   else {document.getElementById('moreMenuBtn').click();await until(()=>document.querySelector('.shell-menu-row'));[...document.querySelectorAll('.shell-menu-row')].find(row=>row.textContent==='角色創作資源中心').click();}
   await until(()=>document.querySelector('.provider-fabric-host'));
   assert([...document.querySelectorAll('input[type="password"]')].every(node=>node.disabled),'credentials disabled');
-  visible('[data-view="characters"]').click();await until(()=>document.body.dataset.view==='characters');
+  visible('[data-view="characters"]').click();await until(()=>document.querySelector('[data-demo-id="character-create"]'));
+  assert(document.querySelector('.experimental-create-form input[name=name]').value,'character name prefilled');
+  document.querySelector('.experimental-create-form button[type=submit]').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
+  assert(document.querySelector('.demo-character img'),'character sample result');
+  const lang=document.getElementById('languageSelect');lang.value='en';lang.dispatchEvent(new Event('change'));
+  await until(()=>document.documentElement.lang==='en' && visible('[data-view="characters"]').textContent.includes('Characters'));
+  assert(document.querySelector('.experimental-create-form button[type=submit]').textContent.includes('demo'),'English native demo action');
+  location.hash='#/studio/img2img';await until(()=>document.querySelector('form[data-demo-id="img2img"]'));
+  const englishForm=document.querySelector('form[data-demo-id="img2img"]');
+  const edited=englishForm.querySelector('textarea');edited.value='My unchanged prompt 文生圖';edited.dispatchEvent(new Event('input',{bubbles:true}));
+  const keptFile=englishForm.querySelector('input[type=file]');keptFile.files=transfer.files;keptFile.dispatchEvent(new Event('change',{bubbles:true}));
+  lang.value='zh-Hant';lang.dispatchEvent(new Event('change'));await until(()=>document.documentElement.lang==='zh-Hant');
+  await until(()=>/[\u4e00-\u9fff]/.test(englishForm.querySelector('.app-demo h3').textContent));
+  assert(edited.value==='My unchanged prompt 文生圖'&&keptFile.files[0].name==='local-example.png','language preserves user prompt and file');
+  const revokedBeforeReset=revoked.length;englishForm.querySelector('.demo-prefill-bar button').click();
+  assert(!keptFile.value&&revoked.length===revokedBeforeReset+1,'reset inputs clears file and revokes preview');
   visible('[data-view="workflows"]').click();await until(()=>document.querySelectorAll('.workflow-card').length);
   const mode = document.querySelector('[aria-label="收錄狀態"]'); mode.value = 'local'; mode.dispatchEvent(new Event('change'));
   document.querySelector('.workflow-card').click();await until(()=>document.querySelector('.workflow-details'));
@@ -67,20 +96,40 @@ ASSERT = r'''(async () => {
   await close();
   const search=document.querySelector('[aria-label="搜尋工作流"]');search.value='no-such-workflow-xyz';search.dispatchEvent(new Event('input'));
   assert(document.querySelectorAll('.workflow-card').length===0,'empty search');search.value='';search.dispatchEvent(new Event('input'));
+  const features=(await(await fetch('/api/features')).json()).features;
+  const originalMatchMedia=window.matchMedia;
+  window.matchMedia=query=>query.includes('prefers-reduced-motion')?{matches:true,addEventListener(){},removeEventListener(){}}:originalMatchMedia(query);
+  for(const entry of features) {
+    window.__currentFeature=entry.id;
+    location.hash='#/studio/'+entry.id;
+    await until(()=>document.querySelector('[data-demo-id="'+entry.id+'"]'));
+    const form=document.querySelector('[data-demo-id="'+entry.id+'"]');
+    const generate=form.querySelector('.generate-btn,button[type=submit]');assert(generate&&!generate.disabled,'demo action ready '+entry.id);
+    generate.click();await until(()=>form.querySelector('.app-demo')?.dataset.state==='complete');
+    assert(!form.querySelector('.demo-output').hidden,'all options produce a prepared result '+entry.id);
+    if(entry.id==='img2video') assert(form.querySelector('.demo-output video')?.src.includes('coastal-pan.mp4'),'prepared video is playable media');
+  }
+  window.matchMedia=originalMatchMedia;
   const blocked=await fetch('/api/generate',{method:'POST',body:'PRIVATE_TEST_INPUT'});assert(blocked.status===405,'writes blocked in memory');
   const external=await fetch('https://example.invalid/api');assert(external.status===405,'external calls blocked');
   assert((await fetch('/api/unlisted')).status===404,'unknown endpoint fails closed');
   assert(document.documentElement.scrollWidth<=innerWidth+1,'final overflow');
   assert(window.__docsErrors.length===0,window.__docsErrors.join(';'));
   result.textContent='PASS';
- }catch(error){result.textContent='FAIL '+error.message;}
+ }catch(error){result.textContent='FAIL '+error.message+' feature: '+(window.__currentFeature||'')+' route: '+location.hash+' errors: '+window.__docsErrors.join(';');}
 })();
 '''
 
 
 @pytest.mark.parametrize('initial_page', ['app', 'feature', 'help'])
 def test_static_docs_browser(tmp_path, initial_page):
+    playwright = pytest.importorskip('playwright.sync_api')
     browser = shutil.which('chromium')
+    if not browser:
+        with playwright.sync_playwright() as driver:
+            candidate = driver.chromium.executable_path
+            if Path(candidate).is_file():
+                browser = candidate
     if not browser:
         pytest.skip('Chromium not installed')
     output = tmp_path / 'site'; build(ROOT, output)
@@ -100,7 +149,7 @@ def test_static_docs_browser(tmp_path, initial_page):
                 if not file.resolve().is_relative_to(output.resolve()) or not file.is_file(): self.send_error(404); return
                 data = file.read_bytes()
                 if initial_page != 'app' and file.name == 'app.js': time.sleep(0.5)
-                mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json'}.get(file.suffix, 'text/plain')
+                mime = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webp': 'image/webp', '.mp4': 'video/mp4'}.get(file.suffix, 'text/plain')
                 if file.name == 'index.html': data = data.replace(b'<head>', b'<head><script src="./monitor.js"></script>').replace(b'</body>', b'<script src="./assert.js"></script></body>')
             else: self.send_error(404); return
             self.send_response(200); self.send_header('Content-Type', mime); self.send_header('Content-Length', str(len(data))); self.end_headers(); self.wfile.write(data)
@@ -109,11 +158,20 @@ def test_static_docs_browser(tmp_path, initial_page):
     server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:
-        for width in ((1440, 768, 390) if initial_page == 'app' else (390,)):
-            route = {'app': '', 'feature': '?slowguide#/studio/text2img?guide=1', 'help': '?helptest#/start'}[initial_page]
-            run = subprocess.run([browser, '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', f'--user-data-dir={tmp_path / str(width)}', f'--window-size={width},900', '--virtual-time-budget=15000', '--dump-dom', f'http://127.0.0.1:{server.server_port}/Web_Comfyui/{route}'], capture_output=True, text=True, timeout=45)
-            marker = run.stdout.split('id="docs-test-result"')[-1].split('</pre>')[0]
-            assert '>PASS' in marker, (width, marker[-1000:], run.stderr[-500:])
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                for width in ((1440, 768, 390) if initial_page == 'app' else (390,)):
+                    route = {'app': '', 'feature': '?slowguide#/studio/text2img?guide=1', 'help': '?helptest#/start'}[initial_page]
+                    with instance.new_context(viewport={'width': width, 'height': 900}) as context:
+                        page = context.new_page()
+                        page.goto(f'http://127.0.0.1:{server.server_port}/Web_Comfyui/{route}')
+                        assert page.evaluate('innerWidth') == width
+                        for _ in range(600):
+                            if page.locator('#docs-test-result').count() and page.locator('#docs-test-result').inner_text().startswith(('PASS', 'FAIL')):
+                                break
+                            page.wait_for_timeout(100)
+                        marker = page.locator('#docs-test-result').inner_text()
+                        assert marker == 'PASS', (width, marker)
         assert not any('/api/' in path or path.startswith('POST ') for path in requests)
         assert any('/downloads/' in path for path in requests)
     finally:

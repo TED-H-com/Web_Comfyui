@@ -1,6 +1,8 @@
 # Installation and configuration
 
-Start with [the quick start](../README.md) or [繁體中文逐步安裝](../README.zh-TW.md). This page explains environment settings, optional components and troubleshooting. After installation, follow [your first workflow](getting-started.md). The [documentation website](https://ted-h-com.github.io/Web_Comfyui/) shares the actual app interface with a read-only adapter. Its tool buttons and generation actions open source-backed guides instead of running models. Install locally to perform real work.
+Start with [the quick start](../README.md) or [繁體中文逐步安裝](../README.zh-TW.md). This page explains environment settings, optional components and troubleshooting. After installation, follow [your first workflow](getting-started.md). The [documentation website](https://ted-h-com.github.io/Web_Comfyui/) shares the actual app interface: two help buttons open the source-backed guide and node view, while the existing generation button reveals a fixed example inline from a prefilled form. Local file selection or dropping provides browser-only previews, with no upload or generation. Use the top-right **繁中 / English** control on the website or in the installed app. Install locally to perform real work.
+
+The site's 23 feature guides distinguish ComfyUI node graphs from explanatory service-process diagrams. Its six approved demo assets total approximately 1.68 MiB: four fictional illustrations and two silent pan/fade animations of those stills. Voice examples are transcript-only. These assets do not demonstrate runtime readiness or model quality. Their [provenance](../webui/docs/examples/provenance.json) and [publication rules](site.md) are separate from user media, which remains excluded from the repository. The workflow library still contains 248 entries and 46 downloadable graphs.
 
 ## Supported starting point
 
@@ -48,7 +50,7 @@ Then run:
 .venv/bin/python run.py
 ```
 
-Open `http://127.0.0.1:8190`, set a local administrator password of at least eight characters, and choose **設定並進入**. Successful setup signs you in immediately. There is no preset username or password; on later visits use the password you chose. First-run setup is local-only. Keep your own state directory when updating the checkout. No user accounts, character assets, voice recordings, or generation records are included.
+Open `http://127.0.0.1:8190`, set a local administrator password of at least eight characters, and choose **設定並進入**. Successful setup signs you in immediately. There is no preset username or password; on later visits use the password you chose. First-run setup is local-only. Keep your own state directory when updating the checkout. No user accounts, personal character assets, voice recordings, or generation records are included. The dedicated public demo illustrations are not seeded into your character or media libraries.
 
 ### Understand the readiness report
 

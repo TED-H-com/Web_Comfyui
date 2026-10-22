@@ -1182,7 +1182,8 @@ body[data-view="characters"] .workspace {
 .gen-form { display: grid; gap: 18px; margin-top: 20px; }
 .field { display: grid; gap: 8px; font-size: 14px; }
 .field-label { display: flex; align-items: center; gap: 8px; font-weight: 750; }
-.role-bound-summary .bound-value {
+.role-bound-summary .bound-value,
+.role-bound-summary .voice-path-label {
   border: 1px solid #bfd9cf;
   border-radius: 9px;
   background: #f2fbf7;
@@ -3720,8 +3721,7 @@ body.has-character-composer .layout { padding-bottom: calc(var(--sticky-generate
 
 @media (min-width: 768px) and (max-width: 1279px) {
   .topbar { gap: 7px; }
-  .brand { max-width: none; overflow: visible; font-size: 0; }
-  .brand::before { content: "🏰 Castle"; font-size: 14px; }
+  .brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
   .view-nav { gap: 2px; }
   .view-tab { padding-inline: 8px; }
   .identity-name { max-width: 72px; overflow: hidden; text-overflow: ellipsis; }

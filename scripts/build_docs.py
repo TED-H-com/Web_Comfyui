@@ -22,12 +22,20 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from webui.workflow_library import catalog
 from scripts.check_public_release import inspect
+from scripts.public_demo_assets import PUBLIC_DEMO_ASSETS
 
 MARKER = '.web-comfyui-docs'
 ASSETS = {
     'webui/docs/docs.css': 'assets/docs.css',
     'webui/docs/docs.js': 'assets/docs.js',
+    'webui/docs/explorers.js': 'assets/explorers.js',
+    'webui/docs/explorers.css': 'assets/explorers.css',
+    'webui/docs/tour.js': 'assets/tour.js',
     'webui/static/app.js': 'assets/app.js',
+    'webui/static/i18n.js': 'assets/i18n.js',
+    'webui/static/i18n.css': 'assets/i18n.css',
+    'webui/static/translations-en.js': 'assets/translations-en.js',
+    'webui/static/guide-translations-en.js': 'assets/guide-translations-en.js',
     'webui/static/login-return.js': 'assets/login-return.js',
     'webui/static/provider-fabric.js': 'assets/provider-fabric.js',
     'webui/static/provider-fabric.css': 'assets/provider-fabric.css',
@@ -38,7 +46,9 @@ ASSETS = {
     'webui/static/workflow-library.js': 'assets/workflow-library.js',
     'LICENSE': 'licenses/project-GPL-3.0.txt',
     'third_party/community/dseditor/NOTICE.md': 'licenses/dseditor-NOTICE.md',
+    'webui/docs/examples/provenance.json': 'assets/examples/provenance.json',
 }
+ASSETS.update({'webui/docs/examples/' + name: 'assets/examples/' + name for name in PUBLIC_DEMO_ASSETS})
 HTML_SOURCE = 'webui/static/index.html'
 FIELDS = {'id', 'title', 'category', 'source', 'kind', 'available', 'format', 'tags',
           'node_types', 'node_count', 'models', 'license', 'upstream_url', 'source_urls',
@@ -70,10 +80,10 @@ def site_html(root):
     html = html.replace('<title>Web ComfyUI</title>', '<title>Web ComfyUI · 互動說明</title>')
     html = html.replace('class="auth-gate"', 'class="auth-gate hidden"')
     policy = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
-    html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + policy + '">\n<link rel="stylesheet" href="./assets/docs.css">\n</head>')
+    html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + policy + '">\n<link rel="stylesheet" href="./assets/docs.css">\n<link rel="stylesheet" href="./assets/explorers.css">\n</head>')
     banner = '<aside class="app-docs-banner" id="docsBanner"><p>互動說明版 · 點功能或生成按鈕，查看實際模型、template 與技巧。</p><button id="docsHelpButton" class="ghost small" type="button">安裝與使用說明</button></aside>'
     html = html.replace('</header>', '</header>' + banner, 1)
-    html = html.replace('<script src="./assets/login-return.js', '<script src="./assets/docs.js"></script>\n    <script src="./assets/login-return.js', 1)
+    html = html.replace('<script src="./assets/login-return.js', '<script src="./assets/docs.js"></script>\n    <script src="./assets/explorers.js"></script>\n    <script src="./assets/tour.js"></script>\n    <script src="./assets/login-return.js', 1)
     return html.encode('utf-8')
 
 
@@ -109,6 +119,13 @@ def build(root: Path = ROOT, output: Path | None = None) -> dict:
     for relative in SOURCE_FILES:
         source_bytes(root, relative)
     app_guide = app_catalog(root)
+    from scripts.app_graph_catalog import SOURCE_FILES as GRAPH_SOURCES, graphs
+    from scripts.demo_catalog import demos
+    for relative in GRAPH_SOURCES:
+        source_bytes(root, relative)
+    app_guide['graphs'] = graphs(root, app_guide)
+    app_guide['demos'] = demos(app_guide)
+    app_guide['translations'] = source_json(root, 'manifests/app_guides/en.json')
     approved = {}
     records = []
     licenses = {}

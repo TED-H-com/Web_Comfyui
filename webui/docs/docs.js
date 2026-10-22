@@ -56,6 +56,32 @@
     if (className) node.className = className;
     return node;
   };
+  const english = value => registry?.translations?.[value] || window.WebComfyEnglish?.[value] || value;
+  const label = (zh, en = english(zh)) => {
+    const node = el('span'); node.dataset.i18nZh = zh; node.dataset.i18nEn = en;
+    node.textContent = window.WebComfyI18n?.t(zh, en) || zh; return node;
+  };
+  function titledSheet(options, zh, en) {
+    window.openSheet({...options, title: window.WebComfyI18n?.t(zh, en) || zh, onOpen({root, dialog}) {
+      const heading = dialog.querySelector('.sheet-head h2');
+      heading.dataset.i18nZh = zh; heading.dataset.i18nEn = en;
+      root.querySelectorAll('.sheet-close,.sheet-scrim').forEach(node => {
+        node.dataset.docsCloseZh = '關閉' + zh; node.dataset.docsCloseEn = 'Close ' + en;
+        node.setAttribute('aria-label', window.WebComfyI18n?.t(node.dataset.docsCloseZh, node.dataset.docsCloseEn) || node.dataset.docsCloseZh);
+      });
+      window.WebComfyI18n?.translate(root);
+    }});
+  }
+  window.addEventListener('webcomfy:language', () => {
+    document.querySelectorAll('[data-docs-close-zh]').forEach(node => node.setAttribute('aria-label', window.WebComfyI18n?.t(node.dataset.docsCloseZh, node.dataset.docsCloseEn) || node.dataset.docsCloseZh));
+    updateDocsIdentity();
+  });
+  function updateDocsIdentity() {
+    const name = window.WebComfyI18n?.t('說明模式', 'Guide mode') || '說明模式';
+    document.querySelectorAll('.identity-name').forEach(node => {
+      if (['說明模式', 'Guide mode'].includes(node.textContent) && node.textContent !== name) node.textContent = name;
+    });
+  }
   const link = (text, href) => {
     const node = el('a', text, 'ghost small workflow-link');
     node.href = href; node.target = '_blank'; node.rel = 'noopener noreferrer'; return node;
@@ -64,14 +90,22 @@
     if (!values?.length) return;
     const section = el('section', '', 'workflow-guide-section');
     const list = el(numbered ? 'ol' : 'ul');
-    for (const value of values) list.append(el('li', typeof value === 'string' ? value : JSON.stringify(value)));
+    for (const value of values) {const item = el('li'); if (value instanceof Node) item.append(value); else item.textContent = typeof value === 'string' ? value : JSON.stringify(value); list.append(item);}
     section.append(el('h3', title), list); host.append(section);
   }
   const sourceLink = path => 'https://github.com/TED-H-com/Web_Comfyui/blob/main/' + path.split('/').map(encodeURIComponent).join('/');
+  const characterGuide = {
+    id: 'character-create', title: '建立角色', summary: '輸入角色名稱並選擇照片，先建立角色資料與素材，再選擇適合的生成工作流。建立資料本身不會訓練模型。',
+    models: [], templates: [{path: 'webui/static/app.js#createExperimentalCharacter', role: '角色建立與素材管理流程'}],
+    steps: ['輸入角色名稱，選取一張清楚的參考照片。', '本機版會儲存角色設定與照片；此說明站只在瀏覽器預覽。', '進入角色工作室，依條件選擇寫真、影片或其他創作功能。'],
+    techniques: ['角色資料與素材分開管理', '使用角色參考圖維持視覺一致性'], requirements: ['照片須為自己有權使用的素材。'], source_files: ['webui/static/app.js'],
+  };
+  const featureRecord = id => registry.features.find(item => item.id === id) || (id === 'character-create' ? characterGuide : null);
+  const guideRecord = id => registry.guides.find(item => item.id === id) || (id === 'character-create' ? characterGuide : null);
   async function openFeature(id, opener = document.activeElement) {
     await ready;
-    const guide = registry.guides.find(item => item.id === id);
-    const feature = registry.features.find(item => item.id === id);
+    const guide = guideRecord(id);
+    const feature = featureRecord(id);
     if (!guide || !feature) return openHelp(opener);
     const content = el('div', '', 'workflow-details app-feature-guide');
     content.dataset.featureId = id;
@@ -83,32 +117,68 @@
       const head = el('thead'); const tr = el('tr'); ['用途', '模型／權重', '安裝位置'].forEach(value => tr.append(el('th', value))); head.append(tr);table.append(head);
       const body = el('tbody');
       for (const model of guide.models) {
-        const row = el('tr');row.append(el('td', model.role || '模型'), el('td', model.name), el('td', model.directory_hint ? 'models/' + model.directory_hint : '依功能設定'));
+        const row = el('tr'), name = el('td'), directory = el('td');name.append(el('code', model.name));directory.append(model.directory_hint ? el('code', 'models/' + model.directory_hint) : label('依功能設定'));row.append(el('td', model.role || '模型'), name, directory);
         if (model.condition) row.children[1].append(el('small', model.condition));
         body.append(row);
       }
       table.append(body);models.append(table);
     } else models.append(el('p', '這項功能沒有固定的 checkpoint；請參考下方的組圖方式與外部依賴。'));
     content.append(models);
-    rows(content, '對應哪個 template', (guide.templates || []).map(item => typeof item === 'string' ? item : [item.path, item.role].filter(Boolean).join(' — ')));
+    rows(content, '對應哪個 template', (guide.templates || []).map(item => {if (typeof item === 'string') return el('code', item);const row = el('span');row.append(el('code', item.path));if (item.role) row.append(document.createTextNode(' — '), label(item.role));return row;}));
     rows(content, '會怎麼跑', guide.steps, true);
-    rows(content, '使用什麼技巧', (guide.techniques || []).map(item => typeof item === 'string' ? item : [item.name, item.explanation].filter(Boolean).join('：')));
+    rows(content, '使用什麼技巧', (guide.techniques || []).map(item => {if (typeof item === 'string') return item;const row = el('span');row.append(label(item.name));if (item.explanation) row.append(document.createTextNode(': '), label(item.explanation));return row;}));
     rows(content, '執行前準備', guide.requirements);
     const settings = (feature.fields || []).filter(field => ['slider','number','checkbox','select','aspect'].includes(field.type) && !/seed/i.test(field.id));
-    rows(content, '介面預設參數', settings.map(field => `${field.label}：${String(field.default ?? '依選擇')}`));
+    rows(content, '介面預設參數', settings.map(field => {const row = el('span');row.append(label(field.label), document.createTextNode(': '), field.default == null ? label('依選擇') : el('code', String(field.default)));return row;}));
     const sources = el('div', '', 'workflow-actions');
-    for (const file of guide.source_files || []) sources.append(link('查看 ' + file, sourceLink(file)));
+    for (const file of guide.source_files || []) {const source = link('', sourceLink(file));source.append(label('查看 ', 'View '), el('code', file));sources.append(source);}
     sources.append(link('安裝自己的 WebUI', sourceLink('README.zh-TW.md')));
     const share = link('分享這個功能的說明', new URL('./#/studio/' + encodeURIComponent(id) + '?guide=1', base).href); sources.append(share);
     content.append(sources);
-    window.openSheet({id: 'app-feature-guide', title: `${feature.title} · 流程與模型`, opener, content, className: 'catalogue-detail-sheet'});
+    titledSheet({id: 'app-feature-guide', opener, content, className: 'catalogue-detail-sheet'}, `${feature.title} · 流程與模型`, `${english(feature.title)} · Workflow and models`);
+  }
+  async function openGraph(id, opener = document.activeElement) {
+    await ready;
+    const graph = registry.graphs?.[id];
+    if (!graph) return openFeature(id, opener);
+    const title = featureRecord(id)?.title || id;
+    titledSheet({id: 'app-node-graph', opener, content: window.WebComfyExplorers.graphContent(graph), className: 'catalogue-detail-sheet'}, `${title} · ComfyUI 範本與節點`, `${english(title)} · ComfyUI templates and nodes`);
+  }
+  async function openLibraryGraph(item, opener) {
+    let graph;
+    if (item.download_url) {
+      const response = await fetch(new URL(item.download_url, base)); const raw = await response.json();
+      if (!response.ok) return openHelp(opener);
+      if (Array.isArray(raw.nodes)) {
+        graph = {nodes: raw.nodes.map(node => ({id: node.id, type: node.type, title: node.title,
+          inputs: {widgets: node.widgets_values || []}})),
+          links: (raw.links || []).map(link => Array.isArray(link) ? {from: link[1], from_slot: link[2], to: link[3], to_slot: link[4]} : {from: link.origin_id, from_slot: link.origin_slot, to: link.target_id, to_slot: link.target_slot})};
+      } else {
+        graph = {nodes: [], links: []};
+        for (const [id, node] of Object.entries(raw)) if (node?.class_type) {
+          graph.nodes.push({id, type: node.class_type, inputs: node.inputs || {}});
+          for (const [key, value] of Object.entries(node.inputs || {})) if (Array.isArray(value) && value.length === 2 && raw[value[0]]?.class_type) graph.links.push({from: value[0], from_slot: value[1], to: id, to_slot: key});
+        }
+      }
+      Object.assign(graph, {kind: 'comfyui', source: item.upstream_url,
+        evidence: '從這份可下載 JSON 的外層節點與連線繪製；群組內部請下載 JSON 查看。此處不執行工作流。',
+        evidence_en: 'Drawn from the outer nodes and connections in this downloadable JSON. Download it to inspect nested groups. No workflow is executed here.'});
+    } else {
+      const steps = item.guide?.steps || [item.guide?.summary || item.title];
+      graph = {kind: 'process', source: item.upstream_url, evidence: '依教學步驟整理的流程示意；沒有附帶可驗證的 ComfyUI 節點圖。',
+        evidence_en: 'Process outline from the guide steps. No verified ComfyUI graph is included.',
+        nodes: steps.map((step, index) => ({id: String(index), type: 'Guide step', title: step, inputs: {}})),
+        links: steps.slice(1).map((_, index) => ({from: String(index), to: String(index + 1)}))};
+    }
+    window.openSheet({id: 'library-node-graph', title: item.title, opener, content: window.WebComfyExplorers.graphContent(graph), className: 'catalogue-detail-sheet'});
   }
   function openHelp(opener = document.activeElement) {
     const content = el('div', '', 'workflow-details');
     content.append(el('p', '這是 Web ComfyUI 的互動說明版，使用與本機版相同的頁面、按鈕和表單。', 'workflow-summary'));
     rows(content, '怎麼看這個介面', [
       '從「創作」切換文生圖、改圖、影片或聲音工具；點工具名稱或「查看流程與模型」會說明真正使用的模型與 template。',
-      '表單可以切換設定以了解操作位置；生成、上傳與表單送出會開啟說明。API 呼叫與儲存不會送出。',
+      '表單已填入示範案例，可修改文字或點擊／拖曳檔案在瀏覽器預覽；按開始生成會播放模擬步驟並顯示預製成果。',
+      '查看 ComfyUI 範本與節點可探索節點連線與參數；API 或獨立工具則顯示已標明的處理流程。',
       '「工作庫」整理其他可下載工作流與來源方法；這些社群流程與創作表單使用的內建組圖程式分別標示。',
       '角色、素材、任務與供應商清單從空白開始。個人內容由安裝後的本機 WebUI 管理。',
     ]);
@@ -125,27 +195,40 @@
     const selected = selectedFeature(); return selected ? openFeature(selected.id, opener) : openHelp(opener);
   }
   window.WebComfyDocs = {
-    ready, openFeature, openHelp,
+    ready, openFeature, openGraph, openHelp,
+    createCharacterDemo() { location.hash = '#/characters'; openFeature('character-create'); },
     featureButton(id) {
-      const wrap = el('div', '', 'app-guide-button'); const button = el('button', '查看流程與模型', 'ghost small'); button.type = 'button';
-      button.onclick = () => openFeature(id, button); wrap.append(button); return wrap;
+      const wrap = el('div', '', 'app-guide-button'); wrap.dataset.guideFeature = id;
+      const button = el('button', '查看流程與模型', 'ghost small'); button.type = 'button';
+      const graph = el('button', '查看 ComfyUI 範本與節點', 'ghost small'); graph.type = 'button'; graph.dataset.action = 'view-graph';
+      button.onclick = () => openFeature(id, button); graph.onclick = () => openGraph(id, graph); wrap.append(button, graph); return wrap;
     },
-    libraryOptions(openSheet) {return {openSheet, docsMode: true, catalogUrl: new URL('catalog.json', base).href, onSelect(id) {history.replaceState(history.state, '', '#/workflow/' + encodeURIComponent(id));}};},
+    libraryOptions(openSheet) {return {openSheet, docsMode: true, catalogUrl: new URL('catalog.json', base).href, onGraph: openLibraryGraph, onSelect(id) {history.replaceState(history.state, '', '#/workflow/' + encodeURIComponent(id));}};},
   };
-  document.addEventListener('submit', event => {event.preventDefault();event.stopImmediatePropagation();explainAction(event.submitter);}, true);
+  document.addEventListener('submit', event => {
+    if (event.target.closest('[data-docs-interactive="true"]')) return;
+    event.preventDefault();event.stopImmediatePropagation();
+    if (event.target.dataset.demoId) window.WebComfyTour.start(event.target); else explainAction(event.submitter);
+  }, true);
   document.addEventListener('click', event => {
     const target = event.target.closest('button,input,a');
-    if (!target || target.closest('.sheet-layer .workflow-details')) return;
-    if (target.matches('a[href="/admin"]') || (target.matches('button') && target.textContent.trim() === '登出')) {
+    if (!target || target.closest('[data-docs-interactive="true"],.sheet-layer .workflow-details')) return;
+    if (target.matches('a[href="/admin"]') || (target.matches('button') && ['登出', 'Sign out', 'Log out'].includes(target.textContent.trim()))) {
       event.preventDefault();event.stopImmediatePropagation();openHelp(target);return;
     }
+    if (target.matches('input[type=file]') && target.closest('[data-demo-id]')) return;
     if (target.matches('input[type=file],input[type=password],button[type=submit],.generate-btn,.assist-btn')) {
-      event.preventDefault();event.stopImmediatePropagation();explainAction(target);
+      event.preventDefault();event.stopImmediatePropagation();
+      const form = target.closest('[data-demo-id]');
+      if (form && target.matches('button[type=submit],.generate-btn')) window.WebComfyTour.start(form); else explainAction(target);
     }
   }, true);
-  document.addEventListener('drop', event => {event.preventDefault();event.stopImmediatePropagation();explainAction(event.target);}, true);
+  document.addEventListener('drop', event => {event.preventDefault();event.stopImmediatePropagation();if (!window.WebComfyTour?.handleDrop(event)) explainAction(event.target);}, true);
   document.addEventListener('beforeinput', event => {if(event.target.matches('input[type=password]')) {event.preventDefault();event.stopImmediatePropagation();}}, true);
-  const disableSecrets = () => document.querySelectorAll('input[type=password]').forEach(input => {input.disabled = true;input.value = '';input.placeholder = '請在本機 WebUI 設定';});
+  const disableSecrets = () => {
+    document.querySelectorAll('input[type=password]').forEach(input => {input.disabled = true;input.value = '';input.placeholder = '請在本機 WebUI 設定';});
+    updateDocsIdentity();
+  };
   new MutationObserver(disableSecrets).observe(document.documentElement, {childList: true, subtree: true});
   disableSecrets();
   // Wait for the real app script, including slow first visits; a fixed delay
@@ -156,6 +239,7 @@
   });
   const showLoadError = () => {const message = document.getElementById('docsBanner'); if(message) message.textContent = '說明資料載入失敗，請重新整理頁面。';};
   const initialGuide = callback => Promise.all([ready, appLoaded]).then(() => callback()).catch(showLoadError);
+  initialGuide(() => {window.WebComfyI18n?.register(registry.translations || {}); window.WebComfyTour?.install(registry);});
   if (!location.hash || location.hash === '#/') history.replaceState(null, '', '#/studio/text2img');
   // Keep former static help links useful; workflow deep links remain supported.
   if (['#/start', '#/about'].includes(location.hash)) {history.replaceState(null, '', '#/studio/text2img');initialGuide(openHelp);}

@@ -47,6 +47,8 @@ workflows/user-saved/
 *.mov
 *.mp3
 *.wav
+!webui/docs/examples/*.webp
+!webui/docs/examples/*.mp4
 *.zip
 *.tar*
 .openclaw/

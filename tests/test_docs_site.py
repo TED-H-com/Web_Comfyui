@@ -20,6 +20,7 @@ MANIFESTS = (
     'manifests/community_workflows/catalog.json',
     'manifests/workflow_coverage/imported_sources.json',
     'manifests/community_recipes/recipes.json',
+    'manifests/app_guides/en.json',
 )
 
 
@@ -94,6 +95,7 @@ def test_artifact_contains_only_reviewed_graphs_assets_and_licenses(source, tmp_
     assert 'sources.json' in (output / 'NOTICE.txt').read_text()
     app = read_json(output / 'app-guide.json')
     assert len(app['features']) == len(app['guides']) == 23
+    assert set(app['graphs']) == set(app['demos']) == {row['id'] for row in app['features']} | {'character-create'}
     assert {row['id'] for row in app['features']} == {row['id'] for row in app['guides']}
     assert not any(relative.endswith('.py') for relative in artifact_files(output))
 
@@ -267,7 +269,8 @@ def test_static_shell_preserves_app_navigation_and_loads_adapter_first(source, t
     assert "connect-src 'self'" in html
     assert "form-action 'none'" in html
     assert parsed.scripts[0] == './assets/docs.js'
-    assert parsed.scripts[1:] == [url.replace('/static/', './assets/') for url in original.scripts]
+    assert parsed.scripts[1:3] == ['./assets/explorers.js', './assets/tour.js']
+    assert parsed.scripts[3:] == [url.replace('/static/', './assets/') for url in original.scripts]
     assert {'assets/app.js', 'assets/login-return.js', 'assets/provider-fabric.js', 'assets/project-preview.js'} <= artifact_files(output)
 
 
@@ -308,7 +311,7 @@ const calls = [], listeners = {};
 const password = {value: 'synthetic-old-value', disabled: false};
 const app = {studios: [], features: [], guides: []};
 const library = {items: []};
-const window = {fetch: async (url, options) => {
+const window = {addEventListener() {}, fetch: async (url, options) => {
   calls.push({url: String(url), options});
   return new Response(JSON.stringify(String(url).endsWith('app-guide.json') ? app : library));
 }};

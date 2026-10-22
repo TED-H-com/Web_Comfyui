@@ -1,0 +1,33 @@
+/* Language control uses the app's existing compact controls and tokens. */
+#languageSelect, #authLanguageSelect, .language-select {
+  width: auto;
+  min-width: 84px;
+  max-width: 112px;
+  min-height: var(--tap-min, 44px);
+  padding: 6px 8px;
+  border: 1px solid var(--line, #dde4ee);
+  border-radius: var(--space-2, 8px);
+  color: var(--ink, #1f2c3c);
+  background: var(--panel, #fff);
+  font: inherit;
+  font-size: var(--text-xs, 12px);
+  flex: 0 0 auto;
+}
+#languageSelect:focus-visible, #authLanguageSelect:focus-visible, .language-select:focus-visible { outline: 2px solid var(--blue, #2f8fe0); outline-offset: 2px; }
+.auth-language-select { position: absolute; top: var(--space-4, 16px); right: var(--space-4, 16px); z-index: 1; }
+@media (max-width: 767px) { #languageSelect, #authLanguageSelect, .language-select { min-width: 96px; max-width: 120px; padding-inline: 6px; font-size: var(--text-md, 16px); } }
+
+/* Keep all navigation destinations visible alongside bilingual controls. */
+@media (min-width: 768px) and (max-width: 1279px) {
+  :root { --topbar-h: calc(var(--tap-min) * 2 + var(--space-2) + var(--space-3)); }
+  #appTopbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2); }
+  #appTopbar > .brand { grid-column: 1; grid-row: 1; }
+  #appTopbar > .top-actions { grid-column: 2; grid-row: 1; }
+  #appTopbar > .view-nav { grid-column: 1 / -1; grid-row: 2; width: 100%; flex-wrap: wrap; }
+}
+
+/* Reserve controls' intrinsic width; the brand absorbs narrow-header space. */
+#appTopbar > .top-actions { flex: 0 0 auto; }
+#appTopbar > .brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#appTopbar > .view-nav { flex: 0 0 auto; }
+@media (max-width: 767px) { #appTopbar > .brand { flex: 1 1 0; } }

@@ -1,0 +1,45 @@
+/* Documentation explorers share the real app's palette, type and controls. */
+.app-node-graph, .app-demo { min-width: 0; max-width: 100%; color: var(--ink); font-size: var(--text-sm); line-height: 1.6; }
+.app-node-graph { padding: var(--space-5); }
+.app-demo { padding: var(--space-4); border-top: 1px solid var(--line); }
+.app-demo h3, .graph-inspector h3 { font-size: var(--text-lg); margin: 0 0 var(--space-3); }
+.explorer-lead { font-size: var(--text-md); margin-top: 0; }
+.explorer-evidence, .explorer-help { color: var(--muted); overflow-wrap: anywhere; }
+.explorer-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block: var(--space-3); }
+.explorer-toolbar button, .demo-form button { min-width: var(--tap-min); min-height: var(--tap-min); }
+.graph-zoom-label { min-width: var(--space-7); text-align: center; font-variant-numeric: tabular-nums; }
+.graph-viewport { position: relative; height: min(52vh, 480px); min-height: 280px; width: 100%; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: var(--catalogue-radius); background: var(--bg); cursor: grab; }
+.graph-viewport.dragging { cursor: grabbing; user-select: none; }
+.graph-viewport:focus-visible, .graph-node:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 2px; }
+.graph-surface { position: relative; }
+.graph-canvas { position: absolute; left: 0; top: 0; transform-origin: top left; }
+.graph-wires { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.graph-wires path { fill: none; stroke: var(--muted); stroke-width: 2; opacity: .6; }
+.graph-wires path.selected { stroke: var(--blue-dark); stroke-width: 3; opacity: 1; }
+.graph-node { position: absolute; display: flex; flex-direction: column; padding: 0; text-align: left; border: 1px solid var(--line); border-radius: var(--catalogue-radius); color: var(--ink); background: var(--panel); font: inherit; cursor: pointer; box-shadow: var(--shadow-soft); }
+.graph-node[aria-pressed=true] { border-color: var(--blue-dark); box-shadow: 0 0 0 1px var(--blue-dark); }
+.graph-node-heading { height: 62px; min-height: 62px; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); width: 100%; box-sizing: border-box; }
+.graph-node-heading small { float: right; margin-left: var(--space-2); font-size: var(--text-xs); color: var(--muted); }
+.graph-node-heading strong, .graph-node-heading .graph-node-type { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.graph-node-heading strong { font-size: var(--text-sm); }
+.graph-node-type { font-size: var(--text-xs); color: var(--muted); overflow-wrap: anywhere; }
+.graph-ports { display: block; width: 100%; }
+.graph-port-row { display: flex; justify-content: space-between; height: 24px; }
+.graph-port { position: relative; display: block; max-width: 46%; padding-inline: var(--space-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-xs); line-height: 24px; }
+.graph-port.connected::before { content: ''; position: absolute; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--blue-dark); }
+.graph-port.in::before { left: 0; }.graph-port.out::before { right: 0; background: var(--green); }
+.graph-node-footer { margin-top: auto; padding: var(--space-1) var(--space-3); font-size: var(--text-xs); color: var(--blue-dark); }
+.graph-inspector { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--line); }
+.graph-parameters { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(0, 3fr); margin: var(--space-3) 0; }
+.graph-parameters dt, .graph-parameters dd { margin: 0; padding: var(--space-2); border-bottom: 1px solid var(--line); overflow-wrap: anywhere; white-space: pre-wrap; }
+.graph-parameters dt { font-weight: 600; }.graph-connections { padding-left: var(--space-5); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.explorer-notes { padding-left: var(--space-5); }.demo-disclosure { font-weight: 600; color: var(--blue-dark); margin-block: var(--space-2); }
+.demo-form label { display: grid; gap: var(--space-2); }.demo-form textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 96px; padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--space-2); background: var(--panel); color: var(--ink); font: inherit; font-size: var(--text-md); }.demo-form button { margin-top: var(--space-3); }
+.demo-prompt-echo { padding: var(--space-3); background: var(--bg); border-radius: var(--space-2); overflow-wrap: anywhere; white-space: pre-wrap; }
+.demo-state { font-weight: 600; margin-bottom: var(--space-2); }.demo-progress { height: var(--space-1); overflow: hidden; background: var(--line); border-radius: var(--space-1); }.demo-progress span { display: block; height: 100%; width: 0; background: var(--blue-dark); transition: width .3s ease; }
+.demo-stages { display: flex; flex-wrap: wrap; list-style-position: inside; gap: var(--space-2) var(--space-4); padding: 0; color: var(--muted); font-size: var(--text-sm); }.demo-stages .active { color: var(--blue-dark); font-weight: 600; }.demo-stages .done { color: var(--ink); }.demo-stages .done::after { content: ' ✓'; }
+.demo-output { border-top: 1px solid var(--line); margin-top: var(--space-4); padding-top: var(--space-3); }.demo-output h4 { font-size: var(--text-md); margin: 0 0 var(--space-3); }
+.demo-gallery { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,220px),1fr)); gap: var(--space-3); }.demo-gallery figure { margin: 0; min-width: 0; }.demo-gallery img { display: block; width: 100%; height: auto; max-height: 480px; object-fit: contain; background: var(--bg); border-radius: var(--space-2); }.demo-gallery figcaption { font-size: var(--text-xs); padding-top: var(--space-2); overflow-wrap: anywhere; }.demo-character img { aspect-ratio: 4/5; }.demo-output video { width: 100%; max-height: 480px; background: var(--ink); border-radius: var(--space-2); }.demo-result-text { white-space: pre-wrap; overflow-wrap: anywhere; }.demo-transcript-label { font-weight: 600; }
+.app-demo [hidden], .app-node-graph [hidden] { display: none !important; }
+@media(max-width:767px) { .app-node-graph { padding: var(--space-4); }.app-demo { padding: var(--space-3); }.graph-viewport { height: 340px; }.graph-parameters { grid-template-columns: minmax(0,1fr); }.graph-parameters dt { border-bottom: 0; padding-bottom: 0; }.graph-parameters dd { padding-top: var(--space-1); }.demo-form textarea { font-size: var(--text-md); } }
+@media(prefers-reduced-motion:reduce) { .demo-progress span { transition: none; } }

@@ -1,6 +1,6 @@
 # Your first workflow
 
-Start after [installing Web_Comfyui](installation.md). Keep ComfyUI open at `http://127.0.0.1:8188` and Web_Comfyui at `http://127.0.0.1:8190`. The [online guides](https://ted-h-com.github.io/Web_Comfyui/) use the same app interface in read-only mode; your local application performs the work. For installation steps in Traditional Chinese, see [README.zh-TW.md](../README.zh-TW.md).
+Start after [installing Web_Comfyui](installation.md). Keep ComfyUI open at `http://127.0.0.1:8188` and Web_Comfyui at `http://127.0.0.1:8190`. The [online guides](https://ted-h-com.github.io/Web_Comfyui/) use the same app interface with prepared demonstrations; your local application performs real work. Both have a top-right **繁中 / English** language control. For installation steps in Traditional Chinese, see [README.zh-TW.md](../README.zh-TW.md).
 
 ## 1. Sign in and choose a starting point
 
@@ -15,7 +15,11 @@ You have two routes:
 | **創作** — generation forms | You want the application's existing controls for a supported model/task. | The form submits its supported job after its prerequisites pass. |
 | **工作庫** — workflow library | You want to inspect or adapt a supplied ComfyUI graph. | You open the graph and queue it in the native ComfyUI editor. |
 
-Before installing models, you can explore the online **創作** page. Click a tool name, **查看流程與模型**, or its generation button to read one of 23 source-backed feature guides. For example, **文生圖** explains the Z-Image Turbo Python builder, its Qwen text encoder, AE and optional DOPSD LoRA. Forms remain interactive for learning; online actions do not upload, queue or call providers.
+Before installing models, explore the online **創作** page. Its two help buttons are **查看流程與模型**, for the feature guide, and **查看 ComfyUI 範本與節點**, for the node view. For example, **文生圖** explains the Z-Image Turbo Python builder, its Qwen text encoder, AE and optional DOPSD LoRA. Node views identify actual ComfyUI graph structure separately from service-process illustrations.
+
+Each of the 23 tools, plus character creation, has a prefilled example. Edit the text or click/drop a supported local file to preview your own input in the browser. Press the existing **Generate** button to see a short simulated sequence followed by the fixed prepared result in the form. Nothing is uploaded, queued or sent to a provider. Changed inputs do not generate a different result.
+
+The demo set contains four fictional illustrations and two four-second silent pan/fade animations, approximately 1.68 MiB in total. Video previews animate prepared stills; they do not demonstrate model-generated motion or lip sync. Voice examples show transcripts only. [Prompts, derivations and hashes](../webui/docs/examples/provenance.json) identify the six approved public assets, which are separate from runtime and personal media. The [site maintenance guide](site.md) explains the publication checks.
 
 Most actual generation forms build their own API graphs in Python. A community JSON with a similar title is a separate example, not automatically the form’s template.
 
@@ -54,7 +58,7 @@ If the loading action is unavailable, check the entry type and your access. Only
 Inside the native editor:
 
 1. Select installed checkpoints, encoders, VAEs and adapters. Match the source's model family and variant.
-2. Replace example input filenames with your own uploaded images, video or audio. A filename in a template does not mean that media was bundled.
+2. Replace example input filenames with your own uploaded images, video or audio. A filename in a template does not mean its input media was bundled; the six documentation demo assets are a separate illustration set.
 3. Edit the prompt and choose one image or a short clip for the first test. Check output dimensions, duration and filename prefix.
 4. If the graph contains API nodes, configure your own endpoint/model/credentials before running it. An application `.env` key may not configure those nodes.
 5. Queue the graph in ComfyUI. Watch its queue and terminal for errors, then inspect the saved output.
