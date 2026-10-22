@@ -155,7 +155,7 @@
     else resolve();
   });
   const showLoadError = () => {const message = document.getElementById('docsBanner'); if(message) message.textContent = '說明資料載入失敗，請重新整理頁面。';};
-  const initialGuide = callback => Promise.all([ready, appLoaded]).then(callback).catch(showLoadError);
+  const initialGuide = callback => Promise.all([ready, appLoaded]).then(() => callback()).catch(showLoadError);
   if (!location.hash || location.hash === '#/') history.replaceState(null, '', '#/studio/text2img');
   // Keep former static help links useful; workflow deep links remain supported.
   if (['#/start', '#/about'].includes(location.hash)) {history.replaceState(null, '', '#/studio/text2img');initialGuide(openHelp);}
