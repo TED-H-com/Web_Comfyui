@@ -7480,7 +7480,26 @@ def _clean_character_visual_class(raw: dict, kind: str) -> str:
     return "unknown"
 
 
+def _fast_json_copy(value):
+    t = type(value)
+    if t is dict:
+        res = {}
+        for k, v in value.items():
+            if type(k) is not str:
+                raise TypeError("strict")
+            res[k] = _fast_json_copy(v)
+        return res
+    if t is list:
+        return [_fast_json_copy(v) for v in value]
+    if t is str or t is int or t is float or t is bool or value is None:
+        return value
+    raise TypeError("strict")
+
 def _json_copy(value):
+    try:
+        return _fast_json_copy(value)
+    except (TypeError, RecursionError):
+        pass
     try:
         return json.loads(json.dumps(value, ensure_ascii=False))
     except (TypeError, ValueError):
