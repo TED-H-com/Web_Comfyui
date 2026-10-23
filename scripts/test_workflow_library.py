@@ -261,6 +261,37 @@ def test_open_sanitizes_all_upstream_errors(monkeypatch, error):
     assert 'private' not in json.dumps(handler.body)
 
 
+def test_discovered_provenance_without_owner_does_not_drop_the_library(tmp_path):
+    workflows = tmp_path / 'workflows'
+    workflows.mkdir()
+    graph = {'nodes': [{'id': 1, 'type': 'KSampler'}], 'links': []}
+    for name in ('kept', 'blank', 'site', 'owned'):
+        (workflows / f'{name}.json').write_text(json.dumps(graph), encoding='utf-8')
+    provenance = tmp_path / 'manifests/workflow_coverage/imported_sources.json'
+    provenance.parent.mkdir(parents=True)
+    provenance.write_text(json.dumps({'records': [
+        {'destination': 'workflows/blank.json', 'source_url': None, 'license': 'MIT', 'modifications': ['kept']},
+        {'destination': 'workflows/site.json', 'source_url': 'https://example.com', 'license': 'Apache-2.0'},
+        {'destination': 'workflows/owned.json', 'source_url': 'https://github.com/Comfy-Org/workflow_templates/blob/abc/templates/x.json', 'license': 'GPL-3.0'},
+    ]}), encoding='utf-8')
+    entries = {entry['title']: entry for entry in library.catalog(tmp_path)}
+    assert set(entries) == {'kept', 'blank', 'site', 'owned'}
+    assert entries['kept']['source'] == 'workspace'
+    assert entries['blank']['source'] == 'workspace'
+    assert entries['blank']['license'] == 'MIT'
+    assert entries['blank']['notes'] == ['kept']
+    assert entries['site']['source'] == 'workspace'
+    assert entries['site']['upstream_url'] == 'https://example.com'
+    assert entries['owned']['source'] == 'Comfy-Org'
+    assert entries['owned']['license'] == 'GPL-3.0'
+
+
+def test_shipped_catalog_still_attributes_provenance_owners():
+    entries = library.catalog(ROOT)
+    assert len(entries) == 248
+    assert sum(entry.get('source') == 'Comfy-Org' for entry in entries) == 5
+
+
 def test_non_operator_cannot_read_import_body_or_contact_comfy(monkeypatch):
     class Handler:
         def require_auth(self): return True

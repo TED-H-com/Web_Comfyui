@@ -164,6 +164,20 @@ def safe_path(relative, root=ROOT):
     return candidate
 
 
+def _provenance_owner(url):
+    """Return the first URL path segment, or None when it cannot be an owner.
+
+    Discovered-workflow provenance is contributor-supplied. A missing URL or a
+    URL with no owner segment must not abort the rest of the catalog.
+    """
+    if not isinstance(url, str) or not url:
+        return None
+    parts = urllib.parse.urlsplit(url).path.split('/')
+    if len(parts) < 2 or parts[1] in {'', '.', '..'}:
+        return None
+    return parts[1]
+
+
 def catalog(root=ROOT, *, include_discovered=True, object_info=None):
     entries = []
     covered = set()
@@ -212,16 +226,24 @@ def catalog(root=ROOT, *, include_discovered=True, object_info=None):
             details = graph_details(graph)
         except (ValueError, OSError):
             continue
+        extra = {}
+        if relative in by_path:
+            row = by_path[relative]
+            extra = {
+                'upstream_url': row.get('source_url'),
+                'license': row.get('license'),
+                'notes': row.get('modifications', []),
+            }
+            owner = _provenance_owner(row.get('source_url'))
+            if owner:
+                extra['source'] = owner
         entry = {
             'id': 'local-' + hashlib.sha256(relative.encode()).hexdigest()[:20],
             'title': path.stem, 'category': path.parent.name if path.parent.name != 'workflows' else 'local',
             'source': 'workspace', 'kind': 'workflow', 'available': True,
             'local_path': relative, 'tags': [], 'status': 'not-gpu-qualified', **details,
             'models': graph_models(graph),
-            **({'upstream_url': by_path[relative].get('source_url'),
-                'license': by_path[relative].get('license'),
-                'source': urllib.parse.urlsplit(by_path[relative].get('source_url', '')).path.split('/')[1],
-                'notes': by_path[relative].get('modifications', [])} if relative in by_path else {}),
+            **extra,
         }
         entry['guide'] = enrich_entry(entry, graph)
         if object_info is not None:
