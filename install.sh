@@ -148,7 +148,7 @@ while read -r name url pin _; do
   fi
 
   if [ -n "${pin:-}" ]; then
-    if [ -n "$(git -C "$dest" status --porcelain)" ]; then
+    if [ -n "$(git -C "$dest" status --porcelain --untracked-files=no)" ]; then
       echo "[WARN] pinned custom node is dirty; leaving it untouched: $name"
       continue
     fi
