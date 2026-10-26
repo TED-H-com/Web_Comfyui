@@ -170,6 +170,8 @@ an active lock file to migrate names.
 The `webui/file_lock.py` primitive retains `fcntl.flock` on POSIX and uses
 [Portalocker's Win32 implementation](https://github.com/wolph/portalocker/blob/v3.2.0/portalocker/portalocker.py)
 on Windows. Shared/exclusive lock and contention behavior have isolated tests.
+On 2026-10-26, the [Windows Server 2025 CI job](https://github.com/TED-H-com/Web_Comfyui/actions/runs/40278430459/job/121426126822)
+passed all 10 lock/configuration tests; the POSIX protected-path test was skipped.
 The Windows-only requirements include Portalocker and pywin32. This removes
 unconditional `fcntl` imports, but is **not full Windows portable support**:
 protected filesystem stores still require a Windows ACL/reparse-point design,

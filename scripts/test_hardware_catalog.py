@@ -7,7 +7,7 @@ import socket
 import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import urlsplit
 
 import pytest
 from app_guide_catalog import catalog as app_catalog
@@ -113,8 +113,7 @@ BROWSER=r'''<!doctype html><html lang="zh-Hant"><meta charset="utf-8">
 
 @pytest.mark.parametrize('width',[390,768,1440])
 def test_hardware_browser(tmp_path,hardware,width):
-    browser=shutil.which('chromium')
-    if not browser:pytest.skip('Chromium unavailable')
+    playwright = pytest.importorskip('playwright.sync_api')
     requests=[]
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,*args):pass
@@ -131,8 +130,16 @@ def test_hardware_browser(tmp_path,hardware,width):
             self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
     server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start()
     try:
-        run=subprocess.run([browser,'--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',f'--user-data-dir={tmp_path / "browser"}',f'--window-size={width},1000','--virtual-time-budget=9000','--dump-dom',f'http://127.0.0.1:{server.server_port}/'],capture_output=True,text=True,timeout=40)
-        marker=run.stdout.split('id="result"')[-1].split('</pre>')[0]
-        assert '>PASS' in marker,(marker[-2000:],run.stderr[-500:])
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch_persistent_context(
+                str(tmp_path / 'browser'),
+                executable_path=shutil.which('google-chrome') or shutil.which('chromium'),
+                viewport={'width': width, 'height': 1000},
+                args=['--no-sandbox', '--disable-dev-shm-usage'],
+            ) as context:
+                page = context.new_page()
+                page.goto(f'http://127.0.0.1:{server.server_port}/')
+                page.wait_for_function("document.getElementById('result').textContent !== 'WAIT'", timeout=15000)
+                assert page.locator('#result').inner_text() == 'PASS'
         assert not any('/api' in request for request in requests)
     finally:server.shutdown();server.server_close()

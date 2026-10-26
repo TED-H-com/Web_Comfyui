@@ -41,7 +41,8 @@ jobs:
           mkdir -p "$HOME/agent-work/tmp/pytest"
           test_tmp="$(mktemp -d "$HOME/agent-work/tmp/pytest/public-ci-XXXXXX")"
           trap 'rm -rf "$test_tmp"' EXIT
-          python -m pytest -q --basetemp="$test_tmp/bt" tests scripts/test_app_guide_catalog.py scripts/test_app_graph_catalog.py scripts/test_hardware_catalog.py scripts/test_demo_catalog.py scripts/test_guide_translations.py scripts/test_i18n_browser.py scripts/test_community_workflows.py scripts/test_moss_trainer.py scripts/test_workflow_library.py scripts/test_workflow_guides.py scripts/test_autoip_oct22.py scripts/test_autoip_contract.py scripts/test_autoip_worker.py scripts/test_autoip_quote.py scripts/test_provider_autoip_profiles.py
+          export TMPDIR="$test_tmp"
+          python -m pytest -q --basetemp="$test_tmp/bt" tests scripts/test_app_guide_catalog.py scripts/test_app_graph_catalog.py scripts/test_hardware_catalog.py scripts/test_demo_catalog.py scripts/test_guide_translations.py scripts/test_community_workflows.py scripts/test_moss_trainer.py scripts/test_workflow_library.py scripts/test_workflow_guides.py scripts/test_autoip_oct22.py scripts/test_autoip_contract.py scripts/test_autoip_worker.py scripts/test_autoip_quote.py scripts/test_provider_autoip_profiles.py
       - name: JavaScript syntax
         run: |
           node --check webui/static/app.js
@@ -79,4 +80,5 @@ jobs:
           mkdir -p "$HOME/agent-work/tmp/pytest"
           browser_test_tmp="$(mktemp -d "$HOME/agent-work/tmp/pytest/browser-ci-XXXXXX")"
           trap 'rm -rf "$browser_test_tmp"' EXIT
-          python -m pytest -q --basetemp="$browser_test_tmp/bt" scripts/test_docs_browser.py scripts/test_landing_browser.py scripts/test_tour_browser.py scripts/test_explorers_browser.py
+          export TMPDIR="$browser_test_tmp"
+          python -m pytest -q --basetemp="$browser_test_tmp/bt" scripts/test_docs_browser.py scripts/test_landing_browser.py scripts/test_tour_browser.py scripts/test_explorers_browser.py scripts/test_hardware_catalog.py scripts/test_i18n_browser.py
