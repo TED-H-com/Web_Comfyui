@@ -9,9 +9,12 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+import sys
 from unittest.mock import patch
 
-SPEC = importlib.util.spec_from_file_location("public_launcher", Path(__file__).resolve().parents[1] / "run.py")
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+SPEC = importlib.util.spec_from_file_location("public_launcher", ROOT / "run.py")
 launcher = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(launcher)
 
@@ -48,6 +51,23 @@ class LauncherTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             launcher.load_repository_env(checkout)
             self.assertNotIn("GEMINI_API_KEY", os.environ)
+
+    def test_alias_precedence_across_process_and_env_file(self):
+        (self.root / '.env').write_text('WEB_COMFYUI_PORT=8195\n')
+        with self.environment(), patch.dict(os.environ, {'CASTLE_COMFY_WEB_PORT': '8196'}):
+            launcher.load_repository_env(self.root)
+            self.assertEqual(launcher.prepare_environment(create_dirs=False)['port'], 8196)
+        (self.root / '.env').write_text('CASTLE_COMFY_WEB_PORT=8195\n')
+        with self.environment(), patch.dict(os.environ, {'WEB_COMFYUI_PORT': '8197'}):
+            launcher.load_repository_env(self.root)
+            self.assertEqual(launcher.prepare_environment(create_dirs=False)['port'], 8197)
+        for lines in [('CASTLE_COMFY_WEB_PORT=8195', 'WEB_COMFYUI_PORT=8198'),
+                      ('WEB_COMFYUI_PORT=8198', 'CASTLE_COMFY_WEB_PORT=8195')]:
+            (self.root / '.env').write_text('\n'.join(lines) + '\n')
+            with self.environment():
+                launcher.load_repository_env(self.root)
+                self.assertEqual(launcher.prepare_environment(create_dirs=False)['port'], 8198)
+                self.assertEqual(launcher.prepare_environment(port=8199, create_dirs=False)['port'], 8199)
 
     def test_env_error_does_not_echo_value(self):
         value = "synthetic-sensitive-value"

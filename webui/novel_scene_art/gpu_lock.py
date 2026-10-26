@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import errno
-import fcntl
+if '.' in (__package__ or ''):
+    from .. import file_lock as fcntl
+else:  # top-level webui package layout
+    import file_lock as fcntl
 import os
 import stat
 from pathlib import Path
@@ -11,9 +14,14 @@ from types import TracebackType
 
 from .errors import SceneArtError, fail
 from .secure_path import close_descriptors, open_absolute_directory
+try:
+    from ..config_env import default_gpu_lock
+except ImportError:  # server.py also supports top-level webui modules
+    from config_env import default_gpu_lock
 
 
-PRODUCTION_GPU_LOCK = (Path.home() / '.cache/web-comfyui-gpu-queue/rtx5090.lock')
+PRODUCTION_GPU_LOCK = Path(os.environ.get('WEB_COMFYUI_GPU_LOCK_PATH',
+                           os.environ.get('CASTLE_GPU_LOCK_PATH', str(default_gpu_lock())))).expanduser()
 
 
 class SharedGpuLock:

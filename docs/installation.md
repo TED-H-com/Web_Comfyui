@@ -8,7 +8,7 @@ The demo hardware selector uses planning estimates for no NVIDIA GPU, 8/12/16/24
 
 ## Supported starting point
 
-Use Linux, or a Linux distribution under WSL2, with Python 3.11 or newer. The backend uses POSIX file locking and process controls; native Windows is not supported by this launcher. Under WSL, install and run both applications inside the same Linux distribution so local files and paths agree. Use a Linux filesystem for application state and disk temporary files.
+Use Linux, or a Linux distribution under WSL2, with Python 3.11 or newer. Descriptor locking has a cross-platform backend, but the launcher and protected stores still use POSIX directory descriptors, ownership/mode checks and process controls. Native Windows is not supported by the complete launcher. Under WSL, install and run both applications inside the same Linux distribution so local files and paths agree. Use a Linux filesystem for application state and disk temporary files.
 
 Install ComfyUI separately using its [official installation instructions](https://docs.comfy.org/installation/manual_install), environment, models, and GPU drivers. Keep it bound to `127.0.0.1`. Web_Comfyui does not choose PyTorch/CUDA wheels for an existing ComfyUI installation.
 
@@ -42,7 +42,7 @@ Edit `.env` with your ComfyUI directory. Do not `source` this file: `run.py` par
 COMFY_HOME=/absolute/path/to/ComfyUI
 COMFYUI_URL=http://127.0.0.1:8188
 COMFYUI_BROWSER_URL=http://127.0.0.1:8188
-CASTLE_COMFY_WEB_PORT=8190
+WEB_COMFYUI_PORT=8190
 ```
 
 Then run:
@@ -81,10 +81,10 @@ The launcher leaves the configured backend URL intact. Most standard forms and w
 | `WEB_COMFYUI_DATA_DIR` | Persistent UI data; defaults to `~/.local/share/web-comfyui`. Choose a directory outside this checkout. |
 | `WEB_COMFYUI_CACHE_DIR` | Cache root; defaults to `~/.cache/web-comfyui`. |
 | `WEB_COMFYUI_TMP_DIR` | Disk temporary directory; defaults to the cache root's `tmp` directory. RAM-backed locations are rejected. |
-| `CASTLE_COMFY_WEB_PORT` | UI port; defaults to 8190. `--port` overrides it. |
+| `WEB_COMFYUI_PORT` | UI port; defaults to 8190. `--port` overrides it. |
 | `OPENAI_API_KEY`, `GEMINI_API_KEY` | Your optional language-model API credentials. |
-| `CASTLE_VOICE_LAB_ENV` | Optional absolute path to a local `KEY=VALUE` secrets file. No implicit credential-file search occurs. |
-| `CASTLE_OPERATOR_EMAIL` | Optional operator identity for account-based login. Local admin sessions already have operator access. |
+| `WEB_COMFYUI_VOICE_LAB_ENV` | Optional absolute path to a local `KEY=VALUE` secrets file. No implicit credential-file search occurs. |
+| `WEB_COMFYUI_OPERATOR_EMAIL` | Optional operator identity for account-based login. Local admin sessions already have operator access. |
 
 Quoted `.env` values have their surrounding quotes removed; escapes, substitutions, multiline values, and inline comments are not interpreted. The launcher expands `~` for `COMFY_HOME` and `WEB_COMFYUI_*` directories, but it does not expand `$HOME` or other variables. Use absolute paths for other directory overrides. For a value containing `#`, keep it as part of the value. Put comments on their own lines. Environment variables already supplied to the process override `.env` values. Keep `.env`, credentials, databases, and generated files out of source control.
 
@@ -102,11 +102,11 @@ Application API keys do not automatically configure every community workflow. An
 | URL media collection | `yt-dlp` for supported sources; certain crawler routes require a separately configured crawler helper. |
 | Image/video workflow generation | Referenced checkpoints, VAEs, encoders, custom nodes, and suitable hardware in ComfyUI. |
 | OpenAI/Gemini text generation | Your API credentials and selected provider model. |
-| Local Claude text generation | A separately installed, authenticated Claude CLI configured with `CASTLE_CLAUDE_CLI`. |
-| BreezyVoice personas | Your own service configured with `CASTLE_BREEZY_URL`, reference voices, and required voice/GPU helper tools. |
+| Local Claude text generation | A separately installed, authenticated Claude CLI configured with `WEB_COMFYUI_CLAUDE_CLI`. |
+| BreezyVoice personas | Your own service configured with `WEB_COMFYUI_BREEZY_URL`, reference voices, and required voice/GPU helper tools. |
 | VoxCPM cloning / voiceover | Your own VoxCPM installation, model files, configured Python executables, GPU queue helper, and reference audio/transcript. |
 | Speaker/content checks | Matching optional audio environment dependencies: Torch, torchaudio, NumPy, soundfile, ONNX Runtime, and Whisper as required by the selected worker. |
-| Reel rendering and specialist adapters | External rendering/QC/helper scripts, assets, and models configured through the corresponding `CASTLE_*` paths. They are not bundled. |
+| Reel rendering and specialist adapters | External rendering/QC/helper scripts, assets, and models configured through the corresponding `WEB_COMFYUI_*` paths. They are not bundled. |
 | H3 production paths | Required model license authorization and local runtime qualification records established by the installation owner. |
 
 Install optional audio/GPU packages in the relevant **worker environment**, not blindly into the Web UI virtual environment. `--check` checks the lightweight UI dependencies and ComfyUI status only. It does not load or qualify models, inspect API credential values, or execute external helpers. A reachable ComfyUI and a reported GPU do not prove a specific large model will fit in VRAM.
@@ -145,3 +145,35 @@ Before updating, back up `.env`, your persistent application data directory, and
 - **Password/state location:** the launcher stores local authentication under the application data root's `auth` directory. Back up that directory with the rest of your application state.
 
 For a remote browser, use an authenticated, operator-managed access solution while retaining loopback listeners. Proxy headers and origin checks affect the authentication lane; review the deployment settings instead of changing the listener to `0.0.0.0`.
+
+
+## Public environment names and portability
+
+At startup, `run.py` and direct `webui/server.py` launches translate
+`WEB_COMFYUI_<suffix>` to the legacy `CASTLE_<suffix>` setting. Existing names
+remain valid. `WEB_COMFYUI_HOST` and `WEB_COMFYUI_PORT` map to
+`CASTLE_COMFY_WEB_HOST` and `CASTLE_COMFY_WEB_PORT`; data/cache/tmp directory
+settings keep their existing public meanings. A public name wins when both
+names are explicitly supplied, even if its value is empty. Process environment
+values take priority over `.env` across aliases; `--port` still wins over both.
+Standalone specialist scripts retain their documented configuration interfaces.
+
+`WEB_COMFYUI_GPU_LOCK_PATH` (legacy `CASTLE_GPU_LOCK_PATH`) selects an absolute
+shared GPU lock path. The default remains
+`~/.cache/web-comfyui-gpu-queue/rtx5090.lock`, even before that file exists:
+choosing a different name based on file existence can split an idle legacy
+queue and a new worker onto two independent locks. A new installation may
+explicitly choose a neutral name such as `gpu0.lock`. Keep one fixed path
+across every worker and external queue script that shares a GPU. Never remove
+an active lock file to migrate names.
+
+The `webui/file_lock.py` primitive retains `fcntl.flock` on POSIX and uses
+[Portalocker's Win32 implementation](https://github.com/wolph/portalocker/blob/v3.2.0/portalocker/portalocker.py)
+on Windows. Shared/exclusive lock and contention behavior have isolated tests.
+On 2026-10-26, the [Windows Server 2025 CI job](https://github.com/TED-H-com/Web_Comfyui/actions/runs/40278430459/job/121426126822)
+passed all 10 lock/configuration tests; the POSIX protected-path test was skipped.
+The Windows-only requirements include Portalocker and pywin32. This removes
+unconditional `fcntl` imports, but is **not full Windows portable support**:
+protected filesystem stores still require a Windows ACL/reparse-point design,
+process handling needs porting, and end-to-end native Windows validation has
+not been performed. Use Linux/WSL2 for the application until those are completed.

@@ -13,6 +13,7 @@ import shutil
 import sys
 import urllib.parse
 import urllib.request
+from webui.config_env import apply_environment_aliases, legacy_name, public_name
 
 ROOT = Path(__file__).resolve().parent
 _ENV_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
@@ -29,6 +30,7 @@ def load_repository_env(root: Path = ROOT) -> None:
         return
     if path.is_symlink() or not path.is_file() or path.stat().st_size > 65_536:
         raise ConfigurationError("The repository .env must be a regular file smaller than 64 KiB")
+    process_names = set(os.environ)
     for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         line = line.strip()
         if not line or line.startswith("#"):
@@ -45,7 +47,10 @@ def load_repository_env(root: Path = ROOT) -> None:
             value = value[1:-1]
         if "\x00" in value:
             raise ConfigurationError(f"Invalid .env value on line {number}")
-        os.environ.setdefault(key, value)
+        # A process setting wins over .env even when the two use different aliases.
+        legacy = legacy_name(key)
+        if not any(name in process_names for name in {key, legacy, public_name(legacy)}):
+            os.environ.setdefault(key, value)
 
 
 def local_comfy_url(value: str) -> str:
@@ -91,6 +96,7 @@ def _filesystem_type(path: Path) -> str:
 
 def prepare_environment(*, port: int | None = None, create_dirs: bool = True) -> dict[str, Path | str | int]:
     """Set application paths before importing any module with runtime defaults."""
+    apply_environment_aliases()
     comfy = _absolute_setting("COMFY_HOME", Path.home() / "comfyui")
     data = _absolute_setting("WEB_COMFYUI_DATA_DIR", Path.home() / ".local/share/web-comfyui")
     cache = _absolute_setting("WEB_COMFYUI_CACHE_DIR", Path.home() / ".cache/web-comfyui")
@@ -103,7 +109,7 @@ def prepare_environment(*, port: int | None = None, create_dirs: bool = True) ->
     try:
         selected_port = port if port is not None else int(os.environ.get("CASTLE_COMFY_WEB_PORT", "8190"))
     except ValueError as error:
-        raise ConfigurationError("CASTLE_COMFY_WEB_PORT must be an integer") from error
+        raise ConfigurationError("WEB_COMFYUI_PORT must be an integer") from error
     if not 1 <= selected_port <= 65535:
         raise ConfigurationError("The Web UI port must be between 1 and 65535")
     url = local_comfy_url(os.environ.get("COMFYUI_URL", "http://127.0.0.1:8188"))

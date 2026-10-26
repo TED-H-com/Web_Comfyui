@@ -2385,7 +2385,7 @@
         "subject_pixels": 315611,
         "max_subject_channel_difference": 2,
         "channel_scale": 255,
-        "tolerance_note": "ComfyUI image decode/save quantization is measured against the published lossless reference; this is not bit-identical output.",
+        "tolerance_note": "Historical published WebP pair only, not a compositing tolerance. PyAV 17.1.0 argb→floating RGB→uint8 reproduces the live WebP load/save difference exactly; rgb24 conversion, PNG roundtrips and composition relative to the loaded source are 0/255.",
         "face_rectangle_xyxy": [
           475,
           185,
@@ -2393,7 +2393,39 @@
           245
         ],
         "max_face_channel_difference": 1,
-        "background_changed": true
+        "background_changed": true,
+        "file_sha256": {
+          "cheer-subject-reference.webp": "004728e3b0cca52e7557da9a038e3affc7cb82be72a881dae771ebbc670f757b",
+          "cheer-subject-blend.webp": "6cd14f743227dcff61b57a88e596018b4a1978115c7f108db3d2efd8a49a5b6e",
+          "cheer-subject-blend-v4_00001_.png": "5e0cc0208f2e697f8e0b46297be80c8b6282404aee82e4b9aab2ab92f5b8c872",
+          "cheer-subject-mask.webp": "f0c7e8d5461ecb1ef56f456f86224d9b276a817a7064b132872f56b4e5b77523",
+          "cheer-subject-mask-v4_00001_.png": "b807c173a43d37a1918b59c97b83a7889d77ee3d2793da7adb30dc50461ae027"
+        },
+        "conversion_trace": {
+          "checked_on": "2026-10-24",
+          "actual_input_matches_published_source_sha256": true,
+          "raw_png_to_published_webp_max_rgb_difference": 0,
+          "raw_mask_png_to_published_webp_max_rgb_difference": 0,
+          "source_vs_raw_png_max_subject_channel_difference": 2
+        },
+        "isolation_probe": {
+          "checked_on": "2026-10-24",
+          "comfyui_version_reported": "0.37.0",
+          "prompt_id": "620f9dbc-4774-4eb1-b69d-7084bd4fd017",
+          "scope": "No SAM3 inference; reuse the recorded binary mask to isolate I/O and compositing. No new public media.",
+          "webp_reference_load_save_max_rgb_difference": 2,
+          "rgb_png_reference_load_save_max_rgb_difference": 0,
+          "all_256_png_values_load_save_max_rgb_difference": 0,
+          "binary_composite_vs_loaded_source_max_subject_channel_difference": 0,
+          "decoder_trace": {
+            "pyav_version": "17.1.0",
+            "decoded_pixel_format": "argb",
+            "float_conversion": "gbrpf32le, multiply by 255, clip, uint8 truncation",
+            "float_conversion_vs_live_load_save_max_rgb_difference": 0,
+            "float_conversion_vs_published_reference_max_rgb_difference": 2,
+            "rgb24_conversion_vs_published_reference_max_rgb_difference": 0
+          }
+        }
       }
     },
     {

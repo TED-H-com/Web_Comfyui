@@ -18,7 +18,10 @@ never cross this boundary.
 
 from __future__ import annotations
 
-import fcntl
+if __package__:
+    from . import file_lock as fcntl
+else:
+    import file_lock as fcntl
 import hashlib
 import http.client
 import importlib

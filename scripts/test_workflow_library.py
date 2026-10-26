@@ -177,6 +177,27 @@ def test_missing_loader_counts_node_and_unchecked_model_without_exposing_paths()
     assert '/private/' not in json.dumps(result)
 
 
+@pytest.mark.parametrize('section', ['required', 'optional'])
+@pytest.mark.parametrize('descriptor,status,checked', [
+    ([['upscaler.pth']], 'present', 1),
+    (['COMBO', {'options': ['upscaler.pth']}], 'present', 1),
+    (['COMBO', {'options': ['other.pth']}], 'missing', 1),
+    (['COMBO', {'options': []}], 'missing', 1),
+    (['COMBO'], 'partial', 0),
+    (['COMBO', {}], 'partial', 0),
+    (['COMBO', {'options': 'upscaler.pth'}], 'partial', 0),
+    (['COMBO', {'options': [None]}], 'partial', 0),
+])
+def test_legacy_and_v3_combo_inventory(section, descriptor, status, checked):
+    graph = {'1': {'class_type': 'UpscaleModelLoader', 'inputs': {'model_name': 'upscaler.pth'}}}
+    info = {'UpscaleModelLoader': {'input': {section: {'model_name': descriptor}}}}
+    result = library.dependency_checks(library.graph_details(graph), graph, info)
+    assert result['dependency_status'] == status
+    assert result['models_checked'] == checked
+    assert result['model_checks_unknown'] == 1 - checked
+    assert result['gpu_tested'] is False
+
+
 def test_checked_catalog_uses_one_inventory_response_and_actual_graph_selections(tmp_path, monkeypatch):
     workflows = tmp_path / 'workflows'
     workflows.mkdir()
@@ -259,6 +280,61 @@ def test_open_sanitizes_all_upstream_errors(monkeypatch, error):
     library.handle_post(handler, '/api/workflow-library/open')
     assert handler.status == 400 and handler.body['ok'] is False
     assert 'private' not in json.dumps(handler.body)
+
+
+def test_discovered_provenance_without_owner_does_not_drop_the_library(tmp_path):
+    workflows = tmp_path / 'workflows'
+    workflows.mkdir()
+    graph = {'nodes': [{'id': 1, 'type': 'KSampler'}], 'links': []}
+    for name in ('kept', 'blank', 'site', 'owned'):
+        (workflows / f'{name}.json').write_text(json.dumps(graph), encoding='utf-8')
+    provenance = tmp_path / 'manifests/workflow_coverage/imported_sources.json'
+    provenance.parent.mkdir(parents=True)
+    provenance.write_text(json.dumps({'records': [
+        {'destination': 'workflows/blank.json', 'source_url': None, 'license': 'MIT', 'modifications': ['kept']},
+        {'destination': 'workflows/site.json', 'source_url': 'https://example.com', 'license': 'Apache-2.0'},
+        {'destination': 'workflows/owned.json', 'source_url': 'https://github.com/Comfy-Org/workflow_templates/blob/abc/templates/x.json', 'license': 'GPL-3.0'},
+    ]}), encoding='utf-8')
+    entries = {entry['title']: entry for entry in library.catalog(tmp_path)}
+    assert set(entries) == {'kept', 'blank', 'site', 'owned'}
+    assert entries['kept']['source'] == 'workspace'
+    assert entries['blank']['source'] == 'workspace'
+    assert entries['blank']['license'] == 'MIT'
+    assert entries['blank']['notes'] == ['kept']
+    assert entries['site']['source'] == 'workspace'
+    assert entries['site']['upstream_url'] == 'https://example.com'
+    assert entries['owned']['source'] == 'Comfy-Org'
+    assert entries['owned']['license'] == 'GPL-3.0'
+
+
+def test_shipped_catalog_still_attributes_provenance_owners():
+    entries = library.catalog(ROOT)
+    assert len(entries) == 248
+    assert sum(entry.get('source') == 'Comfy-Org' for entry in entries) == 5
+
+
+@pytest.mark.parametrize('url', [None, '', '   ', 'https://[broken', [], {}, 7])
+def test_invalid_provenance_url_keeps_discovered_graph_and_unrelated_reference(tmp_path, url):
+    workflows = tmp_path / 'workflows'
+    workflows.mkdir()
+    (workflows / 'local.json').write_text(json.dumps({'nodes': [{'id': 1, 'type': 'KSampler'}], 'links': []}))
+    provenance = tmp_path / 'manifests/workflow_coverage/imported_sources.json'
+    provenance.parent.mkdir(parents=True)
+    provenance.write_text(json.dumps({'records': [
+        {'destination': 'workflows/local.json', 'source_url': url, 'license': 'MIT'},
+    ]}))
+    catalog = tmp_path / 'manifests/community_workflows/catalog.json'
+    catalog.parent.mkdir(parents=True)
+    catalog.write_text(json.dumps({'workflows': [
+        {'id': 'reference', 'title': 'Reference', 'upstream_url': url, 'distribution': 'links-only'},
+    ]}))
+    entries = library.catalog(tmp_path)
+    reference = next(row for row in entries if row['id'] == 'reference')
+    assert reference['available'] is False
+    assert 'local_path' not in reference
+    local = next(row for row in entries if row['title'] == 'local')
+    assert local['available'] is True and local['source'] == 'workspace'
+    assert local['license'] == 'MIT'
 
 
 def test_non_operator_cannot_read_import_body_or_contact_comfy(monkeypatch):

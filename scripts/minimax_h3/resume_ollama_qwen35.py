@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-import fcntl
 import hashlib
 import json
 import os
@@ -23,6 +22,9 @@ from typing import Any, Iterator
 from urllib.error import URLError
 from urllib.request import urlopen
 
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "webui"))
+import file_lock as fcntl
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LOCK_MANIFEST = REPO_ROOT / "manifests/minimax_h3/tutorial_stack.lock.json"

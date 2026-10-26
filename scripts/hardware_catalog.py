@@ -1,7 +1,7 @@
 """Offline, conservative demo planning profiles; not hardware detection or benchmarks.
 
 Only accepts the already source-derived app catalog. No server imports, network,
-GPU probes, environment access, model loading or runtime files. VRAM floors below
+GPU probes, environment access, model loading or runtime files. VRAM allowances below
 are editorial estimates for the named default builders with sequential CPU
 model offload and sufficient system RAM. Smaller quantized/tiled variants may
 work below them; large inputs or different nodes can exceed them.
@@ -27,6 +27,26 @@ PROFILES = [
     {'id': 'autoip', 'label': 'AutoIP · 雲端示範', 'label_en': 'AutoIP · cloud demo', 'cards_gb': [], 'examples': [], 'source_urls': [], 'cloud_simulation': True},
 ]
 # (planning VRAM GB, rationale in Chinese, rationale in English)
+COMMUNITY_MEASUREMENTS = {
+    'text2img': [{
+        'source': 'User review supplied 2026-10-24', 'validation': 'user-reported-not-independently-reproduced',
+        'device': 'RTX 5070 Laptop 8 GB', 'model': 'FLUX 3 Klein', 'quantization': 'int8',
+        'width': 832, 'height': 1216, 'steps': 16, 'seconds_per_image_approx': 7,
+        'reported_peak_gb': [7, 7], 'memory_metric': 'whole-machine peak as reported; measurement method unspecified',
+        'same_as_default_builder': False,
+        'summary': '使用者實測回報：RTX 5070 Laptop 8 GB，FLUX 3 Klein int8，832×1216、16 步，約 7 秒／張，整機峰值約 7 GB。測量方法未提供，本機未重現；這是另一個模型，並非此頁預設的 Z-Image。',
+        'summary_en': 'User-reported measurement: RTX 5070 Laptop 8 GB, FLUX 3 Klein int8, 832×1216, 16 steps, about 7 s/image and about 7 GB whole-machine peak. Measurement method unspecified; not independently reproduced. This is an alternative model, not this form’s default Z-Image.',
+    }],
+    'image-blend': [{
+        'source': 'User review supplied 2026-10-24', 'validation': 'user-reported-not-independently-reproduced',
+        'device': 'RTX 5070 Laptop 8 GB', 'model': 'SAM3.1', 'quantization': 'not reported',
+        'seconds_per_image_approx': 2, 'warm_run': True, 'reported_peak_gb': [2.3, 4.2],
+        'memory_metric': 'peak as reported; measurement method unspecified',
+        'summary': '使用者實測回報：RTX 5070 Laptop 8 GB，SAM3.1 熱跑約 2 秒／張，峰值 2.3–4.2 GB。量化、輸入尺寸與測量方法未提供，本機未重現；不是冷啟動時間。',
+        'summary_en': 'User-reported measurement: RTX 5070 Laptop 8 GB, SAM3.1 warm runs about 2 s/image, peak 2.3–4.2 GB. Quantization, input dimensions and measurement method unspecified; not independently reproduced. Not a cold-start time.',
+    }],
+}
+
 ESTIMATES = {
     'text2img': (24, 'Z-Image BF16 與 Qwen 4B 編碼器；預設大圖需留採樣／解碼空間。', 'Z-Image BF16 plus the Qwen 4B encoder; the large default image needs sampling and decoding headroom.'),
     'img2img': (24, 'Flux Kontext FP8、T5 編碼器及原圖 latent；預留編輯採樣空間。', 'Flux Kontext FP8, T5 and an input-image latent; allow headroom for editing and sampling.'),
@@ -67,6 +87,7 @@ def catalog(app_catalog):
         requirements[fid] = {
             'estimated_vram_gb': gb, 'basis': reason, 'basis_en': reason_en,
             'validation': 'editorial-estimate-not-benchmark',
+            'measurements': deepcopy(COMMUNITY_MEASUREMENTS.get(fid, [])),
             'model_names': [model['name'] for model in guide.get('models', [])],
             'source_files': list(guide.get('source_files', [])),
             'native_api_disabled': feature.get('apiEnabled') is False,
@@ -89,7 +110,7 @@ def catalog(app_catalog):
             'Estimates concern the default source builders, not measured minimum VRAM or speed.',
             'Assumes one job at a time, sequential model offload, sufficient system RAM and compatible nodes.',
             'Model file size is not peak GPU memory; resolution, frames, references and precision change requirements.',
-            'Smaller quantized/tiled variants may run below the planning floor; large inputs can exceed it.',
+            'Smaller quantized/tiled variants may run below the planning allowance; large inputs can exceed it.',
             'Two 24 GB cards are treated as one 24 GB device: these builders do not implement model sharding.',
             'AutoIP enables every prepared demo only. Real provider model coverage, configuration and credit pricing must be checked separately.',
         ],

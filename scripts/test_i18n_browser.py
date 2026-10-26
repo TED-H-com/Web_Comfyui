@@ -2,7 +2,6 @@
 import json
 from pathlib import Path
 import shutil
-import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
@@ -101,8 +100,7 @@ if(query.get('mode')==='docs'){
 
 @pytest.mark.parametrize('mode,initial',[('local','en'),('local','zh-Hant'),('docs','en')])
 def test_language_browser(tmp_path,mode,initial):
-    browser=shutil.which('chromium')
-    if not browser:pytest.skip('Chromium not installed')
+    playwright = pytest.importorskip('playwright.sync_api')
     registry=registry_strings()
     requests=[]
     class Handler(BaseHTTPRequestHandler):
@@ -125,8 +123,16 @@ def test_language_browser(tmp_path,mode,initial):
             self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
     server=ThreadingHTTPServer(('127.0.0.1',0),Handler);threading.Thread(target=server.serve_forever,daemon=True).start()
     try:
-        result=subprocess.run([browser,'--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',f'--user-data-dir={tmp_path / "browser"}','--window-size=390,900','--virtual-time-budget=8000','--dump-dom',f'http://127.0.0.1:{server.server_port}/?mode={mode}&initial={initial}'],capture_output=True,text=True,timeout=40)
-        marker=result.stdout.split('id="i18n-test-result"')[-1].split('</pre>')[0]
-        assert '>PASS' in marker,(marker[-2000:],result.stderr[-500:])
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch_persistent_context(
+                str(tmp_path / 'browser'),
+                executable_path=shutil.which('google-chrome') or shutil.which('chromium'),
+                viewport={'width': 390, 'height': 900},
+                args=['--no-sandbox', '--disable-dev-shm-usage'],
+            ) as context:
+                page = context.new_page()
+                page.goto(f'http://127.0.0.1:{server.server_port}/?mode={mode}&initial={initial}')
+                page.wait_for_function("document.getElementById('i18n-test-result').textContent !== 'WAIT'", timeout=15000)
+                assert page.locator('#i18n-test-result').inner_text() == 'PASS'
         assert all(path in {'/','/case','/favicon.ico','/static/i18n.js','/static/translations-en.js','/static/i18n.css'} for path in requests)
     finally:server.shutdown();server.server_close()

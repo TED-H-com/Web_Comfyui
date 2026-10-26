@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import base64
 from contextlib import contextmanager
-import fcntl
+import file_lock as fcntl
 import hashlib
 import heapq
 import hmac
@@ -38,6 +38,12 @@ from pathlib import Path
 from xml.etree import ElementTree
 import zipfile
 import types
+
+from config_env import apply_environment_aliases
+
+if __name__ == '__main__':
+    # run.py already applies aliases before adding derived paths/origin hosts.
+    apply_environment_aliases()
 
 import library_service
 import workflow_library
@@ -1253,10 +1259,11 @@ FEATURES = [
         "fields": [
             {"id": "positive", "type": "text", "label": "保留的主體", "default": "person"},
             {"id": "threshold", "type": "slider", "label": "主體偵測門檻", "default": 0.5, "min": 0, "max": 1, "step": 0.01},
+            {"id": "feather", "type": "slider", "label": "邊緣羽化（像素，0 為關閉）", "default": 0, "min": 0, "max": 16, "step": 1},
         ],
         "requiredModels": ["sam3.1_multiplex_fp16.safetensors"],
-        "requiredNodes": ["SAM3_Detect", "CheckpointLoaderSimple", "ResizeImageMaskNode", "ThresholdMask", "ImageCompositeMasked"],
-        "note": "AI 辨識人物後保留遮罩內的原始像素，只縮放裁切背景。輸出維持人物原圖尺寸；不重畫臉、不換裝，也不自動補光或生成陰影。去背邊緣需檢查。",
+        "requiredNodes": ["SAM3_Detect", "CheckpointLoaderSimple", "ResizeImageMaskNode", "ThresholdMask", "ImageCompositeMasked", "MaskToImage", "ImageBlur", "ImageToMask", "GrowMask"],
+        "note": "只縮放裁切背景，不重畫人物或補光。person 可能漏掉動漫角色的書包、手腳與髮尾；主體文字可包含道具，例如 person holding a bag，仍需檢查遮罩。羽化預設關閉；開啟會混合邊緣與背景，不能補回漏切部位。",
     },
     {
         "id": "character-angles",
@@ -3957,7 +3964,7 @@ def parse_range_header(header: str | None, size: int) -> tuple[int, int] | None:
 def clamp_int(value, default: int, minimum: int, maximum: int) -> int:
     try:
         parsed = int(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return default
     return max(minimum, min(maximum, parsed))
 
@@ -3965,7 +3972,9 @@ def clamp_int(value, default: int, minimum: int, maximum: int) -> int:
 def clamp_float(value, default: float, minimum: float, maximum: float) -> float:
     try:
         parsed = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
+        return default
+    if not math.isfinite(parsed):
         return default
     return max(minimum, min(maximum, parsed))
 
@@ -7016,7 +7025,8 @@ def subject_blend_prompt(settings: dict, uploads: dict[str, str] | None = None) 
         raise ValueError("請上傳人物原圖及背景參考圖")
     subject = str(settings.get("positive") or "person").strip() or "person"
     threshold = clamp_float(settings.get("threshold"), 0.5, 0.0, 1.0)
-    return {
+    feather = clamp_int(settings.get("feather"), 0, 0, 16)
+    graph = {
         "1": {"class_type": "LoadImage", "inputs": {"image": uploads["image1"]}},
         "2": {"class_type": "LoadImage", "inputs": {"image": uploads["image2"]}},
         "3": {"class_type": "ResizeImageMaskNode", "inputs": {"input": ["2", 0], "resize_type": "match size", "resize_type.match": ["1", 0], "resize_type.crop": "center", "scale_method": "lanczos"}},
@@ -7027,6 +7037,20 @@ def subject_blend_prompt(settings: dict, uploads: dict[str, str] | None = None) 
         "8": {"class_type": "ImageCompositeMasked", "inputs": {"destination": ["3", 0], "source": ["1", 0], "x": 0, "y": 0, "resize_source": False, "mask": ["7", 0]}},
         "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": output_prefix(settings, "image-blend")}},
     }
+    if feather:
+        # FeatherMask fades canvas borders, not the detected subject contour.
+        graph["10"] = {"class_type": "MaskToImage", "inputs": {"mask": ["7", 0]}}
+        # ImageBlur's Gaussian coordinates span [-1, 1], independent of radius.
+        graph["11"] = {"class_type": "ImageBlur", "inputs": {"image": ["10", 0], "blur_radius": feather, "sigma": 1 / 3}}
+        graph["12"] = {"class_type": "ImageToMask", "inputs": {"image": ["11", 0], "channel": "red"}}
+        graph["8"]["inputs"]["mask"] = ["12", 0]
+        # A Gaussian convolution of ones can produce 0.99999988, which SaveImage
+        # truncates one level darker. Restore the untouched interior explicitly.
+        # Square erosion matches the full square support of ImageBlur's kernel.
+        graph["13"] = {"class_type": "GrowMask", "inputs": {"mask": ["7", 0], "expand": -feather, "tapered_corners": False}}
+        graph["14"] = {"class_type": "ImageCompositeMasked", "inputs": {"destination": ["8", 0], "source": ["1", 0], "x": 0, "y": 0, "resize_source": False, "mask": ["13", 0]}}
+        graph["9"]["inputs"]["images"] = ["14", 0]
+    return graph
 
 
 def ip_blend_prompt(settings: dict, uploads: dict[str, str] | None = None) -> dict:

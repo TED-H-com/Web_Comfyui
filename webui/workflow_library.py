@@ -12,8 +12,10 @@ import urllib.parse
 
 try:
     from workflow_guides import active_nodes, enrich_entry
+    from comfy_schema import combo_options
 except ModuleNotFoundError:
     from webui.workflow_guides import active_nodes, enrich_entry
+    from webui.comfy_schema import combo_options
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_WORKFLOW_BYTES = 8 * 1024 * 1024
@@ -131,8 +133,8 @@ def dependency_checks(entry, graph, object_info):
                 if isinstance(fields, dict) and field in fields:
                     descriptor = fields[field]
                     break
-        choices = descriptor[0] if isinstance(descriptor, (list, tuple)) and descriptor else None
-        if name is None or not isinstance(choices, (list, tuple)) or any(not isinstance(choice, str) for choice in choices):
+        choices = combo_options(descriptor)
+        if name is None or choices is None:
             unknown += 1
             continue
         checked += 1
@@ -164,12 +166,41 @@ def safe_path(relative, root=ROOT):
     return candidate
 
 
+def _provenance_url_parts(url):
+    """Parse absolute HTTP source references without accepting empty match keys."""
+    if not isinstance(url, str) or not url or url != url.strip():
+        return None
+    try:
+        parts = urllib.parse.urlsplit(url)
+        if parts.scheme not in {'http', 'https'} or not parts.hostname:
+            return None
+        return parts
+    except ValueError:
+        return None
+
+
+def _provenance_owner(url):
+    """Return the first URL path segment, or None when it cannot be an owner.
+
+    Discovered-workflow provenance is contributor-supplied. A missing URL or a
+    URL with no owner segment must not abort the rest of the catalog.
+    """
+    parsed = _provenance_url_parts(url)
+    if parsed is None:
+        return None
+    parts = parsed.path.split('/')
+    if len(parts) < 2 or parts[1] in {'', '.', '..'}:
+        return None
+    return parts[1]
+
+
 def catalog(root=ROOT, *, include_discovered=True, object_info=None):
     entries = []
     covered = set()
     provenance_path = root / 'manifests/workflow_coverage/imported_sources.json'
     provenance = read_json(provenance_path).get('records', []) if provenance_path.is_file() else []
-    by_url = {row.get('source_url'): row for row in provenance if row.get('destination')}
+    by_url = {row['source_url']: row for row in provenance
+              if row.get('destination') and _provenance_url_parts(row.get('source_url')) is not None}
     by_path = {row['destination']: row for row in provenance if row.get('destination')}
     catalog_path = root / 'manifests/community_workflows/catalog.json'
     if catalog_path.is_file():
@@ -178,7 +209,8 @@ def catalog(root=ROOT, *, include_discovered=True, object_info=None):
             entry = dict(raw)
             source = data.get('sources', {}).get(entry.get('source'), {})
             entry['license'] = entry.get('license') or source.get('license') or '未宣告再散布授權'
-            imported = by_url.get(entry.get('upstream_url'), {})
+            upstream_url = entry.get('upstream_url')
+            imported = by_url.get(upstream_url, {}) if isinstance(upstream_url, str) else {}
             if imported and not entry.get('local_path'):
                 entry['local_path'] = imported['destination']
                 entry['license'] = imported['license']
@@ -212,16 +244,24 @@ def catalog(root=ROOT, *, include_discovered=True, object_info=None):
             details = graph_details(graph)
         except (ValueError, OSError):
             continue
+        extra = {}
+        if relative in by_path:
+            row = by_path[relative]
+            extra = {
+                'upstream_url': row.get('source_url'),
+                'license': row.get('license'),
+                'notes': row.get('modifications', []),
+            }
+            owner = _provenance_owner(row.get('source_url'))
+            if owner:
+                extra['source'] = owner
         entry = {
             'id': 'local-' + hashlib.sha256(relative.encode()).hexdigest()[:20],
             'title': path.stem, 'category': path.parent.name if path.parent.name != 'workflows' else 'local',
             'source': 'workspace', 'kind': 'workflow', 'available': True,
             'local_path': relative, 'tags': [], 'status': 'not-gpu-qualified', **details,
             'models': graph_models(graph),
-            **({'upstream_url': by_path[relative].get('source_url'),
-                'license': by_path[relative].get('license'),
-                'source': urllib.parse.urlsplit(by_path[relative].get('source_url', '')).path.split('/')[1],
-                'notes': by_path[relative].get('modifications', [])} if relative in by_path else {}),
+            **extra,
         }
         entry['guide'] = enrich_entry(entry, graph)
         if object_info is not None:

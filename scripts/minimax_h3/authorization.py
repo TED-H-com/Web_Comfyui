@@ -9,7 +9,6 @@ environment variables, contact a network service, or print record contents.
 from __future__ import annotations
 
 import argparse
-import fcntl
 import hashlib
 import json
 import os
@@ -20,6 +19,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "webui"))
+import file_lock as fcntl
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parent))

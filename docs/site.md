@@ -75,7 +75,7 @@ pytest-disktmp uv run --python 3.12 --with pytest --with Pillow --with playwrigh
 
 ## 已記錄的 GPU 範例
 
-目前 [來源紀錄](../webui/docs/examples/provenance.json) 包含 RTX 5090 上完成的 8 次執行，示範頁選用其中 6 項功能的成果：文生圖、指令改圖、參考圖融合、臉部參考肖像、圖生影片與舞蹈／動作轉移。實際模型與設定以各筆紀錄中的工作流為準；這些單次範例不是全部功能已完成驗證的宣告。
+[來源紀錄](../webui/docs/examples/provenance.json) 包含工作流的 `runs` 與獨立語音引擎的 `audio_runs`。建置會從這兩個陣列產生 `execution-summary.json`，並放入 `app-guide.json` 的 `execution_summary`：分別列出紀錄數、成功執行數與實際裝置分類，避免把 CPU 語音算成 GPU 工作流，或把預製介面範例算成已驗證功能。可在建置目錄開啟該 JSON 查看本次發布的數字；本文件不再手動維護次數。實際模型與設定以各筆紀錄中的工作流為準；單次範例不代表全部功能已完成驗證。
 
 人物參考為原創生成的虛構成年女性。動作轉移使用的 `cheer-motion-source.mp4` 也是由 Wan 實際生成的側步／抬手應援動作影片，再輸入 SCAIL 工作流；它不是下載的真人表演素材或單張圖片的平移縮放動畫。影片海報由對應輸出影片擷取。素材的來源雜湊、發布版本雜湊與執行關聯都保留在來源紀錄中。
 
