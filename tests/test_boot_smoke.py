@@ -16,12 +16,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_launcher_first_run_with_fake_comfy(tmp_path):
     requests = []
+    upscale_descriptor = ['COMBO', {'options': ['4x-UltraSharp.pth']}]
     class Comfy(BaseHTTPRequestHandler):
         def log_message(self, *_): pass
         def do_GET(self):
             requests.append(self.path)
             payload = {'system': {'comfyui_version': 'test'}, 'devices': []} if self.path == '/system_stats' else {}
             if self.path == '/queue': payload = {'queue_running': [], 'queue_pending': []}
+            if self.path == '/object_info':
+                payload = {'UpscaleModelLoader': {'input': {'required': {'model_name': upscale_descriptor}}}}
             raw = json.dumps(payload).encode()
             self.send_response(200); self.send_header('Content-Type', 'application/json'); self.send_header('Content-Length', str(len(raw))); self.end_headers(); self.wfile.write(raw)
         def do_POST(self):
@@ -37,13 +40,15 @@ def test_launcher_first_run_with_fake_comfy(tmp_path):
         'COMFYUI_URL': f'http://127.0.0.1:{comfy.server_port}',
         'WEB_COMFYUI_DATA_DIR': str(tmp_path / 'data'),
         'WEB_COMFYUI_CACHE_DIR': str(tmp_path / 'cache'),
+        'WEB_COMFYUI_PORT': str(port),
+        'WEB_COMFYUI_ALLOWED_ORIGIN_HOSTS': 'localhost',
         'PYTHONDONTWRITEBYTECODE': '1',
     })
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
     process = None
     try:
         with (tmp_path / 'server.log').open('wb') as log:
-            process = subprocess.Popen([sys.executable, str(ROOT / 'run.py'), '--no-env', '--port', str(port)], cwd=ROOT, env=env, stdout=log, stderr=log)
+            process = subprocess.Popen([sys.executable, str(ROOT / 'run.py'), '--no-env'], cwd=ROOT, env=env, stdout=log, stderr=log)
             base = f'http://127.0.0.1:{port}'
             deadline = time.monotonic() + 12
             while True:
@@ -63,6 +68,24 @@ def test_launcher_first_run_with_fake_comfy(tmp_path):
                 catalog = json.load(response)
             assert len(catalog['items']) >= 240
             assert sum(bool(item.get('available')) for item in catalog['items']) == 46
+            # Exercise the authenticated HTTP precheck with actual catalog files.
+            outcomes = []
+            for descriptor in ([['4x-UltraSharp.pth']], ['COMBO', {'options': ['4x-UltraSharp.pth']}],
+                               ['COMBO', {'options': []}], ['COMBO', {}]):
+                upscale_descriptor = descriptor
+                with opener.open(base + '/api/workflow-library?check=1', timeout=5) as response:
+                    checked = json.load(response)
+                assert checked['connection'] == {'checked': True, 'connected': True}
+                item = next(row for row in checked['items'] if row['id'] == 'dseditor-flux-dev-fp8-upscale')
+                outcomes.append({key: item[key] for key in ('models_checked', 'model_checks_unknown', 'missing_models')})
+                assert item['gpu_tested'] is False
+            assert outcomes[0] == outcomes[1]
+            assert outcomes[1]['models_checked'] == 1
+            assert outcomes[1]['missing_models'] == []
+            assert outcomes[2]['models_checked'] == 1
+            assert outcomes[2]['missing_models'] == [{'name': '4x-UltraSharp.pth', 'node_type': 'UpscaleModelLoader', 'directory_hint': 'upscale_models'}]
+            assert outcomes[3]['models_checked'] == 0
+            assert outcomes[3]['model_checks_unknown'] == outcomes[1]['model_checks_unknown'] + 1
             with opener.open(base + '/api/characters', timeout=5) as response:
                 assert json.load(response)['characters'] == []
             assert not any(path.startswith('POST ') for path in requests), 'Startup must not execute a workflow'

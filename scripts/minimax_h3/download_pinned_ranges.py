@@ -27,7 +27,6 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import contextlib
-import fcntl
 import hashlib
 import http.client
 import json
@@ -43,6 +42,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "webui"))
+import file_lock as fcntl
 
 REPORT_SCHEMA = "castle.minimax-h3.pinned-range-download.v1"
 STAGE_SCHEMA = 1

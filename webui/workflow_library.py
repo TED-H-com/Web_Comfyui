@@ -12,8 +12,10 @@ import urllib.parse
 
 try:
     from workflow_guides import active_nodes, enrich_entry
+    from comfy_schema import combo_options
 except ModuleNotFoundError:
     from webui.workflow_guides import active_nodes, enrich_entry
+    from webui.comfy_schema import combo_options
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_WORKFLOW_BYTES = 8 * 1024 * 1024
@@ -131,8 +133,8 @@ def dependency_checks(entry, graph, object_info):
                 if isinstance(fields, dict) and field in fields:
                     descriptor = fields[field]
                     break
-        choices = descriptor[0] if isinstance(descriptor, (list, tuple)) and descriptor else None
-        if name is None or not isinstance(choices, (list, tuple)) or any(not isinstance(choice, str) for choice in choices):
+        choices = combo_options(descriptor)
+        if name is None or choices is None:
             unknown += 1
             continue
         checked += 1

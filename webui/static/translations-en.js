@@ -205,6 +205,8 @@ Flux Kontext 重新生成式編輯|Regenerative editing with Flux Kontext
 背景參考圖|Background reference
 保留的主體|Subject to keep
 主體偵測門檻|Subject detection threshold
+邊緣羽化（像素，0 為關閉）|Edge feathering (pixels, 0 = off)
+只縮放裁切背景，不重畫人物或補光。person 可能漏掉動漫角色的書包、手腳與髮尾；主體文字可包含道具，例如 person holding a bag，仍需檢查遮罩。羽化預設關閉；開啟會混合邊緣與背景，不能補回漏切部位。|Only the background is resized and cropped; the subject is not redrawn or relit. The person label can miss anime props, limbs and hair. Try including the prop, such as person holding a bag, and inspect the mask. Feathering is off by default; enabling it blends edges with the background and cannot recover missing regions.
 AI 辨識人物後保留遮罩內的原始像素，只縮放裁切背景。輸出維持人物原圖尺寸；不重畫臉、不換裝，也不自動補光或生成陰影。去背邊緣需檢查。|AI segments the subject and preserves original pixels inside the mask. Only the background is resized and cropped. Output matches the subject image dimensions, without redrawing faces, changing clothes, relighting, or generating shadows. Check the cutout edges.
 InstantID · 依同一張真人正臉生成候選肖像|InstantID · Generate portrait candidates from one real face photo
 角色卡原圖雙重身份鎖定 · SDXL Beta|Dual identity guidance from the character profile · SDXL Beta

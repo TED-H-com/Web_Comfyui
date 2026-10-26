@@ -14,7 +14,6 @@ arbitrary model-path inputs in this runner.
 from __future__ import annotations
 
 import argparse
-import fcntl
 import hashlib
 import hmac
 import ipaddress
@@ -40,6 +39,10 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "webui"))
+import file_lock as fcntl
+from comfy_schema import combo_options
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
@@ -1392,10 +1395,13 @@ def verify_object_info(object_info: Mapping[str, Any], graph: native.PromptGraph
     for class_name, field, expected in sorted(model_fields):
         node = object_info.get(class_name)
         try:
-            options = node["input"]["required"][field][0]  # type: ignore[index]
+            descriptor = node["input"]["required"][field]  # type: ignore[index]
         except (KeyError, IndexError, TypeError):
             _fail("comfy_object_info_invalid", "ComfyUI object metadata is invalid.")
-        if not isinstance(options, list) or expected not in options:
+        options = combo_options(descriptor)
+        if options is None:
+            _fail("comfy_object_info_invalid", "ComfyUI model options are not enumerable.")
+        if expected not in options:
             _fail("comfy_model_not_indexed", "ComfyUI has not indexed a pinned H3 model.")
 
 

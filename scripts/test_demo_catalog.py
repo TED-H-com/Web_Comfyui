@@ -189,6 +189,9 @@ def test_subject_demo_preserves_person_pixels_and_changes_background():
     provenance = json.loads((root / 'provenance.json').read_text())
     run = next(row for row in provenance['runs'] if row['id'] == example['output']['run_id'])
     proof = run['pixel_verification']
+    import hashlib
+    for field in ('source', 'output', 'mask'):
+        assert hashlib.sha256((root / proof[field]).read_bytes()).hexdigest() == proof['file_sha256'][proof[field]]
     source = Image.open(root / proof['source']).convert('RGB')
     result = Image.open(root / proof['output']).convert('RGB')
     mask = Image.open(root / proof['mask']).convert('L')

@@ -53,6 +53,21 @@ def first_download(root):
     return next(row for row in read_json(root / MANIFESTS[0])['workflows'] if row.get('local_path'))
 
 
+def test_execution_counts_derive_from_receipts_and_do_not_count_failed_or_prepared_examples():
+    records = {'runs': [{'id': 'gpu', 'status': 'success', 'device': 'test GPU'},
+                        {'id': 'failed', 'status': 'error', 'device': 'test GPU'}],
+               'audio_runs': [{'id': 'speech', 'status': 'success', 'device': 'CPU'}],
+               'prepared_examples': [{'id': 'prepared', 'status': 'success'}]}
+    summary = build_docs.provenance_summary(records)
+    assert summary['records'] == {'runs': 2, 'audio_runs': 1}
+    assert summary['successful_runs_by_device'] == {'CPU': 1, 'test GPU': 1}
+    records['runs'].append({'id': 'second', 'status': 'success', 'device': 'test GPU'})
+    assert build_docs.provenance_summary(records)['successful_runs'] == 3
+    records['audio_runs'].append({'id': 'gpu', 'status': 'success', 'device': 'CPU'})
+    with pytest.raises(ValueError, match='Duplicate'):
+        build_docs.provenance_summary(records)
+
+
 def artifact_files(output):
     return {path.relative_to(output).as_posix() for path in output.rglob('*') if path.is_file()}
 
@@ -73,7 +88,7 @@ def test_artifact_contains_only_reviewed_graphs_assets_and_licenses(source, tmp_
     assert payload['mode'] == 'documentation'
     assert payload['gpu_tested'] is False
     expected = set(build_docs.ASSETS.values()) | {
-        'index.html', 'demo/index.html', 'app-guide.json', 'catalog.json', 'sources.json', 'NOTICE.txt', '.nojekyll', build_docs.MARKER,
+        'index.html', 'demo/index.html', 'app-guide.json', 'execution-summary.json', 'catalog.json', 'sources.json', 'NOTICE.txt', '.nojekyll', build_docs.MARKER,
     }
     for record in records:
         graph = record['download_url'].removeprefix('./')
@@ -85,6 +100,11 @@ def test_artifact_contains_only_reviewed_graphs_assets_and_licenses(source, tmp_
         assert 'modifications' in record
         assert 'path' not in record
     assert artifact_files(output) == expected
+    summary = read_json(output / 'execution-summary.json')
+    assert summary == read_json(output / 'app-guide.json')['execution_summary']
+    provenance = read_json(source / 'webui/docs/examples/provenance.json')
+    assert summary['records']['runs'] == len(provenance['runs'])
+    assert summary['records']['audio_runs'] == len(provenance['audio_runs'])
     for original, destination in build_docs.ASSETS.items():
         assert (output / destination).read_bytes() == (source / original).read_bytes()
     for row in payload['items']:

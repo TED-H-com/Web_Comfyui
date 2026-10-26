@@ -50,6 +50,18 @@ def test_thresholds_do_not_pool_cards(hardware):
     assert not can_use(hardware,'text2img','unreviewed')
 
 
+def test_alternative_model_reports_do_not_certify_default_builder(hardware):
+    text = hardware['features']['text2img']
+    report = text['measurements'][0]
+    assert text['estimated_vram_gb'] == 24
+    assert report['device'] == 'RTX 5070 Laptop 8 GB'
+    assert report['quantization'] == 'int8'
+    assert report['same_as_default_builder'] is False
+    assert report['validation'] == 'user-reported-not-independently-reproduced'
+    assert not can_use(hardware, 'text2img', 'vram-8')
+    assert hardware['features']['image-blend']['measurements'][0]['warm_run']
+
+
 def test_pure_catalog_no_network_gpu_or_source_mutation(monkeypatch):
     source=app_catalog(ROOT);before=copy.deepcopy(source)
     def forbidden(*args,**kwargs):raise AssertionError('No network or hardware process permitted')

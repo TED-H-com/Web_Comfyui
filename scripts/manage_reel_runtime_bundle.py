@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import binascii
 import contextlib
-import fcntl
 import hashlib
 import json
 import os
@@ -25,6 +24,9 @@ import zlib
 from pathlib import Path, PurePosixPath
 from typing import BinaryIO, Callable, Iterator
 
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "webui"))
+import file_lock as fcntl
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LOCK = REPO_ROOT / "runtime/reel/reel-runtime.lock.json"

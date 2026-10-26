@@ -80,6 +80,26 @@ def source_json(root, relative):
     return json.loads(source_bytes(root, relative))
 
 
+def provenance_summary(provenance):
+    """Count successful receipts by their recorded device, not by demo labels."""
+    groups = {name: provenance.get(name, []) for name in ('runs', 'audio_runs')}
+    devices = {}
+    ids = set()
+    for rows in groups.values():
+        for row in rows:
+            if row['id'] in ids:
+                raise ValueError('Duplicate provenance run ID')
+            ids.add(row['id'])
+            if row.get('status') == 'success':
+                device = row.get('device') or 'unspecified'
+                devices[device] = devices.get(device, 0) + 1
+    return {'schema_version': 1, 'source': 'assets/examples/provenance.json',
+            'records': {name: len(rows) for name, rows in groups.items()},
+            'successful_runs_by_device': dict(sorted(devices.items())),
+            'successful_runs': sum(devices.values()),
+            'scope': 'recorded-executions-not-all-features-qualified'}
+
+
 def version_assets(root, html):
     """Changing shared app bytes must also invalidate a visitor's cached scripts."""
     sources = {destination: source for source, destination in ASSETS.items()}
@@ -156,6 +176,8 @@ def build(root: Path = ROOT, output: Path | None = None) -> dict:
     app_guide['translations'] = source_json(root, 'manifests/app_guides/en.json')
     from scripts.hardware_catalog import catalog as hardware_catalog
     app_guide['hardware'] = hardware_catalog(app_guide)
+    execution_summary = provenance_summary(source_json(root, 'webui/docs/examples/provenance.json'))
+    app_guide['execution_summary'] = execution_summary
     approved = {}
     records = []
     licenses = {}
@@ -235,6 +257,7 @@ def build(root: Path = ROOT, output: Path | None = None) -> dict:
         write('index.html', landing_html(root))
         write('demo/index.html', site_html(root))
         write('app-guide.json', (json.dumps(app_guide, ensure_ascii=False, indent=2) + '\n').encode())
+        write('execution-summary.json', (json.dumps(execution_summary, ensure_ascii=False, indent=2) + '\n').encode())
         for relative, data in license_bytes.items():
             write('licenses/' + relative + '.txt', data)
         for entry, item in zip(entries, items):

@@ -1,3 +1,6 @@
 # Required for server import, image validation, thumbnails, and profile previews.
 # GPU/voice/model packages belong in separate worker environments.
 Pillow>=10
+# The locking primitive supports Windows; the full launcher still requires Linux/WSL2.
+portalocker==3.2.0; sys_platform == "win32"
+pywin32>=306; sys_platform == "win32"

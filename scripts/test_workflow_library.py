@@ -177,6 +177,27 @@ def test_missing_loader_counts_node_and_unchecked_model_without_exposing_paths()
     assert '/private/' not in json.dumps(result)
 
 
+@pytest.mark.parametrize('section', ['required', 'optional'])
+@pytest.mark.parametrize('descriptor,status,checked', [
+    ([['upscaler.pth']], 'present', 1),
+    (['COMBO', {'options': ['upscaler.pth']}], 'present', 1),
+    (['COMBO', {'options': ['other.pth']}], 'missing', 1),
+    (['COMBO', {'options': []}], 'missing', 1),
+    (['COMBO'], 'partial', 0),
+    (['COMBO', {}], 'partial', 0),
+    (['COMBO', {'options': 'upscaler.pth'}], 'partial', 0),
+    (['COMBO', {'options': [None]}], 'partial', 0),
+])
+def test_legacy_and_v3_combo_inventory(section, descriptor, status, checked):
+    graph = {'1': {'class_type': 'UpscaleModelLoader', 'inputs': {'model_name': 'upscaler.pth'}}}
+    info = {'UpscaleModelLoader': {'input': {section: {'model_name': descriptor}}}}
+    result = library.dependency_checks(library.graph_details(graph), graph, info)
+    assert result['dependency_status'] == status
+    assert result['models_checked'] == checked
+    assert result['model_checks_unknown'] == 1 - checked
+    assert result['gpu_tested'] is False
+
+
 def test_checked_catalog_uses_one_inventory_response_and_actual_graph_selections(tmp_path, monkeypatch):
     workflows = tmp_path / 'workflows'
     workflows.mkdir()

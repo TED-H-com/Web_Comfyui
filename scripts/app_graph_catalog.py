@@ -309,6 +309,7 @@ def graphs(root,app_catalog):
         notes=[]
         if id=='text2img':notes=['預設 useDopsd=false；啟用時才插入 DOPSD LoRA，這裡顯示無 LoRA 的預設連線。']
         if id=='dance':notes=['顯示目前表單的 animate 分支；不混入隱藏 replace／分段流程。']
+        if id=='image-blend':notes=['顯示預設羽化關閉的九節點流程；開啟羽化會加入五個節點，混合邊緣並以內縮遮罩還原主體內部像素。']
         if id=='clipmode-character-photoshoot':notes=['代表分支：真人角色 InstantID + ReActor；動漫角色改用角色 LoRA，未合併兩種互斥分支。','身份輸入由伺服器綁定；圖中不公開任何角色素材。']
         if feature.get('apiEnabled') is False:notes.append('此入口的生成 API 目前停用，圖表不代表可執行。')
         result[id]=diagram(raw,'webui/server.py#'+symbol,notes)
@@ -318,6 +319,7 @@ def graphs(root,app_catalog):
 
 
 ENGLISH_NOTES = {
+ '顯示預設羽化關閉的九節點流程；開啟羽化會加入五個節點，混合邊緣並以內縮遮罩還原主體內部像素。': 'Shows the default nine-node graph with feathering off. Enabling feathering adds five nodes, blends edge pixels and restores the subject interior using an eroded mask.',
  '代表分支：兩張參考圖，依實際迴圈建立兩個 IPAdapterAdvanced；第三張會再串接一組。': 'Representative branch: two references create two chained IPAdapterAdvanced nodes using the actual loop. A third reference adds another pair.',
  '代表分支：一張輸入圖片；實際改圖支援依序加入最多四張。': 'Representative branch: one input image. Editing supports up to four images in sequence.',
  '文生圖分支：ResolutionSelector 決定空白 latent 尺寸。': 'Text-to-image branch: ResolutionSelector determines the empty latent dimensions.',

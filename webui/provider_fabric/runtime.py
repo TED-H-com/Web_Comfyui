@@ -10,7 +10,10 @@ response.
 
 from __future__ import annotations
 
-import fcntl
+if '.' in (__package__ or ''):
+    from .. import file_lock as fcntl
+else:  # top-level webui package layout
+    import file_lock as fcntl
 import hashlib
 import hmac
 import os

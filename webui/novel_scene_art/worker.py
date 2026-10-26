@@ -83,7 +83,10 @@ class WorkerSettings:
             fail("oracle_origin_unconfigured", "Set AISISTER_BASE before enabling the remote worker")
 
         def absolute(name: str, default: Path) -> Path:
-            raw = Path(os.environ.get(name, str(default))).expanduser()
+            # The lock alias also works when this specialist worker is launched
+            # directly, without run.py's process-wide alias normalization.
+            public = 'WEB_COMFYUI_GPU_LOCK_PATH' if name == 'CASTLE_GPU_LOCK_PATH' else name
+            raw = Path(os.environ.get(public, os.environ.get(name, str(default)))).expanduser()
             if not raw.is_absolute() or "\x00" in os.fspath(raw):
                 fail("worker_path_invalid", f"{name} must be an absolute path")
             return Path(os.path.abspath(os.fspath(raw)))

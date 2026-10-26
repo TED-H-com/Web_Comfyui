@@ -25,8 +25,8 @@
       reason = '此流程不要求本機擴散 GPU；仍需對應素材、軟體或自行設定的外部服務。此處只播放預製示範。';
       reason_en = 'This flow does not require a local diffusion GPU; assets, software or a separately configured external service may still be needed. This page only plays prepared examples.';
     } else {
-      reason = `保守規劃：單卡 ${requirement.estimated_vram_gb} GB；目前單卡 ${capacity} GB。${allowed ? '可查看生成示範，仍需驗證實際環境。' : '此設定低於規劃值，生成示範停用；仍可查看流程與節點。'}`;
-      reason_en = `Conservative plan: ${requirement.estimated_vram_gb} GB on one GPU; selected capacity ${capacity} GB per GPU. ${allowed ? 'The generation demo is available; validate your actual environment separately.' : 'Below the planning allowance: generation demo disabled; guides and nodes remain available.'}`;
+      reason = `此預設模型的保守規劃：單卡 ${requirement.estimated_vram_gb} GB；目前單卡 ${capacity} GB。${allowed ? '可查看生成示範，仍需驗證實際環境。' : '此設定低於預設模型規劃值，生成示範停用；仍可查看流程與節點。'} 這不是整類功能的最低需求。`;
+      reason_en = `Conservative plan for this default model: ${requirement.estimated_vram_gb} GB on one GPU; selected capacity ${capacity} GB per GPU. ${allowed ? 'The generation demo is available; validate your actual environment separately.' : 'Below this default model’s planning allowance: generation demo disabled; guides and nodes remain available.'} This is not a minimum for the entire task category.`;
     }
     if ((current.cards_gb || []).length > 1) {
       reason += ' 兩張 24 GB 不視為 48 GB；此組圖未實作模型分片。';
@@ -42,6 +42,14 @@
     let message = host.querySelector('.hardware-reason');
     if (!message) {message = document.createElement('p');message.className = 'hardware-reason';host.append(message);}
     label(message, result.reason, result.reason_en);
+    let measurements = host.querySelector('.hardware-measurements');
+    if (!measurements) {measurements = document.createElement('div');measurements.className='hardware-measurements';host.append(measurements);}
+    const reports = result.requirement?.measurements || [];
+    const reportText = reports.map(item => choose(item.summary, item.summary_en)).join('\n');
+    if (measurements.textContent !== reportText) {
+      measurements.replaceChildren(...reports.map(item => label(document.createElement('p'), item.summary, item.summary_en)));
+    }
+    measurements.hidden = reports.length === 0;
     let cloudLink = host.querySelector('.hardware-cloud-option');
     if (!cloudLink) {
       cloudLink = document.createElement('p');cloudLink.className='hardware-cloud-option';
