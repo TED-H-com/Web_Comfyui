@@ -38,6 +38,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 import zipfile
 import types
+import enum
 
 from config_env import apply_environment_aliases
 
@@ -7510,13 +7511,24 @@ def _fast_json_copy(value):
         res = {}
         for k, v in value.items():
             if type(k) is not str:
-                raise TypeError("strict")
+                if isinstance(k, bool):
+                    k = "true" if k else "false"
+                elif isinstance(k, enum.Enum):
+                    k = str(k.value)
+                elif isinstance(k, (int, float)):
+                    k = str(k)
+                elif k is None:
+                    k = "null"
+                else:
+                    raise TypeError("strict")
             res[k] = _fast_json_copy(v)
         return res
-    if t is list:
+    if t is list or t is tuple:
         return [_fast_json_copy(v) for v in value]
     if t is str or t is int or t is float or t is bool or value is None:
         return value
+    if isinstance(value, enum.Enum):
+        return value.value
     raise TypeError("strict")
 
 def _json_copy(value):
@@ -12060,7 +12072,7 @@ def _clipmode_photoshoot_attempt_graph(
     seed = _clipmode_photoshoot_attempt_seed(base_seed, attempt_index)
     # JSON round-tripping is also the canonical graph hashing representation;
     # it avoids sharing mutable nested input dictionaries between attempts.
-    attempt_graph = json.loads(json.dumps(graph, ensure_ascii=False))
+    attempt_graph = _json_copy(graph)
     attempt_graph[sampler_id]["inputs"]["seed"] = seed
     attempt_graph[save_id]["inputs"]["filename_prefix"] = (
         f"Castle/{CLIPMODE_PHOTOSHOOT_STAGING_FOLDER}/"
@@ -12350,7 +12362,7 @@ def run_clipmode_photoshoot_worker(spec_path_value: str) -> dict:
                 attempt_graph = graph
                 attempt_seed = accepted_seed
                 active_prompt_id = job_id
-            attempt_extra_data = json.loads(json.dumps(extra_data, ensure_ascii=False))
+            attempt_extra_data = _json_copy(extra_data)
             public = attempt_extra_data.get("castlePublicSettings")
             if isinstance(public, dict):
                 public["seed"] = attempt_seed
