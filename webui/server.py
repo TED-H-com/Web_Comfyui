@@ -3886,7 +3886,8 @@ def _ws_read_frame(sock) -> tuple[int, bytes]:
     mask = _recv_exact(sock, 4) if masked else b""
     payload = _recv_exact(sock, size) if size else b""
     if masked:
-        payload = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
+        mask_repeated = (mask * (len(payload) // 4 + 1))[:len(payload)]
+        payload = (int.from_bytes(payload, 'little') ^ int.from_bytes(mask_repeated, 'little')).to_bytes(len(payload), 'little')
     return opcode, payload
 
 
@@ -3922,6 +3923,8 @@ def comfy_ws_messages(client_id: str):
             opcode, payload = _ws_read_frame(sock)
             if opcode == 1:
                 yield payload.decode("utf-8", "replace")
+            elif opcode == 2:
+                yield payload
             elif opcode == 8:
                 break
             elif opcode == 9:
