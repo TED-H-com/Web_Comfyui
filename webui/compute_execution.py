@@ -111,7 +111,7 @@ class PipelineExecution:
             # Artifact IDs are supplied only by the server's exact-intent output
             # receipt. Resolve an owned, hash-verified immutable version.
             source = self.s.resolve_owned_media_source(runtime.store, runtime.provider_media_store,
-                actor.user_id, match[1], allowed_file_roots=(self.s.minimax_h3_output_root(),
+                actor.user_id, match[1], allowed_file_roots=(self.s.COMFY_OUTPUT,
                 self.s.provider_database_path().parent / 'autoip-outputs',
                 self.s.provider_database_path().parent / 'production-edits')).path
         else:

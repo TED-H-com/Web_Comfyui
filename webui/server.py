@@ -18671,7 +18671,7 @@ class Handler(BaseHTTPRequestHandler):
                 runtime.store, runtime.provider_media_store,
                 actor.user_id, match.group(1),
                 allowed_file_roots=(
-                    minimax_h3_output_root(),
+                    COMFY_OUTPUT,
                     provider_database_path().parent / "autoip-outputs",
                     provider_database_path().parent / "production-edits",
                 ),
