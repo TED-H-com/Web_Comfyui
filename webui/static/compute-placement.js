@@ -73,7 +73,7 @@
     let preferenceTask=null,placementTouched=false,appliedFeature=null,visualFeature=null,visualTouched=false;
     const preferenceAbort=new AbortController();
     let availability={placement:'local',loading:true,eligible:false,selected_lane:null,candidates:[],error:''};
-    let jobs=new Map();
+    let jobs=new Map(),visibleJobCount=8;
     const placement=select([['local','本機'],['auto','自動安排'],['colab','Google Colab'],['autoip','AutoIP'],['comfy_cloud','Comfy Cloud'],['runninghub','RunningHub']]);
     const account=select([['','自動選擇可用帳號']]);
     const visualClass=select([['','未指定'],['anime','動漫'],['realistic','寫實']]);
@@ -107,9 +107,10 @@
       el('details',{class:'compute-compatibility'},[el('summary',{text:'查看各方式的支援條件'}),candidates]),controls,retry,
     ]);
     const jobList=el('div',{class:'compute-job-list'});
+    const moreJobs=button('顯示更多任務',()=>{visibleJobCount+=8;renderJobs();});moreJobs.hidden=true;
     const jobNotice=el('p',{class:'compute-note',role:'status','aria-live':'polite'});
     const taskRoot=el('section',{class:'compute-tasks','aria-label':'運算任務'},[
-      el('div',{class:'compute-task-heading'},[el('strong',{text:'運算任務'}),button('更新任務',()=>refreshJobs())]),jobNotice,jobList,
+      el('div',{class:'compute-task-heading'},[el('strong',{text:'運算任務'}),button('更新任務',()=>refreshJobs())]),jobNotice,jobList,el('div',{class:'compute-job-actions'},[moreJobs]),
     ]);
     form.prepend(root);form.append(taskRoot);
     function live(){return !disposed && form.isConnected;}
@@ -232,9 +233,9 @@
       renderJobs();locked();return job;
     }
     function renderJobs(){
-      jobList.replaceChildren();
+      jobList.replaceChildren();moreJobs.hidden=jobs.size<=visibleJobCount;
       if(!jobs.size){jobList.append(el('p',{class:'compute-note',text:'尚無運算任務。'}));return;}
-      for(const job of [...jobs.values()].reverse().slice(0,8)) {
+      for(const job of [...jobs.values()].reverse().slice(0,visibleJobCount)) {
         const actions=el('div',{class:'compute-job-actions'});
         const outputs=Array.isArray(job.artifacts)?[...job.artifacts]:[];
         if(job.result_url && !outputs.some(item=>item.url===job.result_url))outputs.push({name:'查看成果',url:job.result_url});

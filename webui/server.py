@@ -804,7 +804,7 @@ STREAM_CHUNK_SIZE = 1024 * 1024
 # data is provided by the installation owner and never bundled in this repo.
 BREEZY_URL = os.environ.get("CASTLE_BREEZY_URL", "").strip().rstrip("/")
 VOICE_LAB_PYTHON = Path(os.environ.get("CASTLE_VOICE_LAB_PYTHON", Path.home() / ".local/share/web-comfyui/integrations/voice/.venv/bin/python"))
-GPU_QUEUE_SCRIPT = Path(os.environ.get("CASTLE_GPU_QUEUE_SCRIPT", Path.home() / ".local/share/web-comfyui/integrations/voice/gpu_queue.py"))
+GPU_QUEUE_SCRIPT = Path(os.environ.get("CASTLE_GPU_QUEUE_SCRIPT", ROOT.parent / "scripts/run_comfy_gpu_queue.py"))
 GPU_QUEUE_PYTHON = os.environ.get("CASTLE_GPU_QUEUE_PYTHON", "/usr/bin/python3")
 H3_WEB_STATE_ROOT = Path(os.environ.get(
     "CASTLE_H3_WEB_STATE_ROOT",
@@ -22117,9 +22117,11 @@ class Handler(BaseHTTPRequestHandler):
                     "prompt": prompt,
                     "extra_data": workflow_extra_data("castle-voice-speak-library-web", character_context, submitted_by, action_id, variant_id),
                 }
-                self._compute_dispatch_started = True
-                result = request_json("/prompt", payload)
-                record_job_attribution(result.get("prompt_id") or result.get("promptId"), submitted_by, character_id, "voice-speak", action_id, variant_id)
+                from comfy_checkpoint_context import prompt_admission
+                with prompt_admission():
+                    self._compute_dispatch_started = True
+                    result = request_json("/prompt", payload)
+                    record_job_attribution(result.get("prompt_id") or result.get("promptId"), submitted_by, character_id, "voice-speak", action_id, variant_id)
                 return ({"ok": True, **result, **({"variantId": variant_id} if variant_id else {})})
                 return
             if bool(settings.get("qualityGate")):
@@ -22145,9 +22147,11 @@ class Handler(BaseHTTPRequestHandler):
                     "prompt": prompt,
                     "extra_data": workflow_extra_data("castle-voice-speak-web", character_context, submitted_by, action_id, variant_id),
                 }
-                self._compute_dispatch_started = True
-                result = request_json("/prompt", payload)
-                record_job_attribution(result.get("prompt_id") or result.get("promptId"), submitted_by, character_id, "voxcpm-tts", action_id, variant_id)
+                from comfy_checkpoint_context import prompt_admission
+                with prompt_admission():
+                    self._compute_dispatch_started = True
+                    result = request_json("/prompt", payload)
+                    record_job_attribution(result.get("prompt_id") or result.get("promptId"), submitted_by, character_id, "voxcpm-tts", action_id, variant_id)
                 return ({"ok": True, **result})
                 return
             self._compute_dispatch_started = True
@@ -22191,17 +22195,19 @@ class Handler(BaseHTTPRequestHandler):
             "prompt": prompt,
             "extra_data": workflow_extra_data(f"castle-{feature_id}-web", character_context, submitted_by, action_id, variant_id),
         }
-        self._compute_dispatch_started = True
-        result = request_json("/prompt", payload)
-        record_job_attribution(
-            result.get("prompt_id") or result.get("promptId"),
-            submitted_by,
-            character_id,
-            feature_id,
-            action_id,
-            variant_id,
-            character_context=character_context,
-        )
+        from comfy_checkpoint_context import prompt_admission
+        with prompt_admission():
+            self._compute_dispatch_started = True
+            result = request_json("/prompt", payload)
+            record_job_attribution(
+                result.get("prompt_id") or result.get("promptId"),
+                submitted_by,
+                character_id,
+                feature_id,
+                action_id,
+                variant_id,
+                character_context=character_context,
+            )
         return ({"ok": True, **result, **({"variantId": variant_id} if variant_id else {})})
 
     def api_post_generate(self) -> None:
@@ -23055,6 +23061,8 @@ def main() -> None:
         return
     server = CastleThreadingHTTPServer((args.host, args.port), Handler)
     colab_root = Path(os.environ.get("CASTLE_COLAB_ROOT", _CASTLE_DATA_HOME / "web-comfyui/colab"))
+    from comfy_checkpoint_context import write_checkpoint_context
+    write_checkpoint_context(globals(), colab_root)
     if (colab_root / "state.sqlite3").exists():
         get_colab_service().start()
     if (colab_root.parent / 'compute-pipelines.sqlite3').exists():

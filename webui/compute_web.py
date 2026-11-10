@@ -1,9 +1,59 @@
 """Authenticated WebUI adapters over the existing durable execution lanes."""
 from pathlib import Path
 from urllib.parse import urlencode, quote
+import hashlib
+import json
+import os
+import tempfile
 
 from compute_routing import ComputeAdapter, ComputeRouter, ComputeRejected, ComputeRoutingError
 import compute_adapters as colab_adapter
+
+
+def checkpoint_owned_history(server, history, *, receipt_root=None):
+    """Trusted local recycle barrier, never a generation/admission API.
+
+    The caller holds the shared admission/recycle gate and supplies history
+    from the configured Comfy instance. Unindexed external tasks are skipped;
+    every known successful terminal task must have durable verified outputs.
+    Only counts are returned; failure messages never contain paths or prompts.
+    """
+    if not isinstance(history, dict):
+        raise RuntimeError('local_checkpoint_invalid_history')
+    root = Path(receipt_root) if receipt_root is not None else Path(server.get_colab_service().root).parent / 'compute-local-results'
+    if not root.is_absolute():
+        raise RuntimeError('local_checkpoint_invalid_root')
+    index = server.load_job_index()
+    result = {'persisted': 0, 'skipped': 0}
+    for task_id, item in history.items():
+        indexed = index.get(task_id)
+        if not isinstance(indexed, dict):
+            result['skipped'] += 1
+            continue
+        status = item.get('status') if isinstance(item, dict) else None
+        if not isinstance(status, dict):
+            raise RuntimeError('local_checkpoint_invalid_status')
+        if not status.get('completed') and status.get('status_str') != 'error':
+            raise RuntimeError('local_checkpoint_unfinished_task')
+        owner = indexed.get('email')
+        if not isinstance(owner, str) or not owner or owner != server.normalize_email(owner):
+            raise RuntimeError('local_checkpoint_invalid_owner')
+        web = object.__new__(ComputeWeb)
+        web.s, web.user, web.owner = server, {'email': owner}, owner
+        web.local_receipt_root = root
+        try:
+            if not server.user_can_access_job(web.user, task_id, item, {task_id: indexed}):
+                raise ValueError('ownership mismatch')
+            if indexed.get('jobKind'):
+                valid = web._persist_local_history(task_id, item, indexed, wrapper_checkpoint=True)
+            else:
+                valid = web._persist_local_history(task_id, item, indexed)
+            if not valid:
+                raise ValueError('unverified output')
+        except Exception:
+            raise RuntimeError('local_checkpoint_output_unverified') from None
+        result['persisted'] += 1
+    return result
 
 
 class ComputeWeb:
@@ -151,6 +201,205 @@ class ComputeWeb:
                 'filename': filename, 'subfolder': subfolder, 'type': 'output', 'promptId': task_id})})
         return artifacts[:100]
 
+    def _local_receipt_path(self, task_id):
+        root = getattr(self, 'local_receipt_root', None)
+        service = getattr(self, 'colab', None)
+        if root is None and service is None:
+            return None  # Lightweight injected adapters may have no persistent runtime.
+        key = hashlib.sha256((self.user['email'] + '\0' + task_id).encode()).hexdigest()
+        root = Path(root) if root is not None else Path(service.root).parent / 'compute-local-results'
+        return root / (key + '.json')
+
+    @staticmethod
+    def _output_digest(path):
+        digest = hashlib.sha256()
+        with path.open('rb') as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    def _durable_local_result(self, task_id):
+        receipt_path = self._local_receipt_path(task_id)
+        if receipt_path is None or not receipt_path.exists():
+            return None
+        try:
+            receipt = json.loads(receipt_path.read_text())
+            if (receipt.get('owner') != self.user['email'] or receipt.get('task_id') != task_id
+                    or receipt.get('version') != 1):
+                raise ValueError('invalid receipt')
+            if receipt.get('state') == 'failed' and receipt.get('files') == []:
+                return {'state': 'failed', 'downstream_id': task_id}
+            files = receipt['files']
+            if receipt.get('state', 'completed') != 'completed' or not isinstance(files, list) or not files or len(files) > 100:
+                raise ValueError('invalid outputs')
+            for file in files:
+                path = self.s.resolve_view_path(file['filename'], file.get('subfolder', ''), 'output')
+                if (path is None or not path.is_file()
+                        or path.stat().st_size != file['bytes']
+                        or self._output_digest(path) != file['sha256']):
+                    raise ValueError('changed output')
+                sidecar = self.s.load_direct_sidecar(path)
+                if (not isinstance(sidecar, dict) or sidecar.get('promptId') != task_id
+                        or self.s.direct_sidecar_owner_email(self.s.direct_sidecar_path(path), sidecar, task_id) != self.user['email']):
+                    raise ValueError('durable ownership changed')
+            artifacts = self._local_artifacts(files, task_id)
+            if len(artifacts) != len(files):
+                raise ValueError('output ownership changed')
+            return {'state': 'completed', 'downstream_id': task_id, 'artifacts': artifacts}
+        except (OSError, ValueError, TypeError, KeyError):
+            # An existing invalid receipt must never be replaced with freshly
+            # blessed bytes or trigger a second generation.
+            return {'state': 'submission_uncertain', 'downstream_id': task_id,
+                    'error': {'code': 'local_output_unverified', 'message': '原任務成果尚未通過持久化驗證，請勿重送。'}}
+
+    def _wrapper_checkpoint_path(self, task_id):
+        path = self._local_receipt_path(task_id)
+        return path.parent / 'wrapper-checkpoints' / path.name if path is not None else None
+
+    def _wrapper_checkpoint_valid(self, task_id, job_kind):
+        path = self._wrapper_checkpoint_path(task_id)
+        if path is None or not path.exists():
+            return None
+        try:
+            receipt = json.loads(path.read_text())
+            if (receipt.get('schema') != 'castle.local-wrapper-output-checkpoint.v1'
+                    or receipt.get('owner') != self.user['email'] or receipt.get('task_id') != task_id
+                    or receipt.get('job_kind') != job_kind or receipt.get('wrapper_verified') is not False):
+                return False
+            if receipt.get('native_state') == 'failed' and receipt.get('files') == []:
+                return True
+            files = receipt['files']
+            if receipt.get('native_state') != 'completed' or not isinstance(files, list) or not 1 <= len(files) <= 100:
+                return False
+            for file in files:
+                media = self.s.resolve_view_path(file['filename'], file.get('subfolder', ''), 'output')
+                if (media is None or not media.is_file() or media.stat().st_size != file['bytes']
+                        or self._output_digest(media) != file['sha256']):
+                    return False
+            return True
+        except (OSError, ValueError, TypeError, KeyError):
+            return False
+
+    def _write_wrapper_checkpoint(self, task_id, job_kind, item, files, *, state='completed'):
+        # Raw Comfy completion is evidence for recovery, never a verified
+        # wrapper result. It must not create a public .castle.json sidecar or
+        # enter the normal completion namespace used by status_local.
+        prompt = item.get('prompt') or []
+        graph = prompt[2] if isinstance(prompt, list) and len(prompt) > 2 and isinstance(prompt[2], dict) else None
+        graph_hash = hashlib.sha256(json.dumps(graph, sort_keys=True, separators=(',', ':')).encode()).hexdigest() if graph is not None else None
+        receipt = {'schema': 'castle.local-wrapper-output-checkpoint.v1', 'owner': self.user['email'],
+                   'task_id': task_id, 'job_kind': job_kind, 'native_state': state,
+                   'wrapper_verified': False, 'graph_sha256': graph_hash, 'files': files}
+        self._write_checkpoint_file(self._wrapper_checkpoint_path(task_id), receipt)
+        return self._wrapper_checkpoint_valid(task_id, job_kind) is True
+
+    def _persist_local_history(self, task_id, item, indexed, *, wrapper_checkpoint=False):
+        receipt_path = self._local_receipt_path(task_id)
+        if receipt_path is None:
+            return False
+        if not isinstance(indexed, dict) or indexed.get('email') != self.user['email']:
+            return False
+        if wrapper_checkpoint:
+            if indexed.get('jobKind') not in {'minimax_h3_web', 'clipmode_character_photoshoot_web'}:
+                return False
+            prior = self._wrapper_checkpoint_valid(task_id, indexed['jobKind'])
+            if prior is not None:
+                return prior
+        else:
+            prior = self._durable_local_result(task_id)
+            if prior is not None:
+                return prior['state'] in {'completed', 'failed'}
+        status = item.get('status') or {}
+        if status.get('status_str') == 'error':
+            if wrapper_checkpoint:
+                return self._write_wrapper_checkpoint(task_id, indexed['jobKind'], item, [], state='failed')
+            return self._write_local_receipt(task_id, [], state='failed')
+        if not status.get('completed'):
+            return False
+        from colab_service import validate_media
+        files = []
+        safe_outputs = {}
+        seen = set()
+        for output in (item.get('outputs') or {}).values():
+            for key in ('images', 'gifs', 'audio', 'video', 'videos'):
+                for file in output.get(key) or []:
+                    if not isinstance(file, dict) or file.get('type', 'output') != 'output':
+                        continue
+                    identity = (file.get('filename'), file.get('subfolder', ''))
+                    if identity in seen:
+                        continue
+                    seen.add(identity)
+                    if len(files) >= 100:
+                        return False
+                    path = self.s.resolve_view_path(*identity, 'output')
+                    if path is None or not path.is_file() or not self._local_artifacts([file], task_id):
+                        return False
+                    proof = validate_media(path)
+                    files.append({'filename': identity[0], 'subfolder': identity[1], 'type': 'output',
+                                  'bytes': path.stat().st_size, 'sha256': self._output_digest(path), 'kind': proof['kind']})
+                    safe_outputs[str(len(files))] = {'video' if key == 'videos' else key: [file]}
+        if not files or len(files) > 100:
+            return False
+        if wrapper_checkpoint:
+            return self._write_wrapper_checkpoint(task_id, indexed['jobKind'], item, files)
+        # Reuse the application's existing owner/provenance/history sidecars;
+        # only this already authorized task is passed to the persistence code.
+        self.s.output_images({task_id: {**item, 'outputs': safe_outputs}}, job_index={task_id: indexed})
+        for file in files:
+            path = self.s.resolve_view_path(file['filename'], file['subfolder'], 'output')
+            sidecar = self.s.load_direct_sidecar(path)
+            if (not isinstance(sidecar, dict) or sidecar.get('promptId') != task_id
+                    or self.s.direct_sidecar_owner_email(self.s.direct_sidecar_path(path), sidecar, task_id) != self.user['email']):
+                return False
+        return self._write_local_receipt(task_id, files)
+
+    def _write_local_receipt(self, task_id, files, *, state='completed'):
+        receipt_path = self._local_receipt_path(task_id)
+        receipt = {'version': 1, 'owner': self.user['email'], 'task_id': task_id, 'state': state, 'files': files}
+        self._write_checkpoint_file(receipt_path, receipt)
+        return self._durable_local_result(task_id)['state'] in {'completed', 'failed'}
+
+    @staticmethod
+    def _write_checkpoint_file(receipt_path, receipt):
+        receipt_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix='.local-result-', dir=receipt_path.parent)
+        try:
+            with os.fdopen(fd, 'w') as stream:
+                json.dump(receipt, stream, sort_keys=True, separators=(',', ':'))
+                stream.flush()
+                os.fsync(stream.fileno())
+            try:
+                os.link(temporary, receipt_path)  # First completion is immutable, including concurrent polls.
+            except FileExistsError:
+                pass
+            directory = os.open(receipt_path.parent, os.O_RDONLY)
+            try: os.fsync(directory)
+            finally: os.close(directory)
+        finally:
+            if os.path.exists(temporary): os.unlink(temporary)
+
+    def checkpoint_local_history(self, history=None):
+        """Owner-scoped barrier; caller must hold the admission/recycle gate.
+
+        A recycler must aggregate this for every indexed owner and refuse the
+        recycle when any ``blocked`` entry remains. This method never submits.
+        """
+        history = self.s.request_json('/history') if history is None else history
+        index = self.s.load_job_index()
+        result = {'persisted': [], 'blocked': []}
+        for task_id, item in history.items():
+            indexed = index.get(task_id, {})
+            if indexed.get('email') != self.user['email'] or indexed.get('jobKind'):
+                continue
+            if not (item.get('status') or {}).get('completed') or (item.get('status') or {}).get('status_str') == 'error':
+                continue
+            try:
+                valid = self.s.user_can_access_job(self.user, task_id, item) and self._persist_local_history(task_id, item, indexed)
+            except Exception:
+                valid = False
+            result['persisted' if valid else 'blocked'].append(task_id)
+        return result
+
     def _direct_local_result(self, task_id, *, owned_voice_run=None):
         # Match /api/history/detail's durable ownership source. A stale index
         # row must not authorize a sidecar belonging to another owner.
@@ -253,7 +502,18 @@ class ComputeWeb:
             if not self.s.user_can_access_job(self.user, task_id):
                 raise PermissionError('找不到這個任務')
             return {'state': 'submission_uncertain', 'downstream_id': task_id}
-        history = self.s.request_json('/history/' + quote(task_id, safe=''))
+        durable = self._durable_local_result(task_id)
+        if durable is not None:
+            return durable
+        try:
+            history = self.s.request_json('/history/' + quote(task_id, safe=''))
+        except Exception:
+            direct = self._direct_local_result(task_id)
+            if direct:
+                return direct
+            if not self.s.user_can_access_job(self.user, task_id):
+                raise PermissionError('找不到這個任務')
+            return {'state': 'submission_uncertain', 'downstream_id': task_id}
         item = history.get(task_id)
         if item:
             if not self.s.user_can_access_job(self.user, task_id, item):
@@ -263,17 +523,30 @@ class ComputeWeb:
             files = [file for output in (item.get('outputs') or {}).values()
                      for key in ('images', 'gifs', 'audio', 'video', 'videos') for file in (output.get(key) or [])]
             artifacts = self._local_artifacts(files, task_id) if state == 'completed' else []
-            if state == 'completed' and files and not artifacts:
-                state = 'collecting'
+            if state == 'completed':
+                try:
+                    persisted = bool(artifacts) and self._persist_local_history(task_id, item, indexed)
+                except Exception:
+                    persisted = False
+                if not persisted:
+                    state = 'collecting'
+                else:
+                    durable = self._durable_local_result(task_id)
+                    if durable is not None:
+                        return durable
             return {'state': state, 'downstream_id': task_id, 'artifacts': artifacts}
         direct = self._direct_local_result(task_id)
         if direct:
             return direct
         if not self.s.user_can_access_job(self.user, task_id):
             raise PermissionError('找不到這個任務')
-        queue = self.s.request_json('/queue')
-        running = any(x[1] == task_id for x in queue.get('queue_running', []))
-        return {'state': 'running' if running else 'queued', 'downstream_id': task_id}
+        try:
+            queue = self.s.request_json('/queue')
+        except Exception:
+            return {'state': 'submission_uncertain', 'downstream_id': task_id}
+        running = any(isinstance(x, (list, tuple)) and len(x) > 1 and x[1] == task_id for x in queue.get('queue_running', []))
+        pending = any(isinstance(x, (list, tuple)) and len(x) > 1 and x[1] == task_id for x in queue.get('queue_pending', []))
+        return {'state': 'running' if running else ('queued' if pending else 'submission_uncertain'), 'downstream_id': task_id}
 
     def cancel_local(self, owner, task_id):
         if task_id.startswith('run_'):

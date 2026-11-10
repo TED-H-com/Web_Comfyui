@@ -13,6 +13,10 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+@pytest.fixture(autouse=True)
+def isolated_comfy_admission(tmp_path, monkeypatch):
+    monkeypatch.setenv('CASTLE_COMFY_ADMISSION_LOCK', str(tmp_path / 'comfy-admission.lock'))
+
 @pytest.fixture(scope="module")
 def test_server(tmp_path_factory, request):
     tmp_path = tmp_path_factory.mktemp("test_server")
@@ -44,6 +48,7 @@ def test_server(tmp_path_factory, request):
         'WEB_COMFYUI_PORT': str(port),
         'WEB_COMFYUI_ALLOWED_ORIGIN_HOSTS': 'localhost',
         'PYTHONDONTWRITEBYTECODE': '1',
+        'CASTLE_COMFY_ADMISSION_LOCK': str(tmp_path / 'comfy-admission.lock'),
     })
     if getattr(request, 'param', None) == 'colab_transport':
         controller = tmp_path / 'synthetic-controller'

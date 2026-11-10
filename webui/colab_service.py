@@ -616,7 +616,7 @@ class ColabService:
                     return self._cleanup(state)
                 return
             remote_phase = status.get("phase", status.get("state", ""))
-            self.update(job_id, remote_phase=remote_phase)
+            self.update(job_id, remote_phase=remote_phase, message=None)
             if remote_phase in {"failed", "ambiguous", "timeout", "cancelled", "submission_uncertain"}:
                 from scripts.colab_remote.remote_job import sanitize_diagnostics
                 state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="雲端生成未完成；保留紀錄並釋放 GPU",

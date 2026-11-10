@@ -488,3 +488,45 @@ def test_generic_or_unreviewed_h3_reference_gets_no_autoip_video_override(comput
     assert 'computeAutoipVideo' not in previews[-1]['request']
     assert page.locator('#generate').is_disabled() and not submissions
     assert not errors,errors
+
+
+@pytest.mark.parametrize('width',[390,768,1440])
+def test_more_jobs_keeps_expansion_and_older_artifact_links(compute_page,width):
+    page,errors=compute_page;page.set_viewport_size({'width':width,'height':900})
+    _,submissions,_,jobs,_,_=fake_router(page)
+    ids=[str(uuid.uuid4()) for _ in range(17)]
+    for index,ident in enumerate(ids):
+        jobs[ident]={'ok':True,'request_id':ident,'lane':'autoip','state':'completed',
+                     'artifacts':[{'name':f'合成成果 {index}','url':f'/api/assets/synthetic-{index}/source'}]}
+    page.evaluate('window.mountCompute()')
+    page.locator('.compute-job').nth(7).wait_for()
+    assert page.locator('.compute-job').count()==8
+    assert page.get_by_role('link',name='合成成果 1',exact=True).count()==0
+    directory=os.environ.get('WEB_COMFYUI_TEST_SCREENSHOTS')
+    if directory:
+        Path(directory).mkdir(parents=True,exist_ok=True)
+        page.screenshot(path=str(Path(directory)/f'compute-jobs-initial-{width}.png'),full_page=True)
+    more=page.get_by_role('button',name='顯示更多任務',exact=True)
+    assert more.is_visible()
+    if width==390:assert more.evaluate('node=>getComputedStyle(node).minHeight')=='44px'
+    more.click()
+    assert page.locator('.compute-job').count()==16
+    assert page.get_by_role('link',name='合成成果 1',exact=True).get_attribute('href')=='/api/assets/synthetic-1/source'
+    # A refresh with an additional job must retain the expanded row count.
+    latest=str(uuid.uuid4())
+    jobs[latest]={'ok':True,'request_id':latest,'lane':'colab','state':'completed',
+                  'artifacts':[{'name':'新增合成成果','url':'/api/assets/synthetic-new/source'}]}
+    page.get_by_role('button',name='更新任務',exact=True).click()
+    page.get_by_role('link',name='新增合成成果',exact=True).wait_for()
+    assert page.locator('.compute-job').count()==16
+    assert page.get_by_role('link',name='合成成果 2',exact=True).is_visible()
+    more.click()
+    assert page.locator('.compute-job').count()==18
+    assert page.get_by_role('link',name='合成成果 0',exact=True).get_attribute('href')=='/api/assets/synthetic-0/source'
+    assert more.is_hidden()
+    # Poll/refresh does not collapse the final expanded results either.
+    page.get_by_role('button',name='更新任務',exact=True).click()
+    assert page.locator('.compute-job').count()==18
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+    if directory:page.screenshot(path=str(Path(directory)/f'compute-jobs-expanded-{width}.png'),full_page=True)
+    assert not submissions and not errors

@@ -29,8 +29,12 @@
 - 遠端成果先下載、驗證格式、保存至本機；圖片、音訊或影片再複製成擁有者專屬、內容雜湊固定的輸入檔，交給下一步。瀏覽器不能提供任意下載網址或伺服器路徑。交接檔案上限 64 MiB；音訊／影片須經串流探測，最長一小時。
 - 提交結果不明時只查詢原任務；不自動換平台或重送付費工作。Comfy Cloud 與 RunningHub 某些失去回覆的提交無法自動恢復，會保留「提交狀態待確認」。
 - 背景步驟重新讀取目前帳號權限，不保留 HTTP handler、登入 cookie 或另一使用者的執行上下文。
+- 本機一般任務完成時，會保存擁有者、原任務編號、精確輸出檔名及內容雜湊。ComfyUI 重啟後仍可讀取已驗證的成果；任務同時不在歷史、佇列與持久紀錄時，顯示「提交待確認」，不猜測檔名或自動重跑。
+- Web 送出本機任務至保存歸屬紀錄的期間，與 H3／語音工作程序的記憶體整理共用鎖。整理前必須確認佇列空閒並保存已完成成果；無法驗證時保留現有程序。這個協調只涵蓋使用相同鎖的呼叫端，其他直接操作 ComfyUI 的程式不會自動受到保護。
 
 狀態位於 Colab 資料目錄的上一層：`compute-routing.sqlite3`、`compute-pipelines.sqlite3`、`compute-preferences.sqlite3`、`hosted-compute/`。其內容包含私人任務與連線設定，不可提交至 Git。
+
+本機成果收據同樣位於該目錄下的 `compute-local-results/`。維護鎖預設為 `~/.local/share/castle-comfy-web/comfy-admission.lock`；若設定 `CASTLE_COMFY_ADMISSION_LOCK`，Web 與所有本機工作程序必須使用同一個絕對路徑。Web 啟動時會在鎖旁寫入權限為 `0600` 的程序與路徑設定，供整理前的檢查程序使用；其中不包含供應商金鑰，過期 Web 程序的設定不會被接受。語音的 `CASTLE_GPU_QUEUE_SCRIPT` 覆寫值也應指向本版本的 `scripts/run_comfy_gpu_queue.py`。
 
 ## 費用與驗證範圍
 

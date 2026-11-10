@@ -73,6 +73,7 @@ def _worker_environment(*, token: str, state_root: Path) -> dict[str, str]:
     allowed = (
         "HOME", "PATH", "LANG", "LC_ALL", "LC_CTYPE", "TZ", "USER",
         "LOGNAME", "TMPDIR",
+        "CASTLE_COMFY_ADMISSION_LOCK", "CASTLE_WEB_PYTHON",
     )
     environment = {key: os.environ[key] for key in allowed if key in os.environ}
     runtime_dir = Path("/run/user") / str(os.geteuid())

@@ -213,6 +213,7 @@ def run(spec_path: Path, *, token: str, state_root: Path) -> None:
     submission_attempted = False
     memory_cleanup = guarded.memory_cleanup_not_attempted()
     receipt_payload: dict[str, object] | None = None
+    output_checkpoint_written = False
     try:
         _check_stop(cancel_file, deadline_epoch=deadline_epoch)
         manifest = guarded.load_manifest(guarded.DEFAULT_MANIFEST)
@@ -328,6 +329,14 @@ def run(spec_path: Path, *, token: str, state_root: Path) -> None:
                 "probe": probe,
             },
         }
+        # Survive a crash during cleanup without claiming cleanup succeeded.
+        # The parent removes transient spec/final receipt files, not this proof.
+        guarded._write_exclusive_json(
+            Path(str(spec["receipt_path"])).with_suffix(".output-checkpoint.json"),
+            {"schema_version": "castle.minimax-h3-output-checkpoint.v1",
+             "cleanup_pending": True, "receipt": receipt_payload},
+        )
+        output_checkpoint_written = True
     except BaseException as error:
         if submission_attempted:
             guarded.cancel_owned_prompt(
@@ -336,7 +345,9 @@ def run(spec_path: Path, *, token: str, state_root: Path) -> None:
             raise
         raise PreSubmitError("MiniMax H3 Web submission was not accepted") from error
     finally:
-        if submission_attempted:
+        # A verified output whose durable proof could not be written must keep
+        # its Comfy history available for recovery; never recycle in that case.
+        if submission_attempted and (receipt_payload is None or output_checkpoint_written):
             guarded.wait_for_comfy_queue_idle(
                 base_url, timeout_seconds=None
             )

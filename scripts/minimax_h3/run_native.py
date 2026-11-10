@@ -47,6 +47,9 @@ from comfy_schema import combo_options
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
 WEBUI_ROOT = REPO_ROOT / "webui"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from scripts import comfy_lifecycle
 if str(WEBUI_ROOT) not in sys.path:
     sys.path.insert(0, str(WEBUI_ROOT))
 
@@ -830,7 +833,16 @@ def _require_running_comfy_service(state: ComfyServiceState) -> None:
         )
 
 
-def recycle_comfy_service(
+def recycle_comfy_service(base_url: str, *, gate_timeout_seconds: float = 30.0, **kwargs: Any) -> dict[str, object]:
+    """Checkpoint and replace an idle Comfy process under the admission gate."""
+    try:
+        with comfy_lifecycle.recycle_lock(timeout_seconds=gate_timeout_seconds):
+            return _recycle_comfy_service_locked(base_url, **kwargs)
+    except comfy_lifecycle.LifecycleError as error:
+        raise RunnerError("comfy_history_checkpoint_failed", "ComfyUI 維護未取得安全鎖或無法保存已完成工作的紀錄；未重新啟動。") from error
+
+
+def _recycle_comfy_service_locked(
     base_url: str,
     *,
     timeout_seconds: float = SERVICE_RECYCLE_TIMEOUT_SECONDS,
@@ -844,6 +856,7 @@ def recycle_comfy_service(
     run_command: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
     clock: Callable[[], float] = time.monotonic,
     sleeper: Callable[[float], None] = time.sleep,
+    history_checkpoint: Callable[[str], object] | None = None,
 ) -> dict[str, object]:
     """Safely free H3 memory by replacing the idle ComfyUI process.
 
@@ -867,13 +880,14 @@ def recycle_comfy_service(
         )
     read_memory = memory_reader or read_memory_snapshot
 
-    # Never terminate a prompt owned by another caller.  The shared GPU flock
-    # is still held by the worker while this check and restart take place.
+    # The shared admission gate is exclusive throughout checkpoint/restart.
     require_queue_idle(http(base_url, "/queue", timeout=5.0))
     sleeper(precheck_seconds)
     require_queue_idle(http(base_url, "/queue", timeout=5.0))
     before = service_reader()
     _require_running_comfy_service(before)
+    (history_checkpoint or comfy_lifecycle.checkpoint_history)(base_url)
+    require_queue_idle(http(base_url, "/queue", timeout=5.0))
 
     try:
         completed = run_command(
@@ -2553,6 +2567,8 @@ def _worker_environment(*, token: str, state_root: Path) -> dict[str, str]:
         "USER",
         "LOGNAME",
         "TMPDIR",
+        "CASTLE_COMFY_ADMISSION_LOCK",
+        "CASTLE_WEB_PYTHON",
     )
     environment = {key: os.environ[key] for key in allowed if key in os.environ}
     runtime_dir = Path("/run/user") / str(os.geteuid())

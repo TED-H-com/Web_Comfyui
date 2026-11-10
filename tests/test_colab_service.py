@@ -415,3 +415,18 @@ def test_watchdog_bad_ack_fails_immediately_without_leaking_error(lane, monkeypa
     assert failed['watchdog_attempts'] == 1
     assert failed['preparation_error_code'] == 'watchdog_ack_invalid'
     assert 'PRIVATE_CREDENTIAL_AND_PROMPT' not in json.dumps(failed)
+
+
+def test_successful_owned_poll_clears_stale_connection_notice(lane, monkeypatch):
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    state = service.update(job['id'], phase='running', runtime_id=str(uuid.uuid4()),
+                           message='連線暫時中斷；保留任務識別碼，正在確認狀態')
+    report = {'status': {'job_id': state['id'], 'manifest_sha256': state['manifest_sha256'],
+                         'phase': 'installing'}, 'worker_dead': False}
+    monkeypatch.setattr(service, '_exec', lambda *args: report)
+    service.tick(state)
+    restored = service.job('alice', job['id'])
+    assert restored['phase'] == 'running' and restored['remote_phase'] == 'installing'
+    assert restored['message'] is None
+    assert not [op for op, _ in bridge.calls if op in {'runtime_allocate', 'upload', 'runtime_stop'}]
