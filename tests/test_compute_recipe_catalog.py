@@ -177,12 +177,17 @@ def test_h3_graph_matches_pure_product_compiler_for_native_sections(tid):
 @pytest.mark.parametrize('aspect,dimensions', list(C.ASPECTS.items()))
 @pytest.mark.parametrize('frames', [124, 226, 362])
 def test_h3_exact_geometry_and_legal_frame_lattice(aspect, dimensions, frames):
-    template = TEMPLATES['native-h3-first-last-v1']
+    template = TEMPLATES['native-h3-first-last-v2']
     submitted = request(template)
     submitted['settings'].update(aspect=aspect, frames=str(frames))
     graph = compile_graph(template, submitted)
     node = graph['5']['inputs']
     assert (node['width'], node['height'], node['length']) == (*dimensions, frames)
+    for pad_id in ('17','18'):
+        fitting=graph[pad_id]['inputs']
+        assert (fitting['target_width'],fitting['target_height'])==dimensions
+        assert fitting['padding_color']=='black'
+    assert template['adaptation']=='preserve_aspect_black_pad'
     expected = P.compile_product_prompt(feature_id='h3-image-video', visual_class=None,
         settings={**submitted['settings'], 'seed': 73}, uploads={'image': 'image.png', 'last_frame': 'last_frame.png'}, output_token='test')
     assert node['prompt'] == expected['5']['inputs']['prompt']
@@ -194,7 +199,7 @@ def test_h3_exact_geometry_and_legal_frame_lattice(aspect, dimensions, frames):
 
 @pytest.mark.parametrize('style', ['anime', 'realistic'])
 def test_generic_h3_visual_style_does_not_become_a_character_request(style):
-    template = TEMPLATES['native-h3-first-v1']
+    template = TEMPLATES['native-h3-first-v2']
     submitted = request(template)
     submitted['settings']['visualStyle'] = style
     graph = compile_graph(template, submitted)
@@ -206,7 +211,7 @@ def test_generic_h3_visual_style_does_not_become_a_character_request(style):
 
 @pytest.mark.parametrize('style,motion', [('anime', 'gentle'), ('realistic', 'natural')])
 def test_bound_h3_character_keeps_native_guardrails(style, motion):
-    template = TEMPLATES['native-h3-first-v1']
+    template = TEMPLATES['native-h3-first-v2']
     submitted = request(template, {'description': 'A synthetic adult presenter waves.', 'motionProfile': motion,
         'aspect': 'portrait', 'frames': '124', 'seed': '-1', 'acceleration': 'stock',
         'visualStyle': style, '_characterVisualClass': style, '_characterId': 'synthetic-owned'})
@@ -259,7 +264,7 @@ def test_malformed_finite_maps_and_defaults_fail_configuration(binding_change):
 
 
 def test_defaults_maps_not_allowed_for_prompt_or_files_and_conflicting_defaults_rejected():
-    recipe = copy.deepcopy(TEMPLATES['native-h3-first-v1']['recipe'])
+    recipe = copy.deepcopy(TEMPLATES['native-h3-first-v2']['recipe'])
     for index in (0, len(recipe['bindings'])-1):
         broken = copy.deepcopy(recipe)
         broken['bindings'][index]['default'] = 'do-not-replace'

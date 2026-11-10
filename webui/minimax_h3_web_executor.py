@@ -74,6 +74,7 @@ _ALLOWED_NODE_CLASSES = frozenset(
         "CreateVideo",
         "SaveVideo",
         "LoadImage",
+        "ResizeAndPadImage",
         "VHS_LoadVideo",
         "LoadAudio",
         "PathchSageAttentionKJ",
@@ -275,6 +276,44 @@ def _node_inputs(node: object) -> tuple[str, dict[str, object]]:
     return class_type, inputs
 
 
+def _validate_i2v_geometry(
+    graph: Mapping[str, object], generator_inputs: Mapping[str, object],
+    *, mode: str, width: int, height: int,
+) -> None:
+    pads = {key: node["inputs"] for key, node in graph.items()
+            if node["class_type"] == "ResizeAndPadImage"}
+    if mode != "i2v":
+        if pads:
+            _fail("graph_geometry_invalid", "Image fitting is only valid for H3 keyframes.")
+        return
+    loaders = {key for key, node in graph.items() if node["class_type"] == "LoadImage"}
+    used_pads: set[str] = set()
+    used_loaders: set[str] = set()
+    for field in ("first_frame", "last_frame"):
+        if field not in generator_inputs:
+            continue
+        link = generator_inputs[field]
+        if (type(link) is not list or len(link) != 2 or type(link[0]) is not str
+                or type(link[1]) is not int or link[1] != 0 or link[0] not in pads
+                or link[0] in used_pads):
+            _fail("graph_geometry_invalid", "H3 keyframes must use separate fitted image canvases.")
+        pad = pads[link[0]]
+        if (set(pad) != {"image", "target_width", "target_height", "padding_color", "interpolation"}
+                or type(pad["target_width"]) is not int or pad["target_width"] != width
+                or type(pad["target_height"]) is not int or pad["target_height"] != height
+                or pad["padding_color"] != "black" or pad["interpolation"] != "lanczos"):
+            _fail("graph_geometry_invalid", "H3 keyframe fitting must match the output canvas.")
+        source = pad["image"]
+        if (type(source) is not list or len(source) != 2 or type(source[0]) is not str
+                or type(source[1]) is not int or source[1] != 0 or source[0] not in loaders
+                or source[0] in used_loaders or set(graph[source[0]]["inputs"]) != {"image"}):
+            _fail("graph_geometry_invalid", "H3 image fitting must use the bound source image.")
+        used_pads.add(link[0])
+        used_loaders.add(source[0])
+    if not used_pads or used_pads != set(pads) or used_loaders != loaders:
+        _fail("graph_geometry_invalid", "H3 keyframe source coverage is incomplete.")
+
+
 def _validate_graph_contract(
     graph: Mapping[str, object], *, input_root: Path
 ) -> WebGraphContract:
@@ -368,6 +407,8 @@ def _validate_graph_contract(
         and media_counts["audio"] <= 3
     ):
         _fail("graph_mode_mismatch", "MiniMax H3 reference inputs are invalid.")
+
+    _validate_i2v_geometry(graph, generator_inputs, mode=mode, width=width, height=height)
 
     expected_unet = native.REF2VA_MODEL if mode == "ref2va_image" else native.FL2VA_MODEL
     if (

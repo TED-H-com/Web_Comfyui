@@ -193,6 +193,11 @@ def _h3(kind, *, pictures=0, videos=0, audios=0):
         graph = N.build_i2v_prompt(**common, first_frame='image.png' if 'image' in slots else None,
             last_frame='last_frame.png' if 'last_frame' in slots else None, output_prefix='Castle/minimax-h3/i2v/catalog')
         bindings = [_bind('files.' + slot, 15 + index, 'image') for index, slot in enumerate(slots)]
+        for index in range(len(slots)):
+            bindings.extend([
+                _setting('aspect', 17 + index, 'target_width', 'landscape', values=[(k, v[0]) for k, v in ASPECTS.items()]),
+                _setting('aspect', 17 + index, 'target_height', 'landscape', values=[(k, v[1]) for k, v in ASPECTS.items()]),
+            ])
     else:
         feature = 'h3-reference-video'
         slots = ['reference' if i == 1 else f'reference{i}' for i in range(1, pictures + 1)]
@@ -211,7 +216,8 @@ def _h3(kind, *, pictures=0, videos=0, audios=0):
                 _setting('frames', 5, 'length', '124', values=[(value, frames) for frames in N.LEGAL_FRAME_LENGTHS for value in (str(frames), frames)]),
                 _setting('seed', 6, 'noise_seed', -1), *bindings]
     suffix = kind if kind != 'reference' else f'reference-{pictures}' if not videos and not audios else f'reference-i{pictures}-v{videos}-a{audios}'
-    return _template(f'native-h3-{suffix}-v1', feature, label,
+    is_keyframe = kind in ('first', 'last', 'first-last')
+    template = _template(f'native-h3-{suffix}-v{2 if is_keyframe else 1}', feature, label,
         '官方 FL2VA／Ref2VA 模型；保留六種原生／預覽畫布、124–362 合法幀數與有聲 MP4。Stock 20 步；此配方不使用 PRISM 或快取加速。',
         graph, bindings, output='video', fixed={'acceleration': 'stock'},
         sources=['webui/minimax_h3_native.py#build_t2v_prompt' if kind == 'text' else
@@ -222,6 +228,11 @@ def _h3(kind, *, pictures=0, videos=0, audios=0):
                       '節點基準：ComfyUI @ c2bcbecd82ec5ae66594340b395c24ef0217b238；需原生 MiniMax H3 與音訊 VAE 節點。',
                       '恰好提供此範本列出的素材；目前託管服務最多 8 個檔案，不能忽略其餘參考。',
                       *(['影片參考需要 VideoHelperSuite 的上傳型 VHS_LoadVideo；音軌引用順序沿用原生 H3。'] if videos else [])])
+    if is_keyframe:
+        template['adaptation'] = 'preserve_aspect_black_pad'
+        template['description'] += ' 首尾格等比例縮放、完整保留並置中補黑邊；不裁切，也不生成延伸背景。'
+        template['requirements'].append('需要內建 ResizeAndPadImage（已檢視 ComfyUI @ c194dd00cd42aa18d9dbf27d977bf6b85d9ea565）；黑邊會進入影片條件。新幾何配方須重新驗證，未宣稱供應商執行通過。')
+    return template
 
 
 VHS_REVISION = '4ee72c065db22c9d96c2427954dc69e7b908444b'

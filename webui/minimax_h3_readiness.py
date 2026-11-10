@@ -174,14 +174,14 @@ H3_CONTRACTS: Final = MappingProxyType({
             "fl",
             "i2v",
             "anime",
-            _FL_NODES | {"LoadImage"},
+            _FL_NODES | {"LoadImage", "ResizeAndPadImage"},
         ),
         H3ReadinessContract(
             "h3.i2v.realistic.stock.v1",
             "fl",
             "i2v",
             "realistic",
-            _FL_NODES | {"LoadImage"},
+            _FL_NODES | {"LoadImage", "ResizeAndPadImage"},
         ),
         H3ReadinessContract(
             "h3.ref2va-image.anime.stock.v1",
@@ -901,6 +901,11 @@ def _graph_contract_payload(contract: H3ReadinessContract) -> dict[str, Any]:
     conditioning["width"] = {"slot": "width"}
     conditioning["height"] = {"slot": "height"}
     conditioning["length"] = {"slot": "length"}
+    for node in graph.values():
+        if node["class_type"] == "ResizeAndPadImage":
+            # These are the same caller-selected canvas slots as the generator.
+            node["inputs"]["target_width"] = {"slot": "width"}
+            node["inputs"]["target_height"] = {"slot": "height"}
     noise = graph["6"]["inputs"]
     output = graph["14"]["inputs"]
     assert isinstance(noise, dict) and isinstance(output, dict)

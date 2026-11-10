@@ -531,22 +531,29 @@ def build_i2v_prompt(
         seed=clean_seed,
         output_prefix=clean_prefix,
     )
-    next_node = 15
-    if clean_first is not None:
-        node_id = str(next_node)
-        next_node += 1
-        graph[node_id] = {
+    # Preserve each complete source image. The native H3 first-frame path
+    # stretches and its last-frame path crops; feed both an already fitted
+    # canvas so neither path changes the source aspect ratio.
+    keyframes = [("first_frame", clean_first), ("last_frame", clean_last)]
+    for index, (field, image_name) in enumerate(
+        (item for item in keyframes if item[1] is not None)
+    ):
+        loader_id, pad_id = str(15 + index), str(17 + index)
+        graph[loader_id] = {
             "class_type": "LoadImage",
-            "inputs": {"image": clean_first},
+            "inputs": {"image": image_name},
         }
-        conditioning_inputs["first_frame"] = [node_id, 0]
-    if clean_last is not None:
-        node_id = str(next_node)
-        graph[node_id] = {
-            "class_type": "LoadImage",
-            "inputs": {"image": clean_last},
+        graph[pad_id] = {
+            "class_type": "ResizeAndPadImage",
+            "inputs": {
+                "image": [loader_id, 0],
+                "target_width": width,
+                "target_height": height,
+                "padding_color": "black",
+                "interpolation": "lanczos",
+            },
         }
-        conditioning_inputs["last_frame"] = [node_id, 0]
+        conditioning_inputs[field] = [pad_id, 0]
     return _apply_acceleration(graph, clean_acceleration)
 
 

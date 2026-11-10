@@ -329,8 +329,8 @@ H3_FEATURES: Final = (
             _seed_field(),
         ],
         "requiredModels": [FL2VA_MODEL, *H3_COMMON_MODELS],
-        "requiredNodes": [*H3_NATIVE_NODES, "MiniMaxH3ImageToVideo", "LoadImage", "PathchSageAttentionKJ", "EasyCache", "MiniMaxH3TeaCache"],
-        "note": "首格、尾格皆可單獨使用；至少上傳一張。角色入口仍會套用動漫／真人 guardrail。",
+        "requiredNodes": [*H3_NATIVE_NODES, "MiniMaxH3ImageToVideo", "LoadImage", "ResizeAndPadImage", "PathchSageAttentionKJ", "EasyCache", "MiniMaxH3TeaCache"],
+        "note": "首格、尾格皆可單獨使用；至少上傳一張。角色入口仍會套用動漫／真人 guardrail。本機原生流程：首尾格保留完整畫面，比例不同時等比例補黑邊。",
     },
     {
         "id": "h3-reference-video",

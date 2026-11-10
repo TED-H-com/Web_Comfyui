@@ -1,0 +1,26 @@
+# H3 首尾格等比例補邊
+
+Native H3 圖生影片現在先以 `ResizeAndPadImage` 等比例縮放首／尾格，置中補黑邊，再交給 `MiniMaxH3ImageToVideo`。完整來源畫面保留，不裁切、不拉伸，也不生成延伸背景。原始素材、其內容雜湊、所有權、參考順序、提示、seed、模型及輸出畫布保持各自原有契約。
+
+這是明示的輸入適配修改。黑邊也會成為影片條件；不能保證模型會把黑邊補成背景，也不能因此保證生成後的人物外觀完全不變。AutoIP 和 Colab 的既有工作流程沒有因此修好。
+
+實作依據是 ComfyUI `c194dd00cd42aa18d9dbf27d977bf6b85d9ea565`：
+
+- [內建 ResizeAndPadImage](https://github.com/Comfy-Org/ComfyUI/blob/c194dd00cd42aa18d9dbf27d977bf6b85d9ea565/comfy_extras/nodes_images.py#L594) 使用較小縮放比例，將整張圖置中放入固定大小畫布。
+- [H3 原生節點](https://github.com/Comfy-Org/ComfyUI/blob/c194dd00cd42aa18d9dbf27d977bf6b85d9ea565/comfy_extras/nodes_minimax_h3.py#L144) 的首格會拉伸、尾格會中央裁切。預先補成精確畫布後，這兩個步驟不再改變長寬比。沒有修改已安裝節點。
+
+例如 1024×1024 方圖輸出至864×480時，內容為480×480，左右各補192；864×1152直圖則縮成360×480，左右各補252。整數像素取整可能造成一像素誤差。
+
+## 相容性與資格紀錄
+
+`LoadImage` 的15／16號節點不變；17／18號節點負責補邊。首格、尾格、首尾格都支援。驗證器要求每個首尾格經過獨立補邊，輸入連線正確且尺寸等於生成器畫布，拒絕繞過、錯配及孤立節點。
+
+I2V readiness 加入 `ResizeAndPadImage`，執行圖與 runtime schema 雜湊會改變。舊 I2V golden receipt 將被判定過期；此修改不捏造新的 GPU 資格紀錄，也不放寬既有的資格政策。T2V／Ref2VA 不改變。worker 與 receipt 外層 JSON schema 不變，既有成果不重新送出。
+
+託管配方 `native-h3-first-v2`、`native-h3-last-v2`、`native-h3-first-last-v2` 同步綁定六種 aspect 的生成器與補邊尺寸，並標為 `preserve_aspect_black_pad`。已儲存的使用者配方不自動替換。供應商仍須部署相容節點並重新驗證輸出；新增配方沒有遠端執行通過的宣稱。
+
+## 驗證範圍
+
+契約測試涵蓋來源雜湊保留、首尾順序、六種畫布、錯誤連線／尺寸拒絕、缺少節點及舊 golden 失效。選用的 CPU 數值測試只執行三段雜湊鎖定的上游 AST，使用合成圓形與四角標記，檢查保留完整畫面、比例、黑邊與來源張量不變；不啟動 ComfyUI、不載入模型、不使用 GPU。
+
+內建補邊節點對極端細長圖片仍有限制：若縮放後某一軸不足一像素，整數取整會成為零，節點會拒絕執行。數值測試明確保留此限制；沒有宣稱任意長寬比都可用。此修改尚未透過新的 GPU 影片生成驗證。
