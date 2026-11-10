@@ -152,6 +152,16 @@ def test_empty_lookup_during_cancel_does_not_drop_ambiguous_allocation(lane):
     assert service.job('alice', job['id'])['phase'] == 'cancelled'
 
 
+def test_delayed_worker_snapshot_observes_cancel_before_allocating(lane):
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    stale = service.job('alice', job['id'])
+    service.cancel('alice', job['id'])
+    service.tick(stale)
+    assert service.job('alice', job['id'])['phase'] == 'cancelled'
+    assert not [op for op, _ in bridge.calls if op == 'runtime_allocate']
+
+
 def test_stop_failure_never_claims_completion_and_is_recovered(lane):
     service, bridge, body = lane
     job = service.submit("alice", body)

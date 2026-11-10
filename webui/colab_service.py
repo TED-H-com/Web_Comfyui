@@ -474,6 +474,13 @@ class ColabService:
         return json.loads(lines[-1])
 
     def tick(self, state):
+        # Another account's slow provider call may have delayed this queued
+        # snapshot. Observe cancellations committed since the sweep started.
+        with self.db() as db:
+            row = db.execute("SELECT state FROM jobs WHERE id=?", (state["id"],)).fetchone()
+        if row is None:
+            return
+        state = json.loads(row[0])
         job_id, phase = state["id"], state["phase"]
         if phase in TERMINAL:
             return
