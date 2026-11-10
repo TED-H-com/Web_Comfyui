@@ -203,3 +203,22 @@ def test_licensed_source_reference_explains_selection_policy(catalog, monkeypatc
     error = capsys.readouterr().err
     assert 'not selected for local import' in error and 'GPL-3.0' in error
     assert 'no redistribution license found' not in error
+
+
+@pytest.mark.parametrize('metadata', [
+    {'extra': None, 'definitions': None},
+    {'extra': {'groupNodes': None}, 'definitions': {'subgraphs': None}},
+])
+def test_frontend_null_metadata_can_be_sanitized_and_imported(selected, metadata):
+    entry, source = selected
+    graph = {'nodes': [{'id': 1, 'type': 'SaveImage', 'widgets_values': ['old']}], 'links': [], **metadata}
+    result = cw.sanitize(graph, entry, source)
+    cw.validate_graph(result)
+    assert result['nodes'][0]['widgets_values'] == ['community/' + entry['id']]
+
+
+@pytest.mark.parametrize('metadata', [{'extra': []}, {'definitions': False}, {'definitions': {'subgraphs': 0}}])
+def test_invalid_falsey_metadata_is_not_treated_as_absent(selected, metadata):
+    entry, source = selected
+    with pytest.raises(ValueError, match='metadata|definitions'):
+        cw.sanitize({'nodes': [], 'links': [], **metadata}, entry, source)

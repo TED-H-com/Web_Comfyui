@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 @pytest.fixture(scope="module")
-def test_server(tmp_path_factory):
+def test_server(tmp_path_factory, request):
     tmp_path = tmp_path_factory.mktemp("test_server")
     class Comfy(BaseHTTPRequestHandler):
         def log_message(self, *_): pass
@@ -45,6 +45,12 @@ def test_server(tmp_path_factory):
         'WEB_COMFYUI_ALLOWED_ORIGIN_HOSTS': 'localhost',
         'PYTHONDONTWRITEBYTECODE': '1',
     })
+    if getattr(request, 'param', None) == 'colab_transport':
+        controller = tmp_path / 'synthetic-controller'
+        fixture = (ROOT / 'tests/fixtures/colab_transport.py').read_text()
+        controller.write_text('#!' + sys.executable + '\n' + fixture)
+        controller.chmod(0o700)
+        env['WEB_COMFYUI_COLAB_PYTHON'] = str(controller)
 
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     process = None

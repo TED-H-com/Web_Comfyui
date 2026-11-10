@@ -74,3 +74,37 @@ def test_colab_form_and_owned_job_controls(test_server, width):
         dialog.wait_for(state="hidden")
         assert not errors, errors
         context.close(); browser.close()
+
+
+@pytest.mark.parametrize('test_server', ['colab_transport'], indirect=True)
+def test_colab_real_http_login_admission_and_cancel(test_server):
+    """No Colab API routes mocked: browser -> HTTP -> SQLite -> subprocess."""
+    pw = pytest.importorskip('playwright.sync_api')
+    chromium = shutil.which('chromium') or shutil.which('chromium-browser')
+    if not chromium:
+        pytest.skip('Chromium unavailable')
+    base, _, cookie = test_server
+    with pw.sync_playwright() as p:
+        browser = p.chromium.launch(executable_path=chromium, args=['--no-sandbox', '--disable-dev-shm-usage'])
+        context = browser.new_context(viewport={'width': 1280, 'height': 900})
+        name, value = cookie.split('=', 1)
+        context.add_cookies([{'name': name, 'value': value, 'url': base}])
+        page = context.new_page()
+        errors = []; page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto(base + '/#/resources')
+        page.wait_for_function('window.castleTimers && foregroundRefreshes.size === 0')
+        page.get_by_role('button', name='開啟 Colab', exact=True).click()
+        page.get_by_label('帳號名稱', exact=True).fill('合成測試帳號')
+        page.get_by_role('button', name='新增並連接', exact=True).click()
+        page.get_by_label('授權碼', exact=True).fill('synthetic-code')
+        page.get_by_role('button', name='完成連線', exact=True).click()
+        page.get_by_text('可用 100.0 點', exact=True).wait_for()
+        page.get_by_label('內容描述', exact=True).fill('A synthetic blue square')
+        page.get_by_role('button', name='在 Colab 生成', exact=True).click()
+        page.get_by_role('button', name='停止並釋放 GPU', exact=True).click()
+        page.get_by_text('已取消，GPU 已釋放', exact=True).wait_for(timeout=35000)
+        assert not errors
+        state = context.request.get(base + '/api/colab').json()
+        assert len(state['jobs']) == 1 and state['jobs'][0]['released']
+        assert 'subject_key' not in json.dumps(state)
+        context.close(); browser.close()

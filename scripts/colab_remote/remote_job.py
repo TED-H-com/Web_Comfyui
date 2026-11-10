@@ -29,12 +29,19 @@ import urllib.parse
 import urllib.request
 import uuid
 
+_HELPER_IMPORT_ERROR = None
 try:
-    from . import h3graph as G
-    from . import upstream_runtime as U
-except ImportError:
-    import h3graph as G
-    import upstream_runtime as U
+    if __package__:
+        from . import h3graph as G
+        from . import upstream_runtime as U
+    else:
+        import h3graph as G
+        import upstream_runtime as U
+except Exception as exc:
+    # An incomplete upload must still report a bound terminal status, so the
+    # controller can release its paid assignment instead of polling forever.
+    G = U = None
+    _HELPER_IMPORT_ERROR = exc
 
 HERE = Path(__file__).resolve().parent
 MAX_INPUT_BYTES = 256 * 1024 * 1024
@@ -115,6 +122,8 @@ def validate_manifest(manifest, job_dir, check_files=True):
     Seeds default deterministically from the immutable batch UUID and subjob ID.
     The parent must persist/upload the normalized manifest before hashing it.
     """
+    if _HELPER_IMPORT_ERROR is not None:
+        raise ValidationError('Remote helper bundle could not be imported') from _HELPER_IMPORT_ERROR
     if not isinstance(manifest, dict):
         raise ValidationError('Manifest must be an object')
     allowed = {'schema_version', 'job_id', 'deadline_epoch', 'jobs', 'stop_on_error', 'input_files'}
@@ -429,6 +438,10 @@ class Runner:
 
     def provision(self):
         self.save('installing')
+        # Reject an incomplete/corrupt upload before installing or downloading.
+        for item in self.lock['templates']:
+            if file_digest(HERE / item['path']) != item['sha256']:
+                raise ValidationError('Bundled template integrity check failed')
         for source in self.lock['git']:
             dest = contained(self.root / 'runtime', source['directory'])
             if not (dest / '.git').is_dir():
@@ -472,9 +485,6 @@ class Runner:
                               json.dumps(model), '--destination', str(target), '--cache-dir', str(self.root / 'runtime' / 'hf')])
             if target.stat().st_size != model['size'] or file_digest(target) != model['sha256']:
                 raise RuntimeError('Pinned model integrity check failed')
-        for item in self.lock['templates']:
-            if file_digest(HERE / item['path']) != item['sha256']:
-                raise ValidationError('Bundled template integrity check failed')
 
     def start_comfy(self):
         existing = self.state.get('comfy_pid')
@@ -675,6 +685,72 @@ def watchdog(job_dir, deadline, runner_pid):
         pass
 
 
+def run_job(job_dir, manifest_sha256=None):
+    """Run under the durable lock; kept separate for real offline subprocess tests."""
+    root = Path(job_dir)
+    root.mkdir(parents=True, exist_ok=True)
+    with (root / '.runner.lock').open('a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            digest = file_digest(root / 'manifest.json')
+            if manifest_sha256 and digest != manifest_sha256:
+                raise ValidationError('Manifest digest differs from launch request')
+            state_path = root / 'status.json'
+            current = json.loads(state_path.read_text()) if state_path.exists() else {}
+            if current.get('manifest_sha256', digest) != digest:
+                raise ValidationError('Running worker has a different manifest')
+            print('WEB_COMFYUI_JOB ' + json.dumps({'job_id': root.name, 'manifest_sha256': digest, 'already_running': True}))
+            return 0
+        try:
+            runner = Runner(root, manifest_sha256)
+            runner.save()
+        except Exception:
+            traceback.print_exc()
+            # The launch hash binds even a broken/missing manifest to the paid
+            # assignment. Never overwrite state belonging to another launch.
+            state_path = root / 'status.json'
+            if state_path.exists():
+                try:
+                    existing = json.loads(state_path.read_text())
+                except (ValueError, OSError):
+                    existing = {}
+                if not isinstance(existing, dict):
+                    existing = {}
+                if existing and (existing.get('job_id') != root.name or
+                                 existing.get('manifest_sha256') != manifest_sha256):
+                    return 1
+            digest = manifest_sha256
+            if digest is None and (root / 'manifest.json').is_file():
+                digest = file_digest(root / 'manifest.json')
+            state = {'schema_version': 1, 'job_id': root.name, 'manifest_sha256': digest,
+                     'phase': 'failed', 'done': True, 'jobs': {}, 'updated': time.time(),
+                     'error': 'Remote worker bootstrap failed; inspect private runtime logs'}
+            atomic_json(state_path, state)
+            print('WEB_COMFYUI_JOB ' + json.dumps(state))
+            return 1
+        if runner.state['phase'] in TERMINAL:
+            print('WEB_COMFYUI_JOB ' + json.dumps(runner.state))
+            return 0
+        try:
+            # Parent launches this process detached. A separate watchdog survives its death.
+            subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--watchdog', '--job-dir', str(root),
+                              '--deadline', str(runner.deadline), '--runner-pid', str(os.getpid())],
+                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+            runner.execute()
+        except SubmissionUncertain:
+            runner.save('submission_uncertain', done=False, error='Prompt acceptance requires reconciliation; automatic retry disabled')
+        except Cancelled:
+            runner.cancel_owned()
+            runner.save('cancelled', done=True, error='Cancelled or runtime deadline reached')
+        except Exception:
+            traceback.print_exc()
+            runner.cancel_owned()
+            runner.save('failed', done=True, error='Remote execution failed; inspect private runtime logs')
+        print('WEB_COMFYUI_JOB ' + json.dumps(runner.state))
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--job-dir', type=Path)
@@ -689,7 +765,8 @@ def main(argv=None):
     if args.download_model:
         from huggingface_hub import hf_hub_download
         model = json.loads(args.download_model)
-        source = hf_hub_download(repo_id=model['repository'], filename=model['filename'], revision=model['revision'], cache_dir=str(args.cache_dir))
+        source = hf_hub_download(repo_id=model['repository'], filename=model['filename'], revision=model['revision'],
+                                 cache_dir=str(args.cache_dir), token=False)
         if Path(source).stat().st_size != model['size'] or file_digest(source) != model['sha256']:
             raise RuntimeError('Downloaded model integrity check failed')
         # Models and the HF cache share a per-job filesystem. A hard link avoids
@@ -703,43 +780,7 @@ def main(argv=None):
         parser.error('--job-dir must be /content/web-comfyui/<UUID>')
     if fcntl is None:
         parser.error('The remote worker requires Linux file locking')
-    root = args.job_dir
-    root.mkdir(parents=True, exist_ok=True)
-    with (root / '.runner.lock').open('a') as lock:
-        try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            digest = file_digest(root / 'manifest.json')
-            if args.manifest_sha256 and digest != args.manifest_sha256:
-                raise ValidationError('Manifest digest differs from launch request')
-            state_path = root / 'status.json'
-            current = json.loads(state_path.read_text()) if state_path.exists() else {}
-            if current.get('manifest_sha256', digest) != digest:
-                raise ValidationError('Running worker has a different manifest')
-            print('WEB_COMFYUI_JOB ' + json.dumps({'job_id': root.name, 'manifest_sha256': digest, 'already_running': True}))
-            return 0
-        runner = Runner(root, args.manifest_sha256)
-        runner.save()
-        if runner.state['phase'] in TERMINAL:
-            print('WEB_COMFYUI_JOB ' + json.dumps(runner.state))
-            return 0
-        # Parent launches this process detached. A separate watchdog survives its death.
-        subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--watchdog', '--job-dir', str(root),
-                          '--deadline', str(runner.deadline), '--runner-pid', str(os.getpid())],
-                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-        try:
-            runner.execute()
-        except SubmissionUncertain:
-            runner.save('submission_uncertain', done=False, error='Prompt acceptance requires reconciliation; automatic retry disabled')
-        except Cancelled:
-            runner.cancel_owned()
-            runner.save('cancelled', done=True, error='Cancelled or runtime deadline reached')
-        except Exception:
-            traceback.print_exc()
-            runner.cancel_owned()
-            runner.save('failed', done=True, error='Remote execution failed; inspect private runtime logs')
-        print('WEB_COMFYUI_JOB ' + json.dumps(runner.state))
-    return 0
+    return run_job(args.job_dir, args.manifest_sha256)
 
 
 if __name__ == '__main__':

@@ -8,7 +8,8 @@ The parent owns authorization, media ownership, durable jobs, and budget policy.
 Common request: {"op": ..., "account_dir": "/absolute/private/account"}.
 Operations (all responses are {"ok": bool, "result": ...} or {"error": ...}):
   oauth_begin: -> authorization_url, flow_id, expires_at
-  oauth_finish: flow_id, code -> authenticated
+  oauth_finish: flow_id, code -> authenticated, subject_key
+  account_identity: -> bound, subject_key (local only; no SDK or Google request)
   account_status: -> authenticated, balance_compute_units,
                   consumption_rate_per_hour, active_assignments
   runtime_allocate/runtime_lookup: allocation_id (UUID), gpu -> found,
@@ -50,7 +51,7 @@ MAX_FILE = 64 * 1024 * 1024
 MAX_REQUEST = 2 * 1024 * 1024
 MAX_OUTPUT = 512 * 1024
 GPUS = frozenset({"L4", "G4", "A100", "H100"})
-OPS = frozenset({"oauth_begin", "oauth_finish", "account_status", "runtime_allocate",
+OPS = frozenset({"oauth_begin", "oauth_finish", "account_identity", "account_status", "runtime_allocate",
                  "runtime_lookup", "runtime_stop", "remote_exec", "upload", "download"})
 MUTATING_REMOTE = frozenset({"runtime_allocate", "runtime_stop", "remote_exec", "upload"})
 SCOPES = ["openid", "https://www.googleapis.com/auth/userinfo.profile",
@@ -59,6 +60,11 @@ SCOPES = ["openid", "https://www.googleapis.com/auth/userinfo.profile",
           "https://www.googleapis.com/auth/colaboratory",
           "https://www.googleapis.com/auth/drive.file"]
 REDIRECT = "https://sdk.cloud.google.com/applicationdefaultauthcode.html"
+# Google's OIDC discovery document advertises this endpoint and immutable sub:
+# https://accounts.google.com/.well-known/openid-configuration
+# https://developers.google.com/identity/openid-connect/openid-connect
+GOOGLE_ISSUER = "https://accounts.google.com"
+USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 
 
 class BridgeError(Exception):
@@ -166,6 +172,18 @@ def bounded_int(value: object, low: int, high: int) -> int:
     return value
 
 
+def verified_subject(value: object) -> str:
+    # Google documents sub as case-sensitive ASCII, <=255 characters. Never
+    # substitute email, an unverified ID-token payload, or a browser-supplied id.
+    if not isinstance(value, str) or re.fullmatch(r"[\x21-\x7e]{1,255}", value) is None:
+        raise BridgeError("identity_unverified", "Google did not return a verified account identity; reconnect and try again.")
+    return value
+
+
+def subject_key(subject: str) -> str:
+    return hashlib.sha256((GOOGLE_ISSUER + "\0" + subject).encode("ascii")).hexdigest()
+
+
 def remote_path(value: object) -> str:
     if not isinstance(value, str) or len(value) > 2048 or "\\" in value or "\x00" in value:
         raise invalid()
@@ -214,6 +232,20 @@ class GoogleSDK:
                                            code_verifier=verifier, state=state)
         flow.redirect_uri = REDIRECT
         flow.oauth2session.trust_env = False
+        original_request = flow.oauth2session.request
+
+        def request(method, url, **kwargs):
+            # requests-oauthlib treats unknown fetch_token kwargs as OAuth form
+            # fields, so redirect control belongs on the actual HTTP session.
+            kwargs["timeout"] = (10, 30)
+            kwargs["allow_redirects"] = False
+            response = original_request(method, url, **kwargs)
+            if 300 <= response.status_code < 400:
+                response.close()
+                raise BridgeError("redirect_rejected", "Google returned an unexpected authentication redirect.")
+            return response
+
+        flow.oauth2session.request = request
         return flow
 
     def http(self, credentials=None):
@@ -308,6 +340,26 @@ class GoogleSDK:
             raise BridgeError("authentication_required", "Reconnect the selected Google account.") from None
         return credentials
 
+    def subject(self, credentials):
+        """Verify identity over Google's HTTPS userinfo endpoint, not JWT decoding."""
+        try:
+            with self.http(credentials) as transport:
+                response = transport.request("GET", USERINFO_URL, stream=True)
+                try:
+                    response.raise_for_status()
+                    chunks, size = [], 0
+                    for chunk in response.iter_content(4096):
+                        size += len(chunk)
+                        if size > 32768:
+                            raise ValueError()
+                        chunks.append(chunk)
+                    data = json.loads(b"".join(chunks))
+                    return verified_subject(data.get("sub"))
+                finally:
+                    response.close()
+        except Exception:
+            raise BridgeError("identity_unverified", "Google did not return a verified account identity; reconnect and try again.") from None
+
     def client(self, credentials):
         return self.Client(self.Prod(), self.http(credentials))
 
@@ -316,6 +368,7 @@ class Bridge:
     def __init__(self, account: Path, sdk, *, clock=time.time):
         self.account, self.sdk, self.clock = account, sdk, clock
         self.token_path = account / "token.json"
+        self.identity_path = account / "identity.json"
         self.pending_path = account / "pending_login.json"
         self.runtime_dir = private_directory(str(account / "runtimes"))
         self.secrets = []
@@ -325,12 +378,53 @@ class Bridge:
     def client(self):
         if self._client is None:
             credentials = self.sdk.credentials(self.token_path)
+            self.ensure_identity(credentials)
             for key in ("token", "refresh_token", "id_token"):
                 value = getattr(credentials, key, None)
                 if value:
                     self.secrets.append(value)
             self._client = self.sdk.client(credentials)
         return self._client
+
+    def identity(self):
+        try:
+            data = private_json(self.identity_path)
+        except FileNotFoundError:
+            return None
+        except Exception:
+            raise BridgeError("identity_unverified", "The saved Google account identity is invalid; keep the existing runtime records.") from None
+        if not isinstance(data, dict) or data.get("issuer") != GOOGLE_ISSUER:
+            raise BridgeError("identity_unverified", "The saved Google account identity is invalid; keep the existing runtime records.")
+        return verified_subject(data.get("subject"))
+
+    def bind_identity(self, subject):
+        subject = verified_subject(subject)
+        previous = self.identity()
+        if previous is not None and not secrets.compare_digest(previous, subject):
+            raise BridgeError("account_identity_mismatch", "Choose the same Google account originally connected to this profile; its existing credentials were kept.")
+        if previous is None:
+            # Binding first makes a crash before token replacement fail closed.
+            atomic_json(self.identity_path, {"issuer": GOOGLE_ISSUER, "subject": subject,
+                                            "verified_at": self.clock()})
+        return subject_key(subject)
+
+    def ensure_identity(self, credentials=None):
+        subject = self.identity()
+        if subject is not None:
+            return subject_key(subject)
+        if credentials is None and not self.token_path.exists():
+            if any(self.runtime_dir.glob("*.json")):
+                raise BridgeError("legacy_identity_unverified", "This older profile has no verified identity. Confirm its runtimes are released in Google Colab before creating a new profile.")
+            return None
+        try:
+            credentials = credentials or self.sdk.credentials(self.token_path)
+            return self.bind_identity(self.sdk.subject(credentials))
+        except Exception:
+            raise BridgeError("legacy_identity_unverified", "This older profile's original Google identity could not be verified. Confirm its runtimes are released in Google Colab before creating a new profile.") from None
+
+    def account_identity(self, request):
+        subject = self.identity()
+        return {"bound": subject is not None, "subject_key": subject_key(subject) if subject is not None else None}
 
     def redact(self, value: str) -> str:
         for secret in sorted(self.secrets, key=len, reverse=True):
@@ -372,6 +466,9 @@ class Bridge:
         raise BridgeError("runtime_missing", "The Colab runtime is no longer available.")
 
     def oauth_begin(self, request):
+        # Existing unbound credentials must establish their original identity
+        # before any replacement OAuth flow, including flows begun pre-upgrade.
+        self.ensure_identity()
         flow = self.sdk.flow()
         url, state = flow.authorization_url(prompt="consent", token_usage="remote", access_type="offline")
         flow_id = secrets.token_urlsafe(32)
@@ -394,16 +491,18 @@ class Bridge:
         self.pending_path.unlink()
         if self.clock() >= pending["expires_at"]:
             raise BridgeError("oauth_flow_expired", "The Google connection expired; start again.")
+        self.ensure_identity()
         flow = self.sdk.flow(verifier=pending["verifier"], state=pending["state"])
         try:
             flow.fetch_token(code=code.strip(), timeout=30)
-            credentials = json.loads(flow.credentials.to_json())
-            if not credentials.get("refresh_token"):
+            credentials = flow.credentials
+            if not credentials.refresh_token:
                 raise ValueError()
-            atomic_json(self.token_path, credentials)
         except Exception:
             raise BridgeError("oauth_exchange_failed", "Google did not complete the connection; start again.") from None
-        return {"authenticated": True}
+        key = self.bind_identity(self.sdk.subject(credentials))
+        atomic_json(self.token_path, json.loads(credentials.to_json()))
+        return {"authenticated": True, "subject_key": key}
 
     def account_status(self, request):
         info = self.client.get_consumption_user_info()
@@ -413,7 +512,8 @@ class Bridge:
             raise BridgeError("invalid_account_status", "Google did not return usable compute-unit information.")
         count = bounded_int(info.assignments_count, 0, 10000)
         return {"authenticated": True, "balance_compute_units": balance,
-                "consumption_rate_per_hour": rate, "active_assignments": count}
+                "consumption_rate_per_hour": rate, "active_assignments": count,
+                "subject_key": self.account_identity({})["subject_key"]}
 
     def allocation(self, request, *, lookup):
         runtime_id = identifier(request.get("allocation_id"))
@@ -491,7 +591,20 @@ class Bridge:
             except Exception:
                 raise BridgeError("execution_uncertain", "Remote execution was not confirmed; inspect the job state.", ambiguous=True) from None
             finally:
-                runtime.stop(shutdown_kernel=False)
+                try:
+                    # v0.7.4 only fires its callbacks when the supplied IDs were
+                    # empty. If Jupyter reports a saved kernel as gone, it starts
+                    # a replacement but omits those callbacks; without capturing
+                    # the actual IDs every subsequent poll starts another kernel.
+                    client = getattr(runtime, "_kernel_client", None)
+                    if client is not None and client.id:
+                        if client.id != data.get("kernel_id"):
+                            remember("kernel_id", client.id)
+                        session_id = client._manager.client.session.session
+                        if session_id and session_id != data.get("session_id"):
+                            remember("session_id", session_id)
+                finally:
+                    runtime.stop(shutdown_kernel=False)
         clean, stdout, size = [], [], 0
         for output in outputs:
             kind = output.get("output_type")
@@ -556,10 +669,15 @@ class Bridge:
                 response.raise_for_status()
                 response.close()
             else:
-                response = transport.request("GET", url, params=dict(params, content="1"), stream=True)
+                # Explicit base64 also covers valid UTF-8 binary data (e.g. a
+                # short silent WAV), which Jupyter otherwise returns as text.
+                response = transport.request("GET", url, params=dict(params, content="1", format="base64"), stream=True)
                 try:
                     response.raise_for_status()
-                    bound = 4 * ((maximum + 2) // 3) + 1024 * 1024
+                    encoded_bound = 4 * ((maximum + 2) // 3)
+                    # Jupyter uses MIME base64 with 76-column line wrapping;
+                    # JSON escapes LF (or CRLF) and adds wire bytes per line.
+                    bound = encoded_bound + 4 * ((encoded_bound + 75) // 76) + 1024 * 1024
                     chunks, total = [], 0
                     for chunk in response.iter_content(64 * 1024):
                         total += len(chunk)
@@ -569,7 +687,15 @@ class Bridge:
                     payload = json.loads(b"".join(chunks))
                     if payload.get("type") != "file" or payload.get("format") != "base64":
                         raise BridgeError("invalid_download", "The runtime did not return a binary file.")
-                    content = base64.b64decode(payload["content"], validate=True)
+                    encoded = payload.get("content")
+                    if not isinstance(encoded, str):
+                        raise BridgeError("invalid_download", "The runtime returned malformed file content.")
+                    encoded = encoded.translate(str.maketrans("", "", " \t\r\n"))
+                    if len(encoded) > encoded_bound:
+                        raise BridgeError("download_too_large", "The output exceeds the transfer limit.")
+                    # Strip only permitted MIME whitespace; retain strict
+                    # validation of every base64 character and its padding.
+                    content = base64.b64decode(encoded, validate=True)
                     if len(content) > maximum:
                         raise BridgeError("download_too_large", "The output exceeds the transfer limit.")
                 finally:
@@ -598,7 +724,7 @@ def dispatch(request: object, *, sdk_factory=GoogleSDK):
         raise invalid()
     account = private_directory(request.get("account_dir"))
     with account_lock(account):
-        bridge = Bridge(account, sdk_factory())
+        bridge = Bridge(account, None if request["op"] == "account_identity" else sdk_factory())
         return getattr(bridge, request["op"])(request)
 
 

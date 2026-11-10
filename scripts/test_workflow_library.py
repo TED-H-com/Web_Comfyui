@@ -93,6 +93,74 @@ def test_npnet_model_path_is_an_unchecked_dependency_even_when_node_exists():
     assert result['gpu_tested'] is False
 
 
+@pytest.mark.parametrize('metadata', [
+    {'extra': None, 'definitions': None},
+    {'extra': {'groupNodes': None}, 'definitions': {'subgraphs': None}},
+])
+def test_frontend_null_metadata_preserves_dependency_checks(metadata):
+    graph = {'nodes': [{'id': 1, 'type': 'KSampler'}], 'links': [], **metadata}
+    assert library.graph_details(graph)['node_types'] == ['KSampler']
+    assert library.dependency_checks({}, graph, {})['missing_nodes'] == ['KSampler']
+
+
+@pytest.mark.parametrize('metadata', [{'extra': []}, {'definitions': False}, {'definitions': {'subgraphs': 0}}])
+def test_invalid_falsey_metadata_still_rejected(metadata):
+    with pytest.raises(ValueError, match='metadata|definitions'):
+        library.graph_details({'nodes': [], 'links': [], **metadata})
+
+
+def test_dependency_checks_use_graph_when_manifest_omits_nested_nodes():
+    graph = {'nodes': [{'type': 'sub'}], 'definitions': {'subgraphs': [
+        {'id': 'sub', 'nodes': [{'type': 'KSampler'}, {'type': 'CustomNestedNode'}]},
+    ]}}
+    checks = library.dependency_checks({'node_types': ['KSampler']}, graph, {'KSampler': {}})
+    assert checks['missing_nodes'] == ['CustomNestedNode']
+    assert checks['dependency_status'] == 'missing'
+
+
+def test_every_published_source_review_has_exact_pin_and_safe_summary():
+    entries = [e for e in library.catalog(include_discovered=False) if e.get('source_review')]
+    assert len(entries) == 233
+    assert sum(e['source_review']['topology_status'] == 'fail' for e in entries) == 22
+    assert sum(not e['source_review']['import_format_supported'] for e in entries) == 11
+    assert sum(bool(e['source_review']['catalog_missing_active_node_types']) for e in entries) == 11
+    assert sum(bool(e['source_review']['catalog_inactive_node_types']) for e in entries) == 31
+    assert sum(bool(e['source_review']['implicit_model_selector_count']) for e in entries) == 19
+    for entry in entries:
+        review = entry['source_review']
+        assert review['source_sha256'] == entry['upstream_sha256']
+        assert review['source_commit'] in entry['upstream_url']
+        assert review['gpu_tested'] is False
+        assert review['scope'] == 'pinned-upstream-source'
+        assert 'widgets_values' not in json.dumps(review)
+        if not entry['available']:
+            assert entry['node_inventory_basis'] == 'pinned-source-active-nodes'
+
+
+@pytest.mark.parametrize('change', ['hash', 'commit', 'id'])
+def test_source_review_never_applies_to_changed_source(change):
+    import copy
+    data = json.loads((ROOT / 'manifests/community_workflows/catalog.json').read_text())
+    entry = copy.deepcopy(data['workflows'][0])
+    source = copy.deepcopy(data['sources'][entry['source']])
+    if change == 'hash':
+        entry['upstream_sha256'] = '0' * 64
+    elif change == 'commit':
+        source['commit'] = '0' * 40
+    else:
+        entry['id'] += '-unknown'
+    library.apply_source_review(entry, source, library.source_reviews(ROOT))
+    assert 'source_review' not in entry
+
+
+def test_source_review_missing_or_invalid_reports_do_not_break_catalog(tmp_path):
+    path = tmp_path / 'docs/workflow-audit/workflows-audit-20261110.json'
+    assert library.source_reviews(tmp_path) == {}
+    path.parent.mkdir(parents=True)
+    path.write_text('{invalid')
+    assert library.source_reviews(tmp_path)['dseditor'][0] == {}
+
+
 def test_routes_authenticate_before_reading(monkeypatch):
     class Handler:
         def require_auth(self): return False

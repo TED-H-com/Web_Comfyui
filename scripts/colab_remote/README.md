@@ -59,6 +59,10 @@ and immutable request identity **before** POST `/prompt`; the returned
 launch return an acknowledgement without starting another worker. A restarted
 worker reuses its persisted prompt ID. An unknown response is reconciled against
 owned history/queue identity; absence is never permission to submit again.
+An incomplete helper bundle or invalid manifest produces a failed status bound
+to the launch UUID and requested manifest hash before setup starts. Template
+integrity is checked before dependency installation or model downloads. Public
+model downloads disable implicit Hugging Face token use.
 
 Successful `artifacts.json` contains `job_id`, `manifest_sha256` and `artifacts`
 records with `path` relative to the job directory, `size`, `sha256`, `kind`,

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 from contextlib import nullcontext
+from datetime import datetime, timedelta
 from enum import Enum
 import hashlib
 import importlib.util
@@ -13,6 +14,7 @@ import stat
 import subprocess
 import sys
 from types import ModuleType, SimpleNamespace
+from urllib.parse import parse_qs, urlsplit
 import uuid
 
 import pytest
@@ -82,12 +84,21 @@ class FakeSDK:
         self.response = Response()
         self.pending_flow = None
         self.balance = 200.5
+        self.subject_value = "google-subject-account-a"
+        self.credentials_error = None
+        self.oauth_credentials = Credentials()
 
     def credentials(self, token_path):
         self.calls.append(("credentials", str(token_path)))
+        if self.credentials_error:
+            raise self.credentials_error
         if not token_path.exists():
             raise bridge.BridgeError("authentication_required", "Connect a Google account first.")
         return Credentials()
+
+    def subject(self, credentials):
+        self.calls.append(("subject",))
+        return getattr(credentials, "google_subject", self.subject_value)
 
     def client(self, credentials):
         return self
@@ -125,7 +136,7 @@ class FakeSDK:
 
         class Flow:
             code_verifier = verifier or "private-pkce-verifier"
-            credentials = Credentials()
+            credentials = parent.oauth_credentials
 
             def authorization_url(self, **kwargs):
                 return "https://accounts.google.com/o/oauth2/auth?state=public-state", "public-state"
@@ -167,6 +178,8 @@ class FakeSDK:
 def setup(tmp_path):
     account = bridge.private_directory(str(tmp_path / "account-a"))
     bridge.atomic_json(account / "token.json", {"token": "token"})
+    bridge.atomic_json(account / "identity.json", {"issuer": bridge.GOOGLE_ISSUER,
+                                                  "subject": "google-subject-account-a"})
     sdk = FakeSDK()
 
     def call(op, **kwargs):
@@ -186,7 +199,8 @@ def test_account_status_is_read_only_and_account_scoped(setup, tmp_path):
     account, sdk, call = setup
     result = call("account_status")
     assert result["result"] == {"authenticated": True, "balance_compute_units": 200.5,
-                                "consumption_rate_per_hour": 1.5, "active_assignments": 0}
+                                "consumption_rate_per_hour": 1.5, "active_assignments": 0,
+                                "subject_key": bridge.subject_key("google-subject-account-a")}
     assert sdk.calls == [("credentials", str(account / "token.json"))]
     other = bridge.handle({"op": "account_status", "account_dir": str(tmp_path / "account-b")},
                           sdk_factory=lambda: sdk)
@@ -211,14 +225,108 @@ def test_oauth_pkce_expiry_and_replay(setup):
     assert wrong["error"]["code"] == "oauth_flow_mismatch"
     assert (account / "pending_login.json").exists()
     done = call("oauth_finish", flow_id=begun["flow_id"], code="private-code")
-    assert done == {"ok": True, "result": {"authenticated": True}}
-    assert sdk.calls[-1][2:] == ("private-pkce-verifier", "public-state")
+    assert done == {"ok": True, "result": {"authenticated": True,
+                                          "subject_key": bridge.subject_key(sdk.subject_value)}}
+    assert [c for c in sdk.calls if c[0] == "fetch_token"][-1][2:] == ("private-pkce-verifier", "public-state")
     assert call("oauth_finish", flow_id=begun["flow_id"], code="private-code")["error"]["code"] == "oauth_flow_missing"
     begun = call("oauth_begin")["result"]
     pending = bridge.private_json(account / "pending_login.json")
     bridge.atomic_json(account / "pending_login.json", dict(pending, expires_at=0))
     assert call("oauth_finish", flow_id=begun["flow_id"], code="private-code")["error"]["code"] == "oauth_flow_expired"
     assert not (account / "pending_login.json").exists()
+
+
+def test_account_identity_is_local_only_even_without_optional_sdk(setup, tmp_path):
+    account, _, _ = setup
+    fail = lambda: pytest.fail("identity lookup must not load SDK or Google credentials")
+    result = bridge.handle({"op": "account_identity", "account_dir": str(account)}, sdk_factory=fail)
+    assert result["result"] == {"bound": True, "subject_key": bridge.subject_key("google-subject-account-a")}
+    assert "google-subject-account-a" not in json.dumps(result)
+    empty = bridge.handle({"op": "account_identity", "account_dir": str(tmp_path / "new")}, sdk_factory=fail)
+    assert empty["result"] == {"bound": False, "subject_key": None}
+
+
+def test_first_oauth_binds_google_subject_before_saving_tokens(setup):
+    account, sdk, call = setup
+    (account / "identity.json").unlink()
+    (account / "token.json").unlink()
+    begun = call("oauth_begin")["result"]
+    assert not (account / "identity.json").exists()
+    result = call("oauth_finish", flow_id=begun["flow_id"], code="private-code")
+    assert result["result"]["authenticated"]
+    identity = bridge.private_json(account / "identity.json")
+    assert identity["issuer"] == bridge.GOOGLE_ISSUER and identity["subject"] == sdk.subject_value
+    assert stat.S_IMODE((account / "identity.json").stat().st_mode) == 0o600
+    assert sdk.subject_value not in json.dumps(result)
+
+
+def test_bound_account_can_reauthenticate_after_refresh_revoked_and_stop_owned_runtime(setup):
+    account, sdk, call = setup
+    runtime_id = allocate(call)
+    sdk.credentials_error = bridge.BridgeError("authentication_required", "Refresh revoked")
+    assert call("account_status")["error"]["code"] == "authentication_required"
+    begun = call("oauth_begin")["result"]
+    assert call("oauth_finish", flow_id=begun["flow_id"], code="replacement-code")["ok"]
+    sdk.credentials_error = None
+    sdk.assignments.append(Assignment("unrelated-endpoint"))
+    assert call("runtime_stop", runtime_id=runtime_id)["result"]["stopped"]
+    assert [a.endpoint for a in sdk.assignments] == ["unrelated-endpoint"]
+
+
+@pytest.mark.parametrize("subject,code", [("another-google-subject", "account_identity_mismatch"),
+                                         (None, "identity_unverified"), ("", "identity_unverified")])
+def test_reauthentication_does_not_replace_credentials_for_wrong_or_missing_identity(setup, subject, code):
+    account, sdk, call = setup
+    original_token = (account / "token.json").read_bytes()
+    original_identity = (account / "identity.json").read_bytes()
+    begun = call("oauth_begin")["result"]
+    sdk.subject_value = subject
+    result = call("oauth_finish", flow_id=begun["flow_id"], code="private-code")
+    assert result["error"]["code"] == code
+    assert (account / "token.json").read_bytes() == original_token
+    assert (account / "identity.json").read_bytes() == original_identity
+    assert not (account / "pending_login.json").exists()
+
+
+def test_legacy_profile_is_bound_using_original_credentials_before_replacement(setup):
+    account, sdk, call = setup
+    (account / "identity.json").unlink()
+    # A successful old-token status request migrates the profile, without login.
+    assert call("account_identity")["result"]["bound"] is False
+    status = call("account_status")["result"]
+    assert status["subject_key"] == bridge.subject_key(sdk.subject_value)
+    assert call("account_identity")["result"]["bound"] is True
+    begun = call("oauth_begin")["result"]
+    sdk.oauth_credentials.google_subject = "different-account"
+    assert call("oauth_finish", flow_id=begun["flow_id"], code="private-code")["error"]["code"] == "account_identity_mismatch"
+
+
+def test_revoked_legacy_profile_and_missing_token_with_runtime_records_fail_closed(setup):
+    account, sdk, call = setup
+    (account / "identity.json").unlink()
+    sdk.credentials_error = bridge.BridgeError("authentication_required", "Refresh revoked")
+    assert call("oauth_begin")["error"]["code"] == "legacy_identity_unverified"
+    assert not (account / "pending_login.json").exists()
+    (account / "token.json").unlink()
+    bridge.atomic_json(account / "runtimes" / (str(uuid.uuid4()) + ".json"), {"state": "allocating"})
+    assert call("oauth_begin")["error"]["code"] == "legacy_identity_unverified"
+    assert not any(c[0] == "fetch_token" for c in sdk.calls)
+
+
+def test_pre_upgrade_pending_login_cannot_replace_unverified_legacy_identity(setup):
+    account, sdk, call = setup
+    begun = call("oauth_begin")["result"]
+    (account / "identity.json").unlink()
+    sdk.credentials_error = bridge.BridgeError("authentication_required", "Refresh revoked")
+    assert call("oauth_finish", flow_id=begun["flow_id"], code="private-code")["error"]["code"] == "legacy_identity_unverified"
+    assert not any(c[0] == "fetch_token" for c in sdk.calls)
+
+
+def test_corrupt_identity_never_becomes_a_new_unbound_profile(setup):
+    account, _, call = setup
+    bridge.atomic_json(account / "identity.json", {"issuer": "https://not-google.invalid", "subject": "other"})
+    assert call("account_identity")["error"]["code"] == "identity_unverified"
+    assert call("oauth_begin")["error"]["code"] == "identity_unverified"
 
 
 def test_allocation_records_identity_before_transport_and_never_retries(setup):
@@ -317,6 +425,24 @@ def test_download_is_bounded_atomic_and_hashed(setup, tmp_path):
     assert bad["error"]["code"] == "download_too_large"
     assert target.read_bytes() == content
     assert sdk.response.closed
+
+
+def test_download_accepts_jupyter_wrapped_base64_but_rejects_other_characters(setup, tmp_path):
+    _, sdk, call = setup
+    runtime_id = allocate(call)
+    target = tmp_path / "result.wav"
+    content = b"synthetic binary \x00" * 50
+    encoded = base64.encodebytes(content).decode("ascii")
+    assert "\n" in encoded
+    sdk.response = Response({"type": "file", "format": "base64", "content": encoded})
+    result = call("download", runtime_id=runtime_id, local_path=str(target),
+                  remote_path="/content/job/out/result.wav", max_bytes=len(content))
+    assert result["ok"] and target.read_bytes() == content
+    assert [c for c in sdk.calls if c[0] == "http"][-1][3]["params"]["format"] == "base64"
+    sdk.response = Response({"type": "file", "format": "base64", "content": encoded + "!"})
+    assert not call("download", runtime_id=runtime_id, local_path=str(target),
+                    remote_path="/content/job/out/result.wav", max_bytes=len(content))["ok"]
+    assert target.read_bytes() == content
 
 
 def test_upload_passes_bytes_through_contents_protocol(setup, tmp_path):
@@ -475,3 +601,241 @@ def test_entrypoint_accepts_only_stdin_and_has_no_import_side_effects(tmp_path):
     assert json.loads(result.stdout)["error"]["code"] == "invalid_request"
     assert "private-auth-code" not in result.stdout + result.stderr
     assert not list(tmp_path.iterdir())
+
+
+@pytest.fixture
+def sdk_http(monkeypatch):
+    """Use actual pinned SDK, auth, Requests preparation and response handling.
+
+    The HTTP adapter is an in-memory server; no socket or Google request occurs.
+    Run these tests with Python >=3.12 and google-colab-cli==0.7.4 installed.
+    """
+    pytest.importorskip("colab_cli")
+    import requests
+    sdk = bridge.GoogleSDK()
+    server = SimpleNamespace(calls=[], respond=None)
+
+    def send(adapter, request, **kwargs):
+        server.calls.append((request, kwargs))
+        assert server.respond is not None, "unexpected HTTP request"
+        status, payload, headers = server.respond(request)
+        response = requests.Response()
+        response.status_code = status
+        response.reason = "Synthetic HTTP fixture"
+        response.url = request.url
+        response.request = request
+        response.headers.update({"Content-Type": "application/json", **headers})
+        response.encoding = "utf-8"
+        content = payload if isinstance(payload, bytes) else json.dumps(payload).encode()
+        response.raw = io.BytesIO(content)
+        return response
+
+    monkeypatch.setattr(requests.adapters.HTTPAdapter, "send", send)
+    return sdk, server
+
+
+def actual_account(tmp_path, sdk):
+    account = bridge.private_directory(str(tmp_path / "real-sdk-profile"))
+    credentials = sdk.Credentials(token="fixture-access", refresh_token="fixture-refresh",
+        token_uri="https://oauth2.googleapis.com/token", client_id="fixture-client",
+        client_secret="fixture-secret", scopes=bridge.SCOPES,
+        expiry=datetime.now().replace(microsecond=0) + timedelta(hours=24))
+    bridge.atomic_json(account / "token.json", json.loads(credentials.to_json()))
+    bridge.atomic_json(account / "identity.json", {"issuer": bridge.GOOGLE_ISSUER,
+                                                  "subject": "fixture-subject"})
+    return account, credentials
+
+
+def test_actual_sdk_userinfo_verifies_access_token_and_bounds_identity(sdk_http):
+    sdk, server = sdk_http
+    credentials = sdk.Credentials(token="fixture-access")
+
+    def respond(request):
+        assert request.url == bridge.USERINFO_URL
+        assert request.headers["Authorization"] == "Bearer fixture-access"
+        assert request.method == "GET"
+        return 200, {"sub": "fixture-subject", "email": "not-used@example.invalid"}, {}
+
+    server.respond = respond
+    assert sdk.subject(credentials) == "fixture-subject"
+    assert server.calls[-1][1]["timeout"] == (10, 60)
+    for bad in ({"email": "not-used@example.invalid"}, {"sub": ""}, {"sub": 123},
+                {"sub": "a" * 256}, {"sub": "a" * 32768}):
+        server.respond = lambda request, bad=bad: (200, bad, {})
+        with pytest.raises(bridge.BridgeError) as error:
+            sdk.subject(credentials)
+        assert error.value.code == "identity_unverified"
+
+
+def test_actual_oauth_flow_binds_identity_and_rejects_http_redirect(sdk_http, tmp_path):
+    sdk, server = sdk_http
+    account = tmp_path / "oauth"
+
+    def call(op, **values):
+        return bridge.handle({"op": op, "account_dir": str(account), **values}, sdk_factory=lambda: sdk)
+
+    def respond(request):
+        if request.url == "https://oauth2.googleapis.com/token":
+            body = parse_qs(request.body)
+            assert body["code"] == ["fixture-code"] and body.get("code_verifier")
+            assert body["grant_type"] == ["authorization_code"]
+            return 200, {"access_token": "fixture-access", "refresh_token": "fixture-refresh",
+                         "expires_in": 3600, "token_type": "Bearer", "scope": " ".join(bridge.SCOPES)}, {}
+        assert request.url == bridge.USERINFO_URL
+        return 200, {"sub": "fixture-subject"}, {}
+
+    server.respond = respond
+    begun = call("oauth_begin")["result"]
+    done = call("oauth_finish", flow_id=begun["flow_id"], code="fixture-code")
+    assert done["result"]["subject_key"] == bridge.subject_key("fixture-subject")
+    original = (account / "token.json").read_bytes()
+    begun = call("oauth_begin")["result"]
+    server.calls.clear()
+    server.respond = lambda request: (307, {}, {"Location": "https://untrusted.example.invalid/token"})
+    failed = call("oauth_finish", flow_id=begun["flow_id"], code="fixture-code")
+    assert failed["error"]["code"] == "oauth_exchange_failed"
+    assert len(server.calls) == 1
+    assert (account / "token.json").read_bytes() == original
+
+
+def test_actual_sdk_allocation_lookup_and_stop_use_expected_http_protocol(sdk_http, tmp_path):
+    sdk, server = sdk_http
+    account, _ = actual_account(tmp_path, sdk)
+    allocation = str(uuid.uuid4())
+    state = {"assigned": False}
+    assignment = {"accelerator": "L4", "endpoint": "owned-endpoint", "variant": 1,
+        "machineShape": 0, "runtimeProxyInfo": {"token": "fixture-proxy",
+        "tokenExpiresInSeconds": 600, "url": "https://runtime.colab.googleusercontent.com"}}
+
+    def respond(request):
+        uri = urlsplit(request.url)
+        query = parse_qs(uri.query)
+        assert uri.hostname == "colab.research.google.com"
+        assert request.headers["Authorization"] == "Bearer fixture-access"
+        assert query["authuser"] == ["0"]
+        if uri.path == "/tun/m/assign":
+            assert query["accelerator"] == ["L4"] and query["variant"] == ["GPU"]
+            # Despite its name, v0.7.4 uuid_to_web_safe_base64 encodes the
+            # canonical UUID string by replacing hyphens and padding to 44.
+            expected = allocation.replace("-", "_") + "." * 8
+            assert query["nbh"] == [expected]
+            if request.method == "POST":
+                assert request.body == b"{}"
+                assert request.headers.get("X-Goog-Colab-Token") == "fixture-challenge"
+                state["assigned"] = True
+            payload = assignment if state["assigned"] else {"acc": "L4", "nbh": expected,
+                "token": "fixture-challenge", "variant": "GPU"}
+        elif uri.path == "/tun/m/assignments":
+            payload = {"assignments": [assignment] if state["assigned"] else []}
+        elif uri.path == "/tun/m/unassign/owned-endpoint":
+            if request.method == "GET":
+                payload = {"token": "fixture-stop-challenge"}
+            else:
+                assert request.body == b"{}"
+                state["assigned"] = False
+                payload = {}
+        else:
+            pytest.fail("Unexpected endpoint")
+        return 200, b")]}'\n" + json.dumps(payload).encode(), {}
+
+    server.respond = respond
+
+    def call(op, **values):
+        return bridge.handle({"op": op, "account_dir": str(account), **values}, sdk_factory=lambda: sdk)
+
+    absent = call("runtime_lookup", allocation_id=allocation, gpu="L4")
+    assert absent["result"]["found"] is False
+    allocated = call("runtime_allocate", allocation_id=allocation, gpu="L4")
+    assert allocated["result"]["found"] is True
+    assert call("runtime_lookup", allocation_id=allocation, gpu="L4")["result"]["found"]
+    assert call("runtime_stop", runtime_id=allocation)["result"]["stopped"]
+    assert sum(r.method == "POST" and urlsplit(r.url).path == "/tun/m/assign" for r, _ in server.calls) == 1
+
+
+def test_actual_requests_contents_protocol_round_trips_utf8_binary_and_mime_base64(sdk_http, tmp_path):
+    sdk, server = sdk_http
+    account, _ = actual_account(tmp_path, sdk)
+    runtime_id = str(uuid.uuid4())
+    transport = bridge.Bridge(account, sdk)
+    transport.save_assignment(runtime_id, "L4", Assignment())
+    transport.runtime = lambda runtime: transport.record(runtime)
+    contents = b"RIFF\x00\x00fixture\x00" * 100
+    uploaded = {}
+
+    def respond(request):
+        uri = urlsplit(request.url)
+        query = parse_qs(uri.query)
+        assert uri.hostname == "runtime.colab.googleusercontent.com"
+        assert query["colab-runtime-proxy-token"] == ["private-proxy-token"]
+        assert "Authorization" not in request.headers
+        if request.method == "PUT":
+            payload = json.loads(request.body)
+            if payload["type"] == "directory":
+                return 200, {"type": "directory"}, {}
+            uploaded[uri.path] = base64.b64decode(payload["content"])
+            return 200, {"type": "file"}, {}
+        assert request.method == "GET"
+        data = uploaded[uri.path]
+        # This mimics FileContentsManager's actual text-or-wrapped-base64 rule.
+        if query.get("format") == ["base64"]:
+            return 200, {"type": "file", "format": "base64", "content": base64.encodebytes(data).decode()}, {}
+        return 200, {"type": "file", "format": "text", "content": data.decode("utf-8")}, {}
+
+    server.respond = respond
+    source, target = tmp_path / "source.wav", tmp_path / "download.wav"
+    source.write_bytes(contents)
+    values = {"runtime_id": runtime_id, "remote_path": "/content/job/input/source.wav", "max_bytes": len(contents)}
+    assert transport.upload(dict(values, local_path=str(source)))["bytes"] == len(contents)
+    result = transport.download(dict(values, local_path=str(target)))
+    assert result["sha256"] == hashlib.sha256(contents).hexdigest()
+    assert target.read_bytes() == contents
+
+
+def test_actual_sdk_replaced_kernel_identity_is_saved_before_next_exec(sdk_http, tmp_path, monkeypatch):
+    sdk, server = sdk_http
+    from jupyter_kernel_client.client import KernelClient
+    account, _ = actual_account(tmp_path, sdk)
+    runtime_id = str(uuid.uuid4())
+    transport = bridge.Bridge(account, sdk)
+    transport.save_assignment(runtime_id, "L4", Assignment(),
+                              {"kernel_id": "gone-kernel", "session_id": "old-session"})
+    transport.runtime = lambda runtime: transport.record(runtime)
+    wire = []
+
+    def respond(request):
+        path = urlsplit(request.url).path
+        assert request.headers["X-Colab-Runtime-Proxy-Token"] == "private-proxy-token"
+        wire.append((request.method, path))
+        if path == "/api/kernels/gone-kernel":
+            return 404, {"message": "Gone"}, {}
+        if path == "/api/kernels/new-kernel" or (path == "/api/kernels" and request.method == "POST"):
+            return 200, {"id": "new-kernel", "execution_state": "idle"}, {}
+        pytest.fail("Unexpected kernel HTTP operation")
+
+    def start(client, **kwargs):
+        # Exercise the actual Jupyter manager's GET/POST recovery and the real
+        # ColabRuntime callbacks/output handling; only websocket messages fake.
+        if not client._manager.has_kernel:
+            client._manager.start_kernel(name="python3")
+
+        def execute_interactive(code, **options):
+            assert code == "print('sentinel')" and options["allow_stdin"] is False
+            options["output_hook"]({"header": {"msg_type": "stream"},
+                "content": {"name": "stdout", "text": "WEB_COMFYUI_JSON={}\n"}})
+            return {"content": {"status": "ok", "execution_count": 1}}
+
+        socket = SimpleNamespace(on_message=lambda *a: None, close=lambda: None)
+        client._manager._KernelHttpManager__client = SimpleNamespace(
+            session=SimpleNamespace(session="new-session"), kernel_socket=socket,
+            stop_channels=lambda: None, execute_interactive=execute_interactive)
+
+    server.respond = respond
+    monkeypatch.setattr(KernelClient, "start", start)
+    for _ in range(2):
+        result = transport.remote_exec({"runtime_id": runtime_id, "code": "print('sentinel')", "timeout_seconds": 3})
+        assert result["stdout"] == "WEB_COMFYUI_JSON={}\n"
+    saved = bridge.private_json(account / "runtimes" / (runtime_id + ".json"))
+    assert saved["kernel_id"] == "new-kernel" and saved["session_id"] == "new-session"
+    assert wire.count(("POST", "/api/kernels")) == 1
+    assert ("GET", "/api/kernels/new-kernel") in wire
+    assert not any(method == "DELETE" for method, _ in wire)

@@ -22,6 +22,7 @@ class FakeBridge:
         self.stop_error = False
         self.usage_error = False
         self.found = True
+        self.bound = True
         from PIL import Image
         image = io.BytesIO()
         Image.new("RGB", (8, 8), "gray").save(image, "PNG")
@@ -29,6 +30,8 @@ class FakeBridge:
 
     def __call__(self, op, directory, **values):
         self.calls.append((op, values))
+        if op == "account_identity":
+            return {"bound": self.bound, "subject_key": "a" * 64 if self.bound else None}
         if op == "account_status":
             if self.usage_error:
                 raise BridgeError("timeout")
@@ -94,13 +97,59 @@ def test_ambiguous_allocate_survives_restart_without_second_allocation(lane):
     assert len([c for c in bridge.calls if c[0] == "runtime_allocate"]) == 1
 
 
-def test_credential_reconnect_blocked_until_release(lane):
+def test_unbound_legacy_reconnect_blocked_until_release(lane):
     service, bridge, body = lane
     job = service.submit("alice", body)
+    bridge.bound = False
     for action in ("login", "finish"):
         with pytest.raises(ColabError):
             service.account_action("alice", body["account_id"], action, {})
     assert not [c for c in bridge.calls if c[0].startswith("oauth")]
+
+
+def test_bound_account_can_reauthenticate_during_cleanup(lane):
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    service.update(job['id'], phase='cleanup_pending', outcome='failed')
+    service.account_action('alice', body['account_id'], 'login', {})
+    service.account_action('alice', body['account_id'], 'finish', {'flow_id': 'synthetic', 'code': 'synthetic'})
+    assert [op for op, _ in bridge.calls if op.startswith('oauth')] == ['oauth_begin', 'oauth_finish']
+
+
+def test_duplicate_profiles_cannot_bypass_google_account_lease(lane):
+    service, bridge, body = lane
+    service.submit('alice', body)
+    other = service.create_account('bob', 'Another label, same Google subject')
+    with pytest.raises(ColabError, match='已有'):
+        service.submit('bob', {**body, 'request_id': str(uuid.uuid4()), 'account_id': other['id']})
+    assert service.snapshot('bob')['jobs'] == []
+
+
+def test_corrupt_input_and_missing_probe_fail_before_paid_admission(lane, monkeypatch):
+    service, bridge, body = lane
+    with pytest.raises(ColabError, match='圖片'):
+        service.submit('alice', {**body, 'job': {'type': 'image', 'prompt': 'square'}, 'files': [{'name': 'bad.png', 'data': base64.b64encode(b'not an image').decode()}]})
+    from webui import colab_service
+    monkeypatch.setattr(colab_service.shutil, 'which', lambda name: None)
+    with pytest.raises(ColabError, match='ffprobe'):
+        service.submit('alice', body)
+    assert service.snapshot('alice')['jobs'] == []
+    assert not [op for op, _ in bridge.calls if op == 'runtime_allocate']
+
+
+def test_empty_lookup_during_cancel_does_not_drop_ambiguous_allocation(lane):
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    bridge.allocate_error = True
+    service.tick(service.job('alice', job['id']))
+    bridge.found = False
+    service.cancel('alice', job['id'])
+    service.tick(service.job('alice', job['id']))
+    assert service.job('alice', job['id'])['phase'] == 'cleanup_pending'
+    # The original provider request becomes visible later; release that same ID.
+    bridge.found = True
+    service.tick(service.job('alice', job['id']))
+    assert service.job('alice', job['id'])['phase'] == 'cancelled'
 
 
 def test_stop_failure_never_claims_completion_and_is_recovered(lane):
@@ -134,6 +183,7 @@ def test_limits_release_owned_runtime(lane, condition):
 
 def test_download_identity_hash_and_traversal(lane):
     service, bridge, body = lane
+    body["job"] = {"type": "image", "prompt": "A blue square"}
     job = service.submit("alice", body)
     state = service.update(job["id"], runtime_id=str(uuid.uuid4()))
     artifact = {"path": "out/output.png", "size": len(bridge.data), "sha256": hashlib.sha256(bridge.data).hexdigest()}
@@ -160,9 +210,49 @@ def test_invalid_mode_and_external_paths_never_allocate(lane):
     assert not [c for c in bridge.calls if c[0] == "runtime_allocate"]
 
 
+def test_permanently_invalid_output_releases_without_repeated_download(lane, monkeypatch):
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    state = service.update(job['id'], phase='running', runtime_id=str(uuid.uuid4()))
+    identity = {'job_id': job['id'], 'manifest_sha256': state['manifest_sha256']}
+    monkeypatch.setattr(service, '_exec', lambda *args: {'status': {**identity, 'phase': 'completed'}, 'artifacts': {**identity, 'artifacts': [{'path': 'out/video.mp4', 'size': 70*1024*1024, 'sha256': 'a'*64}]}})
+    service.tick(state)
+    state = service.job('alice', job['id'])
+    assert state['phase'] == 'failed' and state['released']
+    assert not [op for op, _ in bridge.calls if op == 'download']
+
+
+def test_actual_detached_worker_crash_is_observed_by_controller(lane, monkeypatch, tmp_path):
+    import contextlib
+    import time
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    state = service.update(job['id'], phase='preparing', runtime_id=str(uuid.uuid4()), watchdog_armed=True,
+                           upload_index=len(service.job('alice', job['id'])['uploads']))
+    remote = tmp_path / 'synthetic-remote'
+    (remote / 'runner').mkdir(parents=True)
+    # A syntax error occurs before the remote worker can publish any status.
+    (remote / 'runner/remote_job.py').write_text('invalid python !')
+    namespace = {}
+    def execute(_state, code):
+        stdout = io.StringIO()
+        code = code.replace('/content/web-comfyui/' + job['id'], str(remote))
+        with contextlib.redirect_stdout(stdout):
+            exec(compile(code, '<reviewed-controller-code>', 'exec'), namespace)
+        return json.loads(stdout.getvalue().split('WEB_COMFYUI_JSON=')[-1])
+    monkeypatch.setattr(service, '_exec', execute)
+    service.tick(state)
+    namespace['p'].wait(timeout=5)
+    service.tick(service.job('alice', job['id']))
+    state = service.job('alice', job['id'])
+    assert state['phase'] == 'failed' and state['released']
+    assert '啟動' in state['message']
+
+
 @pytest.mark.parametrize("cancel_during_download", [False, True])
 def test_complete_lifecycle_uses_frozen_bundle_and_respects_late_cancel(lane, monkeypatch, tmp_path, cancel_during_download):
     service, bridge, body = lane
+    body["job"] = {"type": "image", "prompt": "A blue square"}
     job = service.submit("alice", body)
     real_call = bridge.__class__.__call__
     def transport(op, directory, **values):

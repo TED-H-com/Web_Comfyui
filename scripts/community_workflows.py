@@ -102,11 +102,17 @@ def graph_scopes(workflow: dict):
         if len(stack) > 8:
             raise ValueError("subgraph nesting exceeds supported depth")
         definitions = dict(inherited)
-        section = scope.get("definitions", {})
-        if not isinstance(section, dict) or not isinstance(section.get("subgraphs", []), list):
+        section = scope.get("definitions")
+        section = {} if section is None else section
+        subgraphs = section.get("subgraphs") if isinstance(section, dict) else None
+        subgraphs = [] if subgraphs is None else subgraphs
+        if not isinstance(section, dict) or not isinstance(subgraphs, list):
             raise ValueError("invalid subgraph definitions")
+        extra = scope.get("extra")
+        if extra is not None and not isinstance(extra, dict):
+            raise ValueError("invalid graph metadata")
         local_ids = set()
-        for sub in section.get("subgraphs", []):
+        for sub in subgraphs:
             sid = sub.get("id") if isinstance(sub, dict) else None
             if not isinstance(sid, str) or not sid or sid in local_ids or sid in inherited:
                 raise ValueError("invalid or duplicate subgraph ID")
@@ -144,8 +150,8 @@ def sanitize(original: dict, entry: dict, source: dict) -> dict:
             keys += ("state", "name", "inputNode", "outputNode", "inputs", "outputs", "widgets")
         result = {k: copy.deepcopy(scope[k]) for k in keys if k in scope}
         result["config"] = {}
-        result["extra"] = {k: copy.deepcopy(v) for k, v in scope.get("extra", {}).items() if k in {"frontendVersion", "workflowRendererVersion", "ue_links", "links_added_by_ue"}}
-        subs = [clean(sub, True) for sub in scope.get("definitions", {}).get("subgraphs", []) if id(sub) in retained]
+        result["extra"] = {k: copy.deepcopy(v) for k, v in (scope.get("extra") or {}).items() if k in {"frontendVersion", "workflowRendererVersion", "ue_links", "links_added_by_ue"}}
+        subs = [clean(sub, True) for sub in ((scope.get("definitions") or {}).get("subgraphs") or []) if id(sub) in retained]
         if subs:
             result["definitions"] = {"subgraphs": subs}
         return result

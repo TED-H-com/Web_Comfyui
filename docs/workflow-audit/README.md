@@ -69,3 +69,5 @@ ecjojo Wiki 另固定於 `713c238dcc823cbd304336bacf2c2ad17fc4b3fe`。兩頁 Wik
 ## H3 Colab 專項研究
 
 [H3 Colab 完整來源研究與整合設計](h3-colab-study.md) 記錄 `dseditor/h3-colab-skill` 全部追蹤檔案、三份相關筆記本、官方 Google CLI、必要節點及模型授權的固定版本證據，並說明帳號隔離、任務恢復、取消、輸出驗證與費用限制。此項另有離線傳輸／停止監測契約測試，**尚無真實 Google 帳號或 Colab GPU 生成驗證**。安裝與操作見 [Google Colab 與 H3](../colab.md)。
+
+本次後續端到端重查、修正與剩餘限制見 [2026-11-10 整合重查](review-20261110.md)。

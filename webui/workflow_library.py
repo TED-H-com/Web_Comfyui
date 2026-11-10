@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from functools import lru_cache
 import json
 import os
 from pathlib import Path
@@ -71,18 +72,23 @@ def checked_nodes(graph):
         if len(stack) > 8:
             raise ValueError('Unsupported subgraph nesting depth')
         definitions = dict(inherited)
-        section = document.get('definitions', {})
-        if not isinstance(section, dict) or not isinstance(section.get('subgraphs', []), list):
+        section = document.get('definitions')
+        section = {} if section is None else section
+        subgraphs = section.get('subgraphs') if isinstance(section, dict) else None
+        subgraphs = [] if subgraphs is None else subgraphs
+        if not isinstance(section, dict) or not isinstance(subgraphs, list):
             raise ValueError('Invalid subgraph definitions')
-        for sub in section.get('subgraphs', []):
+        for sub in subgraphs:
             sid = sub.get('id') if isinstance(sub, dict) else None
             if not isinstance(sid, str) or not sid or sid in definitions:
                 raise ValueError('Invalid or duplicate subgraph ID')
             definitions[sid] = sub
-        extra = document.get('extra', {})
+        extra = document.get('extra')
+        extra = {} if extra is None else extra
         if not isinstance(extra, dict):
             raise ValueError('Invalid graph metadata')
-        groups = extra.get('groupNodes', {})
+        groups = extra.get('groupNodes')
+        groups = {} if groups is None else groups
         if not isinstance(groups, dict):
             raise ValueError('Invalid legacy groups')
         for name, sub in groups.items():
@@ -206,7 +212,8 @@ def dependency_checks(entry, graph, object_info):
         kind = node['type']
         if kind not in MODEL_LOADERS and ('loader' in kind.lower() or kind == 'NPNetGoldenNoise'):
             unknown += 1
-    absent_nodes = missing_nodes(entry, object_info)
+    # The supplied entry may have stale top-level-only catalog metadata.
+    absent_nodes = missing_nodes(graph_details(graph), object_info)
     return {'missing_nodes': absent_nodes, 'missing_models': missing,
             'models_checked': checked, 'model_checks_unknown': unknown,
             'dependency_status': 'missing' if absent_nodes or missing else 'partial' if unknown else 'present',
@@ -252,9 +259,93 @@ def _provenance_owner(url):
     return parts[1]
 
 
+@lru_cache(maxsize=8)
+def _review_records(path, modified_ns, size):
+    """Cache only compact structural facts, never upstream widgets or prose.
+
+    The fixed published reports describe pinned upstream bytes at a historical
+    app baseline. They are not a qualification of a modified local workflow.
+    Stat fields invalidate the cache when a report is replaced.
+    """
+    try:
+        report = read_json(Path(path))
+        baseline = report['public_report_notice']['baseline_commit']
+        records = {}
+        for row in report['workflows']:
+            integration = row.get('public', row.get('public_integration', {}))
+            entry_id = integration.get('catalog_id')
+            if not entry_id:
+                continue
+            validation = row.get('structural_validation', row.get('validation', {}))
+            topology = validation.get('result', validation.get('reciprocal_link_validator'))
+            issues = validation.get('errors', validation.get('issues', []))
+            records[entry_id] = {
+                'source_sha256': row.get('sha256', row.get('source_sha256')),
+                'source_commit': row['source_commit'],
+                'baseline_commit': baseline,
+                'topology_status': 'fail' if issues else topology if topology in {'pass', 'fail'} else 'unknown',
+                'topology_issue_count': len(issues),
+                'active_node_types': row['active_node_types'],
+                'implicit_model_selector_count': len(row.get('implicit_model_selectors', [])),
+                'import_format_supported': row.get('format') in {'visual', 'ComfyUI UI graph'} and not row.get('legacy_group_instances'),
+            }
+        return records
+    except (ValueError, OSError, KeyError, TypeError, AttributeError):
+        return {}
+
+
+def source_reviews(root):
+    result = {}
+    for source, filename in (('dseditor', 'workflows'), ('ecjojo', 'templates')):
+        relative = f'docs/workflow-audit/{filename}-audit-20261110.json'
+        path = root / relative
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        result[source] = (_review_records(str(path), stat.st_mtime_ns, stat.st_size), relative)
+    return result
+
+
+def apply_source_review(entry, source, reviews):
+    records, report = reviews.get(entry.get('source'), ({}, ''))
+    record = records.get(entry.get('id'))
+    if (not record or record['source_sha256'] != entry.get('upstream_sha256')
+            or record['source_commit'] != source.get('commit')):
+        return
+    active = set(record['active_node_types'])
+    stored = set(entry.get('node_types', []))
+    missing, inactive = sorted(active - stored), sorted(stored - active)
+    warnings = []
+    if record['topology_status'] == 'fail':
+        warnings.append('固定版本的上游圖未通過靜態連線檢查；需在 ComfyUI 檢查並修復。')
+    if missing:
+        warnings.append('原始目錄遺漏巢狀節點；相依檢查需使用展開後的啟用節點。')
+    if inactive:
+        warnings.append('原始目錄包含停用分支；相依檢查以圖中啟用節點為準。')
+    if record['implicit_model_selector_count']:
+        warnings.append('圖中有模型預設或隱含下載選項；檔名清單無法證明模型已安裝。')
+    if not record['import_format_supported']:
+        warnings.append('目前匯入工具不支援此來源的群組或 API 格式，需另行轉換與審查。')
+    entry['source_review'] = {
+        **{key: value for key, value in record.items() if key != 'active_node_types'},
+        'scope': 'pinned-upstream-source', 'report': report,
+        'status': 'issues' if warnings else 'reviewed-static',
+        'catalog_missing_active_node_types': missing,
+        'catalog_inactive_node_types': inactive,
+        'warnings': warnings, 'gpu_tested': False,
+    }
+    # Reference entries have no graph to inspect locally. Use the hash-matched
+    # active inventory for their detail guide, without enabling local import.
+    if not entry.get('available'):
+        entry['node_types'] = sorted(active)
+        entry['node_inventory_basis'] = 'pinned-source-active-nodes'
+
+
 def catalog(root=ROOT, *, include_discovered=True, object_info=None):
     entries = []
     covered = set()
+    reviews = source_reviews(root)
     provenance_path = root / 'manifests/workflow_coverage/imported_sources.json'
     provenance = read_json(provenance_path).get('records', []) if provenance_path.is_file() else []
     by_url = {row['source_url']: row for row in provenance
@@ -286,6 +377,13 @@ def catalog(root=ROOT, *, include_discovered=True, object_info=None):
                     covered.add(path.resolve())
                 except (ValueError, OSError):
                     entry['status'] = 'file-unavailable'
+            # Compare audit inventory against original catalog metadata even if
+            # graph_details has just refreshed an available local copy.
+            inventory = entry.get('node_types')
+            entry['node_types'] = raw.get('node_types', [])
+            apply_source_review(entry, source, reviews)
+            if entry['available']:
+                entry['node_types'] = inventory
             entry['kind'] = 'workflow'
             entry['guide'] = enrich_entry(entry, graph)
             if entry['available'] and object_info is not None:

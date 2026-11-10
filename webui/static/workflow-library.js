@@ -54,6 +54,10 @@ window.WorkflowLibrary = (() => {
       const guide = item.guide || {};
       content.append(el('p', guide.summary || item.description || '從下方來源查看工作流的用途與設定。', 'workflow-summary'));
       content.append(el('p', item.available ? '已收錄 JSON；請在自己的 ComfyUI 檢查模型與輸入。尚未完成 GPU 生成驗證。' : item.kind === 'recipe' ? '這是方法與參數說明，需要依自己的環境建立流程；未附可直接執行的 JSON。' : '此項目提供上游來源；未附 JSON。請先閱讀原作者說明與授權。', 'workflow-evidence'));
+      if (item.source_review?.warnings?.length) {
+        list(content, '上游工作流已知問題', item.source_review.warnings);
+        content.append(el('p', '以上是固定版本上游圖的靜態查核，並非本機副本或 GPU 實跑結果。', 'workflow-evidence'));
+      }
       list(content, '先準備什麼', guide.inputs);
       list(content, '會怎麼跑', guide.steps, true);
       if (guide.output) content.append(el('p', '預期結果：' + guide.output, 'sub'));
@@ -132,6 +136,7 @@ window.WorkflowLibrary = (() => {
         card.append(el('span', item.category || 'workflow', 'workflow-category'), el('strong', item.title));
         if (item.guide?.summary) card.append(el('span', item.guide.summary, 'workflow-card-summary'));
         card.append(el('span', item.available ? '已收錄 JSON' : item.kind === 'recipe' ? '方法與參數' : '上游參考', 'workflow-state'), el('small', item.source || '教學整理'));
+        if (item.source_review?.warnings?.length) card.append(el('small', `上游查核：${item.source_review.warnings.length} 項待確認`));
         if (item.dependency_status) card.append(el('small', item.dependency_status === 'missing' ? `缺少 ${(item.missing_nodes || []).length} 個節點、${(item.missing_models || []).length} 個模型` : item.dependency_status === 'partial' ? '部分模型仍需核對' : '已核對依賴，GPU 待驗證'));
         else if (item.missing_nodes) card.append(el('small', item.missing_nodes.length ? `缺少 ${item.missing_nodes.length} 個節點` : '節點已具備，模型待確認'));
         card.onclick = () => details(item, card); grid.append(card);

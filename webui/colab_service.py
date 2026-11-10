@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import tempfile
 import time
 import uuid
 
@@ -55,6 +56,8 @@ class BridgeError(ColabError):
         super().__init__({
             "not_installed": "請先安裝 Colab 選用環境並設定 WEB_COMFYUI_COLAB_PYTHON。",
             "authentication_required": "請先連接這個 Google 帳號。",
+            "account_identity_mismatch": "請登入原本綁定的 Google 帳號；其他帳號請新增一份連線設定。",
+            "legacy_identity_unverified": "舊連線尚未確認 Google 身分，請先在 Google 確認執行階段已結束。",
             "timeout": "Google 連線逾時；會先確認既有任務，不會重複申請 GPU。",
         }.get(code, "Colab 連線未完成，請重新整理狀態；既有任務會保留。"))
 
@@ -93,7 +96,7 @@ def private_write(path, data):
 
 def validate_media(path):
     """Decode images; probe audio/video streams without loading user libraries."""
-    if path.suffix.lower() in {".png", ".jpg", ".webp"}:
+    if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}:
         from PIL import Image
         try:
             with Image.open(path) as picture:
@@ -112,7 +115,7 @@ def validate_media(path):
             raise ValueError()
         info = json.loads(result.stdout)
         duration = float(info["format"]["duration"])
-        kind = "video" if path.suffix in {".mp4", ".webm"} else "audio"
+        kind = "video" if path.suffix.lower() in {".mp4", ".mov", ".webm"} else "audio"
         if not math.isfinite(duration) or duration <= 0 or not any(stream.get("codec_type") == kind for stream in info["streams"]):
             raise ValueError()
         return {"kind": kind, "duration": duration}
@@ -205,6 +208,7 @@ class ColabService:
         return {"id": account_id, "label": label}
 
     def account_action(self, owner, account_id, action, values):
+        self.account(owner, account_id)
         if action in {"login", "finish"}:
             with self.account_guard(account_id):
                 return self._account_action(owner, account_id, action, values)
@@ -222,7 +226,9 @@ class ColabService:
             with self.db() as db:
                 states = [json.loads(row[0]) for row in db.execute("SELECT state FROM jobs WHERE account_id=?", (account_id,))]
             if any(state["phase"] not in TERMINAL for state in states):
-                raise ColabError("這個帳號仍有任務或待回收的 GPU，釋放完成後才能重新連接")
+                identity = self.bridge("account_identity", self.account_dir(account_id))
+                if not identity.get("bound"):
+                    raise ColabError("舊連線仍有待回收的 GPU，且尚無已驗證身分；請先在 Google 確認執行階段已結束")
         path = self.account_dir(account_id)
         if action == "login":
             return self.bridge("oauth_begin", path)
@@ -305,6 +311,8 @@ class ColabService:
         if set(spec) - allowed:
             raise ColabError("不支援的生成設定")
         spec = {**spec, "id": "output"}
+        if spec.get("type") in {"video", "tts"} and not shutil.which("ffprobe"):
+            raise ColabError("請先安裝 ffmpeg／ffprobe，才能驗證生成的影音成果")
         files = body.get("files", [])
         if not isinstance(files, list) or len(files) > 8:
             raise ColabError("最多提供 8 個參考檔案")
@@ -349,12 +357,24 @@ class ColabService:
             manifest = validate_manifest(manifest, directory, check_files=False)
         except ValueError as error:
             raise ColabError("生成設定或參考素材不符合這個模式；請檢查秒數、素材種類及描述中的參考編號") from error
+        # Reject corrupt selected media before a paid GPU is requested. This
+        # reads only the files explicitly submitted with this request.
+        with tempfile.TemporaryDirectory(prefix="preflight-", dir=self.root) as temporary:
+            for name, raw in raw_files:
+                target = Path(temporary) / Path(name).name
+                private_write(target, raw)
+                validate_media(target)
         status = self.account_action(owner, account_id, "refresh", {})
+        identity = self.bridge("account_identity", self.account_dir(account_id))
+        subject_key = identity.get("subject_key")
+        if not identity.get("bound") or not isinstance(subject_key, str) or len(subject_key) != 64 or any(c not in "0123456789abcdef" for c in subject_key):
+            raise ColabError("請重新連接 Google 帳號以確認身分，再開始生成")
         balance = status.get("balance_compute_units")
         if not status.get("authenticated") or not isinstance(balance, (int, float)) or not math.isfinite(balance) or balance < max_units:
             raise ColabError("請先連接帳號並確認點數餘額足夠；點數上限不能高於目前餘額")
         state = {"id": job_id, "account_id": account_id, "phase": "queued", "gpu": gpu, "max_units": max_units, "max_minutes": max_minutes,
                  "created_at": now, "updated_at": now, "deadline_epoch": manifest["deadline_epoch"], "allocation_id": str(uuid.uuid4()),
+                 "subject_key": subject_key, "output_kind": "audio" if spec["type"] == "tts" else spec["type"],
                  "baseline_units": balance, "last_balance": balance, "units_observed": 0, "artifacts": [], "released": False, "cancel_requested": False}
         with self.db() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -363,8 +383,8 @@ class ColabService:
                 if duplicate["owner"] != owner or duplicate["request_hash"] != request_hash:
                     raise ColabError("同一請求識別碼不能用於不同內容")
                 return self.public_job(json.loads(duplicate["state"]))
-            active = [json.loads(r[0]) for r in db.execute("SELECT state FROM jobs WHERE account_id=?", (account_id,))]
-            if any(item["phase"] not in TERMINAL for item in active):
+            active = [json.loads(r[0]) for r in db.execute("SELECT state FROM jobs")]
+            if any(item["phase"] not in TERMINAL and (item["account_id"] == account_id or item.get("subject_key") == subject_key) for item in active):
                 raise ColabError("這個帳號已有執行中或待回收的任務，請先完成或釋放 GPU")
             for name, raw in raw_files:
                 private_write(directory / name, raw)
@@ -470,7 +490,7 @@ class ColabService:
             if not state.get("uploads") or not state.get("watchdog_sha256"):
                 self.update(job_id, phase="failed", released=True, message="任務缺少固定的執行器版本，請重新建立")
                 return
-            state = self.update(job_id, phase="allocating")  # durable BEFORE the paid mutation
+            state = self.update(job_id, phase="allocating", allocation_attempted_at=self.clock())  # durable BEFORE the paid mutation
             try:
                 runtime = self._call(state, "runtime_allocate", allocation_id=state["allocation_id"], gpu=state["gpu"])
             except BridgeError:
@@ -525,7 +545,7 @@ class ColabService:
                 entry = paths[position]
                 relative = entry["path"]
                 local = directory / relative
-                if local.is_symlink() or not local.resolve().is_relative_to(directory.resolve()) or local.stat().st_size != entry["size"] or digest(local.read_bytes()) != entry["sha256"]:
+                if local.is_symlink() or not local.is_file() or not local.resolve().is_relative_to(directory.resolve()) or local.stat().st_size != entry["size"] or digest(local.read_bytes()) != entry["sha256"]:
                     state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="執行器或素材內容驗證失敗，正在釋放 GPU")
                     return self._cleanup(state)
                 with self.db() as db:
@@ -539,11 +559,15 @@ class ColabService:
                 fresh = json.loads(db.execute("SELECT state FROM jobs WHERE id=?", (job_id,)).fetchone()[0])
             if fresh.get("cancel_requested") or self.clock() >= fresh["deadline_epoch"]:
                 return self.tick(fresh)
-            state = self.update(job_id, phase="launching")
+            state = self.update(job_id, phase="launching", launch_requested_at=self.clock())
             code = ("import subprocess,sys,json\nfrom pathlib import Path\n"
                     f"d=Path({remote!r})\n"
                     "with (d/'runner.log').open('ab') as log:\n"
                     f" p=subprocess.Popen([sys.executable,str(d/'runner/remote_job.py'),'--job-dir',str(d),'--manifest-sha256',{state['manifest_sha256']!r}],stdin=subprocess.DEVNULL,stdout=log,stderr=log,start_new_session=True)\n"
+                    f"identity={{'job_id':{job_id!r},'manifest_sha256':{state['manifest_sha256']!r},'pid':p.pid}}\n"
+                    "try: identity['start_ticks']=Path('/proc/'+str(p.pid)+'/stat').read_text().rsplit(')',1)[1].split()[19]\n"
+                    "except OSError: identity['start_ticks']=None\n"
+                    "tmp=d/'launch.tmp';tmp.write_text(json.dumps(identity));tmp.replace(d/'launch.json')\n"
                     "print('WEB_COMFYUI_JSON='+json.dumps({'launched':True}))")
             try:
                 self._exec(state, code)
@@ -555,10 +579,17 @@ class ColabService:
             code = ("import json\nfrom pathlib import Path\n"
                     f"d=Path({remote!r})\n"
                     "def read(name):\n p=d/name\n return json.loads(p.read_text()) if p.is_file() and p.stat().st_size<524288 else None\n"
-                    "print('WEB_COMFYUI_JSON='+json.dumps({'status':read('status.json'),'artifacts':read('artifacts.json')}))")
+                    "launch=read('launch.json');dead=False\n"
+                    f"if launch and launch.get('job_id')=={job_id!r} and launch.get('manifest_sha256')=={state['manifest_sha256']!r}:\n"
+                    " try:\n  proc=Path('/proc/'+str(int(launch['pid']))+'/stat').read_text().rsplit(')',1)[1].split()\n  dead=proc[0]=='Z' or proc[19]!=launch.get('start_ticks')\n"
+                    " except (OSError,ValueError,KeyError,IndexError): dead=True\n"
+                    "print('WEB_COMFYUI_JSON='+json.dumps({'status':read('status.json'),'artifacts':read('artifacts.json'),'worker_dead':dead}))")
             report = self._exec(state, code)
             status = report.get("status") or {}
             if status.get("job_id") != job_id or status.get("manifest_sha256") != state["manifest_sha256"]:
+                if report.get("worker_dead") or self.clock() >= state.get("launch_requested_at", state["created_at"]) + 120:
+                    state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="執行器未成功啟動，正在釋放 GPU")
+                    return self._cleanup(state)
                 return
             remote_phase = status.get("phase", status.get("state", ""))
             self.update(job_id, remote_phase=remote_phase)
@@ -566,13 +597,23 @@ class ColabService:
                 state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="雲端生成未完成；保留紀錄並釋放 GPU")
                 return self._cleanup(state)
             if remote_phase not in {"complete", "completed"}:
+                if report.get("worker_dead"):
+                    state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="雲端執行器已停止，正在釋放 GPU")
+                    return self._cleanup(state)
                 return
             state = self.update(job_id, phase="downloading")
             try:
                 outputs = self._download(state, report.get("artifacts"), remote)
-            except (ColabError, OSError, ValueError):
+            except (BridgeError, OSError):
                 self.update(job_id, message="成果尚未通過下載驗證，會在時間上限內重新取得")
                 return
+            except (ColabError, ValueError):
+                with self.db() as db:
+                    fresh = json.loads(db.execute("SELECT state FROM jobs WHERE id=?", (job_id,)).fetchone()[0])
+                if fresh.get("cancel_requested") or self.clock() >= fresh["deadline_epoch"]:
+                    return self.tick(fresh)
+                state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="成果清單、格式或內容驗證失敗，停止重試並釋放 GPU")
+                return self._cleanup(state)
             with self.db() as db:
                 fresh = json.loads(db.execute("SELECT state FROM jobs WHERE id=?", (job_id,)).fetchone()[0])
             if fresh.get("cancel_requested") or self.clock() >= fresh["deadline_epoch"]:
@@ -613,6 +654,8 @@ class ColabService:
                 raise ColabError("成果內容與清單不符")
             os.chmod(local, 0o600)
             metadata = validate_media(local)
+            if state.get("output_kind") and metadata["kind"] != state["output_kind"]:
+                raise ColabError("成果種類與請求不符")
             outputs.append({"name": name, "size": size, "sha256": checksum, **metadata, "url": f"/api/colab/jobs/{state['id']}/files/{name}"})
         return outputs
 
@@ -622,6 +665,12 @@ class ColabService:
             if runtime.get("found"):
                 state = self.update(state["id"], runtime_id=runtime["runtime_id"])
             else:
+                # A timed-out allocation can still be completing remotely.
+                # Reconcile through a grace period instead of declaring it gone
+                # on the first immediately empty lookup after cancellation.
+                if self.clock() < state.get("allocation_attempted_at", 0) + 150:
+                    self.update(state["id"], message="仍在確認未回應的 GPU 申請，尚未宣告釋放")
+                    return
                 self.update(state["id"], phase=state.get("outcome", "failed"), released=True)
                 return
         result = self._call(state, "runtime_stop", runtime_id=state["runtime_id"])

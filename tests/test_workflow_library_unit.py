@@ -203,6 +203,7 @@ def test_dependency_checks():
     }
     graph = {
         "nodes": [
+            {"type": "MissingNode"},
             {
                 "type": "CheckpointLoaderSimple",
                 "widgets_values": ["missing_model.safetensors"]

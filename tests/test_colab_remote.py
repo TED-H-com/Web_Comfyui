@@ -7,6 +7,7 @@ import re
 import shutil
 import struct
 import subprocess
+import sys
 from pathlib import Path
 import time
 import uuid
@@ -332,6 +333,51 @@ def test_only_the_admitted_graph_models_are_download_candidates():
         R.required_models(action, lock)
 
 
+@pytest.mark.parametrize('damage', ['missing_helper', 'invalid_helper', 'invalid_manifest', 'missing_lock', 'invalid_state'])
+def test_real_subprocess_bootstrap_failure_publishes_bound_terminal_state(tmp_path, damage):
+    value = manifest('image')
+    root = tmp_path / value['job_id']
+    bundle = root / 'runner'
+    shutil.copytree(R.HERE, bundle, ignore=shutil.ignore_patterns('__pycache__'))
+    manifest_path = root / 'manifest.json'
+    manifest_path.write_text(json.dumps(value))
+    expected = R.file_digest(manifest_path)
+    if damage == 'missing_helper':
+        (bundle / 'h3graph.py').unlink()
+    elif damage == 'invalid_helper':
+        (bundle / 'h3graph.py').write_text('this is invalid Python (')
+    elif damage == 'invalid_manifest':
+        manifest_path.write_text('{broken upload')
+    elif damage == 'missing_lock':
+        (bundle / 'runtime.lock.json').unlink()
+    else:
+        (root / 'status.json').write_text('["broken status"]')
+    # Invoke the actual worker entry under a disk temp path. Public CLI path
+    # restrictions remain unchanged; this needs no /content access or watchdog.
+    result = subprocess.run([sys.executable, '-I', '-c',
+        'import sys; sys.path.insert(0, sys.argv[1]); import remote_job; '
+        'raise SystemExit(remote_job.run_job(sys.argv[2], sys.argv[3]))',
+        str(bundle), str(root), expected], capture_output=True, text=True, timeout=15)
+    assert result.returncode == 1
+    saved = json.loads((root / 'status.json').read_text())
+    assert saved['job_id'] == value['job_id']
+    assert saved['manifest_sha256'] == expected
+    assert saved['phase'] == 'failed' and saved['done'] is True
+    assert not (root / 'runtime').exists()
+    assert not (root / 'artifacts.json').exists()
+    assert 'WEB_COMFYUI_JOB ' in result.stdout
+    assert value['jobs'][0]['prompt'] not in saved['error']
+
+
+def test_corrupt_template_fails_before_any_install_or_download(tmp_path, monkeypatch):
+    runner = make_runner(tmp_path, manifest('image'))
+    runner.lock['templates'][0]['sha256'] = '0' * 64
+    monkeypatch.setattr(runner, 'command', lambda *a, **k: pytest.fail('Corrupt bundle must not install'))
+    with pytest.raises(R.ValidationError, match='template integrity'):
+        runner.provision()
+    assert not (runner.root / 'runtime').exists()
+
+
 @pytest.fixture
 def synthetic_media(tmp_path):
     """Tiny generated fixtures only, in pytest's disk-backed directory."""
@@ -368,6 +414,8 @@ def test_frontend_service_manifest_runs_real_source_adapters_offline(tmp_path, m
     class FakeAccount:
         installed = True
         def __call__(self, operation, directory, **options):
+            if operation == 'account_identity':
+                return {'bound': True, 'subject_key': 'a' * 64}
             assert operation == 'account_status'
             return {'authenticated': True, 'balance_compute_units': 100, 'consumption_rate_per_hour': 4}
     service = ColabService(tmp_path / 'controller', FakeAccount())

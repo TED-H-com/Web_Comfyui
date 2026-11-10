@@ -62,7 +62,7 @@ HTML_SOURCE = 'webui/static/index.html'
 LANDING_SOURCE = 'webui/docs/landing.html'
 FIELDS = {'id', 'title', 'category', 'source', 'kind', 'available', 'format', 'tags',
           'node_types', 'node_count', 'models', 'license', 'upstream_url', 'source_urls',
-          'status', 'requirements', 'settings', 'validation', 'guide'}
+          'status', 'requirements', 'settings', 'validation', 'guide', 'source_review', 'node_inventory_basis'}
 
 
 def source_bytes(root: Path, relative: str) -> bytes:
