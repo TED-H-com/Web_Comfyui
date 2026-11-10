@@ -10517,6 +10517,7 @@ function renderTextForm(feature, capability = null) {
 
 async function onGeneratePost(event, feature, collect) {
   event.preventDefault();
+  const submittedForm = event.currentTarget;
   const character = activeCharacter();
   if (activeCharacterId && !character) {
     showAlert("目前角色已不存在，請重新選擇。", true);
