@@ -10332,6 +10332,41 @@ class ProviderFabricStore:
             "updated_at": updated_at,
         }
 
+    def list_owned_intent_output_ids(self, owner_user_id: str, intent_id: str) -> list[str]:
+        """Return adopted output IDs for an exact owned intent/task/account graph.
+
+        This metadata lookup does not load media. The existing source endpoint
+        revalidates ownership and bytes when the user opens an output.
+        """
+        status = self.get_intent_status(intent_id, owner_user_id)
+        if status["state"] != "completed" or not status["output_verified"]:
+            return []
+        with self._read_connection() as connection:
+            rows = connection.execute(
+                """SELECT DISTINCT p.projection_id
+                     FROM generation_intent_owners AS io
+                     JOIN submission_outbox AS o ON o.intent_id = io.intent_id
+                     JOIN external_tasks AS t ON t.outbox_id = o.outbox_id
+                     JOIN remote_asset_projections AS p ON p.account_id = o.account_id
+                     JOIN remote_asset_owners AS ao ON ao.projection_id = p.projection_id
+                                                   AND ao.owner_user_id = io.owner_user_id
+                     JOIN remote_asset_versions AS v ON v.projection_id = p.projection_id
+                    WHERE io.owner_user_id = ? AND io.intent_id = ? AND t.state = 'completed'
+                      AND json_extract(p.metadata_json, '$.source') = 'autoip_generation'
+                      AND json_extract(p.metadata_json, '$.intent_id') = io.intent_id
+                      AND json_extract(p.metadata_json, '$.task_id') = t.task_id
+                      AND json_extract(v.metadata_json, '$.validated_download') = 1
+                      AND json_type(v.metadata_json, '$.validated_download') = 'true'
+                      AND v.source_uri LIKE 'file:%' AND v.byte_size > 0
+                      AND length(v.sha256) = 64 AND v.sha256 NOT GLOB '*[^0-9a-f]*'
+                      AND ((p.media_kind = 'image' AND v.mime_type IN ('image/avif','image/gif','image/jpeg','image/png','image/webp'))
+                        OR (p.media_kind = 'video' AND v.mime_type IN ('video/mp4','video/quicktime','video/webm'))
+                        OR (p.media_kind = 'audio' AND v.mime_type IN ('audio/mpeg','audio/wav','audio/x-wav','audio/flac','audio/mp4','audio/ogg')))
+                    ORDER BY p.projection_id LIMIT 100""",
+                (owner_user_id, intent_id),
+            ).fetchall()
+        return [str(row["projection_id"]) for row in rows]
+
     def list_owned_production_intent_statuses(
         self, owner_user_id: str, project_id: str, *, limit: int = 400,
     ) -> dict[str, Any]:

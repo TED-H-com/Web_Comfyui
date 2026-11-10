@@ -1,6 +1,6 @@
 /* External references are selected explicitly; this never submits generation. */
 (() => {
-  function open({h, api, openSheet, dismissTopSheet, captureSessionContext, assertSessionContext, isStaleSessionError, onSelect, textOnly = false, opener, container, fixedKind, onClose, fixedCategory, compact=false, randomize=false, onRandom, selectedId, selectedVariantId, visualStyle=''}) {
+  function open({h, api, openSheet, dismissTopSheet, captureSessionContext, assertSessionContext, isStaleSessionError, onSelect, textOnly = false, opener, container, fixedKind, onClose, fixedCategory, fixedCategories=[], compact=false, randomize=false, onRandom, selectedId, selectedVariantId, visualStyle=''}) {
     const session = captureSessionContext();
     const root = h('div', {class:compact?'reference-picker reference-picker-compact':'reference-picker'});
     const controls = h(container ? 'div' : 'form', {class:'reference-filters'});
@@ -19,6 +19,7 @@
     const source=select('參考來源',[['','全部來源']]);
     const category=select('參考分類',[['','全部分類']]);
     if (fixedCategory) {category.append(h('option',{value:fixedCategory,text:fixedCategory}));category.value=fixedCategory;category.closest('label').hidden=true;}
+    if (fixedCategories.length) category.closest('label').hidden=true;
     if (compact) source.closest('label').hidden=true;
     const search=h('input',{type:'search','aria-label':'搜尋參考',placeholder:compact?'搜尋細項':'名稱、編號、中英文關鍵字',maxlength:160});
     const searchButton=h('button',{type:container?'button':'submit',class:'ghost small',text:'搜尋'});
@@ -44,7 +45,7 @@
       retryRandom=pickRandom;
       status.textContent='載入中…';grid.replaceChildren();retry.hidden=true;previous.disabled=true;next.disabled=true;
       try {
-        const query=new URLSearchParams({kind:kind.value,source:source.value,category:fixedCategory || category.value,q:search.value,page:String(page),...(visualStyle?{visualStyle}:{}),...(pickRandom?{random:'1'}:{})});
+        const query=new URLSearchParams({kind:kind.value,source:source.value,category:fixedCategory || category.value,q:search.value,page:String(page),...(fixedCategories.length?{categories:fixedCategories.join(',')}:{}),...(visualStyle?{visualStyle}:{}),...(pickRandom?{random:'1'}:{})});
         const data=await api('/api/reference-sources?'+query);
         if(!current(turn))return;
         const keepSource=source.value, keepCategory=category.value;
@@ -54,16 +55,19 @@
         source.value=keepSource;category.value=keepCategory;total=data.total;
         status.textContent=total?`${total} 項 · ${page} / ${Math.ceil(total/data.pageSize)} 頁`:'沒有符合條件的參考，請調整搜尋或分類。';
         pagination.hidden=compact && total<=data.pageSize;
-        for(const item of data.items) {
-          const thumb=h('img',{src:item.variants[0].thumbnail,alt:item.title,loading:'lazy',referrerpolicy:'no-referrer'});
-          thumb.onerror=()=>{thumb.hidden=true;};
-          grid.appendChild(h('button',{type:'button',class:'catalogue-card','data-reference-id':item.id,
+        for(const item of compact?data.items.slice(0,24):data.items) {
+          // Eager loading is bounded to this page's first-angle thumbnails.
+          // Alternate angles and original images stay behind the lightbox.
+          const thumb=h('img',{src:item.variants[0].thumbnail,alt:'',loading:compact?'eager':'lazy',decoding:'async',referrerpolicy:'no-referrer'});
+          const fallback=h('span',{class:'photo-reference-unavailable',text:'無預覽',hidden:true});
+          thumb.onerror=()=>{thumb.hidden=true;fallback.hidden=false;};
+          grid.appendChild(h('button',{type:'button',class:compact?'catalogue-card photo-reference-row':'catalogue-card','data-reference-id':item.id,
             'aria-label':`預覽${item.title}`,'aria-haspopup':'dialog',onclick:event=>{
             if(!compact){detail(item);return;}
             try {assertSessionContext(session);preview(item,event.currentTarget);}
             catch(error){if(!isStaleSessionError(error))status.textContent=error.message;}
           }},[
-            h('span',{class:'catalogue-cover'},[thumb]),h('span',{class:'catalogue-card-copy'},[
+            h('span',{class:'catalogue-cover'},[thumb,fallback]),h('span',{class:'catalogue-card-copy'},[
               h('strong',{text:item.title}),...(!compact?[h('span',{text:item.code}),h('small',{text:`${item.categoryLabel} · ${item.variants.length} 個視角`})]:[]),
             ]),
           ]));

@@ -3308,6 +3308,16 @@ class ProviderFabricService:
             plan_nonce=plan_nonce,
             generation_request=binding,
         )
+        # A caller of the unified production UI may impose an explicit credit
+        # ceiling even where the provider otherwise owns its account policy.
+        # Enforce it against this exact signed quote before durable confirmation.
+        # confirm_intent rechecks the same executable quote before committing.
+        maximum = plan_request.get("max_credits")
+        if maximum is not None and planned["quote"]["credits"] > maximum:
+            raise ProviderServiceError(
+                "spend_limit_exceeded",
+                "The current quote exceeds the requested spending limit.",
+            )
         confirmation_request = {
             "schema_version": SERVICE_SCHEMA_VERSION,
             "plan_token": planned["plan_token"],
@@ -3329,6 +3339,46 @@ class ProviderFabricService:
             planned["decision"],
             planned["quote"],
         )
+
+    def recover_generation_request(
+        self, actor: ActorContext, request_id: str,
+    ) -> dict[str, Any] | None:
+        """Read the original owner/request receipt without planning or submit.
+
+        None means no durable record was found, not permission to try a second
+        provider. The outer coordinator retains its uncertain reservation.
+        """
+        actor = self._require_actor(actor)
+        try:
+            normalized = _stable_id(request_id, "request_id")
+        except ValueError as error:
+            raise ProviderServiceError("schema_invalid", "request_id is invalid.") from error
+        if normalized != request_id:
+            raise ProviderServiceError("schema_invalid", "request_id must use its exact canonical form.")
+        plan_id = f"plan:{self._generation_plan_nonce(actor.user_id, request_id)}"
+        intent_id = self._generation_storage_ids(plan_id)["intent_id"]
+        try:
+            status = self.get_intent_status(actor, intent_id)
+        except ProviderServiceError as error:
+            if error.code == "intent_not_found":
+                return None
+            raise
+        # get_intent_status establishes owner access before internal metadata
+        # is examined. Never expose the stored creative instruction or payload.
+        try:
+            stored = self._store.get_intent(intent_id)
+            payload = stored.get("payload")
+            binding = payload.get("generation_request") if isinstance(payload, Mapping) else None
+            if (not isinstance(binding, Mapping)
+                    or binding.get("request_id") != request_id
+                    or payload.get("owner_user_id") != actor.user_id
+                    or payload.get("plan_id") != plan_id):
+                raise ValueError("generation binding mismatch")
+        except (KeyError, ValueError, ProviderFabricStoreError) as error:
+            raise ProviderServiceError(
+                "generation_recovery_unavailable", "The prior generation binding could not be verified.", status=503,
+            ) from error
+        return {**status, "request_id": request_id}
 
     def get_intent_status(self, actor: ActorContext, intent_id: str) -> dict[str, Any]:
         """Read one confirmed intent owned by the authenticated Castle actor.

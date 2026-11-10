@@ -1131,6 +1131,9 @@ IMAGE_ASPECTS = [
     {"label": "方 1:1", "width": 1408, "height": 1408},
     {"label": "橫 4:3", "width": 1536, "height": 1152},
     {"label": "橫 16:9", "width": 1920, "height": 1088},
+    {"label": "方 1K · 1024×1024", "width": 1024, "height": 1024},
+    {"label": "橫 1K · 1024×768", "width": 1024, "height": 768},
+    {"label": "直 1K · 768×1024", "width": 768, "height": 1024},
 ]
 
 VIDEO_ASPECTS = [
@@ -8218,6 +8221,155 @@ def validate_voice_generation_contract(
     if len(prompt_text) > 500:
         raise ValueError("參考音訊逐字稿最多 500 字")
     return resolved
+
+
+def record_input_upload_owner(filename: str, user: dict | None) -> None:
+    """Bind a completed upload/import to its owner and immutable source bytes."""
+    import sqlite3
+    from contextlib import closing
+
+    owner = normalize_email(str((user or {}).get("email") or ""))
+    if not owner:
+        raise PermissionError("請先登入")
+    bare = resolve_server_file(filename)
+    source = (COMFY_INPUT / bare).resolve()
+    size, digest = source.stat().st_size, sha256_file(source)
+    root = JOB_INDEX_PATH.parent / ".input-ownership"
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if root.is_symlink():
+        raise ValueError("素材擁有權資料夾無效")
+    root.chmod(0o700)
+    database = root / "receipts.sqlite3"
+    try:
+        fd = os.open(database, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(fd)
+    except FileExistsError:
+        if database.is_symlink() or not database.is_file():
+            raise ValueError("素材擁有權資料庫無效")
+    database.chmod(0o600)
+    with closing(sqlite3.connect(database, timeout=5)) as db, db:
+        db.execute("CREATE TABLE IF NOT EXISTS inputs (root TEXT NOT NULL, name TEXT NOT NULL, owner TEXT NOT NULL, size INTEGER NOT NULL, sha256 TEXT NOT NULL, created REAL NOT NULL, PRIMARY KEY(root,name))")
+        db.execute("INSERT OR REPLACE INTO inputs VALUES (?,?,?,?,?,?)",
+                   (str(COMFY_INPUT.resolve()), bare, owner, size, digest, time.time()))
+        db.execute("DELETE FROM inputs WHERE rowid NOT IN (SELECT rowid FROM inputs ORDER BY created DESC LIMIT 10000)")
+
+
+def user_can_use_uploaded_input(user: dict | None, filename: str) -> bool:
+    """Read only owner evidence first; hash a source only for its recorded owner."""
+    import sqlite3
+    from contextlib import closing
+
+    owner = normalize_email(str((user or {}).get("email") or ""))
+    database = JOB_INDEX_PATH.parent / ".input-ownership" / "receipts.sqlite3"
+    if not owner or not database.is_file() or database.is_symlink() or database.parent.is_symlink():
+        return False
+    try:
+        bare = resolve_server_file(filename)
+        with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True, timeout=5)) as db:
+            row = db.execute("SELECT owner,size,sha256 FROM inputs WHERE root=? AND name=?",
+                             (str(COMFY_INPUT.resolve()), bare)).fetchone()
+        if not row or row[0] != owner:
+            return False
+        source = (COMFY_INPUT / bare).resolve()
+        return source.stat().st_size == row[1] and hmac.compare_digest(sha256_file(source), row[2])
+    except (OSError, ValueError, sqlite3.Error):
+        return False
+
+
+def stage_colab_uploaded_file(file_info: dict, slot: str) -> str:
+    """Stage an explicit browser upload without needing a local Comfy server."""
+    raw, content_type = decode_data_url(str(file_info.get("dataUrl") or ""), 32 * 1024 * 1024)
+    suffix = Path(str(file_info.get("name") or "")).suffix.lower() or mimetypes.guess_extension(content_type)
+    if not raw or suffix not in {".png", ".jpg", ".jpeg", ".webp", ".mp4", ".mov", ".webm", ".wav", ".mp3", ".flac", ".m4a"}:
+        raise ValueError("不支援或空白的 Colab 素材")
+    COMFY_INPUT.mkdir(parents=True, exist_ok=True)
+    filename = "castle_colab_" + secrets.token_hex(16) + suffix
+    target = COMFY_INPUT / filename
+    fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(raw)
+    except BaseException:
+        target.unlink(missing_ok=True)
+        raise
+    return filename
+
+
+def validate_client_generation_files(files, user: dict | None) -> dict:
+    """Validate client media references before adding trusted character paths.
+
+    A filename in the shared Comfy input directory establishes containment, not
+    application ownership. Reused inputs require the same owner-scoped evidence
+    as viewing a file. Server-created character bindings are added only after
+    this check and are never accepted from the browser.
+    """
+    if files is None:
+        return {}
+    if not isinstance(files, dict):
+        raise ValueError("files must be an object")
+    for file_info in files.values():
+        if not file_info:
+            continue
+        if not isinstance(file_info, dict) or any(str(key).startswith("_") for key in file_info):
+            raise ValueError("上傳素材不能指定伺服器內部欄位")
+        if file_info.get("serverFile"):
+            if file_info.get("dataUrl"):
+                raise ValueError("每個素材只能指定一個來源")
+            bare = resolve_server_file(file_info["serverFile"])
+            prompt_id = str(file_info.get("promptId") or file_info.get("prompt_id") or "")
+            if not user_can_use_uploaded_input(user, bare) and not user_can_access_view_item(user, bare, "", "input", prompt_id):
+                raise PermissionError("無權使用這個伺服器素材；請重新上傳自己的檔案")
+    return files
+
+
+def plan_colab_generation_request(raw_body, submitted_by: dict | None, service_token: bool = False, *, provider_actor=None) -> dict:
+    """Read-only authorization/binding plan for the existing Studio form.
+
+    Return settings and slot names, never asset paths, bytes or ownership
+    receipts. Submission repeats these checks before staging, so the preview is
+    not a transferable authorization. This helper neither probes local model
+    readiness nor calls a compute provider.
+    """
+    from compute_adapters import SUPPORTED_FEATURES
+
+    if not isinstance(raw_body, dict):
+        raise ValueError("request body must be an object")
+    feature_id = str(raw_body.get("featureId") or "").strip()
+    feature = FEATURE_BY_ID.get(feature_id)
+    if feature_id not in SUPPORTED_FEATURES or not feature or feature.get("apiEnabled") is False or not feature.get("builder"):
+        raise ValueError("這項功能尚未提供 PRISM / P-H3 執行方式")
+    if feature.get("operatorOnly") and not is_operator_user(submitted_by):
+        raise PermissionError("這項功能只允許 operator 操作")
+    raw_settings = raw_body.get("settings") or {}
+    if not isinstance(raw_settings, dict):
+        raise ValueError("settings must be an object")
+    settings = strip_client_character_settings(strip_submitted_by(raw_settings))
+    files = validate_client_generation_files(raw_body.get("files"), submitted_by)
+    character_id = str(raw_body.get("characterId") or "").strip()
+    action_id = str(raw_body.get("action") or "").strip()
+    variant_id = str(raw_body.get("variantId") or "").strip()
+    character = character_entry_for_generation(character_id, submitted_by, service_token)
+    context = character_generation_context(character)
+    if character:
+        capability = resolve_character_capability(character, action_id, feature_id, variant_id)
+        capability = require_character_capability_runtime(character, capability, None)
+        settings = apply_character_capability_settings(character, capability, settings)
+        files, _receipt = bind_character_capability_files(character, capability, files, settings)
+    elif feature.get("characterOnly") or action_id or variant_id:
+        raise ValueError("這個請求必須先選擇適用的角色")
+    settings = apply_character_visual_class_hints(settings, context)
+    settings = resolve_generation_presets(feature_id, settings)
+    settings = validate_feature_option_contract(feature, settings)
+    settings = enforce_p0_generation_options(feature_id, settings)
+    settings = validate_voice_generation_contract(feature_id, settings, submitted_by, service_token)
+    files = validate_generation_file_contract(feature, files)
+    # Only the verified class is needed for prompt/style eligibility. Preserve
+    # the complete binding privately in the eventual submission, not preview.
+    settings = strip_client_character_settings(settings)
+    if context:
+        settings["_characterVisualClass"] = normalized_visual_class(context.get("visualClass"))
+    return {"feature_id": feature_id, "settings": settings,
+            "file_slots": [slot for slot, item in files.items() if item]}
 
 
 def validate_generation_file_contract(feature: dict, files) -> dict:
@@ -16706,6 +16858,10 @@ class Handler(BaseHTTPRequestHandler):
             if not self.require_auth():
                 return
             self.api_events()
+        elif parsed.path == "/api/compute/jobs" or parsed.path.startswith("/api/compute/jobs/"):
+            if not self.require_auth():
+                return
+            self.api_compute(parsed.path, False)
         elif parsed.path == "/api/colab" or parsed.path.startswith("/api/colab/"):
             if not self.require_auth():
                 return
@@ -16979,6 +17135,10 @@ class Handler(BaseHTTPRequestHandler):
             if not self.require_auth():
                 return
             self.api_google_drive_import()
+        elif path in ("/api/compute/preview", "/api/compute/jobs") or path.startswith("/api/compute/jobs/"):
+            if not self.require_auth():
+                return
+            self.api_compute(path, True)
         elif path == "/api/generate":
             if not self.require_auth():
                 return
@@ -20031,76 +20191,81 @@ class Handler(BaseHTTPRequestHandler):
             body = self.read_json()
             prompt_id = str(body.get("promptId") or body.get("prompt_id") or "").strip()
             requested_state = str(body.get("state") or "").strip()
-            if not prompt_id or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", prompt_id):
-                self.send_json({"ok": False, "error": "Invalid prompt id"}, 400)
-                return
-            user = self.current_user()
-            if not user_can_access_job(user, prompt_id):
-                self.send_json({"ok": False, "error": "沒有權限"}, 403)
-                return
-            with _LOCAL_JOB_LOCK:
-                local = LOCAL_JOBS.get(prompt_id)
-                if local and local.get("state") in ("pending", "running", "cancel_requested"):
-                    cancel_file = local.get("cancelFile")
-                    safe_worker_job = local.get("jobKind") in {
-                        MINIMAX_H3_WEB_JOB_KIND,
-                        CLIPMODE_PHOTOSHOOT_JOB_KIND,
-                    }
-                    if safe_worker_job:
-                        if not cancel_file:
-                            raise ValueError("安全取消訊號不存在")
-                        if local.get("jobKind") == CLIPMODE_PHOTOSHOOT_JOB_KIND:
-                            _signal_clipmode_photoshoot_cancel(str(cancel_file))
-                            cancel_label = "角色身份寫真正在安全取消"
-                        else:
-                            _signal_minimax_h3_web_cancel(str(cancel_file))
-                            cancel_label = "MiniMax H3 正在安全取消"
-                        local["state"] = "cancel_requested"
-                        local["progress"] = {"pct": 95, "label": cancel_label}
-                        local["updated"] = time.time()
-                        pid = 0
-                    else:
-                        local["state"] = "cancelled"
-                        local["progress"] = {"pct": 100, "label": "正在取消"}
-                        local["updated"] = time.time()
-                        pid = int(local.get("pid") or 0)
-                else:
-                    local = None
-                    cancel_file = None
-                    pid = 0
-            if local:
+            self.send_json(self._cancel_job_result(prompt_id, requested_state))
+        except PermissionError:
+            self.send_json({"ok": False, "error": "沒有權限"}, 403)
+        except ValueError as error:
+            self.send_error_json(error, 400)
+        except Exception as error:
+            self.send_error_json(error, 502)
+
+    def _cancel_job_result(self, prompt_id: str, requested_state: str = "") -> dict:
+        if not prompt_id or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", prompt_id):
+            raise ValueError("Invalid prompt id")
+        user = self.current_user()
+        if not user_can_access_job(user, prompt_id):
+            raise PermissionError("沒有權限")
+        with _LOCAL_JOB_LOCK:
+            local = LOCAL_JOBS.get(prompt_id)
+            if local and local.get("state") in ("pending", "running", "cancel_requested"):
+                cancel_file = local.get("cancelFile")
                 safe_worker_job = local.get("jobKind") in {
                     MINIMAX_H3_WEB_JOB_KIND,
                     CLIPMODE_PHOTOSHOOT_JOB_KIND,
                 }
-                if cancel_file and not safe_worker_job:
-                    try:
-                        Path(cancel_file).touch()
-                    except OSError:
-                        pass
-                if pid:
-                    try:
-                        os.killpg(pid, signal.SIGTERM)
-                    except OSError:
-                        pass
-                action = "cancel_requested" if safe_worker_job else "cancelled"
-                self.send_json({"ok": True, "action": action, "promptId": prompt_id})
-                return
-            queue = request_json("/queue")
-            jobs = queue_job_items(queue)
-            job = next((item for item in jobs if item.get("promptId") == prompt_id), None)
-            state = (job or {}).get("state") or requested_state
-            if state == "pending":
-                request_json("/queue", {"delete": [prompt_id]}, method="POST")
-                self.send_json({"ok": True, "action": "deleted", "promptId": prompt_id})
-                return
-            if state == "running":
-                request_json("/interrupt", {"prompt_id": prompt_id}, method="POST")
-                self.send_json({"ok": True, "action": "interrupted", "promptId": prompt_id})
-                return
-            self.send_json({"ok": True, "action": "not_found", "promptId": prompt_id})
-        except Exception as error:
-            self.send_error_json(error, 502)
+                if safe_worker_job:
+                    if not cancel_file:
+                        raise ValueError("安全取消訊號不存在")
+                    if local.get("jobKind") == CLIPMODE_PHOTOSHOOT_JOB_KIND:
+                        _signal_clipmode_photoshoot_cancel(str(cancel_file))
+                        cancel_label = "角色身份寫真正在安全取消"
+                    else:
+                        _signal_minimax_h3_web_cancel(str(cancel_file))
+                        cancel_label = "MiniMax H3 正在安全取消"
+                    local["state"] = "cancel_requested"
+                    local["progress"] = {"pct": 95, "label": cancel_label}
+                    local["updated"] = time.time()
+                    pid = 0
+                else:
+                    local["state"] = "cancelled"
+                    local["progress"] = {"pct": 100, "label": "正在取消"}
+                    local["updated"] = time.time()
+                    pid = int(local.get("pid") or 0)
+            else:
+                local = None
+                cancel_file = None
+                pid = 0
+        if local:
+            safe_worker_job = local.get("jobKind") in {
+                MINIMAX_H3_WEB_JOB_KIND,
+                CLIPMODE_PHOTOSHOOT_JOB_KIND,
+            }
+            if cancel_file and not safe_worker_job:
+                try:
+                    Path(cancel_file).touch()
+                except OSError:
+                    pass
+            if pid:
+                try:
+                    os.killpg(pid, signal.SIGTERM)
+                except OSError:
+                    pass
+            action = "cancel_requested" if safe_worker_job else "cancelled"
+            return ({"ok": True, "action": action, "promptId": prompt_id})
+            return
+        queue = request_json("/queue")
+        jobs = queue_job_items(queue)
+        job = next((item for item in jobs if item.get("promptId") == prompt_id), None)
+        state = (job or {}).get("state") or requested_state
+        if state == "pending":
+            request_json("/queue", {"delete": [prompt_id]}, method="POST")
+            return ({"ok": True, "action": "deleted", "promptId": prompt_id})
+            return
+        if state == "running":
+            request_json("/interrupt", {"prompt_id": prompt_id}, method="POST")
+            return ({"ok": True, "action": "interrupted", "promptId": prompt_id})
+            return
+        return ({"ok": True, "action": "not_found", "promptId": prompt_id})
 
     def api_status(self) -> None:
         try:
@@ -20122,6 +20287,43 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"ok": True, "comfy": True, "system": system, "models": models})
         except Exception as error:
             self.send_error_json(error, 502)
+
+    def api_compute(self, path: str, mutate: bool) -> None:
+        from compute_web import ComputeWeb
+        from compute_routing import ComputeRoutingError
+        try:
+            web = ComputeWeb(self, sys.modules[__name__])
+            body = self.read_provider_json(MAX_UPLOAD_BODY) if mutate else {}
+            parts = path.split("/")[3:]
+            if mutate and path == "/api/compute/preview":
+                result = web.preview(body)
+            elif mutate and path == "/api/compute/jobs":
+                result = web.router.submit(web.owner, body.get("request_id"), body.get("request"),
+                                           body.get("placement", "auto"), body.get("limits"))
+            elif not mutate and path == "/api/compute/jobs":
+                jobs = web.router.list_jobs(web.owner, limit=50)
+                result = {"jobs": [web.router.status(web.owner, job["request_id"], refresh=index < 10)
+                                   for index, job in enumerate(jobs)]}
+            elif not mutate and len(parts) == 2 and parts[0] == "jobs":
+                result = web.router.status(web.owner, parts[1], refresh=True)
+            elif mutate and len(parts) == 3 and parts[0] == "jobs" and parts[2] == "cancel":
+                result = web.router.cancel(web.owner, parts[1])
+            else:
+                self.send_json({"ok": False, "error": {"code": "compute_request_not_found", "message": "找不到這項運算操作"}}, 404)
+                return
+            self.send_json({"ok": True, **result})
+        except ComputeRoutingError as error:
+            code = "compute_request_not_found" if error.code == "not_found" else error.code
+            payload = {"ok": False, "error": {"code": code, "message": str(error)}}
+            # Router errors here occur before dispatch. An identity conflict can
+            # refer to an existing task, so it must retain the original request.
+            if mutate and path == "/api/compute/jobs" and code != "request_conflict":
+                payload["submission_state"] = "not_submitted"
+            self.send_json(payload, error.status)
+        except (RequestBodyError, ValueError):
+            self.send_json({"ok": False, "error": {"code": "compute_request_invalid", "message": "運算請求格式不正確"}}, 400)
+        except Exception:
+            self.send_json({"ok": False, "error": {"code": "compute_unavailable", "message": "運算狀態暫時無法確認；請查詢原任務"}}, 503)
 
     def api_colab(self, path: str, mutate: bool) -> None:
         owner = str((self.current_user() or {}).get("email") or "")
@@ -20636,6 +20838,7 @@ class Handler(BaseHTTPRequestHandler):
             body = self.read_json(MAX_TEXT_BODY)
             slot = re.sub(r"[^a-z0-9_-]+", "", str(body.get("slot") or "").lower())[:32] or "photo"
             result = import_user_photo_to_input(character, parts[4], slot)
+            record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result})
         except KeyError as error:
             self.send_error_json(error, 404)
@@ -21462,162 +21665,180 @@ class Handler(BaseHTTPRequestHandler):
             file_id = str(body.get("fileId") or "")
             slot = re.sub(r"[^a-z0-9_-]+", "", str(body.get("slot") or "").lower())[:32] or "video"
             result = import_google_drive_file(file_id, slot)
+            record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result})
         except Exception as error:
             self.send_error_json(error, 400)
 
     def api_generate(self) -> None:
         try:
-            raw_body = self.read_json(MAX_UPLOAD_BODY)
-            if not isinstance(raw_body, dict):
-                raise ValueError("request body must be an object")
-            requested_character_id = str(raw_body.get("characterId") or "").strip()
-            body = strip_submitted_by(raw_body)
-            if requested_character_id:
-                body["characterId"] = requested_character_id
-            submitted_by = self.current_user()
-            feature_id = str(body.get("featureId") or "").strip()
-            feature = FEATURE_BY_ID.get(feature_id)
-            if feature is None:
-                raise ValueError("Unknown feature")
-            if feature.get("apiEnabled") is False:
-                raise ValueError("這個工具尚未開放")
-            if feature.get("operatorOnly") and not is_operator_user(submitted_by):
-                raise PermissionError("這項功能只允許 operator 操作")
-            builder = BUILDERS.get(feature.get("builder")) if feature.get("builder") else None
-            if builder is None:
-                raise ValueError("此功能尚未開放生成")
+            result = self._generate_result(self.read_json(MAX_UPLOAD_BODY))
+            self.send_json(result)
+        except PermissionError as error:
+            self.send_error_json(error, 403)
+        except Exception as error:
+            self.send_error_json(error, 400)
 
-            raw_settings = body.get("settings") or {}
-            if not isinstance(raw_settings, dict):
-                raise ValueError("settings must be an object")
-            settings = strip_client_character_settings(raw_settings)
-            character_id = requested_character_id
-            action_id = str(body.get("action") or "").strip()
-            variant_id = str(body.get("variantId") or "").strip()
-            submitted_files = body.get("files")
-            reference_receipt = None
-            character_entry = None
-            character_context = None
-            provider_character_request = (
-                feature_id == CLIPMODE_CHARACTER_PHOTOSHOOT_FEATURE_ID
+    def _generate_result(self, raw_body, *, compute_lane="local", compute_limits=None, request_id=None):
+        if not isinstance(raw_body, dict):
+            raise ValueError("request body must be an object")
+        requested_character_id = str(raw_body.get("characterId") or "").strip()
+        body = strip_submitted_by(raw_body)
+        if requested_character_id:
+            body["characterId"] = requested_character_id
+        submitted_by = self.current_user()
+        feature_id = str(body.get("featureId") or "").strip()
+        feature = FEATURE_BY_ID.get(feature_id)
+        if feature is None:
+            raise ValueError("Unknown feature")
+        if feature.get("apiEnabled") is False:
+            raise ValueError("這個工具尚未開放")
+        if feature.get("operatorOnly") and not is_operator_user(submitted_by):
+            raise PermissionError("這項功能只允許 operator 操作")
+        builder = BUILDERS.get(feature.get("builder")) if feature.get("builder") else None
+        if builder is None:
+            raise ValueError("此功能尚未開放生成")
+
+        raw_settings = body.get("settings") or {}
+        if not isinstance(raw_settings, dict):
+            raise ValueError("settings must be an object")
+        settings = strip_client_character_settings(raw_settings)
+        character_id = requested_character_id
+        action_id = str(body.get("action") or "").strip()
+        variant_id = str(body.get("variantId") or "").strip()
+        submitted_files = validate_client_generation_files(body.get("files"), submitted_by)
+        reference_receipt = None
+        character_entry = None
+        character_context = None
+        provider_character_request = (
+            feature_id == CLIPMODE_CHARACTER_PHOTOSHOOT_FEATURE_ID
+        )
+        if provider_character_request:
+            if action_id != CLIPMODE_CHARACTER_PHOTOSHOOT_ACTION_ID:
+                raise ValueError("角色身份寫真必須使用 action=photoshoot")
+            if variant_id != CLIPMODE_CHARACTER_PHOTOSHOOT_VARIANT_ID:
+                raise ValueError(
+                    "角色身份寫真必須使用 "
+                    f"variantId={CLIPMODE_CHARACTER_PHOTOSHOOT_VARIANT_ID}"
+                )
+            unknown_settings = sorted(
+                str(key) for key in settings
+                if str(key) not in {
+                    "prompt", "negative_prompt", "aspect_ratio", "seed",
+                }
             )
-            if provider_character_request:
-                if action_id != CLIPMODE_CHARACTER_PHOTOSHOOT_ACTION_ID:
-                    raise ValueError("角色身份寫真必須使用 action=photoshoot")
-                if variant_id != CLIPMODE_CHARACTER_PHOTOSHOOT_VARIANT_ID:
-                    raise ValueError(
-                        "角色身份寫真必須使用 "
-                        f"variantId={CLIPMODE_CHARACTER_PHOTOSHOOT_VARIANT_ID}"
-                    )
-                unknown_settings = sorted(
-                    str(key) for key in settings
-                    if str(key) not in {
-                        "prompt", "negative_prompt", "aspect_ratio", "seed",
-                    }
+            if unknown_settings:
+                raise ValueError(
+                    "角色身份寫真不支援設定：" + ", ".join(unknown_settings)
                 )
-                if unknown_settings:
-                    raise ValueError(
-                        "角色身份寫真不支援設定：" + ", ".join(unknown_settings)
-                    )
-                runtime, actor = self._provider_runtime_actor()
-                character_context, private_settings, reference_receipt = (
-                    resolve_owned_provider_character_photoshoot(
-                        runtime, actor, character_id,
-                    )
+            runtime, actor = self._provider_runtime_actor()
+            character_context, private_settings, reference_receipt = (
+                resolve_owned_provider_character_photoshoot(
+                    runtime, actor, character_id,
                 )
-                settings.update(private_settings)
-            else:
-                character_entry = character_entry_for_generation(
-                    character_id,
-                    submitted_by,
-                    self.is_orchestrator_service_authenticated(),
-                )
-                character_context = character_generation_context(character_entry)
-            if character_entry:
-                capability = resolve_character_capability(
-                    character_entry,
-                    action_id,
-                    feature_id,
-                    variant_id,
-                )
-                runtime = breezy_persona_runtime() if capability.get("variantId") == "voice-speak.persona.v1" else None
-                capability = require_character_capability_runtime(character_entry, capability, runtime)
-                settings = apply_character_capability_settings(character_entry, capability, settings)
-                submitted_files, reference_receipt = bind_character_capability_files(
-                    character_entry,
-                    capability,
-                    submitted_files,
-                    settings,
-                )
-            elif not provider_character_request:
-                # Generic Studio requests remain supported, but they cannot
-                # attach forged role attribution or action/variant receipts.
-                if feature.get("characterOnly"):
-                    raise ValueError("這個工具必須先選擇適用的角色")
-                if action_id or variant_id:
-                    raise ValueError("未指定角色時不能提供 action 或 variantId")
-                if feature_id == "voice-speak":
-                    source = str(settings.get("voiceSource") or "persona").strip()
-                    if source != "library":
-                        raise ValueError("角色聲音必須先選擇角色；通用 Studio 只提供聲音庫克隆")
-                if feature_id == "voxcpm-tts":
-                    engine = str(settings.get("voiceEngine") or "voxcpm").strip()
-                    mode = str(settings.get("mode") or "lora").strip()
-                    if engine not in {"breezy", "voxcpm"}:
-                        raise ValueError(f"不支援的語音引擎：{engine}")
-                    if mode not in {"design", "reference", "ultimate", "lora"}:
-                        raise ValueError(f"不支援的 VoxCPM 模式：{mode}")
-                    if engine == "breezy":
-                        raise ValueError("Breezy 角色聲音必須先選擇角色")
-                    if mode == "lora":
-                        profile = str(settings.get("voiceProfile") or "custom_english").strip()
-                        allowed_profiles = {str(item.get("value") or "") for item in VOXCPM_PROFILES}
-                        if profile not in allowed_profiles:
-                            raise ValueError(f"不支援的 VoxCPM LoRA Profile：{profile or '空白'}")
-                    if mode == "lora" and not is_operator_user(submitted_by):
-                        raise PermissionError("Custom English 聲音只允許 operator 操作")
-                action_id = ""
-                variant_id = ""
-
-            settings = apply_character_visual_class_hints(settings, character_context)
-            settings = resolve_generation_presets(feature_id, settings)
-            settings = validate_feature_option_contract(feature, settings)
-            settings = enforce_p0_generation_options(feature_id, settings)
-            settings = validate_voice_generation_contract(
-                feature_id,
-                settings,
+            )
+            settings.update(private_settings)
+        else:
+            character_entry = character_entry_for_generation(
+                character_id,
                 submitted_by,
                 self.is_orchestrator_service_authenticated(),
             )
-            submitted_files = validate_generation_file_contract(feature, submitted_files)
-            voice_id = str(settings.get("voiceId") or "").strip()
-            submitted_voice = bool(submitted_files.get("voice"))
-            if voice_id and submitted_voice:
-                raise ValueError("聲音庫與上傳音檔不能同時使用，請只選擇一種聲音來源")
-            if feature_id == "lipsync" and not (voice_id or submitted_voice):
-                raise ValueError("請從聲音庫挑選或上傳要對嘴的語音")
-            resolved_voice_reference = ""
-            if voice_id:
-                resolved_voice_reference = resolve_voice_reference(
-                    voice_id,
-                    submitted_by,
-                    self.is_orchestrator_service_authenticated(),
-                )
-            if character_context:
-                settings["_characterId"] = character_context["id"]
-                settings["_characterName"] = character_context["name"]
-                settings["_characterActionId"] = action_id
-                settings["_characterVariantId"] = variant_id
-                settings["_characterVisualClass"] = normalized_visual_class(
-                    character_context.get("visualClass")
-                )
-                if reference_receipt:
-                    settings["_characterReference"] = reference_receipt
-                    character_context["reference"] = reference_receipt
+            character_context = character_generation_context(character_entry)
+        if character_entry:
+            capability = resolve_character_capability(
+                character_entry,
+                action_id,
+                feature_id,
+                variant_id,
+            )
+            runtime = breezy_persona_runtime() if capability.get("variantId") == "voice-speak.persona.v1" else None
+            capability = require_character_capability_runtime(character_entry, capability, runtime)
+            settings = apply_character_capability_settings(character_entry, capability, settings)
+            submitted_files, reference_receipt = bind_character_capability_files(
+                character_entry,
+                capability,
+                submitted_files,
+                settings,
+            )
+        elif not provider_character_request:
+            # Generic Studio requests remain supported, but they cannot
+            # attach forged role attribution or action/variant receipts.
+            if feature.get("characterOnly"):
+                raise ValueError("這個工具必須先選擇適用的角色")
+            if action_id or variant_id:
+                raise ValueError("未指定角色時不能提供 action 或 variantId")
+            if feature_id == "voice-speak":
+                source = str(settings.get("voiceSource") or "persona").strip()
+                if source != "library":
+                    raise ValueError("角色聲音必須先選擇角色；通用 Studio 只提供聲音庫克隆")
+            if feature_id == "voxcpm-tts":
+                engine = str(settings.get("voiceEngine") or "voxcpm").strip()
+                mode = str(settings.get("mode") or "lora").strip()
+                if engine not in {"breezy", "voxcpm"}:
+                    raise ValueError(f"不支援的語音引擎：{engine}")
+                if mode not in {"design", "reference", "ultimate", "lora"}:
+                    raise ValueError(f"不支援的 VoxCPM 模式：{mode}")
+                if engine == "breezy":
+                    raise ValueError("Breezy 角色聲音必須先選擇角色")
+                if mode == "lora":
+                    profile = str(settings.get("voiceProfile") or "custom_english").strip()
+                    allowed_profiles = {str(item.get("value") or "") for item in VOXCPM_PROFILES}
+                    if profile not in allowed_profiles:
+                        raise ValueError(f"不支援的 VoxCPM LoRA Profile：{profile or '空白'}")
+                if mode == "lora" and not is_operator_user(submitted_by):
+                    raise PermissionError("Custom English 聲音只允許 operator 操作")
+            action_id = ""
+            variant_id = ""
 
-            # All capability and option checks happen before files are copied
-            # into ComfyUI input, so rejected requests leave no upload debris.
+        settings = apply_character_visual_class_hints(settings, character_context)
+        settings = resolve_generation_presets(feature_id, settings)
+        settings = validate_feature_option_contract(feature, settings)
+        settings = enforce_p0_generation_options(feature_id, settings)
+        settings = validate_voice_generation_contract(
+            feature_id,
+            settings,
+            submitted_by,
+            self.is_orchestrator_service_authenticated(),
+        )
+        submitted_files = validate_generation_file_contract(feature, submitted_files)
+        voice_id = str(settings.get("voiceId") or "").strip()
+        submitted_voice = bool(submitted_files.get("voice"))
+        if voice_id and submitted_voice:
+            raise ValueError("聲音庫與上傳音檔不能同時使用，請只選擇一種聲音來源")
+        if feature_id == "lipsync" and not (voice_id or submitted_voice):
+            raise ValueError("請從聲音庫挑選或上傳要對嘴的語音")
+        resolved_voice_reference = ""
+        if voice_id:
+            resolved_voice_reference = resolve_voice_reference(
+                voice_id,
+                submitted_by,
+                self.is_orchestrator_service_authenticated(),
+            )
+        if character_context:
+            settings["_characterId"] = character_context["id"]
+            settings["_characterName"] = character_context["name"]
+            settings["_characterActionId"] = action_id
+            settings["_characterVariantId"] = variant_id
+            settings["_characterVisualClass"] = normalized_visual_class(
+                character_context.get("visualClass")
+            )
+            if reference_receipt:
+                settings["_characterReference"] = reference_receipt
+                character_context["reference"] = reference_receipt
+
+        if compute_lane == "colab":
+            from compute_adapters import AdapterError, normalise_intent, colab_compatibility
+            normalized, _warnings = normalise_intent(feature_id, settings)
+            compatibility = colab_compatibility(
+                feature_id, normalized, [slot for slot, item in submitted_files.items() if item],
+            )
+            if not compatibility["supported"]:
+                raise AdapterError(compatibility["code"], compatibility["reason"])
+
+        # All capability and option checks happen before files are copied
+        # into ComfyUI input, so rejected requests leave no upload debris.
+        if compute_lane == "local":
             status = next((item for item in feature_status() if item["id"] == feature_id), None)
             status_ready = bool(status and status.get("ready"))
             status_missing_nodes = list((status or {}).get("missingNodes") or [])
@@ -21646,127 +21867,157 @@ class Handler(BaseHTTPRequestHandler):
                     problems.append("缺少模型：" + ", ".join(status["missingModels"]))
                 raise ValueError("；".join(problems) or "尚未就緒")
 
-            if feature_id == CLIPMODE_CHARACTER_PHOTOSHOOT_FEATURE_ID:
-                settings = prepare_clipmode_photoshoot_effective_prompts(settings)
+        if feature_id == CLIPMODE_CHARACTER_PHOTOSHOOT_FEATURE_ID:
+            settings = prepare_clipmode_photoshoot_effective_prompts(settings)
 
-            uploads = {}
-            for slot, file_info in submitted_files.items():
-                if not file_info:
-                    continue
-                if isinstance(file_info, dict) and file_info.get("_characterAssetPath"):
-                    uploads[slot] = stage_character_asset_for_comfy(file_info, character_id)
-                elif isinstance(file_info, dict) and file_info.get("serverFile"):
-                    uploads[slot] = resolve_server_file(file_info["serverFile"])
-                else:
-                    uploads[slot] = save_uploaded_file(file_info, slot)
+        uploads = {}
+        for slot, file_info in submitted_files.items():
+            if not file_info:
+                continue
+            if isinstance(file_info, dict) and file_info.get("_characterAssetPath"):
+                uploads[slot] = stage_character_asset_for_comfy(file_info, character_id)
+            elif isinstance(file_info, dict) and file_info.get("serverFile"):
+                uploads[slot] = resolve_server_file(file_info["serverFile"])
+            elif compute_lane == "colab":
+                uploads[slot] = stage_colab_uploaded_file(file_info, slot)
+            else:
+                uploads[slot] = save_uploaded_file(file_info, slot)
 
-            if resolved_voice_reference:
-                uploads["voice"] = resolved_voice_reference
-            if feature_id == "voice-speak":
-                source = str(settings.get("voiceSource") or "persona").strip()
-                if source == "library":
-                    if not voice_id:
-                        raise ValueError("請從聲音庫選擇一段參考音訊")
-                    clone_engine = str(settings.get("cloneEngine") or "taiwan").strip()
-                    if clone_engine not in ("taiwan", "f5"):
-                        raise ValueError(f"不支援的聲音庫克隆引擎：{clone_engine}")
-                    clone_settings = dict(settings)
-                    clone_settings["engine"] = clone_engine
-                    clone_settings["speech"] = settings.get("text") or ""
-                    if not str(clone_settings.get("prefix") or "").strip():
-                        if character_context:
-                            clone_settings["prefix"] = output_prefix(clone_settings, "voice-speak")
-                        else:
-                            engine_tag = "BreezyClone" if clone_engine == "taiwan" else "F5Clone"
-                            clone_settings["prefix"] = f"Castle/voice-speak_{engine_tag}_{safe_path_segment(voice_id, 'voice')}"
-                    prompt = voice_clone_prompt(clone_settings, uploads)
-                    payload = {
-                        "client_id": CLIENT_ID,
-                        "prompt": prompt,
-                        "extra_data": workflow_extra_data("castle-voice-speak-library-web", character_context, submitted_by, action_id, variant_id),
-                    }
-                    result = request_json("/prompt", payload)
-                    record_job_attribution(result.get("prompt_id") or result.get("promptId"), submitted_by, character_id, "voice-speak", action_id, variant_id)
-                    self.send_json({"ok": True, **result, **({"variantId": variant_id} if variant_id else {})})
-                    return
+        if resolved_voice_reference:
+            uploads["voice"] = resolved_voice_reference
+        if compute_lane == "colab":
+            from compute_adapters import normalise_intent, build_colab_request
+            from compute_routing import ComputeRejected
+            normalized, _warnings = normalise_intent(feature_id, settings)
+            resolved = {slot: (COMFY_INPUT / filename).resolve() for slot, filename in uploads.items()}
+            limits = compute_limits or {}
+            colab_body = build_colab_request(feature_id, normalized, resolved,
+                request_id=request_id, account_id=limits.get("account_id"),
+                gpu=limits.get("gpu", "L4"), max_units=limits.get("max_units", 20),
+                max_minutes=limits.get("max_minutes", 60))
+            self._compute_dispatch_started = True
+            service = get_colab_service()
+            owner = str((submitted_by or {}).get("email") or "")
+            try:
+                return service.submit(owner, colab_body)
+            except colab_service.ColabError:
+                try:
+                    existing = service.job(owner, request_id)
+                except colab_service.ColabError:
+                    raise ComputeRejected("Colab 執行前檢查未通過，尚未申請 GPU", code="colab_admission_rejected") from None
+                return service.public_job(existing)
+        if compute_lane != "local":
+            raise ValueError("不支援的執行路線")
+
+        if feature_id == "voice-speak":
+            source = str(settings.get("voiceSource") or "persona").strip()
+            if source == "library":
+                if not voice_id:
+                    raise ValueError("請從聲音庫選擇一段參考音訊")
+                clone_engine = str(settings.get("cloneEngine") or "taiwan").strip()
+                if clone_engine not in ("taiwan", "f5"):
+                    raise ValueError(f"不支援的聲音庫克隆引擎：{clone_engine}")
+                clone_settings = dict(settings)
+                clone_settings["engine"] = clone_engine
+                clone_settings["speech"] = settings.get("text") or ""
+                if not str(clone_settings.get("prefix") or "").strip():
+                    if character_context:
+                        clone_settings["prefix"] = output_prefix(clone_settings, "voice-speak")
+                    else:
+                        engine_tag = "BreezyClone" if clone_engine == "taiwan" else "F5Clone"
+                        clone_settings["prefix"] = f"Castle/voice-speak_{engine_tag}_{safe_path_segment(voice_id, 'voice')}"
+                prompt = voice_clone_prompt(clone_settings, uploads)
+                payload = {
+                    "client_id": CLIENT_ID,
+                    "prompt": prompt,
+                    "extra_data": workflow_extra_data("castle-voice-speak-library-web", character_context, submitted_by, action_id, variant_id),
+                }
+                self._compute_dispatch_started = True
+                result = request_json("/prompt", payload)
+                record_job_attribution(result.get("prompt_id") or result.get("promptId"), submitted_by, character_id, "voice-speak", action_id, variant_id)
+                return ({"ok": True, **result, **({"variantId": variant_id} if variant_id else {})})
+                return
+            if bool(settings.get("qualityGate")):
+                self._compute_dispatch_started = True
+                result = start_guarded_voice_job(settings)
+                record_job_attribution(result.get("prompt_id") or result.get("promptId") or result.get("run_id"), submitted_by, character_id, "voice-speak", action_id, variant_id)
+                return ({**result, **({"variantId": variant_id} if variant_id else {})})
+                return
+        if feature_id == "voxcpm-tts":
+            engine = str(settings.get("voiceEngine") or "voxcpm").strip()
+            if engine not in {"breezy", "voxcpm"}:
+                raise ValueError(f"不支援的語音引擎：{engine}")
+            if engine == "breezy":
                 if bool(settings.get("qualityGate")):
+                    self._compute_dispatch_started = True
                     result = start_guarded_voice_job(settings)
-                    record_job_attribution(result.get("prompt_id") or result.get("promptId") or result.get("run_id"), submitted_by, character_id, "voice-speak", action_id, variant_id)
-                    self.send_json({**result, **({"variantId": variant_id} if variant_id else {})})
+                    record_job_attribution(result.get("prompt_id") or result.get("promptId") or result.get("run_id"), submitted_by, character_id, "voxcpm-tts", action_id, variant_id)
+                    return (result)
                     return
-            if feature_id == "voxcpm-tts":
-                engine = str(settings.get("voiceEngine") or "voxcpm").strip()
-                if engine not in {"breezy", "voxcpm"}:
-                    raise ValueError(f"不支援的語音引擎：{engine}")
-                if engine == "breezy":
-                    if bool(settings.get("qualityGate")):
-                        result = start_guarded_voice_job(settings)
-                        record_job_attribution(result.get("prompt_id") or result.get("promptId") or result.get("run_id"), submitted_by, character_id, "voxcpm-tts", action_id, variant_id)
-                        self.send_json(result)
-                        return
-                    prompt = voice_speak_prompt(settings, uploads)
-                    payload = {
-                        "client_id": CLIENT_ID,
-                        "prompt": prompt,
-                        "extra_data": workflow_extra_data("castle-voice-speak-web", character_context, submitted_by, action_id, variant_id),
-                    }
-                    result = request_json("/prompt", payload)
-                    record_job_attribution(result.get("prompt_id") or result.get("promptId"), submitted_by, character_id, "voxcpm-tts", action_id, variant_id)
-                    self.send_json({"ok": True, **result})
-                    return
-                result = start_voxcpm_voice_job(settings, uploads)
-                record_job_attribution(result.get("prompt_id") or result.get("promptId") or result.get("run_id"), submitted_by, character_id, "voxcpm-tts", action_id, variant_id)
-                self.send_json(result)
+                prompt = voice_speak_prompt(settings, uploads)
+                payload = {
+                    "client_id": CLIENT_ID,
+                    "prompt": prompt,
+                    "extra_data": workflow_extra_data("castle-voice-speak-web", character_context, submitted_by, action_id, variant_id),
+                }
+                self._compute_dispatch_started = True
+                result = request_json("/prompt", payload)
+                record_job_attribution(result.get("prompt_id") or result.get("promptId"), submitted_by, character_id, "voxcpm-tts", action_id, variant_id)
+                return ({"ok": True, **result})
                 return
-            prompt = builder(settings, uploads)
-            if feature_id == CLIPMODE_CHARACTER_PHOTOSHOOT_FEATURE_ID:
-                if not isinstance(character_context, dict):
-                    raise ValueError("角色身份寫真缺少角色綁定")
-                result = start_clipmode_character_photoshoot_job(
-                    prompt,
-                    settings,
-                    submitted_by,
-                    character_context,
-                    action_id,
-                    variant_id,
-                )
-                self.send_json({**result, "variantId": variant_id})
-                return
-            if feature_id in H3_FEATURE_CONTRACTS:
-                result = start_minimax_h3_web_job(
-                    prompt,
-                    feature_id,
-                    settings,
-                    submitted_by,
-                    character_id,
-                    action_id,
-                    variant_id,
-                )
-                self.send_json({
-                    **result,
-                    **({"variantId": variant_id} if variant_id else {}),
-                })
-                return
-            payload = {
-                "client_id": CLIENT_ID,
-                "prompt": prompt,
-                "extra_data": workflow_extra_data(f"castle-{feature_id}-web", character_context, submitted_by, action_id, variant_id),
-            }
-            result = request_json("/prompt", payload)
-            record_job_attribution(
-                result.get("prompt_id") or result.get("promptId"),
+            self._compute_dispatch_started = True
+            result = start_voxcpm_voice_job(settings, uploads)
+            record_job_attribution(result.get("prompt_id") or result.get("promptId") or result.get("run_id"), submitted_by, character_id, "voxcpm-tts", action_id, variant_id)
+            return (result)
+            return
+        prompt = builder(settings, uploads)
+        if feature_id == CLIPMODE_CHARACTER_PHOTOSHOOT_FEATURE_ID:
+            if not isinstance(character_context, dict):
+                raise ValueError("角色身份寫真缺少角色綁定")
+            self._compute_dispatch_started = True
+            result = start_clipmode_character_photoshoot_job(
+                prompt,
+                settings,
                 submitted_by,
-                character_id,
-                feature_id,
+                character_context,
                 action_id,
                 variant_id,
-                character_context=character_context,
             )
-            self.send_json({"ok": True, **result, **({"variantId": variant_id} if variant_id else {})})
-        except PermissionError as error:
-            self.send_error_json(error, 403)
-        except Exception as error:
-            self.send_error_json(error, 400)
+            return ({**result, "variantId": variant_id})
+            return
+        if feature_id in H3_FEATURE_CONTRACTS:
+            self._compute_dispatch_started = True
+            result = start_minimax_h3_web_job(
+                prompt,
+                feature_id,
+                settings,
+                submitted_by,
+                character_id,
+                action_id,
+                variant_id,
+            )
+            return ({
+                **result,
+                **({"variantId": variant_id} if variant_id else {}),
+            })
+            return
+        payload = {
+            "client_id": CLIENT_ID,
+            "prompt": prompt,
+            "extra_data": workflow_extra_data(f"castle-{feature_id}-web", character_context, submitted_by, action_id, variant_id),
+        }
+        self._compute_dispatch_started = True
+        result = request_json("/prompt", payload)
+        record_job_attribution(
+            result.get("prompt_id") or result.get("promptId"),
+            submitted_by,
+            character_id,
+            feature_id,
+            action_id,
+            variant_id,
+            character_context=character_context,
+        )
+        return ({"ok": True, **result, **({"variantId": variant_id} if variant_id else {})})
 
     def api_post_generate(self) -> None:
         try:
@@ -21859,6 +22110,7 @@ class Handler(BaseHTTPRequestHandler):
             url = str(body.get("url") or "").strip()
             slot = re.sub(r"[^a-z0-9_-]+", "", str(body.get("slot") or "").lower())[:32] or "video"
             result = fetch_video_url(url, slot)
+            record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result})
         except Exception as error:
             self.send_error_json(error, 400)
@@ -21869,6 +22121,7 @@ class Handler(BaseHTTPRequestHandler):
             url = str(body.get("url") or "").strip()
             slot = re.sub(r"[^a-z0-9_-]+", "", str(body.get("slot") or "").lower())[:32] or "video"
             result = fetch_google_drive_video(url, slot)
+            record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result})
         except Exception as error:
             self.send_error_json(error, 400)
@@ -21892,6 +22145,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not raw:
                     raise RequestBodyError("Upload body is empty")
                 filename = save_uploaded_bytes(raw, original_name, content_type, slot)
+            record_input_upload_owner(filename, self.current_user())
             self.send_json({"ok": True, "filename": filename, "name": original_name or filename})
         except Exception as error:
             self.send_error_json(error, 400)
@@ -21923,6 +22177,7 @@ class Handler(BaseHTTPRequestHandler):
             video_id = str(body.get("id") or "")
             slot = re.sub(r"[^a-z0-9_-]+", "", str(body.get("slot") or "").lower())[:32] or "video"
             result = import_crawl_video(video_id, slot)
+            record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result})
         except Exception as error:
             self.send_error_json(error, 400)
@@ -21995,6 +22250,7 @@ class Handler(BaseHTTPRequestHandler):
                     }, 409)
                     return
                 next_action = refreshed_action
+            record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result, **({"nextAction": next_action} if next_action else {})})
         except Exception as error:
             self.send_error_json(error, 400)
@@ -22255,6 +22511,7 @@ class Handler(BaseHTTPRequestHandler):
                 user=self.current_user(),
                 enforce_access=True,
             )
+            record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result})
         except DanceLibraryBusy as error:
             self.send_json({"ok": False, "error": str(error), "retryable": True}, 503)
@@ -22347,6 +22604,7 @@ class Handler(BaseHTTPRequestHandler):
                 user=self.current_user(),
                 enforce_access=True,
             )
+            record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result})
         except DanceLibraryBusy as error:
             self.send_json({"ok": False, "error": str(error), "retryable": True}, 503)

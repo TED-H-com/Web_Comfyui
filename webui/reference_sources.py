@@ -123,6 +123,10 @@ def listing(params):
     q=str(params.get('q') or '').casefold()[:160]
     source=str(params.get('source') or '')
     category=str(params.get('category') or '')
+    category_filter=str(params.get('categories') or '')
+    categories_filter={value for value in category_filter.split(',') if value}
+    if len(category_filter)>1024 or len(categories_filter)>32:
+        raise ValueError('參考分類篩選過多')
     visual_style=str(params.get('visualStyle') or '')
     if visual_style not in ('', 'anime', 'realistic'):
         raise ValueError('不支援的參考畫風')
@@ -131,6 +135,7 @@ def listing(params):
     categories=sorted({(i['category'],i['categoryLabel']) for i in pool})
     sources=sorted({i['source'] for i in pool})
     rows=[i for i in pool if (not source or i['source']==source) and (not category or i['category']==category)
+          and (not categories_filter or i['category'] in categories_filter)
           and (not q or all(t in (' '.join((i['title'],i['englishTitle'],i['code'],i['keywords'],*i['tags']))).casefold() for t in q.split()))]
     return {'ok':True,'items':rows[(page-1)*24:page*24],'total':len(rows),'page':page,'pageSize':24,
             'randomItem':secrets.choice(rows) if rows and str(params.get('random') or '')=='1' else None,

@@ -1189,6 +1189,7 @@ async function logout() {
 
 function resetSessionUi(options = {}) {
   sessionEpoch += 1;
+  window.ComputePlacement?.reset();
   localHistoryOpenRevision += 1;
   pendingProviderIntent = null;
   pendingProviderAutoStart = false;
@@ -4653,7 +4654,8 @@ function renderWorkspaceHeader(character) {
 function characterActionAvailability(character, actionId) {
   const action = enabledCharacterActions(character).find((item) => item.id === actionId) || null;
   const feature = action ? actionFeature(action, character) : null;
-  const enabled = Boolean(action && feature && interactiveReady(feature));
+  const canChooseCompute = window.ComputePlacement && !window.WebComfyDocs && feature?.runnable && (!feature.operatorOnly || isOperator());
+  const enabled = Boolean(action && feature && (interactiveReady(feature) || canChooseCompute));
   return { action, enabled, reason: enabled ? "" : featureUnavailableReason(feature) };
 }
 
@@ -6026,6 +6028,10 @@ function buildMinimalSettings(actionId, feature, state, advanced) {
     settings.quality = "standard";
   } else if (actionId === "photoshoot") {
     settings.positive = [settings.positive, state.prompt].filter(Boolean).join(", ");
+    if (feature.id === "character-photoshoot") {
+      settings.instruction = settings.positive;
+      delete settings.positive;
+    }
   }
   if (actionId === "group-photo") settings.positive = state.vibe || settings.positive || "";
   if (actionId === "multi-angle-selfie") settings.positive = [state.expression ? `${state.expression} expression` : "", settings.positive || ""].filter(Boolean).join(", ");
@@ -6070,7 +6076,7 @@ function collectAdvancedSettings(feature) {
   return settings;
 }
 
-async function collectMinimalFiles(feature, state) {
+async function collectMinimalFiles(feature, state, rawInputs = false) {
   const session = captureSessionContext();
   const files = {};
   for (const up of feature.uploads || []) {
@@ -6086,6 +6092,17 @@ async function collectMinimalFiles(feature, state) {
     const hasUserPhoto = Boolean(state.userPhotoPicks && state.userPhotoPicks[up.id]);
     if (!slotHasFile(up.id, state) && !hasUserPhoto) {
       if (up.required) throw new Error(`請提供「${up.label}」`);
+      continue;
+    }
+    const selectedFile = fileInputs[up.id]?.files?.[0];
+    if (rawInputs && selectedFile) {
+      files[up.id] = await fileToData(selectedFile);
+      assertSessionContext(session);
+      continue;
+    }
+    if (rawInputs && state.defaultFiles?.[up.id] && !serverFiles[up.id]) {
+      files[up.id] = await fileToData(await fileFromDefaultUrl(state.defaultFiles[up.id], `${up.id}.png`));
+      assertSessionContext(session);
       continue;
     }
     const resolved = await ensureSlotServerFile(feature, state, up.id);
@@ -6255,11 +6272,11 @@ function updateRequiredDropzones(form, actionId, state, feature) {
   }
 }
 
-function reasonForAction(actionId, state, feature) {
+function reasonForAction(actionId, state, feature, ignoreRuntime = false) {
   if (!navigator.onLine) return "目前離線，請重新連線後再生成";
-  if (!feature || !interactiveReady(feature)) return featureUnavailableReason(feature);
+  if (!feature || (!ignoreRuntime && !interactiveReady(feature))) return featureUnavailableReason(feature);
   const needsWardrobe = (
-    (actionId === "photoshoot" && (state.serverBoundUploads || []).includes("image"))
+    (actionId === "photoshoot" && feature.id !== "character-photoshoot" && (state.serverBoundUploads || []).includes("image"))
     || (actionId === "image-video" && (state.serverBoundUploads || []).includes("image"))
     || (actionId === "dance" && (state.serverBoundUploads || []).includes("reference"))
   );
@@ -6269,6 +6286,7 @@ function reasonForAction(actionId, state, feature) {
   if (actionId === "photoshoot" && (state.serverBoundUploads || []).includes("scene") && !String(state.sceneTheme || "").trim()) {
     return "請先選擇動漫場景";
   }
+  if (actionId === "photoshoot" && feature.id === "character-photoshoot" && !String(state.prompt || "").trim()) return "請描述想拍攝的場景與動作";
   if (actionId === "image-video" && !String(state.motionPreset || "").trim()) return "目前沒有可用的動作選項";
   if (["h3-image-video", "h3-reference-video"].includes(actionId)) {
     if (!String(state.description || "").trim()) return "請描述角色要做什麼、鏡頭或聲音";
@@ -6757,6 +6775,7 @@ function renderMinimalActionPanel(character, action) {
     }
     refreshLipsyncSourcePanels();
     refreshSubmitState();
+    if (form?.isConnected) form.dispatchEvent(new Event("change", {bubbles:true}));
     return true;
   };
 
@@ -6883,6 +6902,7 @@ function renderMinimalActionPanel(character, action) {
     ]));
     form.appendChild(renderAudioFormatPreference());
   } else if (action.id === "lipsync") {
+    form.appendChild(renderHint("語音接續對嘴目前使用本機，依序執行兩筆任務。"));
     form.appendChild(renderComposerUploadSlot(feature, "video", "影片", state, () => update({})));
     if (lipsyncModeChoice.options.length > 1) {
       form.appendChild(radioCards("影片如何配合語音", lipsyncModeChoice.options, state.mode, (value) => update({ mode: value })));
@@ -6920,11 +6940,13 @@ function renderMinimalActionPanel(character, action) {
       form.appendChild(renderQualitySelector(state.quality, (value) => update({ quality: value }), capability));
     }
   } else if (action.id === "post") {
+    form.appendChild(renderHint("此流程沿用既有文字服務，尚未接入運算安排。"));
     form.appendChild(inputMini("主題", state.topic, ACTION_PLACEHOLDERS.post, (value) => update({ topic: value }), true));
     form.appendChild(radioCards("平台", platformChoice.options, state.platform, (value) => update({ platform: value })));
     form.appendChild(radioCards("長度", postLengthChoice.options, state.postLength, (value) => update({ postLength: value })));
   }
-  if (!capability.hideAdvanced) form.appendChild(renderAdvancedFields(feature, capability));
+  if (!capability.hideAdvanced) form.appendChild(renderAdvancedFields(feature.id === "character-photoshoot"
+    ? {...feature, fields:(feature.fields || []).filter(field => field.advanced)} : feature, capability));
   const extras = action.id === "post" ? [h("div", { class: "post-result hidden", id: "postResult" })] : [];
   const hasLocalFileSlots = (feature.uploads || []).some((upload) => (
     !capabilityServerBindsUpload(capability, String(upload && upload.id || ""))
@@ -6964,7 +6986,14 @@ function renderMinimalActionPanel(character, action) {
   ]);
   refreshLipsyncSourcePanels();
   refreshSubmitState();
-  bindGenerateComposer(character, action, feature, capability, state, form, saveDraftNow, restoredDraftNotice);
+  if (action.id !== "post") mountComputeForm(form, feature, {character, capability, state,
+    getRequest: () => ({featureId:feature.id,characterId:character.id,action:action.id,variantId:capability.variantId,
+      settings:applyCharacterDefaults(feature,buildMinimalSettings(action.id,feature,state,collectAdvancedSettings(feature))),
+      files:computeUploadMetadata(feature,capability,state)}),
+    onAvailability: () => updateGenerateReadiness(),
+  });
+  bindGenerateComposer(character, action, feature, capability, state, form, saveDraftNow, restoredDraftNotice,
+    action.id === "post" ? {} : {reasonForSubmit: () => computeActionReason(form,action,state,feature)});
   if (action.id === "post" && generationFsm.composerKey === composerKey(character, action) && generationFsm.postResult) {
     renderPostResult(formWrap.querySelector("#postResult"), generationFsm.postResult);
   }
@@ -6973,6 +7002,7 @@ function renderMinimalActionPanel(character, action) {
 
 async function submitMinimalAction(event, character, action, feature, renderedCapability, state) {
   event.preventDefault();
+  const submittedForm = event.currentTarget;
   if (submitInFlight) return;
   const renderedContractValid = (
     draftCapabilityMatches(action.id, renderedCapability)
@@ -7002,7 +7032,7 @@ async function submitMinimalAction(event, character, action, feature, renderedCa
   const submitKey = composerKey(character, action);
   const submitId = ++submissionSequence;
   const draftRevision = currentDraftRevision(character.id, action.id);
-  const reason = reasonForAction(action.id, state, feature);
+  const reason = computeActionReason(submittedForm, action, state, feature);
   if (reason) {
     setGenerationFsm("disabled", { reason, detail: reason }, { force: true });
     return;
@@ -7014,6 +7044,8 @@ async function submitMinimalAction(event, character, action, feature, renderedCa
   showAlert("");
   try {
     if (action.id === "lipsync" && state.voiceSource === "tts") {
+      const selected = window.ComputePlacement?.getState(submittedForm);
+      if (selected && selected.selected_lane !== "local") throw new Error("語音接續對嘴目前只支援本機。");
       const promptId = await submitLipsyncTtsChain(character, action, feature, capability, state, draftRevision, () => {
         requestSent = true;
         if (composerBinding && composerBinding.key === submitKey) setGenerationFsm("submitting", { detail: "可能已送出，正在確認", composerKey: submitKey }, { force: true });
@@ -7047,19 +7079,28 @@ async function submitMinimalAction(event, character, action, feature, renderedCa
       showAlert("貼文已生成。");
       return;
     }
-    const files = await collectMinimalFiles(feature, state);
+    const files = await collectMinimalFiles(feature, state, Boolean(window.ComputePlacement?.getState(submittedForm)));
     assertSessionContext(session);
     if (!capabilityStillEnabled(character.id, action.id, capability.variantId, feature.id)) {
       throw new Error("這個角色的動作設定已變更，請重新選擇");
     }
     requestSent = true;
     setGenerationFsm("submitting", { detail: "可能已送出，正在確認", composerKey: submitKey }, { force: true });
-    const result = await api("/api/generate", {
-      method: "POST",
-      body: JSON.stringify({ featureId: feature.id, characterId: character.id, action: action.id, variantId: capability.variantId, files, settings }),
-    });
+    const body = {featureId:feature.id,characterId:character.id,action:action.id,variantId:capability.variantId,files,settings};
+    const routed = Boolean(window.ComputePlacement?.getState(submittedForm));
+    const result = routed ? await window.ComputePlacement.submit(submittedForm,body,api)
+      : await api("/api/generate", {method:"POST",body:JSON.stringify(body)});
     assertSessionContext(session);
-    const promptId = result.prompt_id || result.promptId || "";
+    if (routed && (result.lane !== "local" || !result.downstream_id)) {
+      if (["queued","running","completed","collecting"].includes(result.state)) clearDraftAfterSubmit(character.id,action.id,state,draftRevision);
+      if (composerBinding?.key === submitKey) {
+        trackedPromptId = "";
+        setGenerationFsm("ready", {detail:"請查看表單內的運算任務",resultPromptId:"",composerKey:submitKey}, {force:true});
+      }
+      showAlert("已記錄運算請求，請在表單內查看任務狀態。");
+      return;
+    }
+    const promptId = routed ? result.downstream_id : result.prompt_id || result.promptId || "";
     if (!promptId) throw new Error("伺服器未回傳任務編號");
     rememberActiveJob(promptId, character.id, action.id);
     clearDraftAfterSubmit(character.id, action.id, state, draftRevision);
@@ -7087,6 +7128,7 @@ async function submitMinimalAction(event, character, action, feature, renderedCa
   } finally {
     if (sessionContextIsCurrent(session) && submissionSequence === submitId) {
       submitInFlight = false;
+      if (composerBinding?.key === submitKey && !trackedPromptId) updateGenerateReadiness();
       if (composerBinding && composerBinding.key !== submitKey && !trackedPromptId) {
         generationFsm = { state: "ready", reason: "", detail: "", pct: 0, resultPromptId: "", postResult: null, composerKey: composerBinding.key };
         updateGenerateReadiness();
@@ -8475,6 +8517,60 @@ function renderStudioVersionSelector(feature) {
   ]);
 }
 
+function computeUploadMetadata(feature, capability, state = {}) {
+  const files = {};
+  for (const upload of feature.uploads || []) {
+    if (capabilityServerBindsUpload(capability, upload.id) || slotHasFile(upload.id, state)) {
+      const file = fileInputs[upload.id]?.files?.[0];
+      files[upload.id] = file ? {name: file.name, size: file.size, type: file.type} : {};
+    }
+  }
+  return files;
+}
+
+function computeActionReason(form, action, state, feature) {
+  const compute = window.ComputePlacement?.getState(form);
+  const inputReason = reasonForAction(action.id, state, feature, Boolean(compute));
+  if (inputReason) return inputReason;
+  return compute && !compute.eligible ? (compute.pending ? "請先確認上一筆提交" : "請選擇可用的執行方式") : "";
+}
+
+function mountComputeForm(form, feature, {character = null, capability = null, state = {}, getRequest = null, onAvailability = null} = {}) {
+  if (!window.ComputePlacement || window.WebComfyDocs || !form) return;
+  const currentFeature = () => typeof form.computeFeature === "function" ? form.computeFeature() : feature;
+  const currentCapability = () => character ? enabledFeatureCapability(character, currentFeature().id) : capability;
+  const request = getRequest || (() => ({featureId: currentFeature().id, settings: collectSettings(currentFeature()),
+    characterId: character?.id || "", action: currentCapability()?.actionId || "", variantId: currentCapability()?.variantId || "",
+    files: computeUploadMetadata(currentFeature(), currentCapability(), state)}));
+  const sync = () => {
+    const placement = window.ComputePlacement.getState(form);
+    const target = currentFeature(), bound = currentCapability();
+    const btn = form.querySelector('button[type="submit"]');
+    if (!placement || !btn) return;
+    const settings = collectSettings(target);
+    const missing = (target.uploads || []).find(upload => upload.required && !capabilityServerBindsUpload(bound, upload.id)
+      && !slotHasFile(upload.id, state) && !(upload.id === "voice" && settings.voiceId));
+    const count = Object.keys(computeUploadMetadata(target, bound, state)).length;
+    const missingTheme = bound && allowedOptionValues(bound, "wardrobeTheme") !== null && !String(settings.wardrobeTheme || fieldGetters.wardrobeTheme?.() || "").trim();
+    const missingScene = bound && allowedOptionValues(bound, "sceneTheme") !== null && !String(settings.sceneTheme || fieldGetters.sceneTheme?.() || "").trim();
+    const customReady = typeof form.computeValidate === "function" ? form.computeValidate() : true;
+    const reason = missing ? `請先提供「${missing.label}」` : count < (target.minimumUploads || 0) ? "至少選一個參考"
+      : missingTheme ? "請先選擇角色造型" : missingScene ? "請先選擇動漫場景" : !customReady ? "請完成必要輸入" : "";
+    btn.disabled = !placement.eligible || Boolean(reason);
+    btn.textContent = placement.submitting ? "送出中…" : reason || (placement.eligible ? (target.kind === "audio" ? "生成語音" : "開始生成") : "請選擇可用的執行方式");
+  };
+  form.computeSync = sync;
+  window.ComputePlacement.mount(form, feature, {api, getRequest: request, onAvailability: value => {
+    if (onAvailability) onAvailability(value);
+    else sync();
+  }});
+  // Radio-card and library choices update state through button callbacks.
+  form.addEventListener("click", event => {
+    if (event.target.closest('.compute-placement,.compute-tasks') || !event.target.closest('button[type="button"]')) return;
+    queueMicrotask(() => {if (form.isConnected) form.dispatchEvent(new Event("change", {bubbles:true}));});
+  });
+}
+
 function renderFeaturePanel(feature) {
   const pill = readinessPill(feature);
   const panel = h("section", { class: "panel feature-panel" });
@@ -8509,10 +8605,12 @@ function renderFeaturePanel(feature) {
   }
 
   if (feature.kind === "text") {
+    panel.appendChild(renderHint("此流程沿用既有文字服務，尚未接入運算安排。"));
     panel.appendChild(feature.ready ? renderTextForm(feature, capability) : renderGatedPanel(feature));
     return panel;
   }
   if (feature.id === "voice-batch") {
+    panel.appendChild(renderHint("此批次流程目前使用本機。"));
     panel.appendChild(interactiveReady(feature) ? renderVoiceBatchPage() : renderGatedPanel(feature));
     return panel;
   }
@@ -8520,19 +8618,11 @@ function renderFeaturePanel(feature) {
     panel.appendChild(feature.kind === "storage" ? renderStoragePanel(feature) : renderGatedPanel(feature));
     return panel;
   }
-  if (feature.id === "voice-speak") {
-    panel.appendChild(renderVoiceSpeakForm(feature, capability));
-    return panel;
-  }
-  if (feature.id === "voice-clone") {
-    panel.appendChild(renderVoiceCloneForm(feature));
-    return panel;
-  }
-  if (feature.id === "voxcpm-tts") {
-    panel.appendChild(renderVoxcpmForm(feature));
-    return panel;
-  }
-  panel.appendChild(renderGenForm(feature, capability));
+  const content = feature.id === "voice-speak" ? renderVoiceSpeakForm(feature, capability)
+    : feature.id === "voice-clone" ? renderVoiceCloneForm(feature)
+    : feature.id === "voxcpm-tts" ? renderVoxcpmForm(feature) : renderGenForm(feature, capability);
+  panel.appendChild(content);
+  mountComputeForm(content.matches('form') ? content : content.querySelector('form'), feature, {character, capability});
   return panel;
 }
 
@@ -9162,7 +9252,8 @@ function renderVoiceSpeakForm(feature, capability = null) {
     const currentTranscript = transcriptTa.value.trim();
     const currentTargetFeature = targetFeature();
     const targetCapability = character ? enabledFeatureCapability(character, currentTargetFeature.id) : null;
-    const targetReady = (
+    const computeAvailability = window.ComputePlacement?.getState(form);
+    const targetReady = computeAvailability ? computeAvailability.eligible : (
       isClone && currentTargetFeature.id === "voice-speak"
         ? featureReadyForContext(currentTargetFeature) && Boolean(cloneEngine) && (!runtimeCloneEngines || runtimeCloneEngines.has(cloneEngine))
         : currentTargetFeature.ready === true
@@ -9261,6 +9352,8 @@ function renderVoiceSpeakForm(feature, capability = null) {
   form.addEventListener("change", () => syncFormState(false));
   syncFormState(false);
 
+  form.computeFeature = targetFeature;
+  form.computeValidate = () => syncFormState(false);
   if (!featureReadyForContext(feature)) form.insertBefore(renderMissing(feature), submit);
   return h("div", { class: "text-studio" }, [form]);
 }
@@ -10741,6 +10834,11 @@ async function onGenerate(event, feature) {
     if (!submittedForm || !submittedForm.isConnected) throw new Error("創作工具已切換，這次沒有送出");
   };
   assertSubmittedFormCurrent();
+  const compute = window.ComputePlacement?.getState(submittedForm);
+  if (compute && !compute.eligible) {
+    showAlert(compute.pending ? "請先確認上一筆提交。" : "請選擇可用的執行方式。", true);
+    return;
+  }
   const character = activeCharacter();
   if (activeCharacterId && !character) {
     showAlert("目前角色已不存在，請重新選擇。", true);
@@ -10790,6 +10888,13 @@ async function onGenerate(event, feature) {
         if (up.required) throw new Error(`請上傳「${up.label}」`);
         continue;
       }
+      const selectedFile = fileInputs[up.id]?.files?.[0];
+      if (compute && selectedFile) {
+        files[up.id] = await fileToData(selectedFile);
+        assertSessionContext(session);
+        assertSubmittedFormCurrent();
+        continue;
+      }
       const resolved = await ensureSlotServerFile(feature, {}, up.id);
       assertSessionContext(session);
       assertSubmittedFormCurrent();
@@ -10820,21 +10925,24 @@ async function onGenerate(event, feature) {
     }
     assertSubmittedFormCurrent();
     requestSent = true;
-    const result = await api("/api/generate", {
-      method: "POST",
-      body: JSON.stringify({
+    const body = {
         featureId: feature.id,
         characterId: character ? character.id : "",
         action: capability ? capability.actionId : "",
         variantId: capability ? capability.variantId : "",
         files,
         settings,
-      }),
-    });
+      };
+    const result = compute ? await window.ComputePlacement.submit(submittedForm,body,api)
+      : await api("/api/generate", {method:"POST",body:JSON.stringify(body)});
     assertSessionContext(session);
-    showAlert(`已加入佇列：${result.prompt_id || "OK"}`);
-    refreshQueue();
-    scheduleHistoryRefresh();
+    if (compute) {
+      showAlert("已記錄運算請求，請在表單內查看任務狀態。");
+      if (result.lane === "local" && result.downstream_id) {refreshQueue();scheduleHistoryRefresh();}
+    } else {
+      showAlert(`已加入佇列：${result.prompt_id || "OK"}`);
+      refreshQueue();scheduleHistoryRefresh();
+    }
   } catch (error) {
     if (isStaleSessionError(error)) return;
     const presented = generationErrorPresentation(error, requestSent);
@@ -10851,6 +10959,7 @@ async function onGenerate(event, feature) {
       btn.textContent = missingBoundTheme
         ? "請先選擇角色造型"
         : (missingBoundScene ? "請先選擇動漫場景" : (originalText || (feature.ready ? "開始生成" : "缺件，暫不能送出")));
+      submittedForm.computeSync?.();
     }
   }
 }

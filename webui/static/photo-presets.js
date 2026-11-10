@@ -73,6 +73,24 @@
   const singleLine = value => String(value || '').replace(/[\r\n]+/g, ' ').trim();
 
   const groups = {"outfit": {"street": "日常穿搭", "autumn": "秋日穿搭", "suit": "西裝穿搭", "spring": "春日穿搭", "summer": "夏日穿搭", "party": "派對禮服", "winter": "冬日穿搭", "lingerie": "內衣", "fantasy": "幻想服飾", "swimwear": "泳裝", "expressive-outfits": "魅力穿搭"}, "pose": {"sitting": "坐姿", "standing": "站姿", "movement": "行走與跑步", "crouching": "蹲姿", "kneeling": "跪立", "gestures": "手勢與表情動作", "twisting": "扭身", "arching": "後仰", "side-sitting": "側坐與 W 坐姿", "lying": "臥姿", "leaning": "前傾", "kneeling-all-fours": "跪姿與四肢支撐", "special": "特殊姿勢", "torso-study": "胸廓與手臂動作", "expressive-upper": "上半身曲線", "pair-standing": "雙人站姿", "close-faces": "靠近與互動", "pair-supine": "雙人仰臥構圖", "pair-rear": "背向互動", "pair-sitting": "雙人坐姿", "pair-back-seated": "背向坐姿", "pair-overlap": "雙人重疊構圖", "pair-side": "雙人側臥", "pair-facing": "面對面坐姿", "standing-embrace": "站姿相擁", "seated-embrace": "坐姿相擁", "embrace": "相擁"}};
+  const parentGroups = {
+    outfit: [
+      {id:'daily',label:'日常與季節',categories:['street','spring','summer','autumn','winter']},
+      {id:'formal',label:'正式與禮服',categories:['suit','party']},
+      {id:'fantasy',label:'傳統與幻想',categories:['fantasy']},
+      {id:'swim',label:'泳裝',categories:['swimwear']},
+      {id:'intimate',label:'貼身與魅力',categories:['lingerie','expressive-outfits']},
+    ],
+    pose: [
+      {id:'standing',label:'站立與行走',categories:['standing','movement','leaning']},
+      {id:'seated',label:'坐姿與蹲跪',categories:['sitting','side-sitting','crouching','kneeling','kneeling-all-fours']},
+      {id:'lying',label:'臥姿與伸展',categories:['lying','arching','twisting']},
+      {id:'gesture',label:'手勢與上半身',categories:['gestures','torso-study','expressive-upper','special']},
+      {id:'pair',label:'雙人互動',categories:['pair-standing','close-faces','pair-supine','pair-rear','pair-sitting','pair-back-seated','pair-overlap','pair-side','pair-facing']},
+      {id:'embrace',label:'相擁',categories:['standing-embrace','seated-embrace','embrace']},
+    ],
+  };
+  const parentOf = (key, category) => parentGroups[key].find(group=>group.categories.includes(category))?.id || '';
   const builtinGroups = {
     outfit: {tee:'street',shirt:'suit',knit:'autumn',hoodie:'street',trench:'autumn',leather:'street',suit:'suit','business-dress':'suit',gown:'party',qipao:'fantasy',hanfu:'fantasy',kimono:'fantasy',linen:'summer','summer-dress':'summer',sport:'street','shoulder-dress':'party','shoulder-top':'summer',onepiece:'swimwear',swimtrunks:'swimwear'},
     pose: {environment:'standing',portrait:'standing',standing:'standing',walking:'movement',seated:'sitting',bench:'sitting',leaning:'standing',turned:'twisting',profile:'standing',arms:'gestures',pockets:'standing',wave:'gestures',reading:'gestures',coffee:'gestures',flowers:'gestures',looking:'standing'},
@@ -146,7 +164,7 @@
   function mount(input, {h, browseReferences, visualStyle='realistic'}) {
     let {selection, subject, generated, custom, manual}=restore(input.value);
     let writing=false, undo=null, lastValue=input.value;
-    const selectedGroups={}, controls={}, summaries={}, hosts={}, pickers={}, randomButtons={};
+    const selectedGroups={}, selectedParents={}, controls={}, detailControls={}, summaries={}, hosts={}, pickers={}, randomButtons={};
     const message=h('p',{class:'panel-sub photo-preset-status',role:'status','aria-live':'polite'});
     const rebuild=h('button',{type:'button',class:'ghost small',text:'用選項重建提示詞',hidden:true});
     const undoButton=h('button',{type:'button',class:'ghost small',text:'還原上次提示詞',hidden:true});
@@ -162,10 +180,15 @@
       scene.value=selection.scene || '';
       for(const key of ['outfit','pose']) {
         if(!controls[key])continue;
-        controls[key].value=selectedGroups[key] || '';
+        controls[key].value=selectedParents[key] || '';
+        const parent=parentGroups[key].find(group=>group.id===selectedParents[key]);
+        detailControls[key].replaceChildren(h('option',{value:'',text:'全部細項'}),
+          ...(parent?.categories || []).map(id=>h('option',{value:id,text:groups[key][id]})));
+        detailControls[key].value=selectedGroups[key] || '';
+        detailControls[key].closest('label').hidden=!parent;
         const value=selection[key], summary=summaries[key];summary.replaceChildren();
         summary.hidden=!value || value.categoryOnly;
-        randomButtons[key].hidden=!selectedGroups[key];
+        randomButtons[key].hidden=!selectedParents[key];
         if(!summary.hidden) {
           const title=isReference(value)?referenceTitle(value):catalog[key].find(x=>x.id===value)?.label;
           const label=value.random?'隨機選用':'已固定';
@@ -191,7 +214,9 @@
       message.textContent=notice || (next?'':'已清除選項，保留補充描述。');
     }
     function selectReference(key,item,variant,random) {
-      if(!input.isConnected || item.category!==selectedGroups[key])return false;
+      const parent=parentGroups[key].find(group=>group.id===selectedParents[key]);
+      if(!input.isConnected || !parent?.categories.includes(item.category) ||
+        (selectedGroups[key] && item.category!==selectedGroups[key]))return false;
       selection[key]={reference:true,category:item.category,title:item.title,angle:angleLabels[variant.angle] || variant.label,
         thumbnail:variant.thumbnail,id:item.id,variantId:variant.id,variants:item.variants,item,random};
       if(key==='outfit')selection.level='';
@@ -199,9 +224,9 @@
     }
     function showChoices(key,randomize=false) {
       const host=hosts[key];host.replaceChildren();pickers[key]=null;
-      const category=selectedGroups[key];host.hidden=!category;
-      if(!category || !browseReferences)return;
-      pickers[key]=browseReferences({container:host,fixedKind:key==='pose'?'pose':'costume',fixedCategory:category,
+      const parent=parentGroups[key].find(group=>group.id===selectedParents[key]);host.hidden=!parent;
+      if(!parent || !browseReferences)return;
+      pickers[key]=browseReferences({container:host,fixedKind:key==='pose'?'pose':'costume',fixedCategory:selectedGroups[key],fixedCategories:parent.categories,
         compact:true,textOnly:true,randomize,selectedId:selection[key]?.id,selectedVariantId:selection[key]?.variantId,
         visualStyle:key==='outfit'?visualStyle:'',
         onSelect:(item,variant)=>selectReference(key,item,variant,false),
@@ -209,27 +234,32 @@
     }
     const grid=h('div',{class:'photo-preset-grid'});
     for(const key of ['outfit','pose']) {
-      const label=key==='pose'?'姿勢':'穿著';selectedGroups[key]=groupOf(key,selection[key]);
+      const label=key==='pose'?'姿勢':'穿著';selectedGroups[key]=groupOf(key,selection[key]);selectedParents[key]=parentOf(key,selectedGroups[key]);
       const select=h('select',{'aria-label':`${label}大分類`,'data-photo-preset':key},[
-        h('option',{value:'',text:'不指定'}),...Object.entries(groups[key]).map(([id,text])=>h('option',{value:id,text})),
+        h('option',{value:'',text:'不指定'}),...parentGroups[key].map(({id,label})=>h('option',{value:id,text:label})),
       ]);controls[key]=select;
+      const detail=h('select',{'aria-label':`${label}細分類`});detailControls[key]=detail;
       summaries[key]=h('div',{class:'photo-reference-selected',hidden:true});
       hosts[key]=h('div',{class:'photo-reference-choices',hidden:true});
       randomButtons[key]=h('button',{type:'button',class:'ghost small',text:'換一個','aria-label':`重新隨機挑選${label}`,hidden:true,onclick:()=>pickers[key]?.random()});
       select.onchange=()=>{
-        selectedGroups[key]=select.value;
-        selection[key]=select.value?{reference:true,category:select.value,title:groups[key][select.value],angle:'不限',categoryOnly:true}:'';
+        selectedParents[key]=select.value;selectedGroups[key]='';selection[key]='';
         if(key==='outfit')selection.level='';
         apply(false,select.value?'正在從所選分類隨機挑選細項…':'已取消此分類。');showChoices(key,!!select.value);
+      };
+      detail.onchange=()=>{
+        selectedGroups[key]=detail.value;selection[key]='';
+        if(key==='outfit')selection.level='';
+        apply(false,'正在從所選細分類隨機挑選…');showChoices(key,true);
       };
       grid.append(h('section',{class:'photo-choice','aria-label':`${label}選擇`},[
         h('div',{class:'photo-choice-heading'},[
           h('label',{class:'field'},[h('span',{class:'field-label',text:label}),select]),randomButtons[key],
-        ]),summaries[key],hosts[key],
+        ]),h('label',{class:'field photo-choice-detail',hidden:true},[h('span',{class:'field-label',text:'細分類'}),detail]),summaries[key],hosts[key],
       ]));
     }
     scene.onchange=()=>{selection.scene=scene.value;apply();};
-    const refreshChoices=()=>{for(const key of ['outfit','pose']){selectedGroups[key]=groupOf(key,selection[key]);showChoices(key);}sync();};
+    const refreshChoices=()=>{for(const key of ['outfit','pose']){selectedGroups[key]=groupOf(key,selection[key]);selectedParents[key]=parentOf(key,selectedGroups[key]);showChoices(key);}sync();};
     const quick=h('div',{class:'photo-preset-quick','aria-label':'快速拍攝搭配'},bundles.map(([label,values])=>h('button',{
       type:'button',class:'ghost small',text:label,onclick:()=>{selection={...values};apply();refreshChoices();},
     })));
@@ -245,7 +275,7 @@
     }
     input.addEventListener('input',acceptInput);input.addEventListener('change',acceptInput);
     const node=h('section',{class:'photo-presets','aria-label':'拍攝預設'},[
-      h('div',{class:'photo-preset-heading'},[h('strong',{text:'畫面搭配'}),h('span',{class:'panel-sub',text:'選分類自動挑選，點圖預覽後套用。'})]),
+      h('div',{class:'photo-preset-heading'},[h('strong',{text:'畫面搭配'}),h('span',{class:'panel-sub',text:'先選大分類，再挑細項；點小圖預覽後套用。'})]),
       h('div',{class:'photo-preset-toolbar'},[quick,h('label',{class:'field photo-scene'},[h('span',{class:'field-label',text:'場景'}),scene])]),grid,
       h('div',{class:'photo-preset-actions'},[clear,rebuild,undoButton]),message,
     ]);
@@ -254,15 +284,15 @@
     node.setVisualStyle=value=>{
       if(!['anime','realistic'].includes(value) || value===visualStyle)return;
       visualStyle=value;
-      const category=selectedGroups.outfit;
-      selection.outfit=category?{reference:true,category,title:groups.outfit[category],angle:'不限',categoryOnly:true}:'';
+      const category=selectedParents.outfit;
+      selection.outfit='';
       selection.level='';
       apply(false,category?'畫風已切換，正在重新挑選穿著…':'畫風已切換。');
       showChoices('outfit',!!category);
     };
     return node;
   }
-  const api={catalog,bundles,compose,restore,mount};
+  const api={catalog,bundles,groups,parentGroups,compose,restore,mount};
   if(typeof module!=='undefined')module.exports=api;
   if(typeof window!=='undefined')window.PhotoPromptPresets=api;
 })();

@@ -1,5 +1,8 @@
 """Public portrait graphs and catalog boundaries, using synthetic inputs only."""
 from pathlib import Path
+import json
+import shutil
+import subprocess
 import sys
 import pytest
 from PIL import Image
@@ -61,3 +64,42 @@ def test_catalog_http_requires_login_and_validates_style(test_server):
     with pytest.raises(urllib.error.HTTPError) as error:
         opener.open(urllib.request.Request(url,headers={'Cookie':cookie}))
     assert error.value.code==400
+
+
+def test_parent_categories_cover_each_existing_detail_once():
+    node=shutil.which('node')
+    if not node:pytest.skip('Node unavailable')
+    module=Path(__file__).resolve().parents[1]/'webui/static/photo-presets.js'
+    result=subprocess.run([node,'-e','const p=require(process.argv[1]);console.log(JSON.stringify({groups:p.groups,parents:p.parentGroups}));',str(module)],
+                          capture_output=True,text=True,check=True,timeout=10)
+    data=json.loads(result.stdout)
+    for kind,count in [('outfit',5),('pose',6)]:
+        parents=data['parents'][kind]
+        children=[child for parent in parents for child in parent['categories']]
+        assert len(parents)==count
+        assert len(children)==len(set(children))
+        assert set(children)==set(data['groups'][kind])
+
+
+@pytest.mark.parametrize('style',['anime','realistic'])
+def test_parent_filter_limits_pages_search_and_random_with_style(monkeypatch,style):
+    items=[]
+    for visual in ['anime','realistic']:
+        for category in ['street','summer','suit']:
+            for index in range(20):
+                items.append({'id':f'{visual}-{category}-{index}','kind':'costume','visualStyle':visual,
+                              'category':category,'categoryLabel':category,'source':'synthetic',
+                              'title':'外套','englishTitle':'Coat','code':str(index),'keywords':'','tags':[]})
+    monkeypatch.setattr(refs,'catalog',lambda:items)
+    params={'kind':'costume','visualStyle':style,'categories':'street,summer','q':'Coat','random':'1'}
+    first=refs.listing(params);second=refs.listing({**params,'page':'2'})
+    assert first['total']==second['total']==40
+    assert len(first['items'])==24 and len(second['items'])==16
+    assert {item['id'] for item in first['items']}.isdisjoint(item['id'] for item in second['items'])
+    for item in [*first['items'],*second['items'],first['randomItem'],second['randomItem']]:
+        assert item['visualStyle']==style and item['category'] in {'street','summer'}
+    detail=refs.listing({**params,'category':'summer'})
+    assert detail['total']==20 and detail['randomItem']['category']=='summer'
+    outside=refs.listing({**params,'category':'suit'})
+    assert outside['items']==[] and outside['randomItem'] is None
+    with pytest.raises(ValueError):refs.listing({**params,'categories':','.join(str(i) for i in range(33))})
