@@ -15896,6 +15896,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(raw)))
             if cache_control:
                 self.send_header("Cache-Control", cache_control)
+            self.send_header("X-Frame-Options", "DENY")
             self.end_headers()
             self.wfile.write(raw)
         except ConnectionError:
@@ -16014,6 +16015,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(raw)))
             self.send_header("Cache-Control", "private, no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("X-Frame-Options", "DENY")
             self.end_headers()
             self.wfile.write(raw)
         except ConnectionError:
@@ -16076,6 +16078,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(length))
         if cache_control:
             self.send_header("Cache-Control", cache_control)
+        self.send_header("X-Content-Type-Options", "nosniff")
         if byte_range:
             self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
         if inline_filename:
