@@ -25,11 +25,12 @@
     reader.readAsDataURL(file);
   });
 
-  async function open(opener, {api, openSheet}) {
+  async function open(opener, {api, openSheet}, accountsOnly = false) {
     const root = el("div", {class: "colab-content"});
     const notice = el("p", {class: "muted colab-notice", role: "status", "aria-live": "polite", text: "正在讀取帳號與任務…"});
     root.append(notice);
-    openSheet({id: "colab-workspace", title: "Google Colab · H3", opener, content: root, className: "colab-sheet"});
+    openSheet({id: accountsOnly ? "colab-accounts" : "colab-workspace", title: accountsOnly ? "Google Colab 帳號" : "Google Colab · H3", opener, content: root, className: accountsOnly ? "colab-accounts-sheet" : "colab-sheet"});
+    if (accountsOnly) root.append(el("p", {class: "muted", text: "分別新增你的 Ultra、Pro 帳號並完成 Google 授權。連接後可查看餘額；生成請到「資源 → Google Colab · H3」。"}));
     let snapshot, selectedId = "", requestId = crypto.randomUUID(), lastRequest = null;
     const post = (path, body = {}) => api("/api/colab/" + path, {method: "POST", body: JSON.stringify(body)});
     const run = async (action) => {
@@ -46,7 +47,7 @@
 
     const account = select([]), balance = el("span", {class: "muted"});
     const accounts = el("section", {class: "colab-section"});
-    const accountSettings = el("details", {class: "colab-account-settings"});
+    const accountSettings = el("details", {class: "colab-account-settings", open: accountsOnly});
     accountSettings.append(el("summary", {text: "連接或新增 Google 帳號"}));
     const label = el("input", {type: "text", placeholder: "例如：我的 Ultra、我的 Pro", maxlength: "64"});
     let flow = null;
@@ -56,7 +57,9 @@
       const pendingCode = code.value; code.value = "";
       await post(`accounts/${flow.accountId}/finish`, {flow_id: flow.flowId, code: pendingCode});
       await post(`accounts/${flow.accountId}/refresh`);
-      authorization.replaceChildren(); flow = null; await refresh();
+      authorization.replaceChildren(); flow = null;
+      account.focus();
+      await refresh();
     }));
     async function login(id) {
       const result = await post(`accounts/${id}/login`);
@@ -64,6 +67,7 @@
       if (url.protocol !== "https:" || url.hostname !== "accounts.google.com") throw new Error("Google 登入網址無效");
       flow = {accountId: id, flowId: result.flow_id};
       authorization.replaceChildren(
+        el("p", {class: "muted", text: `正在連接「${snapshot.accounts.find(item => item.id === id)?.label || "Google 帳號"}」。開啟下方授權頁，選擇訂閱所屬的 Google 帳號，再將授權碼貼回這裡。`}),
         el("a", {href: url.href, target: "_blank", rel: "noopener noreferrer", text: "開啟 Google 授權頁面"}),
         field("授權碼", code), finish,
       );
@@ -102,13 +106,14 @@
     const fileField = field("參考檔案（合計最多 32 MB）", files);
     fileField.append(el("div", {class: "colab-row"}, [chooseFiles, selectedFilesLabel]));
     form.append(el("div", {class: "colab-grid"}, [field("生成內容", kind), modeField, aspectField, resolutionField, sizeField, secondsField]), field("內容描述", prompt), fileField, fileNote, details, generate);
-    root.append(form);
+    if (!accountsOnly) root.append(form);
     const jobs = el("section", {class: "colab-jobs", "aria-label": "Colab 任務"});
-    root.append(el("h3", {text: "最近任務"}), jobs);
+    if (!accountsOnly) root.append(el("h3", {text: "最近任務"}), jobs);
 
     function renderAccounts() {
       const wanted = selectedId || account.value;
       account.replaceChildren(...snapshot.accounts.map(item => el("option", {value: item.id, text: item.label})));
+      if (!snapshot.accounts.length) account.append(el("option", {value: "", text: "尚未新增帳號"}));
       if (snapshot.accounts.some(item => item.id === wanted)) account.value = wanted;
       if (!snapshot.accounts.length) accountSettings.open = true;
       const selected = snapshot.accounts.find(item => item.id === account.value);
@@ -177,6 +182,7 @@
   }
 
   window.WebComfyColab = {
+    openAccounts(opener, options) { return open(opener, options, true); },
     mount(host, options) {
       const action = button("開啟 Colab", () => open(action, options));
       host.append(el("section", {class: "panel colab-entry"}, [el("div", {}, [el("h2", {text: "Google Colab · H3"}), el("p", {class: "muted", text: "用自己的 Google 帳號執行生圖、影片與語音，分別管理 Ultra 與 Pro 的點數。"})]), action]));

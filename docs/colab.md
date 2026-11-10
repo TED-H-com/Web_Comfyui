@@ -1,6 +1,7 @@
 # Google Colab 與 H3
 
 Web ComfyUI 現在有獨立的 Colab 執行入口：**資源 → Google Colab · H3 → 開啟 Colab**。
+管理員可直接從 **管理 → Google Colab 帳號**，或 **管理中心 → Google Colab 帳號**，新增帳號、完成授權、重新連接及更新餘額。這裡管理的是目前登入使用者自己的 Google 連線，不是全站共用帳號。
 它使用 Google 官方 `google-colab-cli` 0.7.4 的傳輸實作，讓已選擇的 Google 帳號申請 GPU、執行 H3、下載成果並釋放 GPU。它不會改變本機 ComfyUI 的位址，也不需要公開 ComfyUI 或建立通道。
 
 **驗證程度：已完成來源研究、CPU 契約測試與模擬帳號的瀏覽器測試；尚未以真實 Google 帳號完成 Colab GPU 生成。** 首次連線後仍需用小型任務驗證實際配額、GPU、驅動、依賴安裝及模型相容性。公開示範站不提供這個付費執行入口。

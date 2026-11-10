@@ -108,3 +108,66 @@ def test_colab_real_http_login_admission_and_cancel(test_server):
         assert len(state['jobs']) == 1 and state['jobs'][0]['released']
         assert 'subject_key' not in json.dumps(state)
         context.close(); browser.close()
+
+
+@pytest.mark.parametrize('test_server', ['colab_transport'], indirect=True)
+@pytest.mark.parametrize('width', [390, 768, 1440])
+def test_colab_accounts_from_admin_and_management_menu(test_server, width):
+    """Real HTTP and durable account state; no generation or Google requests."""
+    pw = pytest.importorskip('playwright.sync_api')
+    chromium = shutil.which('chromium') or shutil.which('chromium-browser')
+    if not chromium:
+        pytest.skip('Chromium unavailable')
+    base, _, cookie = test_server
+    with pw.sync_playwright() as p:
+        browser = p.chromium.launch(executable_path=chromium, args=['--no-sandbox', '--disable-dev-shm-usage'])
+        context = browser.new_context(viewport={'width': width, 'height': 900})
+        name, value = cookie.split('=', 1)
+        context.add_cookies([{'name': name, 'value': value, 'url': base}])
+        page = context.new_page()
+        errors = []; page.on('pageerror', lambda error: errors.append(str(error)))
+        before = context.request.get(base + '/api/colab').json()
+        page.goto(base + '/admin')
+        page.get_by_role('button', name='Google Colab 帳號', exact=True).click()
+        dialog = page.get_by_role('dialog', name='Google Colab 帳號', exact=True)
+        page.get_by_label('帳號名稱', exact=True).wait_for(state='visible')
+        assert dialog.locator('.colab-form, .colab-jobs').count() == 0
+        for plan in ('Ultra', 'Pro'):
+            page.get_by_label('帳號名稱', exact=True).fill(f'合成 {plan} {width}')
+            page.get_by_role('button', name='新增並連接', exact=True).click()
+            link = page.get_by_role('link', name='開啟 Google 授權頁面', exact=True)
+            link.wait_for()
+            assert link.get_attribute('href').startswith('https://accounts.google.com/')
+            page.get_by_label('授權碼', exact=True).fill('synthetic-code')
+            page.get_by_role('button', name='完成連線', exact=True).click()
+            page.get_by_label('授權碼', exact=True).wait_for(state='detached')
+            page.get_by_text('可用 100.0 點', exact=True).wait_for()
+        page.get_by_role('button', name='更新餘額', exact=True).click()
+        page.wait_for_function("document.querySelector('.colab-notice').textContent === ''")
+        assert dialog.evaluate('e => e.scrollWidth <= e.clientWidth')
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        evidence = os.environ.get('WEB_COMFYUI_TEST_SCREENSHOTS')
+        if evidence:
+            directory = Path(evidence); directory.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(directory / f'colab-admin-{width}.png'))
+        page.keyboard.press('Escape')
+        dialog.wait_for(state='hidden')
+        assert page.get_by_role('button', name='Google Colab 帳號', exact=True).evaluate('e => e === document.activeElement')
+        menu = page.locator('#moreMenuBtn' if width < 768 else '#managementMenuBtn')
+        menu.click()
+        page.get_by_role('dialog').get_by_role('button', name='Google Colab 帳號', exact=True).click()
+        dialog.wait_for()
+        page.get_by_label('執行帳號', exact=True).select_option(label=f'合成 Ultra {width}')
+        page.get_by_role('button', name='重新連接', exact=True).click()
+        page.get_by_label('授權碼', exact=True).fill('synthetic-code')
+        page.get_by_role('button', name='完成連線', exact=True).click()
+        page.get_by_label('授權碼', exact=True).wait_for(state='detached')
+        page.keyboard.press('Escape')
+        dialog.wait_for(state='hidden')
+        assert menu.evaluate('e => e === document.activeElement')
+        after = context.request.get(base + '/api/colab').json()
+        assert len(after['accounts']) == len(before['accounts']) + 2
+        assert after['jobs'] == before['jobs']
+        assert 'synthetic-code' not in page.evaluate('JSON.stringify(localStorage) + JSON.stringify(sessionStorage)')
+        assert not errors, errors
+        context.close(); browser.close()

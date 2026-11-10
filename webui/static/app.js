@@ -1485,6 +1485,7 @@ function renderAccountMenuContent({ managementOnly = false } = {}) {
     wrap.appendChild(shellMenuButton("工作流監控", () => navigate({ view: "orchestrator" })));
     wrap.appendChild(h("a", { class: "shell-menu-row", href: "/admin", text: "管理中心" }));
     wrap.appendChild(shellMenuButton("使用者管理", () => navigate({ view: "admin-users" })));
+    if (!window.WebComfyDocs && window.WebComfyColab) wrap.appendChild(shellMenuButton("Google Colab 帳號", () => openColabAccounts(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
   }
   if (!managementOnly) {
     wrap.appendChild(h("hr", { class: "shell-menu-divider" }));
@@ -13146,6 +13147,11 @@ function renderOrchestratorView() {
 
 // ---- admin users ----------------------------------------------------------
 
+function openColabAccounts(opener) {
+  if (!isAdmin() || window.WebComfyDocs || !window.WebComfyColab) return;
+  window.WebComfyColab.openAccounts(opener, {api, openSheet});
+}
+
 function renderAdminHome() {
   const ws = beginWorkspaceRender();
   ws.appendChild(h("section", { class: "panel" }, [
@@ -13155,6 +13161,7 @@ function renderAdminHome() {
       h("button", { class: "shell-menu-row", text: "採集圖片與影片", onclick: openMaterialCollect }),
       h("button", { class: "shell-menu-row", text: "外部角色與資源", onclick: () => navigate({ view: "resources" }) }),
       h("button", { class: "shell-menu-row", text: "使用者管理", onclick: () => navigate({ view: "admin-users" }) }),
+      !window.WebComfyDocs && window.WebComfyColab ? h("button", { class: "shell-menu-row", type: "button", text: "Google Colab 帳號", "aria-haspopup": "dialog", onclick: event => openColabAccounts(event.currentTarget) }) : null,
       h("button", { class: "shell-menu-row", text: "工作流監控", onclick: () => navigate({ view: "orchestrator" }) }),
       h("a", { class: "shell-menu-row", href: "http://127.0.0.1:8188/", target: "_blank", rel: "noopener noreferrer", text: "開啟 ComfyUI 節點編輯器 ↗" }),
     ]),
