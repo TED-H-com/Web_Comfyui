@@ -74,6 +74,7 @@
     const preferenceAbort=new AbortController();
     let availability={placement:'local',loading:true,eligible:false,selected_lane:null,candidates:[],error:''};
     let jobs=new Map(),visibleJobCount=8;
+    let nextCursor=null,olderPagesLoaded=false,loadingOlder=false;
     const placement=select([['local','本機'],['auto','自動安排'],['colab','Google Colab'],['autoip','AutoIP'],['comfy_cloud','Comfy Cloud'],['runninghub','RunningHub']]);
     const account=select([['','自動選擇可用帳號']]);
     const visualClass=select([['','未指定'],['anime','動漫'],['realistic','寫實']]);
@@ -107,7 +108,7 @@
       el('details',{class:'compute-compatibility'},[el('summary',{text:'查看各方式的支援條件'}),candidates]),controls,retry,
     ]);
     const jobList=el('div',{class:'compute-job-list'});
-    const moreJobs=button('顯示更多任務',()=>{visibleJobCount+=8;renderJobs();});moreJobs.hidden=true;
+    const moreJobs=button('顯示更多任務',()=>showMoreJobs());moreJobs.hidden=true;
     const jobNotice=el('p',{class:'compute-note',role:'status','aria-live':'polite'});
     const taskRoot=el('section',{class:'compute-tasks','aria-label':'運算任務'},[
       el('div',{class:'compute-task-heading'},[el('strong',{text:'運算任務'}),button('更新任務',()=>refreshJobs())]),jobNotice,jobList,el('div',{class:'compute-job-actions'},[moreJobs]),
@@ -233,9 +234,13 @@
       renderJobs();locked();return job;
     }
     function renderJobs(){
-      jobList.replaceChildren();moreJobs.hidden=jobs.size<=visibleJobCount;
+      jobList.replaceChildren();moreJobs.hidden=jobs.size<=visibleJobCount&&!nextCursor;moreJobs.disabled=loadingOlder;
       if(!jobs.size){jobList.append(el('p',{class:'compute-note',text:'尚無運算任務。'}));return;}
-      for(const job of [...jobs.values()].reverse().slice(0,visibleJobCount)) {
+      const ordered=[...jobs.values()].reverse().sort((a,b)=>{
+        if(!Number.isFinite(a.created_at)||!Number.isFinite(b.created_at))return 0;
+        return b.created_at-a.created_at || (b.request_id>a.request_id?1:b.request_id<a.request_id?-1:0);
+      });
+      for(const job of ordered.slice(0,visibleJobCount)) {
         const actions=el('div',{class:'compute-job-actions'});
         const outputs=Array.isArray(job.artifacts)?[...job.artifacts]:[];
         if(job.result_url && !outputs.some(item=>item.url===job.result_url))outputs.push({name:'查看成果',url:job.result_url});
@@ -250,11 +255,34 @@
         ]));
       }
     }
+    function cursor(value){
+      if(value==null)return null;
+      if(typeof value!=='string'||!/^[\da-f]{8}(-[\da-f]{4}){3}-[\da-f]{12}$/.test(value))throw new Error('任務分頁回應尚待確認。');
+      return value;
+    }
+    async function showMoreJobs(){
+      if(!live()||loadingOlder)return;
+      const target=visibleJobCount+8;
+      try {
+        if(jobs.size<target&&nextCursor){
+          loadingOlder=true;renderJobs();jobNotice.textContent='正在載入較早的任務…';
+          const result=await api('/api/compute/jobs?before='+encodeURIComponent(nextCursor));
+          if(!live())return;
+          const next=cursor(result.next_cursor);
+          for(const value of [...(result.jobs||[])].reverse())accept(value);
+          nextCursor=next;olderPagesLoaded=true;
+        }
+        visibleJobCount=target;jobNotice.textContent='';
+      } catch(_) {if(live())jobNotice.textContent='較早的任務暫時無法載入，請再試一次。';}
+      finally {loadingOlder=false;if(live())renderJobs();}
+    }
     async function refreshJobs(){
       if(!live())return;
       try {
         const result=await api('/api/compute/jobs');
         if(!live())return;
+        const next=cursor(result.next_cursor);
+        if(!olderPagesLoaded)nextCursor=next;
         for(const value of [...(result.jobs||[])].reverse())accept(value);
         const active=[...jobs.values()].filter(job=>!terminal.has(job.state)).slice(-8);
         await Promise.allSettled(active.map(async job=>{

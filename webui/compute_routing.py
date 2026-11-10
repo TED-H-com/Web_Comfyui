@@ -185,6 +185,8 @@ class ComputeRouter:
                 request_json TEXT NOT NULL, limits_json TEXT NOT NULL, receipt_json TEXT NOT NULL,
                 created REAL NOT NULL, updated REAL NOT NULL,
                 PRIMARY KEY (owner, request_id))''')
+            db.execute('CREATE INDEX IF NOT EXISTS compute_requests_owner_history '
+                       'ON compute_requests(owner, created DESC, request_id DESC)')
 
     @contextmanager
     def _db(self):
@@ -388,12 +390,22 @@ class ComputeRouter:
                     pass
         return self._view(self._get(owner, request_id))
 
-    def list_jobs(self, owner, limit=50):
+    def list_jobs(self, owner, limit=50, before=None):
         _owner(owner)
         if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 100:
             raise ComputeRoutingError('工作清單筆數必須是 1–100')
         with self._db() as db:
-            rows = db.execute('SELECT * FROM compute_requests WHERE owner=? ORDER BY created DESC,request_id DESC LIMIT ?', (owner, limit)).fetchall()
+            if before is None:
+                rows = db.execute('SELECT * FROM compute_requests WHERE owner=? ORDER BY created DESC,request_id DESC LIMIT ?', (owner, limit)).fetchall()
+            else:
+                before = _request_id(before)
+                anchor = db.execute('SELECT created FROM compute_requests WHERE owner=? AND request_id=?', (owner, before)).fetchone()
+                if anchor is None:
+                    raise ComputeRoutingError('找不到這個執行請求', code='not_found', status=404)
+                rows = db.execute('''SELECT * FROM compute_requests WHERE owner=?
+                    AND (created<? OR (created=? AND request_id<?))
+                    ORDER BY created DESC,request_id DESC LIMIT ?''',
+                    (owner, anchor['created'], anchor['created'], before, limit)).fetchall()
         return [self._view(row) for row in rows]
 
     def cancel(self, owner, request_id):

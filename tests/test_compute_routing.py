@@ -268,6 +268,40 @@ def test_list_is_owner_scoped_and_excludes_request_payload(tmp_path):
     assert 'request_json' not in rows[0]
 
 
+def test_history_cursor_orders_timestamp_ties_without_duplicates_or_newer_inserts(tmp_path):
+    now = [1000.0]
+    lane = adapter([], submit=lambda owner, rid, request, limits: {'state': 'completed', 'downstream_id': rid})
+    router = ComputeRouter(tmp_path / 'history.db', {'local': lane}, clock=lambda: now[0])
+    ids = [str(uuid.UUID(int=index)) for index in range(1, 124)]
+    for rid in ids[::2] + ids[1::2]:
+        router.submit('owner', rid, {})
+    page = router.list_jobs('owner', limit=50)
+    seen = [row['request_id'] for row in page]
+    assert seen == sorted(ids, reverse=True)[:50]
+    now[0] = 2000.0
+    newer = str(uuid.UUID(int=1000))
+    router.submit('owner', newer, {})
+    while page:
+        page = router.list_jobs('owner', limit=50, before=page[-1]['request_id'])
+        seen.extend(row['request_id'] for row in page)
+    assert seen == sorted(ids, reverse=True)
+    assert len(set(seen)) == 123 and newer not in seen
+    assert router.list_jobs('owner', limit=1)[0]['request_id'] == newer
+
+
+def test_history_cursor_is_canonical_and_owned(tmp_path):
+    router = ComputeRouter(tmp_path / 'history.db', {'local': adapter([])})
+    foreign = new_id()
+    router.submit('other-owner', foreign, {})
+    for value in (foreign, new_id()):
+        with pytest.raises(ComputeRoutingError) as error:
+            router.list_jobs('owner', before=value)
+        assert error.value.code == 'not_found' and error.value.status == 404
+    with pytest.raises(ComputeRoutingError) as error:
+        router.list_jobs('owner', before='not-a-uuid')
+    assert error.value.status == 400
+
+
 def test_recovery_looks_up_original_request_without_submitting_again(tmp_path):
     calls, lookups, request_id = [], [], new_id()
     def fail(*args):

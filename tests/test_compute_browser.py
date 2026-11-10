@@ -99,6 +99,62 @@ def fake_router(page, *, drop_first=None, local_ready=True, autoip_ready=False, 
 
 
 @pytest.mark.parametrize('width',[390,768,1440])
+def test_cursor_more_jobs_retains_old_results_on_refresh(compute_page,tmp_path,monkeypatch,width):
+    from urllib.parse import parse_qs,urlsplit
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]/'webui'))
+    from compute_routing import ComputeAdapter,ComputeRouter
+    page,errors=compute_page;page.set_viewport_size({'width':width,'height':900})
+    fake_router(page)
+    now=[1000.0]
+    def complete(owner,rid,request,limits):
+        return {'state':'completed','downstream_id':rid,'artifacts':[
+            {'name':f'合成成果 {uuid.UUID(rid).int}','url':f'/api/assets/synthetic-{rid}/source'}]}
+    lane=ComputeAdapter(lambda *args:{'eligible':True,'queue_depth':0},complete)
+    router=ComputeRouter(tmp_path/'history.db',{'local':lane},clock=lambda:now[0])
+    ids=[str(uuid.UUID(int=index)) for index in range(1,58)]
+    for rid in ids:router.submit('ui-owner',rid,{})
+    router.submit('other-owner',str(uuid.UUID(int=1000)),{})
+    cursors=[]
+    def history(route):
+        assert route.request.method=='GET','Browsing history must not dispatch jobs'
+        url=urlsplit(route.request.url)
+        if url.path=='/api/compute/jobs':
+            before=parse_qs(url.query).get('before',[None])[0];cursors.append(before)
+            rows=router.list_jobs('ui-owner',limit=51,before=before)
+            route.fulfill(json={'ok':True,'jobs':rows[:50],
+                'next_cursor':rows[49]['request_id'] if len(rows)>50 else None})
+        else:route.fulfill(json=router.status('ui-owner',url.path.rsplit('/',1)[1]))
+    page.route('**/api/compute/jobs**',history)
+    page.evaluate('window.mountCompute()')
+    page.wait_for_function('document.querySelectorAll(".compute-job").length===8')
+    more=page.get_by_role('button',name='顯示更多任務',exact=True)
+    directory=os.environ.get('WEB_COMFYUI_TEST_SCREENSHOTS')
+    if directory:
+        Path(directory).mkdir(parents=True,exist_ok=True)
+        page.screenshot(path=str(Path(directory)/f'compute-cursor-before-{width}.png'))
+    for count in (16,24,32,40,48,56):
+        more.click()
+        page.wait_for_function('count=>document.querySelectorAll(".compute-job").length===count',arg=count)
+    assert cursors.count(ids[7])==1
+    assert page.get_by_role('link',name='合成成果 2',exact=True).get_attribute('href')==f'/api/assets/synthetic-{ids[1]}/source'
+    more.click();page.wait_for_function('document.querySelectorAll(".compute-job").length===57')
+    assert more.is_hidden()
+    now[0]=2000.0;newer=str(uuid.UUID(int=999));router.submit('ui-owner',newer,{})
+    page.get_by_role('button',name='更新任務',exact=True).click()
+    page.wait_for_function('document.querySelectorAll(".compute-job").length===58')
+    visible=page.locator('.compute-job').evaluate_all('nodes=>nodes.map(node=>node.dataset.computeRequest)')
+    assert visible==[newer]+ids[::-1]
+    assert page.get_by_role('link',name='合成成果 1',exact=True).get_attribute('href')==f'/api/assets/synthetic-{ids[0]}/source'
+    assert page.get_by_role('link',name='合成成果 1000',exact=True).count()==0
+    assert more.is_hidden() and cursors.count(ids[7])==1
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+    if directory:
+        page.get_by_role('link',name='合成成果 1',exact=True).evaluate('node=>node.scrollIntoView({block:"center",behavior:"instant"})')
+        page.screenshot(path=str(Path(directory)/f'compute-cursor-after-{width}.png'))
+    assert not errors,errors
+
+
+@pytest.mark.parametrize('width',[390,768,1440])
 def test_unified_placement_limits_jobs_and_small_layout(compute_page,width):
     page,errors=compute_page;page.set_viewport_size({'width':width,'height':900})
     previews,submissions,lookups,jobs,_,account_id=fake_router(page)

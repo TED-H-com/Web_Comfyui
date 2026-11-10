@@ -20443,9 +20443,15 @@ class Handler(BaseHTTPRequestHandler):
             elif mutate and path == "/api/compute/jobs":
                 result = web.submit(body)
             elif not mutate and path == "/api/compute/jobs":
-                jobs = web.router.list_jobs(web.owner, limit=50)
+                params = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query, keep_blank_values=True)
+                cursors = params.get("before", [None])
+                if set(params) - {"before"} or len(cursors) != 1 or cursors[0] == "":
+                    raise ComputeRoutingError("任務分頁參數不正確", code="invalid_cursor")
+                page = web.router.list_jobs(web.owner, limit=51, before=cursors[0])
+                jobs = page[:50]
                 result = {"jobs": [web.router.status(web.owner, job["request_id"], refresh=index < 10)
-                                   for index, job in enumerate(jobs)]}
+                                   for index, job in enumerate(jobs)],
+                          "next_cursor": jobs[-1]["request_id"] if len(page) > 50 else None}
             elif not mutate and len(parts) == 2 and parts[0] == "jobs":
                 result = web.router.status(web.owner, parts[1], refresh=True)
             elif mutate and len(parts) == 3 and parts[0] == "jobs" and parts[2] == "cancel":

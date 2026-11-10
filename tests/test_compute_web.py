@@ -29,6 +29,61 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_history_api_pages_owned_rows_and_rejects_foreign_cursor(tmp_path, monkeypatch):
+    import sys
+    import urllib.parse
+    monkeypatch.syspath_prepend(str(ROOT / 'webui'))
+    from compute_routing import ComputeAdapter, ComputeRouter
+    import compute_web
+    lane = ComputeAdapter(lambda *args: {'eligible': True, 'queue_depth': 0},
+        lambda owner, rid, request, limits: {'state': 'completed', 'downstream_id': rid})
+    router = ComputeRouter(tmp_path / 'history.db', {'local': lane}, clock=lambda: 1000.0)
+    ids = [str(uuid.UUID(int=index)) for index in range(1, 58)]
+    for rid in ids:
+        router.submit('owner', rid, {})
+    foreign = str(uuid.UUID(int=1000))
+    router.submit('another-owner', foreign, {})
+    monkeypatch.setattr(compute_web, 'ComputeWeb', lambda handler, server:
+        types.SimpleNamespace(owner='owner', user={}, router=router))
+    tree = ast.parse((ROOT / 'webui/server.py').read_text())
+    method = next(child for node in tree.body if isinstance(node, ast.ClassDef)
+                  for child in node.body if isinstance(child, ast.FunctionDef) and child.name == 'api_compute')
+    namespace = {'__name__': __name__, 'sys': sys, 'urllib': urllib, 'FEATURE_BY_ID': {},
+                 'RequestBodyError': type('RequestBodyError', (Exception,), {})}
+    exec(compile(ast.fix_missing_locations(ast.Module(body=[copy.deepcopy(method)], type_ignores=[])),
+                 str(ROOT / 'webui/server.py'), 'exec'), namespace)
+
+    def call(query=''):
+        responses = []
+        handler = types.SimpleNamespace(path='/api/compute/jobs' + query,
+            send_json=lambda body, status=200: responses.append((status, body)))
+        namespace['api_compute'](handler, '/api/compute/jobs', False)
+        return responses[0]
+
+    status, first = call()
+    assert status == 200 and len(first['jobs']) == 50
+    assert first['next_cursor'] == ids[7]
+    status, second = call('?before=' + first['next_cursor'])
+    assert status == 200 and [row['request_id'] for row in second['jobs']] == ids[6::-1]
+    assert second['next_cursor'] is None
+    assert call('?before=' + foreign)[0] == 404
+    assert call('?before=' + first['next_cursor'] + '&before=' + foreign)[0] == 400
+    assert call('?before=')[0] == 400
+
+
+def test_history_http_keeps_cursor_query(test_server):
+    import urllib.error
+    import urllib.request
+    base, opener, cookie = test_server
+    with opener.open(urllib.request.Request(base + '/api/compute/jobs', headers={'Cookie': cookie}), timeout=15) as response:
+        assert 'next_cursor' in json.load(response)
+    request = urllib.request.Request(base + '/api/compute/jobs?before=' + str(uuid.uuid4()), headers={'Cookie': cookie})
+    with pytest.raises(urllib.error.HTTPError) as error:
+        opener.open(request, timeout=15)
+    assert error.value.code == 404
+    assert json.load(error.value)['error']['code'] == 'compute_request_not_found'
+
+
 @pytest.mark.parametrize('feature_id', ['character-angles', 'lipsync'])
 def test_explicit_anime_real_face_tools_rejected_before_preview_or_dispatch(web_fixture, feature_id):
     f = web_fixture
