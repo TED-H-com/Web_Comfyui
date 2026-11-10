@@ -3,6 +3,8 @@ import copy
 import base64
 import hashlib
 import json
+import importlib.util
+import os
 import re
 import shutil
 import struct
@@ -10,9 +12,11 @@ import subprocess
 import sys
 from pathlib import Path
 import time
+import urllib.error
 import uuid
 import wave
 import zlib
+import zipfile
 
 import pytest
 
@@ -367,6 +371,58 @@ def test_real_subprocess_bootstrap_failure_publishes_bound_terminal_state(tmp_pa
     assert not (root / 'artifacts.json').exists()
     assert 'WEB_COMFYUI_JOB ' in result.stdout
     assert value['jobs'][0]['prompt'] not in saved['error']
+    assert saved['diagnostics']['stage'] == 'bootstrap'
+    assert saved['diagnostics']['error_type'] in R.DIAGNOSTIC_ERRORS
+    if damage == 'missing_helper':
+        assert saved['diagnostics']['cause_type'] == 'ModuleNotFoundError'
+    elif damage == 'invalid_helper':
+        assert saved['diagnostics']['cause_type'] == 'SyntaxError'
+
+
+@pytest.mark.parametrize('stage', ['source_checkout', 'venv', 'torch_install',
+                                  'requirements_install', 'cuda_check', 'model_download'])
+def test_worker_persists_safe_stage_and_subprocess_status(tmp_path, monkeypatch, stage):
+    value = manifest('image')
+    root = tmp_path / value['job_id']
+    root.mkdir()
+    (root / 'manifest.json').write_text(json.dumps(value))
+    def provision(self):
+        self.diagnostic_stage = stage
+        raise subprocess.CalledProcessError(23, ['private-command', 'private-argument'],
+                                            output=b'private provider response')
+    monkeypatch.setattr(R.Runner, 'provision', provision)
+    monkeypatch.setattr(R.Runner, 'cancel_owned', lambda self: None)
+    monkeypatch.setattr(R.subprocess, 'Popen', lambda *a, **k: None)
+    R.run_job(root)
+    state = json.loads((root / 'status.json').read_text())
+    assert state['phase'] == 'failed'
+    assert state['diagnostics'] == {'stage': stage, 'error_type': 'CalledProcessError', 'exit_code': 23}
+    assert 'private-' not in json.dumps(state)
+    assert 'private provider response' not in json.dumps(state)
+
+
+def test_failure_diagnostics_never_serializes_exception_text_or_unknown_fields():
+    error = urllib.error.HTTPError('https://private.invalid/?credential=hidden', 403,
+                                   'private provider response', {}, None)
+    assert R.failure_diagnostics(error, 'model_download') == {
+        'stage': 'model_download', 'error_type': 'HTTPError', 'http_status': 403}
+    unsafe = {'stage': 'private prompt', 'error_type': ['RuntimeError'], 'cause_type': 'private message',
+              'exit_code': True, 'http_status': 999, 'url': 'https://private.invalid', 'stderr': 'private'}
+    assert R.sanitize_diagnostics(unsafe) == {}
+
+
+def test_generation_failure_retains_controlled_diagnostics(tmp_path, monkeypatch):
+    runner = make_runner(tmp_path, manifest('image'))
+    monkeypatch.setattr(runner, 'provision', lambda: None)
+    monkeypatch.setattr(runner, 'start_comfy', lambda: None)
+    monkeypatch.setattr(runner, 'configure_helpers', lambda: None)
+    def fail(_job):
+        raise RuntimeError('private authored prompt')
+    monkeypatch.setitem(R.U.RUNNERS, 'image', fail)
+    state = runner.execute()
+    assert state['phase'] == 'failed'
+    assert state['diagnostics'] == {'stage': 'generation', 'error_type': 'RuntimeError'}
+    assert 'private authored prompt' not in json.dumps(state)
 
 
 def test_corrupt_template_fails_before_any_install_or_download(tmp_path, monkeypatch):
@@ -376,6 +432,67 @@ def test_corrupt_template_fails_before_any_install_or_download(tmp_path, monkeyp
     with pytest.raises(R.ValidationError, match='template integrity'):
         runner.provision()
     assert not (runner.root / 'runtime').exists()
+
+
+def test_colab_bootstrap_without_ensurepip_installs_only_into_job_environment(tmp_path, monkeypatch):
+    pytest.importorskip('pip')
+    runner = make_runner(tmp_path, manifest('image'))
+    runner.lock['git'] = []
+    monkeypatch.setattr(R, 'required_models', lambda *_: [])
+    support = tmp_path / 'missing-ensurepip'
+    support.mkdir()
+    (support / 'sitecustomize.py').write_text(
+        "import venv\n"
+        "def unavailable(*args, **kwargs):\n"
+        "    raise RuntimeError('synthetic ensurepip unavailable')\n"
+        "venv.EnvBuilder._setup_pip = unavailable\n")
+    environment = dict(os.environ, PYTHONPATH=str(support))
+    # Establish the same failure as the Colab image before exercising the fix.
+    broken = subprocess.run([sys.executable, '-m', 'venv', str(tmp_path / 'control')],
+                            env=environment, capture_output=True, text=True, timeout=30)
+    assert broken.returncode != 0 and 'synthetic ensurepip unavailable' in broken.stderr
+    original = runner.command
+    commands = []
+    def command(args, *, stage=None, **kwargs):
+        commands.append((stage, args))
+        if stage == 'venv':
+            return original(args, stage=stage, env=environment, **kwargs)
+        # These are the production commands, but never install torch or use a GPU.
+        assert stage in {'torch_install', 'requirements_install', 'cuda_check'}
+    monkeypatch.setattr(runner, 'command', command)
+    runner.provision()
+    prefix = [sys.executable, '-m', 'pip', '--python', str(runner.python)]
+    packages = runner.lock['python_packages']
+    assert commands[0] == ('venv', [sys.executable, '-m', 'venv', '--without-pip', str(runner.python.parents[1])])
+    assert commands[1] == ('torch_install', prefix + ['install', '--index-url', runner.lock['torch_index'],
+        *[name + '==' + packages[name] for name in ('torch', 'torchvision', 'torchaudio')]])
+    assert commands[2] == ('requirements_install', prefix + [
+        'install', '-c', str(runner.root / 'runtime' / 'constraints.txt'),
+        '-r', str(runner.comfy / 'requirements.txt'), 'huggingface_hub==' + packages['huggingface_hub'],
+        'hf_xet==' + packages['hf_xet']])
+    assert commands[3][0] == 'cuda_check' and commands[3][1][:2] == [str(runner.python), '-c']
+    probe = subprocess.run([str(runner.python), '-I', '-c',
+        'import importlib.util,sys; assert sys.prefix != sys.base_prefix; '
+        'assert importlib.util.find_spec("pip") is None'], capture_output=True, timeout=30)
+    assert probe.returncode == 0
+    # A local synthetic wheel tests the real pip --python mechanism without
+    # package downloads, system installs, or a GPU. The target still has no pip.
+    name = 'webcomfy_bootstrap_fixture'
+    assert importlib.util.find_spec(name) is None
+    wheel = tmp_path / (name + '-1.0-py3-none-any.whl')
+    info = name + '-1.0.dist-info/'
+    with zipfile.ZipFile(wheel, 'w') as archive:
+        archive.writestr(name + '/__init__.py', 'MARKER = "isolated"\n')
+        archive.writestr(info + 'METADATA', 'Metadata-Version: 2.1\nName: ' + name + '\nVersion: 1.0\n')
+        archive.writestr(info + 'WHEEL', 'Wheel-Version: 1.0\nGenerator: synthetic-test\nRoot-Is-Purelib: true\nTag: py3-none-any\n')
+        archive.writestr(info + 'RECORD', '')
+    installed = subprocess.run(prefix + ['install', '--no-index', '--no-deps', '--disable-pip-version-check', str(wheel)],
+                               capture_output=True, timeout=30)
+    assert installed.returncode == 0
+    checked = subprocess.run([str(runner.python), '-I', '-c',
+        'import webcomfy_bootstrap_fixture as f; assert f.MARKER == "isolated"'], capture_output=True, timeout=30)
+    assert checked.returncode == 0
+    assert importlib.util.find_spec(name) is None
 
 
 @pytest.fixture

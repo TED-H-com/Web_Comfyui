@@ -10232,7 +10232,15 @@ function renderFieldControl(field) {
     required: field.required ? "" : null,
   });
   input.value = field.default !== undefined && field.default !== null ? String(field.default) : "";
-  fieldGetters[id] = () => input.value;
+  if (field.type === "number") {
+    const validNumber = () => input.value.trim() !== "" && Number.isFinite(input.valueAsNumber);
+    const validateNumber = () => input.setCustomValidity(validNumber() ? "" : `請填寫有效的「${field.label || id}」數字`);
+    input.addEventListener("input", validateNumber);
+    validateNumber();
+    fieldGetters[id] = () => validNumber() ? input.valueAsNumber : null;
+  } else {
+    fieldGetters[id] = () => input.value;
+  }
   return h("label", { class: "field" }, [h("span", { class: "field-label", text: field.required ? `${field.label} *` : field.label }), input]);
 }
 

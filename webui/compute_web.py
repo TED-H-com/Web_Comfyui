@@ -34,7 +34,10 @@ class ComputeWeb:
         })
 
     def inspect_hosted(self, provider, owner, request, limits):
-        self._feature(request)
+        try:
+            self._feature(request)
+        except ComputeRejected as error:
+            return {'eligible': False, 'reasons': [error.code]}
         try:
             plan = self.s.plan_colab_generation_request(request, self.user,
                 self.h.is_orchestrator_service_authenticated(),
@@ -52,10 +55,21 @@ class ComputeWeb:
             raise ComputeRejected('這項生產工具尚未開放', code='feature_unavailable')
         if feature.get('operatorOnly') and not self.s.is_operator_user(self.user):
             raise ComputeRejected('這項功能需要操作員權限', code='operator_required', status=403)
+        if feature['id'] in {'character-angles', 'lipsync'}:
+            visual = request.get('computeVisualClass')
+            if request.get('characterId'):
+                character = self.s.character_entry_for_generation(request['characterId'], self.user,
+                    self.h.is_orchestrator_service_authenticated())
+                visual = self.s.normalized_visual_class((character or {}).get('visualClass'))
+            if visual == 'anime':
+                raise ComputeRejected('這項功能只適用可辨識真人臉部的寫實素材。', code='visual_class_unsupported')
         return feature
 
     def inspect_local(self, owner, request, limits):
-        feature = self._feature(request)
+        try:
+            feature = self._feature(request)
+        except ComputeRejected as error:
+            return {'eligible': False, 'reasons': [error.code]}
         status = next((x for x in self.s.feature_status() if x['id'] == feature['id']), {})
         queue = self.s.request_json('/queue')
         active = {str(item[1]): True for key in ('queue_running', 'queue_pending')
@@ -88,7 +102,10 @@ class ComputeWeb:
         return snapshot, sorted(accounts, key=lambda a: (-float(a.get('balance_compute_units') or 0), a['id']))
 
     def inspect_colab(self, owner, request, limits):
-        self._feature(request)
+        try:
+            self._feature(request)
+        except ComputeRejected as error:
+            return {'eligible': False, 'reasons': [error.code]}
         reasons, warnings = [], []
         try:
             compatibility, warnings = self._colab_plan(request)
@@ -106,6 +123,7 @@ class ComputeWeb:
 
     def _run(self, request, lane, request_id, limits):
         self.h._compute_dispatch_started = False
+        self._feature(request)
         try:
             return self.h._generate_result(request, compute_lane=lane, request_id=request_id, compute_limits=limits)
         except (ValueError, PermissionError) as error:
@@ -321,8 +339,41 @@ class ComputeWeb:
             raise ComputeRejected('文字生成不能附帶圖片', code='unsupported_inputs')
         return build_autoip_plan(request['featureId'], settings, max_credits=limits.get('max_credits', 100))
 
+    def _autoip_character_plan(self, runtime, actor, request, limits, request_id, *, preview=False):
+        from compute_autoip_character import build_character_plan
+        self._feature(request)
+        try:
+            return build_character_plan(self.s, self.user, runtime, actor, request,
+                request_id=request_id, service_token=self.h.is_orchestrator_service_authenticated(),
+                max_credits=limits.get('max_credits', 100), preview=preview)
+        except ComputeRoutingError:
+            raise
+        except (ValueError, PermissionError, KeyError, OSError):
+            raise ComputeRejected('角色、動作、原圖或設定未通過授權檢查，沒有提交生成。',
+                                  code='input_validation_failed') from None
+
     def inspect_autoip(self, owner, request, limits):
         try:
+            if request.get('characterId'):
+                from provider_fabric.service import ProviderServiceError
+                runtime, actor = self.h._provider_runtime_actor()
+                compiled = self._autoip_character_plan(runtime, actor, request, limits,
+                    '00000000-0000-0000-0000-000000000000', preview=True)
+                try:
+                    planned = runtime.service.plan_intent(actor, compiled['plan'])
+                except ProviderServiceError as error:
+                    return {'eligible': False, 'reasons': [error.code], 'queue_depth': 0, 'currency': 'credits'}
+                # A changed avatar/name between source planning and the signed
+                # canonical plan must be previewed again, never silently used.
+                if any(planned['intent'][key] != compiled['plan'][key] for key in ('characters', 'assets')):
+                    raise ComputeRejected('角色原圖已改變，請重新預覽', code='source_changed')
+                cost = planned['quote'].get('credits')
+                if type(cost) is not int or cost < 0:
+                    raise ComputeRejected('目前無法確認 AutoIP 報價', code='quote_unavailable')
+                if cost > limits.get('max_credits', 100):
+                    raise ComputeRejected('即時報價超過點數上限', code='budget_exceeded')
+                return {'eligible': True, 'reasons': [], 'queue_depth': 0, 'estimated_cost': cost,
+                        'currency': 'credits', 'warnings': compiled['warnings']}
             settings, visual, conversion_warnings = self._autoip_inputs(request)
             runtime, actor = self.h._provider_runtime_actor()
             if self._is_autoip_media(request):
@@ -378,14 +429,21 @@ class ComputeWeb:
     def submit_autoip(self, owner, request_id, request, limits):
         from provider_fabric.service import ProviderServiceError
         runtime, actor = self.h._provider_runtime_actor()
-        plan = (self._prepare_autoip_media(runtime, actor, request_id, request, limits)
-                if self._is_autoip_media(request) else self._autoip_plan(request, limits))
+        if request.get('characterId'):
+            plan = self._autoip_character_plan(runtime, actor, request, limits, request_id)['plan']
+        else:
+            plan = (self._prepare_autoip_media(runtime, actor, request_id, request, limits)
+                    if self._is_autoip_media(request) else self._autoip_plan(request, limits))
+        source_guard = ({'expected_resources': {key: plan[key] for key in ('characters', 'assets')}}
+                        if request.get('characterId') else {})
         try:
             result = runtime.service.submit_generation(actor, {'schema_version': 1,
-                'request_id': 'generation:' + request_id.replace('-', ''), 'plan': plan})
+                'request_id': 'generation:' + request_id.replace('-', ''), 'plan': plan}, **source_guard)
         except ProviderServiceError as error:
             if error.code == 'spend_limit_exceeded':
                 raise ComputeRejected('即時報價超過點數上限，沒有提交生成。', code='budget_exceeded') from None
+            if error.code == 'source_changed':
+                raise ComputeRejected('角色原圖已改變，請重新預覽；沒有提交生成。', code='source_changed') from None
             raise
         return {'state': 'queued', 'downstream_id': result['intent_id'], 'status_url': result['status_path'],
                 'provider_id': 'autoip', 'recipe_id': 'autoip:' + plan['capability'],

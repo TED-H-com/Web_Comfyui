@@ -288,6 +288,7 @@ def test_explicit_autoip_video_spec_preserves_native_h3_settings(compute_page,wi
     page.get_by_text('工作流：Qwen Image',exact=True).wait_for()
     assert page.get_by_label('AutoIP 影片秒數',exact=True).is_hidden()
     page.get_by_label('執行位置',exact=True).select_option('autoip')
+    assert page.get_by_label('AutoIP 影片秒數',exact=True).locator('option:not([disabled])').evaluate_all('(options)=>options.map(option=>option.value)')==[str(n) for n in range(2,16)]
     page.get_by_label('AutoIP 影片秒數',exact=True).select_option('10')
     page.get_by_label('AutoIP 解析度',exact=True).select_option('768p')
     page.get_by_label('AutoIP 畫面比例',exact=True).select_option('9:16')
@@ -326,3 +327,164 @@ def test_hosted_provider_choice_uses_real_router_receipt_and_separate_budget(com
     assert submissions[0]['limits']['max_runninghub_coins']==100
     assert page.evaluate('window.receipts[0].lane')==lane
     assert previews[-1]['placement']==lane and not errors
+
+
+@pytest.mark.parametrize(('feature_id','width'),[('text2img',390),('qwen21-text2img',768),('h3-text-video',1440)])
+def test_autoip_text_visual_class_is_explicit_and_preserved_in_submit(compute_page,feature_id,width):
+    page,errors=compute_page;page.set_viewport_size({'width':width,'height':900});previews,submissions,_,_,_,_=fake_router(page,autoip_ready=True)
+    page.evaluate("featureId=>{window.request=()=>({featureId,settings:{positive:'Synthetic style test.'},files:{}});window.mountCompute();}",feature_id)
+    page.get_by_label('執行位置',exact=True).select_option('autoip')
+    style=page.get_by_label('圖片類型',exact=True);style.wait_for()
+    assert style.input_value()=='realistic'
+    page.wait_for_function('window.ComputePlacement.getState(document.querySelector("form")).eligible')
+    assert previews[-1]['request']['computeVisualClass']=='realistic'
+    style.select_option('anime')
+    page.wait_for_function('window.ComputePlacement.getState(document.querySelector("form")).eligible')
+    assert previews[-1]['request']['computeVisualClass']=='anime'
+    directory=os.environ.get('WEB_COMFYUI_TEST_SCREENSHOTS')
+    if directory:
+        Path(directory).mkdir(parents=True,exist_ok=True);page.screenshot(path=str(Path(directory)/f'autoip-text-class-{width}.png'),full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+    page.get_by_role('button',name='開始生成',exact=True).click()
+    page.get_by_text('生成中',exact=True).wait_for()
+    assert submissions[0]['request']['computeVisualClass']=='anime'
+    assert 'visualClass' not in submissions[0]['request']['settings']
+    assert not errors,errors
+
+
+def test_autoip_visual_class_keeps_existing_class_and_character_binding(compute_page):
+    page,errors=compute_page;previews,_,_,_,_,_=fake_router(page,autoip_ready=True)
+    page.evaluate("()=>{window.request=()=>({featureId:'text2img',settings:{positive:'Synthetic text.',visualStyle:'anime'},files:{},characterId:'synthetic-character',action:'image-video',variantId:'synthetic-anime'});window.mountCompute();}")
+    page.get_by_label('執行位置',exact=True).select_option('autoip')
+    page.wait_for_function('window.ComputePlacement.getState(document.querySelector("form")).eligible')
+    assert page.get_by_label('圖片類型',exact=True).is_hidden()
+    request=previews[-1]['request'];assert request['characterId']=='synthetic-character' and request['settings']['visualStyle']=='anime'
+    assert 'computeVisualClass' not in request
+    assert not errors,errors
+
+
+def test_actual_native_number_fields_compile_through_remote_adapters(compute_page,monkeypatch):
+    page,errors=compute_page;previews,submissions,_,_,_,_=fake_router(page,autoip_ready=True)
+    page.goto(page.url.split('/compute-fixture')[0]+'/#/studio/text2img')
+    page.wait_for_function('window.castleTimers && foregroundRefreshes.size===0')
+    form=page.locator('form.gen-form:has(.compute-placement)')
+    form.locator('textarea[data-field-id=positive]').fill('A synthetic paper kite.')
+    form.locator('textarea[data-field-id=negative]').fill('')
+    form.locator('.aspect-btn[data-value="1024x1024"]').click()
+    form.get_by_label('執行位置',exact=True).select_option('colab')
+    page.wait_for_function('window.ComputePlacement.getState(document.querySelector("form.gen-form")).eligible')
+    settings=page.evaluate('collectSettings(features.find(f=>f.id==="text2img"))')
+    assert type(settings['batchSize']) is int and settings['batchSize']==1
+    assert type(settings['seed']) is int and settings['seed']==-1
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]/'webui'))
+    from compute_adapters import normalise_intent,colab_compatibility
+    from compute_autoip import build_autoip_plan
+    normalized,_=normalise_intent('text2img',settings)
+    assert colab_compatibility('text2img',normalized)['supported'] is True
+    assert build_autoip_plan('text2img',settings)['visual_class']=='realistic'
+    number=form.get_by_label('張數',exact=True);number.fill('')
+    assert not number.evaluate('input=>input.checkValidity()')
+    assert page.evaluate('collectSettings(features.find(f=>f.id==="text2img")).batchSize') is None
+    form.locator('button[type=submit]').click();assert not submissions
+    number.fill('1')
+    assert number.evaluate('input=>input.checkValidity()')
+    form.locator('button[type=submit]').click()
+    page.get_by_text('生成中',exact=True).wait_for()
+    assert type(submissions[0]['request']['settings']['batchSize']) is int
+    assert submissions[0]['request']['settings']['batchSize']==1
+    assert not errors,errors
+
+
+def test_actual_native_h3_integer_string_seed_is_not_numeric_coerced(compute_page):
+    page,errors=compute_page;fake_router(page)
+    page.goto(page.url.split('/compute-fixture')[0]+'/#/studio/h3-text-video')
+    page.wait_for_function('window.castleTimers && foregroundRefreshes.size===0')
+    form=page.locator('form.gen-form:has(.compute-placement)')
+    seed=form.get_by_label('種子（-1 隨機）',exact=True)
+    if not seed.is_visible():seed.locator('xpath=ancestor::details').locator('summary').first.click()
+    seed.fill('18446744073709551615')
+    settings=page.evaluate('collectSettings(features.find(f=>f.id==="h3-text-video"))')
+    assert settings['seed']=='18446744073709551615' and seed.get_attribute('type')=='text'
+    assert not errors,errors
+
+
+@pytest.mark.parametrize(('visual_class','width','seconds','resolution','aspect'),[
+    ('anime',390,5,'480p','16:9'),('realistic',768,15,'2k','9:16'),('anime',1440,10,'768p','16:9'),
+])
+def test_bound_h3_reference_native_form_keeps_identity_and_explicit_autoip_spec(compute_page,visual_class,width,seconds,resolution,aspect):
+    page,errors=compute_page;page.set_viewport_size({'width':width,'height':900});page.set_default_timeout(5000)
+    previews,submissions,_,_,_,_=fake_router(page,autoip_ready=True)
+    page.goto(page.url.split('/compute-fixture')[0]+'/#/studio/h3-reference-video')
+    page.wait_for_function('window.castleTimers && foregroundRefreshes.size===0')
+    page.evaluate('''visualClass=>{
+      window.ComputePlacement.reset();
+      const capability={actionId:'h3-reference-video',featureId:'h3-reference-video',variantId:`reference-video.${visualClass}.h3-ref2va-image.v1`,visualClass,enabled:true,runtimeReady:true,serverBoundUploads:['reference'],
+        allowedOptions:{motionProfile:visualClass==='anime'?['gentle','expressive']:['natural','presenter'],aspect:['portrait','landscape'],quality:['quality']}};
+      const character={id:'synthetic-character',name:'合成角色',kind:'custom',visualClass,capabilities:[capability]};
+      characters=[character];activeCharacterId=character.id;selectedCharacterId=character.id;
+      currentRoute={view:'studio',characterId:character.id,featureId:'h3-reference-video'};
+      resetGetters();document.querySelector('#workspace').replaceChildren(renderFeaturePanel(features.find(item=>item.id==='h3-reference-video')));
+    }''',visual_class)
+    form=page.locator('form.gen-form:has(.compute-placement)')
+    simplified_bound_form=page.evaluate('typeof characterStudioFeature==="function"')
+    if simplified_bound_form:
+        form.locator('textarea[data-field-id=description]').fill('A fully clothed synthetic character gently waves. Quiet room tone; no music.')
+    else:
+        # Public Studio retains authored H3 fields; private Studio simplifies
+        # the bound character form. Exercise both through the actual app.
+        for field,value in {'subject_definitions':'The fully clothed subject from <Picture 1>.','summary':'A gentle wave.',
+                            'retention_analysis':'Preserve the reference appearance.','detailed_description':'The subject gently waves once.',
+                            'overall_soundscape':'Quiet room tone.','non_diegetic_music':'None.'}.items():
+            form.locator(f'textarea[data-field-id={field}]').fill(value)
+    assert form.get_by_label('AutoIP 影片秒數',exact=True).is_hidden()
+    form.get_by_label('執行位置',exact=True).select_option('auto' if width==1440 else 'autoip')
+    duration=form.get_by_label('AutoIP 影片秒數',exact=True);duration.wait_for()
+    assert duration.locator('option:not([disabled])').evaluate_all('(options)=>options.map(option=>option.value)')==[str(n) for n in range(5,16)]
+    duration.select_option(str(seconds))
+    form.get_by_label('AutoIP 解析度',exact=True).select_option(resolution)
+    form.get_by_label('AutoIP 畫面比例',exact=True).select_option(aspect)
+    page.wait_for_function('window.ComputePlacement.getState(document.querySelector("form.gen-form")).eligible')
+    request=previews[-1]['request']
+    assert request['characterId']=='synthetic-character' and request['action']=='h3-reference-video'
+    assert request['variantId']==f'reference-video.{visual_class}.h3-ref2va-image.v1'
+    assert request['computeAutoipVideo']=={'duration_seconds':seconds,'resolution':resolution,'aspect_ratio':aspect}
+    if simplified_bound_form:
+        assert request['settings']['aspect']=='portrait' and request['settings']['quality']=='quality'
+        assert request['settings']['motionProfile']==('gentle' if visual_class=='anime' else 'natural')
+        assert 'frames' not in request['settings']
+    else:
+        assert request['settings']['aspect']=='landscape' and request['settings']['frames']=='124'
+        assert request['settings']['acceleration']=='stock'
+    assert request['settings']['seed']=='-1'
+    assert 'computeVisualClass' not in request
+    assert request['files']=={'reference':{'name':'reference'}}
+    assert form.get_by_label('圖片類型',exact=True).is_hidden()
+    # Scope this assertion to the changed placement component. The public raw
+    # H3 upload grid has an independent tablet overflow; private bound Studio
+    # omits that grid. The isolated component screenshots check page overflow.
+    assert form.locator('.compute-placement').evaluate('node=>node.scrollWidth<=node.clientWidth')
+    directory=os.environ.get('WEB_COMFYUI_TEST_SCREENSHOTS')
+    if directory:
+        Path(directory).mkdir(parents=True,exist_ok=True);page.screenshot(path=str(Path(directory)/f'bound-reference-native-{width}.png'),full_page=True)
+    form.locator('button[type=submit]').click();page.get_by_text('生成中',exact=True).wait_for()
+    submitted=submissions[0]['request']
+    assert submitted['files']=={}  # The server binds the selected character avatar.
+    assert {key:value for key,value in submitted.items() if key!='files'}=={key:value for key,value in request.items() if key!='files'}
+    assert not errors,errors
+
+
+@pytest.mark.parametrize('context',[
+    {},{'characterId':'synthetic-character'},
+    {'characterId':'synthetic-character','action':'h3-reference-video','variantId':'reference-video.anime.other.v1'},
+    {'characterId':'synthetic-character','action':'reference-portrait','variantId':'reference-video.anime.h3-ref2va-image.v1'},
+    {'characterId':'','action':'h3-reference-video','variantId':'reference-video.anime.h3-ref2va-image.v1'},
+])
+def test_generic_or_unreviewed_h3_reference_gets_no_autoip_video_override(compute_page,context):
+    page,errors=compute_page;previews,submissions,_,_,_,_=fake_router(page)
+    page.evaluate('''context=>{window.request=()=>({featureId:'h3-reference-video',settings:{subject_definitions:'Synthetic reference'},files:{reference:{name:'synthetic.png'}},...context});window.mountCompute();}''',context)
+    page.get_by_label('執行位置',exact=True).select_option('autoip')
+    page.get_by_text('目前無法用所選方式執行；請查看支援條件或調整設定。',exact=True).wait_for()
+    assert page.get_by_label('AutoIP 影片秒數',exact=True).is_hidden()
+    assert 'computeAutoipVideo' not in previews[-1]['request']
+    assert page.locator('#generate').is_disabled() and not submissions
+    assert not errors,errors

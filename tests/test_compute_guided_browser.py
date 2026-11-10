@@ -254,3 +254,75 @@ def test_voice_quick_recipe_compiles_video_input_and_dynamic_step_ids(compute_pa
     assert body['inputs']['video']['dataUrl'].startswith('data:video/mp4;base64,')
     assert plan['steps'][1]['bindings']['voice']=={'step_id':'voice','artifact_index':0,'expected_kind':'audio'}
     assert not errors
+
+
+@pytest.mark.parametrize(('width','seed'),[(390,'9007199254740993'),(768,'18446744073709551615'),(1440,'-1')])
+def test_custom_h3_uses_authored_fields_and_preserves_uint64_seed_text(compute_page,monkeypatch,width,seed):
+    page,errors=compute_page;page.set_viewport_size({'width':width,'height':900});submitted=[];plans=[]
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]/'webui'))
+    from minimax_h3_product import feature_definitions
+    from compute_recipes import build_plan
+    authored={item['id']:item for item in feature_definitions()}
+    def pipelines(route):
+        if route.request.method=='GET':route.fulfill(json={'pipelines':[]});return
+        body=route.request.post_data_json;submitted.append(body);plans.append(build_plan(body,features=authored))
+        route.fulfill(json={'pipeline_id':body['pipeline_id'],'state':'queued','steps':[{'id':step['id'],'state':'pending','placement':step['placement']} for step in plans[-1]['steps']]})
+    page.route('**/api/compute/pipelines',pipelines)
+    page.goto(page.url.split('/compute-fixture')[0]+'/#/compute-production')
+    page.get_by_label('製作方式',exact=True).select_option('custom')
+    feature=page.get_by_label('步驟 1 功能',exact=True)
+    for feature_id in authored:assert feature.locator('option[value="'+feature_id+'"]').count()==1
+    feature.select_option('h3-text-video')
+    step=page.locator('.compute-custom-step').first
+    for text in step.locator('textarea').all():text.fill('Synthetic paper kite, calm ambient sound, no music.')
+    step.get_by_text('進階設定',exact=True).click()
+    seed_input=page.get_by_label('文字生成有聲影片 種子（-1 隨機）',exact=True)
+    assert seed_input.get_attribute('type')=='text' and seed_input.get_attribute('inputmode')=='numeric'
+    seed_input.fill('1e18');page.get_by_role('button',name='開始製作',exact=True).click();assert not submitted
+    seed_input.fill(seed)
+    assert page.locator('.compute-production-form').evaluate('form=>form.checkValidity()'),page.locator('.compute-production-form :invalid').evaluate_all('nodes=>nodes.map(n=>({label:n.getAttribute("aria-label"),value:n.value,message:n.validationMessage}))')
+    screenshot(page,f'custom-h3-seed-{width}.png')
+    page.get_by_role('button',name='開始製作',exact=True).click()
+    page.get_by_text('製作已建立，執行情況顯示於下方。',exact=True).wait_for()
+    assert submitted[0]['plan']['steps'][0]['request']['settings']['seed']==seed
+    assert plans[0]['steps'][0]['request']['settings']['seed']==seed
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+    assert not errors,errors
+
+
+def test_platform_switch_and_partial_save_preserve_stored_key_and_recipes(compute_page):
+    page,errors=compute_page;_,existing,providers,_,writes=guided_api(page)
+    page.goto(page.url.split('/compute-fixture')[0]+'/#/admin')
+    page.get_by_role('button',name='運算平台',exact=True).click()
+    page.get_by_text('金鑰已設定；連線與配方仍會在使用時檢查。',exact=True).wait_for()
+    page.get_by_label('API 金鑰',exact=True).fill('synthetic-unsaved-key')
+    page.get_by_label('平台',exact=True).select_option('runninghub')
+    page.get_by_text('金鑰已設定；連線與配方仍會在使用時檢查。',exact=True).wait_for()
+    page.get_by_label('平台',exact=True).select_option('comfy_cloud')
+    page.get_by_label('平台網址',exact=True).wait_for()
+    assert page.get_by_label('API 金鑰',exact=True).input_value()=='' and not writes
+    assert providers['comfy_cloud']['credential_configured'] is True
+    page.get_by_label('啟用此平台',exact=True).uncheck()
+    page.get_by_role('button',name='儲存平台設定',exact=True).click()
+    page.get_by_text('平台設定已儲存；尚未啟動生成。',exact=True).wait_for()
+    assert writes==[('comfy_cloud',{'enabled':False,'endpoint':'https://cloud.comfy.org'})]
+    assert providers['comfy_cloud']['credential_configured'] is True
+    assert providers['comfy_cloud']['recipes']==[existing]
+    assert 'synthetic-unsaved-key' not in page.locator('body').inner_text()
+    assert not errors,errors
+
+
+def test_switching_back_to_builtin_ignores_hidden_custom_required_fields(compute_page):
+    page,errors=compute_page
+    page.route('**/api/compute/pipelines',lambda route:route.fulfill(json={'pipelines':[]}))
+    page.goto(page.url.split('/compute-fixture')[0]+'/#/compute-production')
+    page.get_by_label('製作方式',exact=True).select_option('custom')
+    page.get_by_label('步驟 1 功能',exact=True).select_option('h3-text-video')
+    assert not page.locator('.compute-production-form').evaluate('form=>form.checkValidity()')
+    page.get_by_label('製作方式',exact=True).select_option('text-image-video')
+    page.get_by_label('圖片描述',exact=True).fill('Synthetic kite.')
+    page.get_by_label('影片動作與場景',exact=True).fill('Synthetic kite rises.')
+    assert page.locator('.compute-production-form').evaluate('form=>form.checkValidity()')
+    page.get_by_label('圖片製作影片執行位置',exact=True).select_option('autoip')
+    assert page.get_by_label('AutoIP 影片秒數',exact=True).is_enabled()
+    assert not errors,errors

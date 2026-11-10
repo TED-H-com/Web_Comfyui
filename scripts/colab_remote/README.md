@@ -82,5 +82,9 @@ cleanup complete solely from a local marker or a timeout.
 ComfyUI stays on `127.0.0.1:8188` in the dedicated runtime. No tunnel, Drive mount,
 global token discovery or sibling-project credential access is used. Dependency
 setup is per job, in a venv, with fixed Git/model revisions and model integrity
-checks. No SelfLift code or model weights are redistributed here. See `NOTICE.md`
+checks. Colab's existing pip (22.3 or later) manages the job interpreter using
+[`--python`](https://pip.pypa.io/en/stable/topics/python-option/); the venv is
+created with `--without-pip` so a missing system `ensurepip` does not prevent
+setup. Package installation targets only the job's venv, without apt or system
+Python changes. No SelfLift code or model weights are redistributed here. See `NOTICE.md`
 for licenses and the current static-only validation level.

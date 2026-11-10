@@ -178,6 +178,55 @@ def test_character_h3_reuses_guardrails_and_motion(tmp_path):
     assert_worker_accepts(body, tmp_path)
 
 
+@pytest.mark.parametrize("style,prose", [("anime", "consistent 2D anime illustration style"),
+                                       ("realistic", "consistent realistic photographic style")])
+@pytest.mark.parametrize("feature,sections,slots", [
+    ("h3-text-video", SECTIONS, []),
+    ("h3-image-video", SECTIONS, ["image", "last_frame"]),
+    ("h3-reference-video", REF_SECTIONS, ["reference"]),
+])
+def test_generic_h3_style_preserves_sections_and_inputs(tmp_path, style, prose, feature, sections, slots):
+    settings = {**sections, "visualStyle": style, "aspect": "landscape-preview", "frames": 124}
+    before = copy.deepcopy(settings)
+    files = {slot: make_file(tmp_path, slot + ".png", slot.encode()) for slot in slots}
+    body = A.build_colab_request(feature, settings, files, **IDS)
+    assert settings == before
+    prompt = body["job"]["prompt"]
+    assert prose in prompt
+    assert all(value in prompt for value in sections.values())
+    assert [base64.b64decode(item["data"]) for item in body["files"]] == [slot.encode() for slot in slots]
+    assert_worker_accepts(body, tmp_path)
+
+
+@pytest.mark.parametrize("style", ["anime", "realistic"])
+def test_generic_h3_free_prompt_style_is_not_character_binding(tmp_path, style):
+    body = A.build_colab_request("h3-text-video", {"prompt": "An adult waves.", "visualStyle": style}, {}, **IDS)
+    assert "An adult waves." in body["job"]["prompt"]
+    assert ("anime illustration" if style == "anime" else "realistic photographic") in body["job"]["prompt"]
+    assert_worker_accepts(body, tmp_path)
+    for context in ({"_characterId": "owned"}, {"_characterVisualClass": style}, {"_characterReference": {}}):
+        result = A.colab_compatibility("h3-image-video", {"prompt": "An adult waves.", "visualStyle": style, **context}, ["image"])
+        assert result["code"] == "character_prompt_invalid"
+
+
+@pytest.mark.parametrize("style,motion", [("anime", "gentle"), ("realistic", "natural")])
+@pytest.mark.parametrize("feature,slot", [("h3-image-video", "image"), ("h3-reference-video", "reference")])
+def test_bound_h3_still_matches_character_compiler_exactly(tmp_path, style, motion, feature, slot):
+    settings = {"description": "The adult hero smiles.", "motionProfile": motion, "visualStyle": style,
+                "_characterId": "synthetic-owned", "_characterVisualClass": style,
+                "aspect": "landscape", "resolution": "480P", "frames": 124}
+    body = A.build_colab_request(feature, settings, {slot: make_file(tmp_path)}, **IDS)
+    canonical = {**settings, "seed": 0, "acceleration": "stock"}
+    expected = A.H3.compile_product_prompt(feature_id=feature, visual_class=style,
+        settings=canonical, uploads={slot: slot + ".png"}, output_token="adapter")
+    assert body["job"]["prompt"] == expected["5"]["inputs"]["prompt"]
+    assert_worker_accepts(body, tmp_path)
+    structured = REF_SECTIONS if feature == "h3-reference-video" else SECTIONS
+    assert A.colab_compatibility(feature, {**settings, **structured}, [slot])["code"] == "prompt_conflict"
+    conflict = {**settings, "visualStyle": "realistic" if style == "anime" else "anime"}
+    assert A.colab_compatibility(feature, conflict, [slot])["code"] == "style_conflict"
+
+
 def test_first_last_order_and_ref_kind_order(tmp_path):
     first = make_file(tmp_path, "first.png", b"first")
     last = make_file(tmp_path, "last.png", b"last")

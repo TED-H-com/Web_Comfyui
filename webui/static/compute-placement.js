@@ -28,6 +28,7 @@
     settings_invalid:'生成設定格式不正確',setting_unsupported:'所選工作流無法保留部分設定',autoip_options_unsupported:'AutoIP 無法保留目前的模型、採樣或種子設定',
     seed_invalid:'種子設定不符合此工作流',prompt_invalid:'請檢查描述內容及長度',prompt_conflict:'描述欄位互相衝突',character_prompt_invalid:'角色描述不符合此工作流',
     style_invalid:'請選擇支援的畫風',style_conflict:'畫風設定互相衝突',visual_class_required:'請選擇動漫或寫實畫風',
+    visual_class_unsupported:'此功能只適用可辨識真人臉部的寫實素材',
     inputs_invalid:'請檢查參考素材的數量與位置',inputs_unsupported:'此方式不支援目前的參考素材',reference_invalid:'參考素材與描述不一致',
     last_frame_only_unsupported:'此方式需要首幀，不能只提供尾幀',negative_unsupported:'此工作流不支援目前的負向描述',
     engine_option_unsupported:'目前的模型或採樣選項無法套用此工作流',geometry_conflict:'尺寸與比例欄位互相衝突',
@@ -69,7 +70,7 @@
     mounted.get(form)?.destroy();
     let disposed=false,turn=0,debounce=null,poll=null,inFlight=null,pending=null;
     const inputValues=new WeakMap();
-    let preferenceTask=null,placementTouched=false,appliedFeature=null;
+    let preferenceTask=null,placementTouched=false,appliedFeature=null,visualFeature=null,visualTouched=false;
     const preferenceAbort=new AbortController();
     let availability={placement:'local',loading:true,eligible:false,selected_lane:null,candidates:[],error:''};
     let jobs=new Map();
@@ -83,7 +84,7 @@
     const videoSummary=el('summary',{text:'AutoIP 影片規格'});
     const videoFields=el('details',{class:'compute-video',hidden:true,open:true},[
       videoSummary,el('div',{class:'compute-grid'},[field('AutoIP 影片秒數',videoDuration),field('AutoIP 解析度',videoResolution),field('AutoIP 畫面比例',videoAspect)]),
-      el('p',{class:'compute-note',text:'以上規格只用於 AutoIP；本機與 Colab 沿用下方的幀數與畫布設定。'}),
+      el('p',{class:'compute-note',text:'以上規格只用於 AutoIP；本機與 Colab 沿用原本的影片設定。'}),
     ]);
     const gpu=select([['L4','L4'],['G4','G4'],['A100','A100'],['H100','H100']]);
     const minutes=number(60,5,180),units=number(20,5,2000),credits=number(100,1,1000000);
@@ -113,11 +114,23 @@
     form.prepend(root);form.append(taskRoot);
     function live(){return !disposed && form.isConnected;}
     function withPlacementOptions(request){
-      const current=request?.settings?.visualStyle || request?.settings?.visualClass;
-      const needed=['img2img','qwen21-edit','img2video','h3-image-video','first-last-frame'].includes(request?.featureId)
-        && ['auto','autoip'].includes(placement.value) && !['anime','realistic'].includes(current);
+      const current=request?.computeVisualClass || request?.settings?.visualStyle || request?.settings?.visualClass;
+      const textFeature=['text2img','qwen21-text2img','h3-text-video'].includes(request?.featureId);
+      const mediaFeature=['img2img','qwen21-edit','img2video','h3-image-video','first-last-frame'].includes(request?.featureId);
+      const bound=Boolean(request?.characterId||request?.action||request?.variantId);
+      if(visualFeature!==request?.featureId){if(!visualTouched)visualClass.value=textFeature?'realistic':'';visualFeature=request?.featureId;}
+      visualClass.options[0].disabled=textFeature;
+      const needed=(textFeature||mediaFeature)&&!bound&&['auto','autoip'].includes(placement.value)&&!['anime','realistic'].includes(current);
       visualField.hidden=!needed;
-      const videoNeeded=['h3-text-video','h3-image-video'].includes(request?.featureId) && ['auto','autoip'].includes(placement.value);
+      // Only the reviewed, single-avatar character reference variant has an
+      // AutoIP bridge. Generic multi-reference work still has no such adapter.
+      const boundReference=request?.featureId==='h3-reference-video'
+        && typeof request?.characterId==='string' && request.characterId.trim()!==''
+        && request?.action==='h3-reference-video'
+        && /^reference-video\.(anime|realistic)\.h3-ref2va-image\.v1$/.test(request?.variantId||'');
+      for(const option of videoDuration.options)option.disabled=option.hidden=boundReference&&Number(option.value)<5;
+      if(boundReference&&Number(videoDuration.value)<5)videoDuration.value='5';
+      const videoNeeded=(['h3-text-video','h3-image-video'].includes(request?.featureId)||boundReference) && ['auto','autoip'].includes(placement.value);
       videoFields.hidden=!videoNeeded;
       videoSummary.textContent=`AutoIP 影片規格 · ${videoDuration.value} 秒 / ${videoResolution.value} / ${videoAspect.value}`;
       let result=needed && visualClass.value ? {...request,computeVisualClass:visualClass.value} : request;
@@ -269,6 +282,7 @@
       if(root.contains(event.target) && event.target.tagName==='BUTTON')return;
       const target=event.target;
       if(target===placement){placementTouched=true;preferenceNote.hidden=true;}
+      if(target===visualClass)visualTouched=true;
       if(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)) {
         const value=target.type==='file'?JSON.stringify([...target.files].map(file=>[file.name,file.size,file.lastModified]))
           : JSON.stringify([target.value,target.checked]);

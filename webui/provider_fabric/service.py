@@ -3266,8 +3266,15 @@ class ProviderFabricService:
         self,
         actor: ActorContext,
         value: Mapping[str, Any],
+        *,
+        expected_resources: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Plan and durably confirm one generation without provider transport."""
+        """Plan and durably confirm one generation without provider transport.
+
+        A trusted adapter may pin characters/assets observed during its source
+        authorization. This Python-only argument is not accepted from HTTP JSON.
+        Existing accepted requests replay before any resource re-resolution.
+        """
 
         actor = self._require_actor(actor)
         request = _safe_mapping(value, "generation request")
@@ -3308,6 +3315,15 @@ class ProviderFabricService:
             plan_nonce=plan_nonce,
             generation_request=binding,
         )
+        if expected_resources is not None:
+            expected = _safe_mapping(expected_resources, "expected resources")
+            if set(expected) != {"characters", "assets"}:
+                raise ProviderServiceError("schema_invalid", "Expected resource binding is incomplete.")
+            actual = {key: planned["intent"][key] for key in ("characters", "assets")}
+            if not self._same_public(actual, dict(expected)):
+                raise ProviderServiceError(
+                    "source_changed", "The authorized character or source bytes changed before admission.", status=409
+                )
         # A caller of the unified production UI may impose an explicit credit
         # ceiling even where the provider otherwise owns its account policy.
         # Enforce it against this exact signed quote before durable confirmation.

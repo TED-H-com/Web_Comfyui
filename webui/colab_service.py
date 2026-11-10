@@ -262,6 +262,8 @@ class ColabService:
     def public_job(state):
         fields = ("id", "account_id", "phase", "created_at", "updated_at", "deadline_epoch", "gpu", "max_units", "max_minutes", "units_observed", "remote_phase", "message", "artifacts", "cancel_requested", "runtime_id", "released")
         result = {key: state.get(key) for key in fields}
+        from scripts.colab_remote.remote_job import sanitize_diagnostics
+        result['diagnostics'] = sanitize_diagnostics(state.get('remote_diagnostics'))
         result["status_label"] = STATES.get(state["phase"], state["phase"])
         return result
 
@@ -539,8 +541,22 @@ class ColabService:
                     if not acknowledgement.get("armed") or acknowledgement.get("job_id") != job_id or acknowledgement.get("manifest_sha256") != state["manifest_sha256"] or acknowledgement.get("deadline_epoch") != state["deadline_epoch"]:
                         raise ColabError("雲端停止期限未確認")
                     self.update(job_id, watchdog_armed=True)
-                except Exception:
-                    state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="無法確認雲端停止期限，正在釋放 GPU")
+                except Exception as error:
+                    # Reconcile only the idempotent watchdog in this same runtime.
+                    # A cold Jupyter kernel may time out before returning its ack.
+                    # Never allocate again or start the generation worker here.
+                    attempts = state.get("watchdog_attempts", 0) + 1
+                    code = (error.code if isinstance(error, BridgeError) and error.code in {
+                        "timeout", "execution_uncertain", "remote_execution_failed", "invalid_runtime",
+                        "authentication_required", "invalid_remote_output", "bridge_unavailable"
+                    } else "watchdog_ack_invalid")
+                    if code in {"timeout", "execution_uncertain"} and attempts < 3:
+                        self.update(job_id, watchdog_attempts=attempts, preparation_error_code=code,
+                            message="雲端執行環境尚未回應，正在確認同一台 GPU 的停止監測")
+                        return
+                    state = self.update(job_id, phase="cleanup_pending", outcome="failed",
+                        watchdog_attempts=attempts, preparation_error_code=code,
+                        message="無法確認雲端停止期限，正在釋放 GPU")
                     return self._cleanup(state)
                 return
             directory = self.root / "jobs" / job_id
@@ -595,17 +611,21 @@ class ColabService:
             status = report.get("status") or {}
             if status.get("job_id") != job_id or status.get("manifest_sha256") != state["manifest_sha256"]:
                 if report.get("worker_dead") or self.clock() >= state.get("launch_requested_at", state["created_at"]) + 120:
-                    state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="執行器未成功啟動，正在釋放 GPU")
+                    state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="執行器未成功啟動，正在釋放 GPU",
+                                        remote_diagnostics={'stage': 'worker_status', 'error_type': 'WorkerExited'})
                     return self._cleanup(state)
                 return
             remote_phase = status.get("phase", status.get("state", ""))
             self.update(job_id, remote_phase=remote_phase)
             if remote_phase in {"failed", "ambiguous", "timeout", "cancelled", "submission_uncertain"}:
-                state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="雲端生成未完成；保留紀錄並釋放 GPU")
+                from scripts.colab_remote.remote_job import sanitize_diagnostics
+                state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="雲端生成未完成；保留紀錄並釋放 GPU",
+                                    remote_diagnostics=sanitize_diagnostics(status.get('diagnostics')))
                 return self._cleanup(state)
             if remote_phase not in {"complete", "completed"}:
                 if report.get("worker_dead"):
-                    state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="雲端執行器已停止，正在釋放 GPU")
+                    state = self.update(job_id, phase="cleanup_pending", outcome="failed", message="雲端執行器已停止，正在釋放 GPU",
+                                        remote_diagnostics={'stage': 'worker_status', 'error_type': 'WorkerExited'})
                     return self._cleanup(state)
                 return
             state = self.update(job_id, phase="downloading")

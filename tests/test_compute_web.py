@@ -29,6 +29,34 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.parametrize('feature_id', ['character-angles', 'lipsync'])
+def test_explicit_anime_real_face_tools_rejected_before_preview_or_dispatch(web_fixture, feature_id):
+    f = web_fixture
+    f.server.FEATURE_BY_ID[feature_id] = {'id': feature_id, 'builder': 'synthetic'}
+    body = {'featureId': feature_id, 'settings': {}, 'files': {}, 'computeVisualClass': 'anime'}
+    preview = f.web.router.preview(f.web.owner, body, 'local', {})
+    assert all(not candidate['eligible'] and 'visual_class_unsupported' in candidate['reasons'] for candidate in preview['candidates'])
+    f.handler._generate_result = lambda *args, **kwargs: pytest.fail('Rejected declared anime must not dispatch')
+    with pytest.raises(Exception) as error:
+        f.web.submit_local(f.web.owner, str(uuid.uuid4()), body, {})
+    assert error.value.code == 'visual_class_unsupported' and not f.stages
+
+
+@pytest.mark.parametrize('feature_id', ['character-angles', 'lipsync'])
+def test_real_face_guard_keeps_undeclared_inputs_and_canonical_bound_visual(web_fixture, feature_id):
+    f = web_fixture
+    f.server.FEATURE_BY_ID[feature_id] = {'id': feature_id, 'builder': 'synthetic'}
+    body = {'featureId': feature_id, 'settings': {}, 'files': {'image': {'name': 'anime-looking-filename.png'}}}
+    assert f.web._feature(body)['id'] == feature_id  # No filename/content inference.
+    body.update(characterId=f.character['id'], computeVisualClass='realistic')
+    with pytest.raises(Exception) as error:
+        f.web._feature(body)
+    assert error.value.code == 'visual_class_unsupported'  # Canonical character is anime.
+    f.character['visualClass'] = 'realistic'
+    body['computeVisualClass'] = 'anime'
+    assert f.web._feature(body)['id'] == feature_id  # Canonical class remains authoritative.
+
+
 def load_server_functions(namespace):
     source = ast.parse((ROOT / "webui/server.py").read_text())
     functions = {node.name: node for node in source.body if isinstance(node, ast.FunctionDef)}
@@ -92,7 +120,8 @@ def web_fixture(tmp_path, monkeypatch):
     character = {"id": "owned-character", "name": "Synthetic", "visualClass": "anime",
                  "ownerEmail": user["email"], "type": "experimental", "kind": "custom"}
     catalog = {row["id"]: row for row in qwen.feature_definitions()}
-    catalog["character-photoshoot"] = qwen.character_feature_definition()
+    if hasattr(qwen, "character_feature_definition"):
+        catalog["character-photoshoot"] = qwen.character_feature_definition()
     stages, permissions = [], []
 
     def character_entry(cid):

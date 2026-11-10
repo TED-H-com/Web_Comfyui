@@ -258,6 +258,11 @@ def _video_job(feature_id, settings, slots):
     if "acceleration" in settings:
         _fail("engine_option_unsupported", "本機 Stock / Sage / Cache 模式與 PRISM 不同；請先選擇 PRISM 配方。")
     visual_style = _style(settings)
+    character = any(key in settings for key in _CONTEXT) or any(
+        key in settings for key in ("description", "motionProfile"))
+    style_prose = ("Use a consistent 2D anime illustration style across characters, clothing and scenery."
+                   if visual_style == "anime" else
+                   "Use a consistent realistic photographic style across people, clothing and scenery.") if visual_style else ""
     frames = settings.get("frames", 124 if settings.get("quality") == "quality" else None)
     if "quality" in settings and (settings["quality"] != "quality" or "frames" in settings or "seconds" in settings):
         _fail("duration_invalid", "不能混用或轉換這個品質／時長選項。")
@@ -293,14 +298,16 @@ def _video_job(feature_id, settings, slots):
     if "prompt" in settings:
         if any(k in settings for k in (*H3.T2V_HEADINGS, *H3.REF2VA_HEADINGS, "description", "motionProfile")):
             _fail("prompt_conflict", "不能混用單段與結構化描述。")
-        if visual_style or any(k in settings for k in _CONTEXT):
+        if character:
             _fail("character_prompt_invalid", "角色影片須保留角色描述與動作規則。")
         prompt = _text(settings["prompt"])
+        if style_prose:
+            prompt = style_prose + "\n\n" + prompt
     else:
         headings = H3.REF2VA_HEADINGS if mode == "ref" else H3.T2V_HEADINGS
-        if visual_style and any(key in settings for key in headings):
+        if character and any(key in settings for key in headings):
             _fail("prompt_conflict", "角色描述不能混用通用影片的結構化欄位。")
-        if not visual_style and any(key in settings for key in ("description", "motionProfile")):
+        if character and not visual_style:
             _fail("character_prompt_invalid", "角色描述與動作必須綁定角色畫風。")
         # Use the existing product compiler for its exact character guardrails,
         # motion prose, section headings and reference validation. Its graph is
@@ -308,9 +315,12 @@ def _video_job(feature_id, settings, slots):
         canonical = {**settings, "seed": 0, "acceleration": "stock", "frames": max(124, frames),
                      "aspect": aspect if aspect in native else "landscape-preview"}
         canonical.pop("quality", None)
+        if style_prose and not character:
+            heading = "detailed_description" if mode == "ref" else "integrated_multimodal_description"
+            canonical[heading] = style_prose + "\n\n" + _text(canonical.get(heading))
         uploads = {slot: slot + {"image": ".png", "video": ".mp4", "audio": ".wav"}[_kind(slot)] for slot in slots}
         try:
-            graph = H3.compile_product_prompt(feature_id=feature_id, visual_class=visual_style or None,
+            graph = H3.compile_product_prompt(feature_id=feature_id, visual_class=visual_style if character else None,
                 settings=canonical, uploads=uploads, output_token="adapter")
         except ValueError as error:
             _fail("prompt_invalid", str(error))

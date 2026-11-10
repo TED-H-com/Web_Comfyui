@@ -200,7 +200,8 @@ def proxy_url(value: object) -> str:
     host = p.hostname or ""
     if (p.scheme != "https" or p.username or p.password or p.query or p.fragment
             or p.port not in (None, 443)
-            or not (host == "colab.research.google.com" or host.endswith(".googleusercontent.com"))):
+            or not (host == "colab.research.google.com" or host.endswith(".googleusercontent.com")
+                    or host.endswith(".r.colab.dev"))):
         raise BridgeError("invalid_runtime", "Google returned an unsupported runtime address.")
     return value.rstrip("/")
 

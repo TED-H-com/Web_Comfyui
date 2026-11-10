@@ -257,6 +257,45 @@ def test_actual_detached_worker_crash_is_observed_by_controller(lane, monkeypatc
     state = service.job('alice', job['id'])
     assert state['phase'] == 'failed' and state['released']
     assert '啟動' in state['message']
+    assert state['remote_diagnostics'] == {'stage': 'worker_status', 'error_type': 'WorkerExited'}
+
+
+def test_remote_failure_diagnostics_are_sanitized_durable_before_cleanup(lane, monkeypatch):
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    state = service.update(job['id'], phase='running', runtime_id=str(uuid.uuid4()))
+    expected = {'stage': 'venv', 'error_type': 'CalledProcessError', 'exit_code': 1}
+    report = {'status': {'job_id': job['id'], 'manifest_sha256': state['manifest_sha256'],
+                        'phase': 'failed', 'error': 'private provider text',
+                        'diagnostics': dict(expected, stderr='private log', command='private command',
+                                            http_status=True, cause_type='private prompt')}}
+    monkeypatch.setattr(service, '_exec', lambda *a: report)
+    bridge.stop_error = True
+    with pytest.raises(BridgeError):
+        service.tick(state)
+    saved = service.job('alice', job['id'])
+    assert saved['phase'] == 'cleanup_pending'
+    assert saved['remote_diagnostics'] == expected
+    assert 'private ' not in json.dumps(saved)
+    restarted = ColabService(service.root, bridge, clock=lambda: 1000)
+    bridge.stop_error = False
+    restarted.tick(restarted.job('alice', job['id']))
+    saved = restarted.job('alice', job['id'])
+    assert saved['phase'] == 'failed' and saved['released']
+    assert restarted.public_job(saved)['diagnostics'] == expected
+    assert not any(op == 'runtime_allocate' for op, _ in bridge.calls)
+
+
+def test_foreign_remote_status_cannot_inject_failure_diagnostics(lane, monkeypatch):
+    service, _, body = lane
+    job = service.submit('alice', body)
+    state = service.update(job['id'], phase='running', runtime_id=str(uuid.uuid4()), launch_requested_at=1000)
+    monkeypatch.setattr(service, '_exec', lambda *a: {'status': {
+        'job_id': str(uuid.uuid4()), 'manifest_sha256': state['manifest_sha256'], 'phase': 'failed',
+        'diagnostics': {'stage': 'venv', 'error_type': 'CalledProcessError', 'exit_code': 1}}})
+    service.tick(state)
+    saved = service.job('alice', job['id'])
+    assert saved['phase'] == 'running' and 'remote_diagnostics' not in saved
 
 
 @pytest.mark.parametrize("cancel_during_download", [False, True])
@@ -320,3 +359,59 @@ def test_colab_http_auth_and_disabled_submission(test_server):
         opener.open(request)
     assert error.value.code == 400
     assert b"WEB_COMFYUI_COLAB_PYTHON" in error.value.read()
+
+
+def test_watchdog_reconciles_cold_kernel_without_reallocation_or_upload(lane, monkeypatch):
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    service.tick(service.job('alice', job['id']))
+    original_deadline = service.job('alice', job['id'])['deadline_epoch']
+    outcomes = [BridgeError('execution_uncertain', True), None]
+    def execute(state, code):
+        outcome = outcomes.pop(0)
+        if outcome is not None:
+            raise outcome
+        return {'armed': True, 'job_id': state['id'], 'manifest_sha256': state['manifest_sha256'],
+                'deadline_epoch': state['deadline_epoch']}
+    monkeypatch.setattr(service, '_exec', execute)
+    service.tick(service.job('alice', job['id']))
+    waiting = service.job('alice', job['id'])
+    assert waiting['phase'] == 'preparing' and waiting['watchdog_attempts'] == 1
+    assert not waiting.get('watchdog_armed')
+    assert not [op for op, _ in bridge.calls if op in {'upload', 'runtime_stop'}]
+    service.tick(waiting)
+    ready = service.job('alice', job['id'])
+    assert ready['watchdog_armed'] and ready['deadline_epoch'] == original_deadline
+    assert len([op for op, _ in bridge.calls if op == 'runtime_allocate']) == 1
+
+
+def test_watchdog_uncertainty_is_bounded_and_releases_same_runtime(lane, monkeypatch):
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    service.tick(service.job('alice', job['id']))
+    def execute(*args):
+        raise BridgeError('execution_uncertain', True)
+    monkeypatch.setattr(service, '_exec', execute)
+    for _ in range(3):
+        service.tick(service.job('alice', job['id']))
+    failed = service.job('alice', job['id'])
+    assert failed['phase'] == 'failed' and failed['released']
+    assert failed['watchdog_attempts'] == 3
+    assert failed['preparation_error_code'] == 'execution_uncertain'
+    assert len([op for op, _ in bridge.calls if op == 'runtime_allocate']) == 1
+    assert not [op for op, _ in bridge.calls if op == 'upload']
+
+
+def test_watchdog_bad_ack_fails_immediately_without_leaking_error(lane, monkeypatch):
+    service, bridge, body = lane
+    job = service.submit('alice', body)
+    service.tick(service.job('alice', job['id']))
+    def execute(*args):
+        raise RuntimeError('PRIVATE_CREDENTIAL_AND_PROMPT')
+    monkeypatch.setattr(service, '_exec', execute)
+    service.tick(service.job('alice', job['id']))
+    failed = service.job('alice', job['id'])
+    assert failed['phase'] == 'failed' and failed['released']
+    assert failed['watchdog_attempts'] == 1
+    assert failed['preparation_error_code'] == 'watchdog_ack_invalid'
+    assert 'PRIVATE_CREDENTIAL_AND_PROMPT' not in json.dumps(failed)

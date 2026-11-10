@@ -356,6 +356,39 @@ def test_lookup_is_only_get_even_without_private_record(setup):
     assert "private-proxy-token" not in json.dumps(found)
 
 
+def test_lookup_recovers_existing_allocation_on_current_colab_proxy_domain(setup):
+    account, sdk, call = setup
+    runtime_id = str(uuid.uuid4())
+    record = account / "runtimes" / (runtime_id + ".json")
+    record.parent.mkdir()
+    bridge.atomic_json(record, {"runtime_id": runtime_id, "accelerator": "L4",
+                               "state": "allocating", "created_at": 123})
+    sdk.lookup_response = Assignment()
+    sdk.lookup_response.runtime_proxy_info.url = "https://synthetic-runtime.r.colab.dev"
+    found = call("runtime_lookup", allocation_id=runtime_id, gpu="L4")
+    assert found["result"] == {"found": True, "runtime_id": runtime_id,
+                               "accelerator": "L4", "state": "allocated"}
+    saved = bridge.private_json(record)
+    assert saved["state"] == "allocated" and saved["created_at"] == 123
+    assert saved["url"] == "https://synthetic-runtime.r.colab.dev"
+    assert [entry[0] for entry in sdk.calls] == ["credentials", "lookup"]
+    assert "private-proxy-token" not in json.dumps(found)
+    assert "r.colab.dev" not in json.dumps(found)
+
+
+@pytest.mark.parametrize("url", [
+    "https://r.colab.dev", "https://not-r.colab.dev", "https://runtime.colab.dev",
+    "https://runtime.r.colab.dev.attacker.invalid", "https://r.colab.dev@attacker.invalid",
+    "http://runtime.r.colab.dev", "https://runtime.r.colab.dev:8443",
+    "https://user@runtime.r.colab.dev", "https://runtime.r.colab.dev?token=unexpected",
+    "https://runtime.r.colab.dev#unexpected",
+])
+def test_current_colab_proxy_domain_rejects_lookalikes_and_unsafe_url_parts(url):
+    with pytest.raises(bridge.BridgeError) as error:
+        bridge.proxy_url(url)
+    assert error.value.code == "invalid_runtime"
+
+
 @pytest.mark.parametrize("gpu", ["l4", "L40", "", "T4", None])
 def test_unknown_gpu_never_falls_back_to_a100(setup, gpu):
     _, sdk, call = setup
@@ -698,14 +731,17 @@ def test_actual_oauth_flow_binds_identity_and_rejects_http_redirect(sdk_http, tm
     assert (account / "token.json").read_bytes() == original
 
 
-def test_actual_sdk_allocation_lookup_and_stop_use_expected_http_protocol(sdk_http, tmp_path):
+@pytest.mark.parametrize("runtime_url", [
+    "https://runtime.colab.googleusercontent.com", "https://synthetic-runtime.r.colab.dev",
+])
+def test_actual_sdk_allocation_lookup_and_stop_use_expected_http_protocol(sdk_http, tmp_path, runtime_url):
     sdk, server = sdk_http
     account, _ = actual_account(tmp_path, sdk)
     allocation = str(uuid.uuid4())
     state = {"assigned": False}
     assignment = {"accelerator": "L4", "endpoint": "owned-endpoint", "variant": 1,
         "machineShape": 0, "runtimeProxyInfo": {"token": "fixture-proxy",
-        "tokenExpiresInSeconds": 600, "url": "https://runtime.colab.googleusercontent.com"}}
+        "tokenExpiresInSeconds": 600, "url": runtime_url}}
 
     def respond(request):
         uri = urlsplit(request.url)

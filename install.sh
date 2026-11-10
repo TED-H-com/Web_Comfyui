@@ -82,6 +82,7 @@ done
 # Validate packaged resources before any clone, package install, or model download.
 for required_resource in \
   custom_nodes.txt \
+  scripts/patch_wav2lip.py \
   patches/minimax-h3-teacache-fresh-state.patch \
   patches/spectrum-sdxl-batch-alias.patch \
   scripts/minimax_h3/install_sageattention_sm120.sh \
@@ -211,6 +212,14 @@ while read -r name url pin _; do
     fi
   fi
 done < "$REPO_DIR/custom_nodes.txt"
+
+# Wav2Lip must keep every detected box aligned with its original frame. The
+# reviewed overlay refuses missing faces instead of returning shortened video.
+# Some installations are registry archives without .git; verify source hashes.
+wav2lip_dir="$COMFY_HOME/custom_nodes/ComfyUI_wav2lip"
+if [ -f "$wav2lip_dir/Wav2Lip/wav2lip_node.py" ]; then
+  python3 "$REPO_DIR/scripts/patch_wav2lip.py" --node-dir "$wav2lip_dir" --apply
+fi
 
 # The pinned Icyoung H3 TeaCache node keeps sampling state on its patched MODEL.
 # ComfyUI may cache that MODEL between queued prompts, so the unmodified upstream

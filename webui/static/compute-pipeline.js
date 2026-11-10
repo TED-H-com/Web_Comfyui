@@ -56,7 +56,7 @@
     function destroy(){disposed=true;delete root.dataset.computePipelineMounted;clearTimeout(poll);pending=null;controls.clear();retryPlacements.clear();instances.delete(destroy);}
     instances.add(destroy);
     function lock(){
-      for(const input of form.querySelectorAll('input,textarea,select,button'))input.disabled=!!pending||submitting;
+      for(const input of form.querySelectorAll('input,textarea,select,button'))input.disabled=!!pending||submitting||(inputs.hidden&&inputs.contains(input))||(steps.hidden&&steps.contains(input))||(customHost.hidden&&customHost.contains(input));
       submit.disabled=!current||!!pending||submitting;confirm.hidden=!pending;confirm.disabled=submitting;
     }
     function newProduction(){
@@ -107,6 +107,7 @@
       const choices=(spec.options||[]).map(option=>typeof option==='object'?{...option,value:option.value??`${option.width}x${option.height}`}:{value:option,label:String(option)});
       if(['select','aspect'].includes(spec.type))input=el('select',{},choices.map(option=>el('option',{value:option.value,text:option.label||String(option.value)})));
       else if(spec.type==='textarea')input=el('textarea',{rows:Math.min(4,spec.rows||3),maxlength:spec.maxLength||12000,placeholder:spec.placeholder});
+      else if(spec.type==='integer-string')input=el('input',{type:'text',inputmode:spec.inputMode||'numeric',pattern:spec.pattern||'-1|[0-9]+',maxlength:spec.maxLength||20,placeholder:spec.placeholder});
       else input=el('input',{type:spec.type==='slider'?'number':spec.type,min:spec.min,max:spec.max,step:spec.step??'any',maxlength:spec.maxLength||12000,placeholder:spec.placeholder});
       input.required=spec.required===true;
       if(spec.type==='checkbox')input.checked=spec.default===true;else if(spec.default!=null)input.value=String(spec.default);
@@ -138,7 +139,7 @@
       const prefix=item.feature.label||item.feature.id,advanced=el('details',{},[el('summary',{text:'進階設定'})]);
       for(const spec of item.feature.fields){
         const value=customField(spec,prefix);item.fields.set(spec.id,value);
-        (['number','slider','checkbox'].includes(spec.type)?advanced:item.content).append(value.row);
+        (['number','slider','checkbox','integer-string'].includes(spec.type)?advanced:item.content).append(value.row);
       }
       if(advanced.children.length>1)item.content.append(advanced);
       for(const slot of item.feature.uploads||[]){
@@ -312,7 +313,7 @@
       try{
         const [data,prefs,registry]=await Promise.all([api('/api/compute/pipeline-recipes'),api('/api/compute/preferences').catch(()=>null),api('/api/compute/pipeline-features').catch(()=>null)]);if(!live())return;
         if(prefs)preferences=prefs;
-        featureRegistry=(registry?.features||[]).filter(item=>!item.characterOnly&&typeof item.id==='string'&&Array.isArray(item.fields)&&item.fields.every(field=>['text','textarea','select','aspect','number','slider','checkbox'].includes(field.type)));
+        featureRegistry=(registry?.features||[]).filter(item=>!item.characterOnly&&typeof item.id==='string'&&Array.isArray(item.fields)&&item.fields.every(field=>['text','textarea','select','aspect','number','slider','checkbox','integer-string'].includes(field.type)));
         recipes=(data.recipes||[]).filter(item=>typeof item.id==='string'&&Array.isArray(item.fields)&&Array.isArray(item.steps));
         recipe.replaceChildren(...recipes.map(item=>el('option',{value:item.id,text:item.label||item.id})),...(featureRegistry.length?[el('option',{value:'custom',text:'自訂多步流程'})]:[]));renderRecipe();
         if(!recipes.length&&!featureRegistry.length)notice.textContent='目前沒有可用的多步製作方式。';

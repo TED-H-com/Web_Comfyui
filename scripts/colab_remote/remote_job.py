@@ -52,6 +52,44 @@ ASPECTS = {'auto', '16:9', '9:16', '1:1', '4:3', '3:4', '21:9'}
 IMAGE = {'.png', '.jpg', '.jpeg', '.webp', '.bmp'}
 VIDEO = {'.mp4', '.mov', '.webm', '.mkv', '.avi'}
 AUDIO = {'.wav', '.mp3', '.flac', '.ogg', '.m4a', '.aac'}
+DIAGNOSTIC_STAGES = frozenset({'bootstrap', 'templates', 'source_checkout', 'venv',
+    'torch_install', 'requirements_install', 'cuda_check', 'model_inventory',
+    'model_download', 'model_verify', 'comfy_start', 'generation', 'artifact_validation',
+    'watchdog_start', 'worker_status'})
+DIAGNOSTIC_ERRORS = frozenset({'Exception', 'ValidationError', 'SubmissionUncertain',
+    'Cancelled', 'CalledProcessError', 'TimeoutExpired', 'ModuleNotFoundError',
+    'ImportError', 'SyntaxError', 'JSONDecodeError', 'KeyError', 'AttributeError',
+    'TypeError', 'ValueError', 'RuntimeError', 'OSError', 'FileNotFoundError',
+    'PermissionError', 'ConnectionError', 'HTTPError', 'URLError', 'WorkerExited'})
+
+
+def sanitize_diagnostics(value):
+    """Permit only controlled vocabulary and bounded status integers, never text."""
+    if not isinstance(value, dict):
+        return {}
+    result = {}
+    for key, allowed in (('stage', DIAGNOSTIC_STAGES), ('error_type', DIAGNOSTIC_ERRORS),
+                         ('cause_type', DIAGNOSTIC_ERRORS)):
+        if isinstance(value.get(key), str) and value[key] in allowed:
+            result[key] = value[key]
+    for key, low, high in (('exit_code', -255, 255), ('http_status', 100, 599)):
+        if type(value.get(key)) is int and low <= value[key] <= high:
+            result[key] = value[key]
+    return result
+
+
+def failure_diagnostics(error, stage):
+    def kind(exc):
+        name = type(exc).__name__
+        return name if name in DIAGNOSTIC_ERRORS else 'Exception'
+    result = {'stage': stage, 'error_type': kind(error)}
+    if error.__cause__ is not None:
+        result['cause_type'] = kind(error.__cause__)
+    if isinstance(error, subprocess.CalledProcessError):
+        result['exit_code'] = error.returncode
+    if isinstance(error, urllib.error.HTTPError):
+        result['http_status'] = error.code
+    return sanitize_diagnostics(result)
 
 
 class ValidationError(ValueError):
@@ -310,6 +348,7 @@ class Runner:
         if self.state.get('job_id') != self.manifest['job_id'] or self.state.get('manifest_sha256') != self.digest:
             raise ValidationError('Saved job identity differs from manifest')
         self.current = None
+        self.diagnostic_stage = 'bootstrap'
         self.comfy = self.root / 'runtime' / 'ComfyUI'
         self.comfy_url = 'http://127.0.0.1:8188'
         self.python = self.root / 'runtime' / 'venv' / 'bin' / 'python'
@@ -430,7 +469,9 @@ class Runner:
             time.sleep(2)
         raise Cancelled('Generation polling deadline reached')
 
-    def command(self, args, **kwargs):
+    def command(self, args, *, stage=None, **kwargs):
+        if stage is not None:
+            self.diagnostic_stage = stage
         self.check_deadline()
         with (self.root / 'runtime.log').open('ab') as log:
             return subprocess.run(args, stdout=log, stderr=subprocess.STDOUT, check=True,
@@ -438,11 +479,13 @@ class Runner:
 
     def provision(self):
         self.save('installing')
+        self.diagnostic_stage = 'templates'
         # Reject an incomplete/corrupt upload before installing or downloading.
         for item in self.lock['templates']:
             if file_digest(HERE / item['path']) != item['sha256']:
                 raise ValidationError('Bundled template integrity check failed')
         for source in self.lock['git']:
+            self.diagnostic_stage = 'source_checkout'
             dest = contained(self.root / 'runtime', source['directory'])
             if not (dest / '.git').is_dir():
                 dest.mkdir(parents=True, exist_ok=True)
@@ -454,23 +497,28 @@ class Runner:
             if rev != source['revision']:
                 raise ValidationError('Runtime Git checkout differs from pinned revision')
         if not self.python.is_file():
-            self.command([sys.executable, '-m', 'venv', str(self.python.parents[1])])
+            # Colab's system Python can omit ensurepip. pip >=22.3 can manage
+            # this isolated interpreter without installing pip into it or
+            # modifying the notebook's system packages.
+            self.command([sys.executable, '-m', 'venv', '--without-pip', str(self.python.parents[1])], stage='venv')
         lock_digest = file_digest(HERE / 'runtime.lock.json')
         marker = self.root / 'runtime' / 'installed.json'
         if not marker.exists() or json.loads(marker.read_text()).get('lock_sha256') != lock_digest:
             packages = self.lock['python_packages']
             constraints = self.root / 'runtime' / 'constraints.txt'
             constraints.write_text('\n'.join(k + '==' + v for k, v in packages.items()) + '\n')
-            self.command([str(self.python), '-m', 'pip', 'install', '--index-url', self.lock['torch_index'],
-                          *[k + '==' + packages[k] for k in ('torch', 'torchvision', 'torchaudio')]])
-            self.command([str(self.python), '-m', 'pip', 'install', '-c', str(constraints), '-r', str(self.comfy / 'requirements.txt'),
-                          'huggingface_hub==' + packages['huggingface_hub'], 'hf_xet==' + packages['hf_xet']])
+            pip = [sys.executable, '-m', 'pip', '--python', str(self.python)]
+            self.command([*pip, 'install', '--index-url', self.lock['torch_index'],
+                          *[k + '==' + packages[k] for k in ('torch', 'torchvision', 'torchaudio')]], stage='torch_install')
+            self.command([*pip, 'install', '-c', str(constraints), '-r', str(self.comfy / 'requirements.txt'),
+                          'huggingface_hub==' + packages['huggingface_hub'], 'hf_xet==' + packages['hf_xet']], stage='requirements_install')
             atomic_json(marker, {'lock_sha256': lock_digest})
         # Check in the venv interpreter, after installation; never reuse imported old torch.
         self.command([str(self.python), '-c',
                       'import torch; assert torch.cuda.is_available(), "No CUDA GPU"; '
                       'assert torch.cuda.get_device_capability(0)>=(8,0), "GPU too old"; '
-                      'print(torch.__version__,torch.version.cuda,torch.cuda.get_device_name(0))'])
+                      'print(torch.__version__,torch.version.cuda,torch.cuda.get_device_name(0))'], stage='cuda_check')
+        self.diagnostic_stage = 'model_inventory'
         needed = required_models(self.manifest, self.lock)
         remaining = sum(x['size'] for x in needed if not (self.comfy / x['destination']).is_file())
         if shutil.disk_usage(self.root).free < remaining + 8 * 1024**3:
@@ -482,11 +530,13 @@ class Runner:
             if not target.is_file():
                 # Passing JSON as argv avoids executing filename/repository strings as code.
                 self.command([str(self.python), str(HERE / 'remote_job.py'), '--download-model',
-                              json.dumps(model), '--destination', str(target), '--cache-dir', str(self.root / 'runtime' / 'hf')])
+                              json.dumps(model), '--destination', str(target), '--cache-dir', str(self.root / 'runtime' / 'hf')], stage='model_download')
+            self.diagnostic_stage = 'model_verify'
             if target.stat().st_size != model['size'] or file_digest(target) != model['sha256']:
                 raise RuntimeError('Pinned model integrity check failed')
 
     def start_comfy(self):
+        self.diagnostic_stage = 'comfy_start'
         existing = self.state.get('comfy_pid')
         if existing:
             try:
@@ -644,18 +694,20 @@ class Runner:
             record.update(status='running', seed=job['seed'])
             self.save('running')
             try:
+                self.diagnostic_stage = 'generation'
                 source, info = U.RUNNERS[job['type']](job)
                 if info.get('warning'):
                     raise RuntimeError('Extension did not produce the complete joined video')
+                self.diagnostic_stage = 'artifact_validation'
                 artifact = self.collect(self.current, source, job['type'], job['seed'])
                 artifacts.append(artifact)
                 record.update(status='done', file=Path(artifact['path']).name, size=artifact['size'], sha256=artifact['sha256'])
             except (SubmissionUncertain, Cancelled):
                 raise
-            except Exception:
+            except Exception as error:
                 traceback.print_exc()
                 record.update(status='error', error='Subjob failed; inspect private runtime logs')
-                self.save('running')
+                self.save('running', diagnostics=failure_diagnostics(error, self.diagnostic_stage))
                 if self.manifest['stop_on_error']:
                     break
             self.save('running')
@@ -705,7 +757,7 @@ def run_job(job_dir, manifest_sha256=None):
         try:
             runner = Runner(root, manifest_sha256)
             runner.save()
-        except Exception:
+        except Exception as error:
             traceback.print_exc()
             # The launch hash binds even a broken/missing manifest to the paid
             # assignment. Never overwrite state belonging to another launch.
@@ -725,7 +777,8 @@ def run_job(job_dir, manifest_sha256=None):
                 digest = file_digest(root / 'manifest.json')
             state = {'schema_version': 1, 'job_id': root.name, 'manifest_sha256': digest,
                      'phase': 'failed', 'done': True, 'jobs': {}, 'updated': time.time(),
-                     'error': 'Remote worker bootstrap failed; inspect private runtime logs'}
+                     'error': 'Remote worker bootstrap failed; inspect private runtime logs',
+                     'diagnostics': failure_diagnostics(error, 'bootstrap')}
             atomic_json(state_path, state)
             print('WEB_COMFYUI_JOB ' + json.dumps(state))
             return 1
@@ -734,19 +787,22 @@ def run_job(job_dir, manifest_sha256=None):
             return 0
         try:
             # Parent launches this process detached. A separate watchdog survives its death.
+            runner.diagnostic_stage = 'watchdog_start'
             subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--watchdog', '--job-dir', str(root),
                               '--deadline', str(runner.deadline), '--runner-pid', str(os.getpid())],
                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
             runner.execute()
-        except SubmissionUncertain:
-            runner.save('submission_uncertain', done=False, error='Prompt acceptance requires reconciliation; automatic retry disabled')
+        except SubmissionUncertain as error:
+            runner.save('submission_uncertain', done=False, error='Prompt acceptance requires reconciliation; automatic retry disabled',
+                        diagnostics=failure_diagnostics(error, runner.diagnostic_stage))
         except Cancelled:
             runner.cancel_owned()
             runner.save('cancelled', done=True, error='Cancelled or runtime deadline reached')
-        except Exception:
+        except Exception as error:
             traceback.print_exc()
             runner.cancel_owned()
-            runner.save('failed', done=True, error='Remote execution failed; inspect private runtime logs')
+            runner.save('failed', done=True, error='Remote execution failed; inspect private runtime logs',
+                        diagnostics=failure_diagnostics(error, runner.diagnostic_stage))
         print('WEB_COMFYUI_JOB ' + json.dumps(runner.state))
     return 0
 
