@@ -2,6 +2,8 @@
 
 安裝版新增[角色搭配寫真](docs/character-portraits.md)：以 Qwen 2.1 參考角色原圖，搭配場景、服裝與姿勢。動畫／寫實服裝分開，圖卡使用小型預覽視窗。
 
+選用的 [Google Colab H3 整合](docs/colab.md) 提供分開的帳號連線、可恢復的雲端任務、成果下載與 GPU 釋放確認；已通過來源、CPU 與瀏覽器測試，真實帳號的 GPU 生成仍待驗證。[完整上游逐條研究](docs/workflow-audit/README.md) 分清楚已收錄、可匯入及有實跑證據的工作流。
+
 在自己的電腦上，用網頁介面操作 ComfyUI 生圖、影片、工作流、角色、聲音與素材。公開文件站與安裝後的 WebUI 都可用右上角 **繁中 / English** 切換介面語言。角色、帳號與素材庫從空白開始，需要 API 的功能可設定自己的帳號與金鑰。
 
 [專案介紹](https://ted-h-com.github.io/Web_Comfyui/) · [互動示範](https://ted-h-com.github.io/Web_Comfyui/demo/) · [English](README.md) · [安裝設定完整參考](docs/installation.md)

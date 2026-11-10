@@ -136,6 +136,7 @@ def prepare_environment(*, port: int | None = None, create_dirs: bool = True) ->
         "CASTLE_DANCE_LIBRARY_CACHE": cache / "dance-library",
         "CASTLE_AUDIO_EXPORT_CACHE_DIR": cache / "audio-exports",
         "CASTLE_H3_WEB_STATE_ROOT": cache / "minimax-h3-web",
+        "CASTLE_COLAB_ROOT": data / "colab",
         "CASTLE_CLIPMODE_PHOTOSHOOT_STATE_ROOT": cache / "clipmode-character-photoshoot",
         "CASTLE_GUARDED_JOB_DIR": cache / "guarded-voice",
     }

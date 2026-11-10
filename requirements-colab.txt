@@ -1,0 +1,3 @@
+# Optional isolated controller environment; never install in the GPU environment.
+# Reviewed Google source tag: 66d7963611bcce2d272488e982ad38e519c062f0.
+google-colab-cli==0.7.4

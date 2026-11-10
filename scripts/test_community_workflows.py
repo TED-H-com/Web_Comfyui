@@ -126,3 +126,80 @@ def test_import_reproducible_and_preserves_license(tmp_path, selected, monkeypat
     assert cw.import_entry(tmp_path, entry, source) == first
     assert cw.validate_entry(tmp_path, entry, source) == []
     assert (tmp_path / source["license_local_path"]).read_bytes() == license_data
+
+
+@pytest.fixture
+def modern_graph():
+    sid = '11111111-1111-1111-1111-111111111111'
+    return {'nodes': [
+        {'id': 1, 'type': 'LoadImage', 'widgets_values': ['old.png'],
+         'outputs': [{'links': [1]}]},
+        {'id': 2, 'type': sid, 'inputs': [{'link': 1}], 'outputs': [{'links': [2]}]},
+        {'id': 3, 'type': 'SaveImage', 'inputs': [{'link': 2}], 'widgets_values': ['old-output']},
+    ], 'links': [[1, 1, 0, 2, 0, 'IMAGE'], [2, 2, 0, 3, 0, 'IMAGE']],
+        'definitions': {'subgraphs': [{
+            'id': sid, 'inputNode': {'id': -10}, 'outputNode': {'id': -20},
+            'inputs': [{'name': 'image', 'linkIds': [100]}],
+            'outputs': [{'name': 'IMAGE', 'linkIds': [101]}],
+            'nodes': [
+                {'id': 10, 'type': 'ImageScale', 'inputs': [{'link': 100}],
+                 'outputs': [{'links': [101]}], 'properties': {'api_key': 'must-remove'}},
+                {'id': 11, 'type': 'UNETLoader', 'widgets_values': ['model.safetensors']},
+            ],
+            'links': [
+                {'id': 100, 'origin_id': -10, 'origin_slot': 0, 'target_id': 10, 'target_slot': 0, 'type': 'IMAGE'},
+                {'id': 101, 'origin_id': 10, 'origin_slot': 0, 'target_id': -20, 'target_slot': 0, 'type': 'IMAGE'},
+            ], 'extra': {'frontendVersion': 'test', 'preview': 'private-cache'},
+        }, {'id': 'unused', 'nodes': [{'id': 1, 'type': 'UnusedPrivateNode'}], 'links': []}]}}
+
+
+def test_modern_subgraph_survives_sanitizing_with_interfaces_and_inventory(modern_graph, selected):
+    entry, source = selected
+    original = copy.deepcopy(modern_graph)
+    result = cw.sanitize(modern_graph, entry, source)
+    assert modern_graph == original
+    assert len(result['definitions']['subgraphs']) == 1
+    sub = result['definitions']['subgraphs'][0]
+    assert sub['links'] == original['definitions']['subgraphs'][0]['links']
+    assert sub['inputs'] == original['definitions']['subgraphs'][0]['inputs']
+    assert sub['nodes'][0]['properties']['api_key'] == ''
+    assert sub['extra'] == {'frontendVersion': 'test'}
+    assert cw.graph_node_types(result) == ['ImageScale', 'LoadImage', 'SaveImage', 'UNETLoader']
+    cw.validate_graph(result)
+    cw.safety_check(result)
+
+
+def test_nested_graph_topology_is_checked(modern_graph):
+    sub = modern_graph['definitions']['subgraphs'][0]
+    sub['links'][0]['target_id'] = 999
+    with pytest.raises(ValueError, match='dangling link node'):
+        cw.validate_graph(modern_graph)
+
+
+@pytest.mark.parametrize('wrapper', ['workflow/old', 'workflow>old'])
+def test_legacy_wrapper_rejected_even_inside_modern_definition(modern_graph, selected, wrapper):
+    entry, source = selected
+    modern_graph['definitions']['subgraphs'][0]['nodes'][1]['type'] = wrapper
+    with pytest.raises(ValueError, match='group nodes require separate review'):
+        cw.sanitize(modern_graph, entry, source)
+
+
+def test_missing_or_recursive_definition_is_not_silently_removed(modern_graph, selected):
+    entry, source = selected
+    missing = copy.deepcopy(modern_graph)
+    missing.pop('definitions')
+    with pytest.raises(ValueError, match='missing subgraph definition'):
+        cw.sanitize(missing, entry, source)
+    sub = modern_graph['definitions']['subgraphs'][0]
+    sub['nodes'][1]['type'] = sub['id']
+    with pytest.raises(ValueError, match='recursive subgraph'):
+        cw.sanitize(modern_graph, entry, source)
+
+
+def test_licensed_source_reference_explains_selection_policy(catalog, monkeypatch, capsys):
+    entry = next(e for e in catalog['workflows'] if e['source'] == 'dseditor' and e['distribution'] == 'links-only')
+    monkeypatch.setattr(cw, 'fetch', lambda *args: pytest.fail('reference must not fetch'))
+    assert cw.main(['import', entry['id']]) == 1
+    error = capsys.readouterr().err
+    assert 'not selected for local import' in error and 'GPL-3.0' in error
+    assert 'no redistribution license found' not in error

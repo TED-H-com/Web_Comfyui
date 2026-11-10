@@ -23,6 +23,7 @@ PRIVATE_PATH = re.compile(r"(?:(?<![A-Za-z])[A-Za-z]:[\\/]|\\\\|/(?:home|Users|m
 SECRET = re.compile(r"(?:sk-[A-Za-z0-9_-]{16,}|aip_[A-Za-z0-9_-]{12,}|hf_[A-Za-z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{16,}|Bearer\s+\S+)")
 SECRET_KEY = re.compile(r"(?:^|_)(?:api[_-]?key|access[_-]?token|token|auth(?:orization)?|password|credential|secret)(?:$|_)", re.I)
 MEDIA_KEYS = {"images", "imgs", "videopreview", "preview", "thumbnail", "base64", "image_base64"}
+SUBGRAPH_ID = re.compile(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")
 
 
 def digest(data: bytes) -> str:
@@ -87,25 +88,79 @@ def scrub(value):
     return value
 
 
+def graph_scopes(workflow: dict):
+    """Resolve referenced modern definitions; never discard a runtime wrapper.
+
+    Legacy workflow/ and workflow> groups need a separately reviewed migration.
+    Include muted instances too: saving a workflow must not destroy a branch the
+    user can subsequently enable. Unused cached definitions are not traversed.
+    """
+    result = []
+    def walk(scope, inherited, stack=()):
+        if not isinstance(scope, dict) or not isinstance(scope.get("nodes"), list):
+            raise ValueError("expected ComfyUI UI-format nodes and links lists")
+        if len(stack) > 8:
+            raise ValueError("subgraph nesting exceeds supported depth")
+        definitions = dict(inherited)
+        section = scope.get("definitions", {})
+        if not isinstance(section, dict) or not isinstance(section.get("subgraphs", []), list):
+            raise ValueError("invalid subgraph definitions")
+        local_ids = set()
+        for sub in section.get("subgraphs", []):
+            sid = sub.get("id") if isinstance(sub, dict) else None
+            if not isinstance(sid, str) or not sid or sid in local_ids or sid in inherited:
+                raise ValueError("invalid or duplicate subgraph ID")
+            local_ids.add(sid)
+            definitions[sid] = sub
+        result.append((scope, bool(stack)))
+        visited = set()
+        for node in scope["nodes"]:
+            kind = node.get("type") if isinstance(node, dict) else None
+            if not isinstance(kind, str) or not kind:
+                raise ValueError("missing node type")
+            if kind.startswith(("workflow/", "workflow>")):
+                raise ValueError("unexpanded group nodes require separate review")
+            if kind in definitions:
+                if kind in stack:
+                    raise ValueError("recursive subgraph reference")
+                if kind not in visited:
+                    walk(definitions[kind], definitions, (*stack, kind))
+                    visited.add(kind)
+            elif SUBGRAPH_ID.fullmatch(kind):
+                raise ValueError("missing subgraph definition")
+    walk(workflow, {})
+    return result
+
+
 def sanitize(original: dict, entry: dict, source: dict) -> dict:
-    if any(n.get("type", "").startswith("workflow/") for n in original.get("nodes", [])):
-        raise ValueError("unexpanded group nodes require separate review")
+    scopes = graph_scopes(original)
+    retained = {id(scope) for scope, _ in scopes}
     # Extra frequently includes unused subgraphs with hidden prompts and paths.
-    # Retain only runtime routing data and frontend version hints for this set.
-    result = {k: copy.deepcopy(original[k]) for k in ("id", "revision", "last_node_id", "last_link_id", "nodes", "links", "groups", "version") if k in original}
-    result["config"] = {}
-    result["extra"] = {k: v for k, v in original.get("extra", {}).items() if k in {"frontendVersion", "workflowRendererVersion", "ue_links", "links_added_by_ue"}}
-    result = scrub(result)
-    for node in result["nodes"]:
-        values = node.get("widgets_values")
-        if node["type"] == "LoadImage" and isinstance(values, list) and values:
-            values[0] = f"input_{node['id']}.png"
-        if node["type"] == "SaveImage" and isinstance(values, list) and values:
-            values[0] = "community/" + entry["id"]
-        if node["type"] == "LayerUtility: SaveImagePlus" and isinstance(values, list) and len(values) >= 2:
-            values[0:2] = ["", entry["id"]]
-        if node["type"] == "VHS_VideoCombine" and isinstance(values, dict):
-            values["filename_prefix"] = "community/" + entry["id"]
+    # Keep referenced modern definitions and their interface bindings, while
+    # removing unused definitions and opaque caches at every level.
+    def clean(scope, subgraph=False):
+        keys = ("id", "revision", "last_node_id", "last_link_id", "nodes", "links", "groups", "version")
+        if subgraph:
+            keys += ("state", "name", "inputNode", "outputNode", "inputs", "outputs", "widgets")
+        result = {k: copy.deepcopy(scope[k]) for k in keys if k in scope}
+        result["config"] = {}
+        result["extra"] = {k: copy.deepcopy(v) for k, v in scope.get("extra", {}).items() if k in {"frontendVersion", "workflowRendererVersion", "ue_links", "links_added_by_ue"}}
+        subs = [clean(sub, True) for sub in scope.get("definitions", {}).get("subgraphs", []) if id(sub) in retained]
+        if subs:
+            result["definitions"] = {"subgraphs": subs}
+        return result
+    result = scrub(clean(original))
+    for scope, _ in graph_scopes(result):
+        for node in scope["nodes"]:
+            values = node.get("widgets_values")
+            if node["type"] == "LoadImage" and isinstance(values, list) and values:
+                values[0] = f"input_{node['id']}.png"
+            if node["type"] == "SaveImage" and isinstance(values, list) and values:
+                values[0] = "community/" + entry["id"]
+            if node["type"] == "LayerUtility: SaveImagePlus" and isinstance(values, list) and len(values) >= 2:
+                values[0:2] = ["", entry["id"]]
+            if node["type"] == "VHS_VideoCombine" and isinstance(values, dict):
+                values["filename_prefix"] = "community/" + entry["id"]
     result["extra"]["community_attribution"] = {
         "author": source["author"], "source": source_url(source, entry["upstream_path"]),
         "source_sha256": entry["upstream_sha256"], "license": source["license"],
@@ -115,15 +170,35 @@ def sanitize(original: dict, entry: dict, source: dict) -> dict:
     return result
 
 
-def validate_graph(workflow: dict) -> None:
+def _validate_scope(workflow: dict, subgraph=False) -> None:
     if not isinstance(workflow.get("nodes"), list) or not isinstance(workflow.get("links"), list):
         raise ValueError("expected ComfyUI UI-format nodes and links lists")
     nodes = {node["id"]: node for node in workflow["nodes"]}
     if len(nodes) != len(workflow["nodes"]):
         raise ValueError("duplicate node IDs")
+    if subgraph:
+        # Modern subgraph interfaces are virtual nodes with linkIds instead of
+        # ordinary node slots. Normalize a copy for the same reciprocity checks.
+        for key, slots, output in (("inputNode", "inputs", True), ("outputNode", "outputs", False)):
+            interface = workflow.get(key, {})
+            sid = interface.get("id")
+            if sid is None or sid in nodes or not isinstance(workflow.get(slots), list):
+                raise ValueError("invalid subgraph interface")
+            normalized = []
+            for item in workflow[slots]:
+                lids = item.get("linkIds", [])
+                if not isinstance(lids, list) or (not output and len(lids) > 1):
+                    raise ValueError("invalid subgraph interface links")
+                normalized.append({"links": lids} if output else {"link": lids[0] if lids else None})
+            nodes[sid] = {"id": sid, "type": key, "outputs" if output else "inputs": normalized}
     links = {}
     targets = set()
     for link in workflow["links"]:
+        if subgraph and isinstance(link, dict):
+            try:
+                link = [link[key] for key in ("id", "origin_id", "origin_slot", "target_id", "target_slot", "type")]
+            except KeyError as exc:
+                raise ValueError("invalid subgraph link record") from exc
         if not isinstance(link, list) or len(link) != 6:
             raise ValueError("invalid link record")
         lid, source, output, target, inp, _ = link
@@ -155,6 +230,25 @@ def validate_graph(workflow: dict) -> None:
                     raise ValueError("stale output link")
 
 
+def validate_graph(workflow: dict) -> None:
+    for scope, subgraph in graph_scopes(workflow):
+        _validate_scope(scope, subgraph)
+
+
+def graph_node_types(workflow: dict) -> list[str]:
+    scopes = graph_scopes(workflow)
+    wrappers = {scope["id"] for scope, subgraph in scopes if subgraph}
+    return sorted({node["type"] for scope, _ in scopes for node in scope["nodes"] if node["type"] not in wrappers})
+
+
+def import_policy_error(entry: dict, source: dict) -> str | None:
+    if source.get("license") != "GPL-3.0":
+        return "redistribution not authorized by catalog license policy"
+    if entry.get("distribution") != "vendored":
+        return "source reference only; not selected for local import (upstream license: GPL-3.0)"
+    return None
+
+
 def safety_check(value) -> None:
     if isinstance(value, dict):
         for key, child in value.items():
@@ -181,8 +275,9 @@ def write_unmodified(path: Path, data: bytes) -> None:
 
 
 def import_entry(root: Path, entry: dict, source: dict, source_dir: Path | None = None) -> Path:
-    if entry["distribution"] != "vendored" or source["license"] != "GPL-3.0":
-        raise ValueError("links-only source: redistribution not authorized by catalog")
+    policy_error = import_policy_error(entry, source)
+    if policy_error:
+        raise ValueError(policy_error)
     if not entry["local_path"].startswith("workflows/community/dseditor/"):
         raise ValueError("unexpected community workflow destination")
     destination = contained(root, entry["local_path"])
@@ -213,7 +308,7 @@ def validate_entry(root: Path, entry: dict, source: dict, object_info: dict | No
     attribution = workflow.get("extra", {}).get("community_attribution", {})
     if attribution.get("source") != source_url(source, entry["upstream_path"]) or attribution.get("license") != source["license"]:
         raise ValueError("missing or incorrect attribution")
-    types = sorted({node["type"] for node in workflow["nodes"]})
+    types = graph_node_types(workflow)
     if types != entry["node_types"]:
         raise ValueError("catalog node inventory differs from graph")
     virtual = {"Note", "MarkdownNote", "Reroute", "SetNode", "GetNode", "Anything Everywhere3"}
@@ -249,7 +344,7 @@ def main(argv=None) -> int:
                 continue
             if entry["distribution"] == "links-only":
                 if args.command == "import" and args.ids:
-                    raise ValueError(f"{entry['id']}: links-only; no redistribution license found")
+                    raise ValueError(f"{entry['id']}: {import_policy_error(entry, source)}")
                 skipped += 1
                 if args.ids:
                     print(f"SKIP {entry['id']} (links-only)")

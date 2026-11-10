@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-11-10",
+  "upstream": {
+    "repository": "dseditor/h3-colab-skill",
+    "revision": "34ba92508ace42bc29548af7a9f07c27dcae5230",
+    "license": "MIT"
+  },
+  "git": [
+    {
+      "name": "ComfyUI",
+      "url": "https://github.com/Comfy-Org/ComfyUI.git",
+      "revision": "f4f3dedddea4e7ac8e79589a1362649fc2bf3377",
+      "directory": "ComfyUI"
+    },
+    {
+      "name": "T8",
+      "url": "https://github.com/T8mars/comfyui-minimax-h3-audio-T8.git",
+      "revision": "ee569dab831cf0d14bf8578215c7250874fad2f6",
+      "directory": "ComfyUI/custom_nodes/minimax-h3-audio-t8"
+    },
+    {
+      "name": "SelfLift",
+      "url": "https://github.com/facok/comfyui-SelfLift.git",
+      "revision": "835c3cf7919410f71f414688f049c6ca497789d0",
+      "directory": "ComfyUI/custom_nodes/comfyui-SelfLift",
+      "license": "not declared; fetched dependency, not redistributed"
+    },
+    {
+      "name": "MotionContext",
+      "url": "https://github.com/NikoDemon80/ComfyUI-H3-Motion-Context.git",
+      "revision": "518c083d11d80fa5920222ad89889924ee4401c9",
+      "directory": "ComfyUI/custom_nodes/ComfyUI-H3-Motion-Context"
+    }
+  ],
+  "python_packages": {
+    "torch": "2.11.0",
+    "torchvision": "0.26.0",
+    "torchaudio": "2.11.0",
+    "huggingface_hub": "2.4.0",
+    "hf_xet": "1.8.0",
+    "transformers": "5.22.2"
+  },
+  "torch_index": "https://download.pytorch.org/whl/cu130",
+  "models": [
+    {
+      "repository": "OliviaRossi/Minimax-h3_Singularity-x-10Eros-Max_PRISM",
+      "revision": "f35f94f7a09d48f637649f665a4d468784187468",
+      "filename": "Minimax-h3_Singularity_x_10Eros-Max_PRISM_int8.safetensors",
+      "destination": "models/diffusion_models/Minimax-h3_Singularity_x_10Eros-Max_PRISM_int8.safetensors",
+      "sha256": "a8023aa1770ffaf689e5141f655a0a4cd6688296f67fa01819d6f4b06a77f188",
+      "size": 20285875632,
+      "group": "base"
+    },
+    {
+      "repository": "Comfy-Org/MiniMax-H3",
+      "revision": "54472221d27c695fca9621b0c3ed52f06c4af707",
+      "filename": "text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+      "destination": "models/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+      "sha256": "35a88d51044231fe332301d7a62aa81e3f2cba62febeb446e2c1e3e0ef76f2c6",
+      "size": 15687142551,
+      "group": "base"
+    },
+    {
+      "repository": "Comfy-Org/MiniMax-H3",
+      "revision": "54472221d27c695fca9621b0c3ed52f06c4af707",
+      "filename": "vae/minimax_h3_video_vae_int8_convrot.safetensors",
+      "destination": "models/vae/minimax_h3_video_vae_int8_convrot.safetensors",
+      "sha256": "52a2c8c73583c86e4f41cdcce3a6ad0ea562987bc0bf3d60a0cef5f5c8e60c0e",
+      "size": 2811065184,
+      "group": "base"
+    },
+    {
+      "repository": "Comfy-Org/MiniMax-H3",
+      "revision": "54472221d27c695fca9621b0c3ed52f06c4af707",
+      "filename": "vae/minimax_h3_audio_vae_fp32.safetensors",
+      "destination": "models/vae/minimax_h3_audio_vae_fp32.safetensors",
+      "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48",
+      "size": 605254808,
+      "group": "base"
+    },
+    {
+      "repository": "Comfy-Org/MiniMax-H3",
+      "revision": "54472221d27c695fca9621b0c3ed52f06c4af707",
+      "filename": "loras/pika_h3_flex_ref2va_v1_bf16.safetensors",
+      "destination": "models/loras/pika_h3_flex_ref2va_v1_bf16.safetensors",
+      "sha256": "de3745ceb7d8d5c20898dd8fa3a05f1c0b00089ccd55297b2a8bab95c766b0e0",
+      "size": 1956172304,
+      "group": "base"
+    },
+    {
+      "repository": "dseditor/minimax-h3-studio-assets",
+      "revision": "1feae43759ca3af96d528a4312c48665d9f88811",
+      "filename": "loras/minimax_h3_turbo_v4_step600_ema_DasiwaREF2VAHybridV1_0_curveproj1025_compat_v001.safetensors",
+      "destination": "models/loras/minimax_h3_turbo_v4_step600_ema_DasiwaREF2VAHybridV1_0_curveproj1025_compat_v001.safetensors",
+      "sha256": "a117f18682a22a0381cadd9832da0afe9912f604305b3e44310b5aa1919734cc",
+      "size": 794888704,
+      "group": "base"
+    },
+    {
+      "repository": "dseditor/minimax-h3-studio-assets",
+      "revision": "1feae43759ca3af96d528a4312c48665d9f88811",
+      "filename": "loras/MysticXXX_MMH3-V2.safetensors",
+      "destination": "models/loras/MysticXXX_MMH3-V2.safetensors",
+      "sha256": "2fc32615f20465e0831a5c8069df4006422fc9638a0b7faa216e04a6ddfee8de",
+      "size": 172057936,
+      "group": "base"
+    },
+    {
+      "repository": "dseditor/minimax-h3-studio-assets",
+      "revision": "1feae43759ca3af96d528a4312c48665d9f88811",
+      "filename": "loras/H3_Combat_V2.safetensors",
+      "destination": "models/loras/H3_Combat_V2.safetensors",
+      "sha256": "5b3edb09e9d6029439badf9bc9db4ba4a355ae679b0810888de82c4793c0bac8",
+      "size": 155110280,
+      "group": "base"
+    },
+    {
+      "repository": "dseditor/minimax-h3-studio-assets",
+      "revision": "1feae43759ca3af96d528a4312c48665d9f88811",
+      "filename": "loras/Motion_Repair.safetensors",
+      "destination": "models/loras/Motion_Repair.safetensors",
+      "sha256": "a678a3657cefd5c2c2712f892da2f71be53c3f252e335557e918854f8abc579f",
+      "size": 155110272,
+      "group": "base"
+    },
+    {
+      "repository": "dseditor/minimax-h3-studio-assets",
+      "revision": "1feae43759ca3af96d528a4312c48665d9f88811",
+      "filename": "loras/H3_SPEED_slider.safetensors",
+      "destination": "models/loras/H3_SPEED_slider.safetensors",
+      "sha256": "381a6b14c126e891d6bcc823852881c8376b85df12651cac1f0beca0780b7f8e",
+      "size": 149166648,
+      "group": "base"
+    },
+    {
+      "repository": "dseditor/minimax-h3-studio-assets",
+      "revision": "1feae43759ca3af96d528a4312c48665d9f88811",
+      "filename": "semantic_bridge/t8_compat/BUNNY_H3_ActionLogic_Bridge_V1_T8_Compat.safetensors",
+      "destination": "models/semantic_bridge/t8_compat/BUNNY_H3_ActionLogic_Bridge_V1_T8_Compat.safetensors",
+      "sha256": "601769d0c6311628840a7bc5896b2a1035661f0ae2bddc602b782b955c95d3d8",
+      "size": 22046928,
+      "group": "base"
+    },
+    {
+      "repository": "dseditor/minimax-h3-studio-assets",
+      "revision": "1feae43759ca3af96d528a4312c48665d9f88811",
+      "filename": "latent_upscale_models/minimax_h3_latent_upscaler_3d_fp16_V2.safetensors",
+      "destination": "models/latent_upscale_models/minimax_h3_latent_upscaler_3d_fp16_V2.safetensors",
+      "sha256": "043e5a48e161610ef6c3ea974645220354d06fa618abca15f76d084812eb55c2",
+      "size": 690592672,
+      "group": "base"
+    },
+    {
+      "repository": "PrunaAI/P-H3-Image-Comfy",
+      "revision": "44a0fb73f299da1bb715bdb5ff59ce3fd3c6f543",
+      "filename": "loras/p-h3-image_lora_bf16.safetensors",
+      "destination": "models/loras/p-h3-image_lora_bf16.safetensors",
+      "sha256": "0e9013ae2873e3415dcb7bb59a9677293bdbdb6f663e138a79bb9bdced00ea61",
+      "size": 1956195360,
+      "group": "picture"
+    },
+    {
+      "repository": "PrunaAI/P-H3-Image-Comfy",
+      "revision": "44a0fb73f299da1bb715bdb5ff59ce3fd3c6f543",
+      "filename": "text_encoders/p-h3-image_text_encoder_int8_convrot.safetensors",
+      "destination": "models/text_encoders/p-h3-image_text_encoder_int8_convrot.safetensors",
+      "sha256": "fb42c9ff0597e61729475d0b48b69b591ffe06d0b442a79dde22b14fadbe1c0f",
+      "size": 5120870504,
+      "group": "picture"
+    },
+    {
+      "repository": "PrunaAI/P-H3-Image-Comfy",
+      "revision": "44a0fb73f299da1bb715bdb5ff59ce3fd3c6f543",
+      "filename": "vae/p-h3-image_vae_int8_convrot.safetensors",
+      "destination": "models/vae/p-h3-image_vae_int8_convrot.safetensors",
+      "sha256": "583e0d43354b6b833aa9a0815a5fac831b1ef6d0c19a7eaa0616980a3dab5ffe",
+      "size": 3146996440,
+      "group": "picture"
+    }
+  ],
+  "validation": "Static source/metadata review only; CUDA/runtime execution untested. ComfyUI requirements transitives are not fully locked.",
+  "templates": [
+    {
+      "path": "workflows/h3_picture_api.json",
+      "sha256": "4cbf32d9ffc868b71927b1f29ff183241255705128374656c9453b9f897d3fc8"
+    },
+    {
+      "path": "workflows/h3_tts32_api.json",
+      "sha256": "079b59a4a6bf94465add1f8f0c52dadd58ec16de164579bf3c491e88304d560b"
+    },
+    {
+      "path": "workflows/h3_video_api.json",
+      "sha256": "346dcfcd42d5677c22f309b8f3c880a04dcb075b15ffe5e816517c4c485e3823"
+    }
+  ]
+}

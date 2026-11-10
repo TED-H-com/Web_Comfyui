@@ -66,6 +66,33 @@ def test_subgraph_dependencies_expand_and_models_ignore_private_paths():
     assert library.graph_models(graph) == [{'name': 'example/model.safetensors', 'node_type': 'UNETLoader', 'directory_hint': 'diffusion_models'}]
 
 
+@pytest.mark.parametrize('kind', ['workflow>missing', 'workflow/missing', '11111111-1111-1111-1111-111111111111'])
+def test_unresolved_group_cannot_be_advertised_as_available_or_dependency_complete(tmp_path, kind):
+    workflows = tmp_path / 'workflows'
+    workflows.mkdir()
+    graph = {'nodes': [{'id': 1, 'type': kind}], 'links': []}
+    (workflows / 'broken.json').write_text(json.dumps(graph))
+    assert library.catalog(tmp_path) == []
+    with pytest.raises(ValueError, match='group|subgraph'):
+        library.dependency_checks({'node_types': [kind]}, graph, {kind: {}})
+
+
+def test_recursive_subgraph_is_rejected_instead_of_empty_inventory():
+    graph = {'nodes': [{'type': 'sub'}], 'definitions': {'subgraphs': [
+        {'id': 'sub', 'nodes': [{'type': 'sub'}]},
+    ]}}
+    with pytest.raises(ValueError, match='Recursive subgraph'):
+        library.graph_details(graph)
+
+
+def test_npnet_model_path_is_an_unchecked_dependency_even_when_node_exists():
+    graph = {'nodes': [{'type': 'NPNetGoldenNoise', 'widgets_values': ['[local path removed]']}]}
+    result = library.dependency_checks({'node_types': ['NPNetGoldenNoise']}, graph, {'NPNetGoldenNoise': {}})
+    assert result['dependency_status'] == 'partial'
+    assert result['model_checks_unknown'] == 1
+    assert result['gpu_tested'] is False
+
+
 def test_routes_authenticate_before_reading(monkeypatch):
     class Handler:
         def require_auth(self): return False

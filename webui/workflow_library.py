@@ -42,6 +42,7 @@ MODEL_LOADERS = {
 DIRECTORY_ALIASES = {'diffusion_models': {'diffusion_models', 'unet'},
                      'text_encoders': {'text_encoders', 'clip'}}
 VAE_BUILTINS = {'pixel_space', 'taesd', 'taesdxl', 'taesd3', 'taef1', 'taef2'}
+SUBGRAPH_ID = re.compile(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}')
 
 
 class LibraryRequestError(ValueError):
@@ -54,11 +55,68 @@ def read_json(path):
     return json.loads(path.read_text(encoding='utf-8'))
 
 
+def checked_nodes(graph):
+    """Do not silently omit unsupported, missing or recursive UI subgraphs.
+
+    The guide walker deliberately bounds its work. A load/dependency check must
+    instead reject unresolved wrappers before presenting their inventory.
+    """
+    count = 0
+    def walk(document, inherited, stack=()):
+        nonlocal count
+        if not isinstance(document, dict) or not isinstance(document.get('nodes'), list):
+            raise ValueError('Invalid visual subgraph')
+        if len(document['nodes']) > 5000:
+            raise ValueError('Graph exceeds supported node inventory size')
+        if len(stack) > 8:
+            raise ValueError('Unsupported subgraph nesting depth')
+        definitions = dict(inherited)
+        section = document.get('definitions', {})
+        if not isinstance(section, dict) or not isinstance(section.get('subgraphs', []), list):
+            raise ValueError('Invalid subgraph definitions')
+        for sub in section.get('subgraphs', []):
+            sid = sub.get('id') if isinstance(sub, dict) else None
+            if not isinstance(sid, str) or not sid or sid in definitions:
+                raise ValueError('Invalid or duplicate subgraph ID')
+            definitions[sid] = sub
+        extra = document.get('extra', {})
+        if not isinstance(extra, dict):
+            raise ValueError('Invalid graph metadata')
+        groups = extra.get('groupNodes', {})
+        if not isinstance(groups, dict):
+            raise ValueError('Invalid legacy groups')
+        for name, sub in groups.items():
+            definitions['workflow/' + name] = sub
+        for node in document['nodes']:
+            if not isinstance(node, dict):
+                raise ValueError('Invalid graph node')
+            if node.get('mode', 0) in (2, 4):
+                continue
+            kind = node.get('type')
+            if not isinstance(kind, str) or not kind:
+                raise ValueError('Missing node type')
+            if kind.startswith('workflow>'):
+                raise ValueError('Unsupported legacy workflow> group; migrate in ComfyUI first')
+            if kind in definitions:
+                if kind in stack:
+                    raise ValueError('Recursive subgraph reference')
+                walk(definitions[kind], definitions, (*stack, kind))
+            elif kind.startswith('workflow/') or SUBGRAPH_ID.fullmatch(kind):
+                raise ValueError('Missing subgraph definition')
+            else:
+                count += 1
+                if count >= 5000:
+                    raise ValueError('Graph exceeds supported node inventory size')
+    if isinstance(graph, dict) and isinstance(graph.get('nodes'), list):
+        walk(graph, {})
+    return active_nodes(graph)
+
+
 def graph_details(graph):
     if not isinstance(graph, dict):
         raise ValueError('工作流必須是 JSON 物件')
     if isinstance(graph.get('nodes'), list):
-        nodes = active_nodes(graph)
+        nodes = checked_nodes(graph)
         types = sorted({str(n.get('type')) for n in nodes if isinstance(n, dict) and n.get('type')})
         return {'format': 'visual', 'node_types': types, 'node_count': len(nodes)}
     nodes = [v for v in graph.values() if isinstance(v, dict) and 'class_type' in v]
@@ -82,7 +140,7 @@ def _model_name(value, kind):
 
 def _model_selections(graph):
     """Yield known fields, marking connected or unsafe selections as unknown."""
-    for node in active_nodes(graph):
+    for node in checked_nodes(graph):
         kind = node['type']
         if kind not in MODEL_LOADERS:
             continue
@@ -144,9 +202,9 @@ def dependency_checks(entry, graph, object_info):
             seen_missing.add((kind, directory, name))
     # Unknown custom loader layouts must not be represented as fully checked.
     # Their arbitrary widget strings and object_info choices stay private.
-    for node in active_nodes(graph):
+    for node in checked_nodes(graph):
         kind = node['type']
-        if kind not in MODEL_LOADERS and 'loader' in kind.lower():
+        if kind not in MODEL_LOADERS and ('loader' in kind.lower() or kind == 'NPNetGoldenNoise'):
             unknown += 1
     absent_nodes = missing_nodes(entry, object_info)
     return {'missing_nodes': absent_nodes, 'missing_models': missing,

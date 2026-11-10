@@ -1,5 +1,10 @@
 # Community workflows
 
+完整逐項研究請見 [上游工作流稽核](workflow-audit/README.md)：兩個來源的每個圖檔、
+模型／節點、輸入／輸出、授權與公開版本整合缺口均有紀錄，另列 PNG／ZIP 內嵌圖與
+未解密成員。報告以 `95e2079` 為歷史基準，索引另列後續修正；**這批上游圖檔的實際
+GPU 驗證數為 0**，目錄收錄與靜態檢查不代表可直接執行。
+
 The collection includes **24 editable, GPL-3.0 licensed workflows** and a searchable
 index of **233 upstream workflows**: 139 from dseditor and 94 from ecjojo. Each
 catalog entry records its source revision, file hash, category, node types and

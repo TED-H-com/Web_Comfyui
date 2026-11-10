@@ -2343,6 +2343,7 @@ function providerFabricCharacterVisualClass(character) {
 
 function renderProviderFabricView() {
   const ws = beginWorkspaceRender("workspace-route-root provider-fabric-route");
+  if (!window.WebComfyDocs && window.WebComfyColab) window.WebComfyColab.mount(ws, {api, openSheet});
   const host = h("div", { class: "provider-fabric-host" });
   ws.appendChild(host);
   if (!window.CastleProviderFabric || typeof window.CastleProviderFabric.mount !== "function") {

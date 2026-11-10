@@ -1,0 +1,222 @@
+import base64
+import hashlib
+import json
+import io
+from pathlib import Path
+import urllib.error
+import urllib.request
+import uuid
+
+import pytest
+
+from webui.colab_service import BridgeError, ColabError, ColabService
+
+
+class FakeBridge:
+    installed = True
+
+    def __init__(self):
+        self.calls = []
+        self.balance = 100
+        self.allocate_error = False
+        self.stop_error = False
+        self.usage_error = False
+        self.found = True
+        from PIL import Image
+        image = io.BytesIO()
+        Image.new("RGB", (8, 8), "gray").save(image, "PNG")
+        self.data = image.getvalue()
+
+    def __call__(self, op, directory, **values):
+        self.calls.append((op, values))
+        if op == "account_status":
+            if self.usage_error:
+                raise BridgeError("timeout")
+            return {"authenticated": True, "balance_compute_units": self.balance, "consumption_rate_per_hour": 4, "active_assignments": 0}
+        if op == "runtime_allocate" and self.allocate_error:
+            raise BridgeError("timeout", True)
+        if op in {"runtime_lookup", "runtime_allocate"}:
+            assert values["gpu"] == "L4"
+            return {"found": self.found, "runtime_id": values["allocation_id"]}
+        if op == "runtime_stop":
+            if self.stop_error:
+                raise BridgeError("timeout", True)
+            return {"stopped": True}
+        if op == "download":
+            Path(values["local_path"]).write_bytes(self.data)
+            return {"bytes": len(self.data)}
+        return {}
+
+
+@pytest.fixture
+def lane(tmp_path, monkeypatch):
+    bridge = FakeBridge()
+    service = ColabService(tmp_path / "colab", bridge, clock=lambda: 1000)
+    monkeypatch.setattr(service, "start", lambda: None)
+    account = service.create_account("alice", "My Pro")
+    body = {"account_id": account["id"], "request_id": str(uuid.uuid4()), "job": {"type": "video", "mode": "text", "prompt": "A blue square", "seconds": 5}, "gpu": "L4", "max_units": 20, "max_minutes": 60}
+    return service, bridge, body
+
+
+def test_admission_owner_budget_and_idempotence(lane):
+    service, bridge, body = lane
+    with pytest.raises(ColabError):
+        service.submit("bob", body)
+    bridge.balance = 10
+    with pytest.raises(ColabError):
+        service.submit("alice", body)
+    bridge.balance = 100
+    first = service.submit("alice", body)
+    assert service.submit("alice", body)["id"] == first["id"]
+    assert not [c for c in bridge.calls if c[0] == "runtime_allocate"]
+    with pytest.raises(ColabError):
+        service.submit("alice", {**body, "max_minutes": 30})
+    with pytest.raises(ColabError):
+        service.submit("alice", {**body, "request_id": str(uuid.uuid4())})
+    assert service.snapshot("bob")["jobs"] == []
+    with pytest.raises(ColabError):
+        service.job("bob", first["id"])
+    with pytest.raises(ColabError):
+        service.cancel("bob", first["id"])
+
+
+def test_ambiguous_allocate_survives_restart_without_second_allocation(lane):
+    service, bridge, body = lane
+    job = service.submit("alice", body)
+    bridge.allocate_error = True
+    service.tick(service.job("alice", job["id"]))
+    assert service.job("alice", job["id"])["phase"] == "allocation_uncertain"
+    recovered = ColabService(service.root, bridge, clock=lambda: 1005)
+    recovered.tick(recovered.job("alice", job["id"]))
+    state = recovered.job("alice", job["id"])
+    assert state["phase"] == "preparing"
+    assert state["runtime_id"] == state["allocation_id"]
+    assert len([c for c in bridge.calls if c[0] == "runtime_allocate"]) == 1
+
+
+def test_credential_reconnect_blocked_until_release(lane):
+    service, bridge, body = lane
+    job = service.submit("alice", body)
+    for action in ("login", "finish"):
+        with pytest.raises(ColabError):
+            service.account_action("alice", body["account_id"], action, {})
+    assert not [c for c in bridge.calls if c[0].startswith("oauth")]
+
+
+def test_stop_failure_never_claims_completion_and_is_recovered(lane):
+    service, bridge, body = lane
+    job = service.submit("alice", body)
+    service.tick(service.job("alice", job["id"]))
+    service.cancel("alice", job["id"])
+    bridge.stop_error = True
+    with pytest.raises(BridgeError):
+        service.tick(service.job("alice", job["id"]))
+    state = service.job("alice", job["id"])
+    assert state["phase"] == "cleanup_pending" and not state["released"]
+    bridge.stop_error = False
+    service.tick(state)
+    state = service.job("alice", job["id"])
+    assert state["phase"] == "cancelled" and state["released"]
+
+
+@pytest.mark.parametrize("condition", ["missing_balance", "budget", "deadline"])
+def test_limits_release_owned_runtime(lane, condition):
+    service, bridge, body = lane
+    job = service.submit("alice", body)
+    service.tick(service.job("alice", job["id"]))
+    if condition == "missing_balance": bridge.usage_error = True
+    if condition == "budget": bridge.balance = 75
+    if condition == "deadline": service.clock = lambda: 5000
+    service.tick(service.job("alice", job["id"]))
+    state = service.job("alice", job["id"])
+    assert state["phase"] == "failed" and state["released"]
+
+
+def test_download_identity_hash_and_traversal(lane):
+    service, bridge, body = lane
+    job = service.submit("alice", body)
+    state = service.update(job["id"], runtime_id=str(uuid.uuid4()))
+    artifact = {"path": "out/output.png", "size": len(bridge.data), "sha256": hashlib.sha256(bridge.data).hexdigest()}
+    report = {"job_id": state["id"], "manifest_sha256": state["manifest_sha256"], "artifacts": [artifact]}
+    outputs = service._download(state, report, "/content/web-comfyui/" + state["id"])
+    assert outputs[0]["sha256"] == artifact["sha256"]
+    service.update(state["id"], artifacts=outputs)
+    with pytest.raises(ColabError):
+        service.artifact("bob", state["id"], "1.png")
+    assert service.artifact("alice", state["id"], "1.png").read_bytes() == bridge.data
+    for changes in ({"path": "../token.json"}, {"path": "/content/out/a.png"}, {"sha256": "0" * 64}):
+        with pytest.raises(ColabError):
+            service._download(state, {**report, "artifacts": [{**artifact, **changes}]}, "/content/web-comfyui/" + state["id"])
+    with pytest.raises(ColabError):
+        service._download(state, {**report, "manifest_sha256": "0" * 64}, "/content/web-comfyui/" + state["id"])
+
+
+def test_invalid_mode_and_external_paths_never_allocate(lane):
+    service, bridge, body = lane
+    for job in ({"type": "image", "prompt": "square", "inputs": ["/private/file.png"]}, {"type": "video", "mode": "text", "prompt": "square", "seconds": 99}):
+        with pytest.raises(ColabError):
+            service.submit("alice", {**body, "job": job})
+    assert service.snapshot("alice")["jobs"] == []
+    assert not [c for c in bridge.calls if c[0] == "runtime_allocate"]
+
+
+@pytest.mark.parametrize("cancel_during_download", [False, True])
+def test_complete_lifecycle_uses_frozen_bundle_and_respects_late_cancel(lane, monkeypatch, tmp_path, cancel_during_download):
+    service, bridge, body = lane
+    job = service.submit("alice", body)
+    real_call = bridge.__class__.__call__
+    def transport(op, directory, **values):
+        state = service.job("alice", job["id"])
+        if op == "remote_exec":
+            code = values["code"]
+            if "read('status.json')" in code:
+                entry = {"path": "out/output.png", "size": len(bridge.data), "sha256": hashlib.sha256(bridge.data).hexdigest()}
+                identity = {"job_id": job["id"], "manifest_sha256": state["manifest_sha256"]}
+                result = {"status": {**identity, "phase": "completed"}, "artifacts": {**identity, "artifacts": [entry]}}
+            elif "armed" in code:
+                result = {"armed": True, "job_id": job["id"], "manifest_sha256": state["manifest_sha256"], "deadline_epoch": state["deadline_epoch"]}
+            else:
+                result = {"launched": True}
+            return {"stdout": "WEB_COMFYUI_JSON=" + json.dumps(result)}
+        if op == "upload":
+            assert Path(values["local_path"]).is_relative_to(service.root / "jobs" / job["id"])
+        result = real_call(bridge, op, directory, **values)
+        if op == "download" and cancel_during_download:
+            service.cancel("alice", job["id"])
+        return result
+    class LifecycleBridge:
+        installed = True
+        __call__ = staticmethod(transport)
+    service.bridge = LifecycleBridge()
+    # Simulate a deployment replacing source files after admission.
+    from webui import colab_service
+    monkeypatch.setattr(colab_service, "ROOT", tmp_path / "new-unrelated-release")
+    for _ in range(50):
+        state = service.job("alice", job["id"])
+        if state["phase"] in {"completed", "failed", "cancelled"}:
+            break
+        service.tick(state)
+    state = service.job("alice", job["id"])
+    assert state["phase"] == ("cancelled" if cancel_during_download else "completed")
+    assert state["released"]
+    assert len([call for call in bridge.calls if call[0] == "runtime_allocate"]) == 1
+    if not cancel_during_download:
+        assert state["artifacts"][0]["width"] == 8
+
+
+def test_colab_http_auth_and_disabled_submission(test_server):
+    base, opener, cookie = test_server
+    for path in ("/api/colab", "/api/colab/jobs/" + str(uuid.uuid4()) + "/files/1.png"):
+        with pytest.raises(urllib.error.HTTPError) as error:
+            opener.open(base + path)
+        assert error.value.code == 401
+    request = urllib.request.Request(base + "/api/colab", headers={"Cookie": cookie})
+    state = json.load(opener.open(request))
+    assert not state["installed"] and state["accounts"] == []
+    request = urllib.request.Request(base + "/api/colab/accounts", data=json.dumps({"label": "Synthetic Pro"}).encode(), headers={"Cookie": cookie, "Origin": base, "Content-Type": "application/json"})
+    account = json.load(opener.open(request))
+    request = urllib.request.Request(base + "/api/colab/accounts/" + account["id"] + "/login", data=b"{}", headers={"Cookie": cookie, "Origin": base, "Content-Type": "application/json"})
+    with pytest.raises(urllib.error.HTTPError) as error:
+        opener.open(request)
+    assert error.value.code == 400
+    assert b"WEB_COMFYUI_COLAB_PYTHON" in error.value.read()

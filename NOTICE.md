@@ -24,3 +24,12 @@ model weights have their own licenses and requirements.
 ## Optional pose and costume references
 
 Open Pose & Costume metadata is pinned to revision `16e378aaf0dd021b8e06001b4e1ed781580287ba`. No upstream images are bundled. Source and custom-asset terms, runtime fetching, and verification limits are documented in [character-portraits.md](docs/character-portraits.md).
+
+## Optional Colab H3 worker
+
+The graph/media helpers and three templates under `scripts/colab_remote/` derive
+from dseditor/h3-colab-skill revision `34ba92508ace42bc29548af7a9f07c27dcae5230`
+under MIT. Its complete notice and changes are in that directory's
+`LICENSE.upstream` and `NOTICE.md`. Google Colab CLI is an optional Apache-2.0
+dependency. No model weights or runtime node repositories are bundled; their
+separate licenses and validation limits are documented in [the Colab guide](docs/colab.md).

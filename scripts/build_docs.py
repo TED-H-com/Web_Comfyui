@@ -26,6 +26,8 @@ from scripts.public_demo_assets import PUBLIC_DEMO_ASSETS
 
 MARKER = '.web-comfyui-docs'
 ASSETS = {
+    'webui/static/colab.js': 'assets/colab.js',
+    'webui/static/colab.css': 'assets/colab.css',
     **{'webui/static/'+name: 'assets/'+name for name in ('reference-sources.js', 'reference-sources.css', 'photo-presets.js', 'photo-presets.css')},
     'webui/docs/landing.css': 'assets/landing.css',
     'webui/docs/landing.js': 'assets/landing.js',

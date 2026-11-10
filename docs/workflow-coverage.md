@@ -1,5 +1,10 @@
 # Workflow coverage and sources
 
+兩個社群來源的完整逐項研究已整理於 [上游工作流稽核](workflow-audit/README.md)，
+包含來源／副本雜湊、實際節點與模型、失敗或未完成的整合，以及稽核後修正。
+該報告以 `95e2079` 為歷史基準；其中**上游特定圖檔的 GPU 驗證數為 0**，
+不能用本頁其他 builder 的錄製結果替代它們的執行證據。
+
 WebUI features and downloadable ComfyUI graphs are separate interfaces. The feature registry contains 23 entries, including library/editor tools and intentionally hidden modes. Most generation features construct their API graphs in Python; they do not depend on a recovered JSON file with a matching display name. Missing a model, custom node or runtime still blocks generation.
 
 The [project homepage](https://ted-h-com.github.io/Web_Comfyui/) introduces the project and [installation](installation.md). The separate [interactive demo](https://ted-h-com.github.io/Web_Comfyui/demo/) uses the actual app shell with a read-only adapter; it is not a live generation service. **查看流程與模型** opens the source-backed guide, while **查看 ComfyUI 範本與節點** opens the graph or clearly labelled process view. The existing **Generate** button instead shows a recorded GPU result inline when execution evidence exists, or explicitly reports no verified result. The 23 feature guides identify real Python builders, required models and form defaults; downloadable reference JSONs are explicitly labelled. The public workflow library separately contains 248 entries, including 46 downloadable graphs: 24 curated community imports plus the 22 baseline examples audited below.

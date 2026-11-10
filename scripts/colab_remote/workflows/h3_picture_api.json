@@ -1,0 +1,140 @@
+{
+ "iu": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "Minimax-h3_Singularity_x_10Eros-Max_PRISM_int8.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "ilo": {
+  "class_type": "LoraLoaderBypassModelOnly",
+  "inputs": {
+   "model": [
+    "iu",
+    0
+   ],
+   "lora_name": "p-h3-image_lora_bf16.safetensors",
+   "strength_model": 1.0
+  }
+ },
+ "ish": {
+  "class_type": "MiniMaxH3SigmaShift",
+  "inputs": {
+   "model": [
+    "ilo",
+    0
+   ],
+   "shift_video": 1.0,
+   "shift_audio": 1.0
+  }
+ },
+ "il": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "p-h3-image_text_encoder_int8_convrot.safetensors",
+   "type": "minimax",
+   "device": "default"
+  }
+ },
+ "iv": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "p-h3-image_vae_int8_convrot.safetensors"
+  }
+ },
+ "ienc": {
+  "class_type": "PH3ImageConditioning",
+  "inputs": {
+   "clip": [
+    "il",
+    0
+   ],
+   "vae": [
+    "iv",
+    0
+   ],
+   "prompt": "",
+   "width": 2048,
+   "height": 2048
+  }
+ },
+ "ig": {
+  "class_type": "BasicGuider",
+  "inputs": {
+   "model": [
+    "ish",
+    0
+   ],
+   "conditioning": [
+    "ienc",
+    0
+   ]
+  }
+ },
+ "in": {
+  "class_type": "RandomNoise",
+  "inputs": {
+   "noise_seed": 0
+  }
+ },
+ "is": {
+  "class_type": "KSamplerSelect",
+  "inputs": {
+   "sampler_name": "euler"
+  }
+ },
+ "im": {
+  "class_type": "ManualSigmas",
+  "inputs": {
+   "sigmas": "1.0, 0.984753, 0.967905, 0.951688, 0.925372, 0.881923, 0.810083, 0.528718, 0.0"
+  }
+ },
+ "isamp": {
+  "class_type": "SamplerCustomAdvanced",
+  "inputs": {
+   "noise": [
+    "in",
+    0
+   ],
+   "guider": [
+    "ig",
+    0
+   ],
+   "sampler": [
+    "is",
+    0
+   ],
+   "sigmas": [
+    "im",
+    0
+   ],
+   "latent_image": [
+    "ienc",
+    1
+   ]
+  }
+ },
+ "id": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "isamp",
+    0
+   ],
+   "vae": [
+    "iv",
+    0
+   ]
+  }
+ },
+ "isave": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "id",
+    0
+   ],
+   "filename_prefix": "h3skill/img"
+  }
+ }
+}

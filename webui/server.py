@@ -49,6 +49,7 @@ import library_service
 import workflow_library
 import material_collector
 import reference_sources
+import colab_service
 
 import orchestrator as castle_orchestrator
 from media_projects import (
@@ -15704,6 +15705,20 @@ def owned_asset_generation_detail(store, owner_user_id: str, projection_id: str)
     }
 
 
+_COLAB_SERVICE = None
+_COLAB_LOCK = threading.Lock()
+
+
+def get_colab_service():
+    global _COLAB_SERVICE
+    with _COLAB_LOCK:
+        if _COLAB_SERVICE is None:
+            _COLAB_SERVICE = colab_service.ColabService(Path(os.environ.get(
+                "CASTLE_COLAB_ROOT", _CASTLE_DATA_HOME / "web-comfyui/colab",
+            )))
+        return _COLAB_SERVICE
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "CastleComfyWeb/0.1"
     MAX_CHUNK_LINE = 4096
@@ -16691,6 +16706,10 @@ class Handler(BaseHTTPRequestHandler):
             if not self.require_auth():
                 return
             self.api_events()
+        elif parsed.path == "/api/colab" or parsed.path.startswith("/api/colab/"):
+            if not self.require_auth():
+                return
+            self.api_colab(parsed.path, False)
         elif parsed.path == "/api/reference-sources":
             if not self.require_auth():
                 return
@@ -17066,6 +17085,10 @@ class Handler(BaseHTTPRequestHandler):
             if not self.require_auth():
                 return
             self.api_upload_input_file(parsed.query)
+        elif path == "/api/colab" or path.startswith("/api/colab/"):
+            if not self.require_auth():
+                return
+            self.api_colab(path, True)
         elif path == "/api/library/collect":
             if not self.require_auth() or not self.require_admin():
                 return
@@ -20100,6 +20123,41 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as error:
             self.send_error_json(error, 502)
 
+    def api_colab(self, path: str, mutate: bool) -> None:
+        owner = str((self.current_user() or {}).get("email") or "")
+        if not owner:
+            self.send_json({"ok": False, "error": "請先登入"}, 401)
+            return
+        try:
+            service = get_colab_service()
+            parts = [urllib.parse.unquote(part) for part in path.split("/") if part][2:]
+            body = self.read_provider_json(48 * 1024 * 1024) if mutate else {}
+            if not mutate and not parts:
+                result = service.snapshot(owner)
+            elif mutate and parts == ["accounts"]:
+                result = service.create_account(owner, body.get("label", ""))
+            elif mutate and len(parts) == 3 and parts[0] == "accounts":
+                result = service.account_action(owner, parts[1], parts[2], body)
+            elif mutate and parts == ["jobs"]:
+                result = service.submit(owner, body)
+            elif mutate and len(parts) == 3 and parts[0] == "jobs" and parts[2] == "cancel":
+                result = service.cancel(owner, parts[1])
+            elif not mutate and len(parts) == 4 and parts[0] == "jobs" and parts[2] == "files":
+                target = service.artifact(owner, parts[1], parts[3])
+                self.send_local_file(target, inline_filename=target.name, cache_control="private, no-store")
+                return
+            else:
+                self.send_json({"ok": False, "error": "找不到這個 Colab 操作"}, 404)
+                return
+            self.send_json({"ok": True, **result})
+        except colab_service.ColabError as error:
+            self.send_json({"ok": False, "error": str(error)}, 400)
+        except RequestBodyError:
+            self.send_json({"ok": False, "error": "請求格式或大小不正確"}, 400)
+        except Exception:
+            # OAuth codes, provider exceptions and private paths must not reach access logs.
+            self.send_json({"ok": False, "error": "Colab 操作未完成，請重新整理狀態"}, 502)
+
     def api_features(self) -> None:
         try:
             self.send_json({"ok": True, "studios": STUDIOS, "features": feature_status()})
@@ -22553,6 +22611,9 @@ def main() -> None:
             raise SystemExit(1) from error
         return
     server = CastleThreadingHTTPServer((args.host, args.port), Handler)
+    colab_root = Path(os.environ.get("CASTLE_COLAB_ROOT", _CASTLE_DATA_HOME / "web-comfyui/colab"))
+    if (colab_root / "state.sqlite3").exists():
+        get_colab_service().start()
     library_service.start_indexer(library_server_context())
     try:
         castle_orchestrator.initialize()

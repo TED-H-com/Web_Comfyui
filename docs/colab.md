@@ -1,0 +1,69 @@
+# Google Colab 與 H3
+
+Web ComfyUI 現在有獨立的 Colab 執行入口：**資源 → Google Colab · H3 → 開啟 Colab**。
+它使用 Google 官方 `google-colab-cli` 0.7.4 的傳輸實作，讓已選擇的 Google 帳號申請 GPU、執行 H3、下載成果並釋放 GPU。它不會改變本機 ComfyUI 的位址，也不需要公開 ComfyUI 或建立通道。
+
+**驗證程度：已完成來源研究、CPU 契約測試與模擬帳號的瀏覽器測試；尚未以真實 Google 帳號完成 Colab GPU 生成。** 首次連線後仍需用小型任務驗證實際配額、GPU、驅動、依賴安裝及模型相容性。公開示範站不提供這個付費執行入口。
+
+## 安裝與連線
+
+本機控制端使用 Linux／WSL2、Python 3.12 以上；影音成果驗證另需 `ffmpeg`／`ffprobe`。保持這個環境與本機 ComfyUI 的 GPU 環境分開。
+
+```bash
+uv venv --python 3.12 ~/.local/share/web-comfyui/colab-controller
+uv pip install --python ~/.local/share/web-comfyui/colab-controller/bin/python -r requirements-colab.txt
+```
+
+在本機 `.env` 設定 Python 的**絕對路徑**，然後重新啟動 Web ComfyUI：
+
+```dotenv
+WEB_COMFYUI_COLAB_PYTHON=/absolute/path/to/colab-controller/bin/python
+```
+
+1. 在 Colab 面板新增帳號名稱，例如「我的 Ultra」或「我的 Pro」。名稱只是辨識用，不會假設你的訂閱資格。
+2. 點開 Google 授權頁，選擇該訂閱所屬的帳號。把 Google 顯示的授權碼貼回面板完成連線，不要貼到聊天或終端命令列。
+3. 更新餘額，選擇帳號、內容、GPU、時間與點數停止門檻，再按「在 Colab 生成」。第一次建立環境和下載模型也會消耗點數。
+4. 成果驗證完成後可以開啟或下載。只有 Google 確認執行階段已消失，任務才顯示「GPU 已釋放」。
+
+多個帳號各自保存授權與點數，不會自動切換、混用餘額或替未確認的任務再申請另一個 GPU。每個帳號同時只接受一個執行中或待回收的任務。執行中不能更換該帳號的登入身分。
+
+## 訂閱權益
+
+Google 在 2026-09-22 宣布付費 Google AI 方案包含 Colab 權益。研究當日的詳細方案表列出 Pro 每月 200 運算單元、Ultra 5x 每月 1,000、Ultra 20x 每月 2,000；適用條件、既有 Colab 方案疊加與 GPU 供應依 Google 為準。上游 README 的 Pro 約 400 點已不符合目前官方表格。本程式只使用帳號查回的實際餘額，不把訂閱名稱當成可用額度。
+
+來源：[Google 公告](https://developers.googleblog.com/colab-is-now-part-of-your-google-ai-plan/)、[Google AI 方案表](https://one.google.com/about/google-ai-plans/)、[Colab FAQ](https://research.google.com/colaboratory/faq.html)。
+
+## 支援內容與邊界
+
+| 內容 | 表單與實際行為 |
+| --- | --- |
+| 生圖／圖片編輯 | P-H3；1K–2.7K，最多 8 張圖片；有圖片時以第一張作為編輯來源 |
+| 文字生影片 | 2–15 秒，產生影片與聲音 |
+| 參考素材生影片 | 圖片、影片、聲音；描述中須以 `@Image1`、`@Video1`、`@Audio1` 明確指定每個參考 |
+| 首尾幀 | 首幀或首尾兩張圖片，依上傳順序使用 |
+| 延長影片 | 一段來源影片；所填秒數是生成請求，新片段會因銜接內容裁切而較短，再與原片接合 |
+| 語音 | 2–15 秒，最多 3 段聲音參考 |
+
+Web 表單每次提交一個任務；遠端執行器另外支援有順序、可引用先前成果的批次 manifest，並不代表 Web 已提供批次編輯介面。GPU 選項為 L4、G4、A100、H100，是否能取得由 Google 決定；不會默默換成另一款 GPU。L4 建議先從 480P 小型任務驗證。
+
+上傳合計上限 32 MiB；本版下載傳輸每個成果上限 64 MiB。圖像以解碼驗證，影音以 ffprobe 檢查串流與時長，並核對全部檔案大小及 SHA256；這不等於品質、人臉或動作正確性的驗證。影片長寬會對齊模型的 32 倍數，例如 720P 16:9 是 1280×704；實際時長也受影格數對齊影響。
+
+## 任務恢復與費用
+
+任務和申請識別碼會先寫入私有資料庫，才開始申請 GPU。若回應不明，系統只查詢原識別碼，不重複申請。遠端送出 ComfyUI 工作前先記錄提交意圖，收到 `prompt_id` 後立即保存；不明提交先對照佇列及歷史，找不到時停止，不盲目重送。
+
+點數停止門檻以每次觀察到的帳號餘額下降累加，補點不會清掉已觀察用量。這可能包含同帳號其他 Colab 使用量，也會受到查詢間隔影響，**不是 Google 提供的硬性扣款上限**。餘額無法確認時會要求停止。
+
+本機控制器會在重啟後繼續確認未完成任務；雲端在上傳前及執行器內也設有絕對截止時間的停止監測。停止要求失敗會保留「等待確認 GPU 已釋放」。網路或 Google 服務故障下，無法保證即時釋放；可至 Google Colab 的執行階段管理頁確認。程式不會以背景保活延長租用期限。
+
+授權、OAuth 暫存、執行階段憑證、任務資料和成果放在 `WEB_COMFYUI_DATA_DIR/colab`，不是 Git 內容。帳號資料夾權限 0700、憑證 0600；授權碼走私有 POST，沒有存進瀏覽器儲存空間。只會傳送使用者在這次任務選取的檔案，不掃描既有媒體庫或其他專案的憑證。
+
+## 上游研究與相容性
+
+來源：[dseditor/h3-colab-skill](https://github.com/dseditor/h3-colab-skill/tree/34ba92508ace42bc29548af7a9f07c27dcae5230)，固定版本 `34ba92508ace42bc29548af7a9f07c27dcae5230`。已研究全部 skill、安裝器、控制與遠端腳本、3 份 API 圖及文件，並另讀其筆記本專案、Google CLI 與必要節點的來源。
+
+整合沿用已檢查的圖建構與媒體處理，重做多帳號、提交、恢復、下載與回收控制；沒有執行上游會覆寫全域工具和 skill 的安裝器。詳見 [遠端執行器契約](../scripts/colab_remote/README.md)、[版本與模型雜湊](../scripts/colab_remote/runtime.lock.json)、[來源與授權說明](../scripts/colab_remote/NOTICE.md)。
+
+目前是社群 PRISM／P-H3 配方，含上游預設啟用的社群 LoRA，並非官方基礎 H3 的純預設組合。模型與節點 Git／HF 版本已固定，15 個模型檔案使用 SHA256 驗證；Python 間接依賴尚未全部建立雜湊鎖定，仍需要實機驗證。
+
+Skill 是 MIT、Google CLI 是 Apache-2.0；T8 與 MotionContext 使用 GPL，SelfLift 在研究版本沒有明示再散布授權，因此只由執行環境取回固定上游版本，不把它的程式碼包進專案。模型有獨立授權；MiniMax H3 的一般授權地域及商業條件見[固定版本授權](https://huggingface.co/MiniMaxAI/MiniMax-H3/blob/0919fb684102ef115126612f3fbb84d1027e7317/LICENSE)。這些資訊留在維護文件，不加入生成表單的來源條款區塊。
