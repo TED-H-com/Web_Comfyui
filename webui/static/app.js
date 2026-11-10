@@ -8573,7 +8573,7 @@ function mountComputeForm(form, feature, {character = null, capability = null, s
     btn.textContent = placement.submitting ? "送出中…" : reason || (placement.eligible ? (target.kind === "audio" ? "生成語音" : "開始生成") : "請選擇可用的執行方式");
   };
   form.computeSync = sync;
-  window.ComputePlacement.mount(form, feature, {api, getRequest: request, onAvailability: value => {
+  window.ComputePlacement.mount(form, feature, {api, getRequest: request, onOpenSettings: opener => openComputeSettings(opener, "preferences"), onAvailability: value => {
     if (onAvailability) onAvailability(value);
     else sync();
   }});
@@ -13269,9 +13269,9 @@ function renderOrchestratorView() {
 
 // ---- admin users ----------------------------------------------------------
 
-function openComputeSettings(opener) {
-  if (!(isAdmin() || isOperator()) || window.WebComfyDocs || !window.ComputeSettings) return;
-  window.ComputeSettings.open(opener, {api, openSheet, openColabAccounts});
+function openComputeSettings(opener, initialSection = "connections") {
+  if (!currentUser || window.WebComfyDocs || !window.ComputeSettings) return;
+  window.ComputeSettings.open(opener, {api, openSheet, openColabAccounts: isAdmin() ? openColabAccounts : null, canConfigure: isAdmin() || isOperator(), initialSection});
 }
 
 function openColabAccounts(opener) {

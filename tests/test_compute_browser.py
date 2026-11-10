@@ -33,13 +33,13 @@ document.querySelector('#generate').onclick=window.submitCompute;
 
 
 @pytest.fixture
-def compute_page(test_server):
+def compute_page(test_server,tmp_path):
     pw=pytest.importorskip('playwright.sync_api')
     chromium=shutil.which('chromium') or shutil.which('chromium-browser')
     if not chromium:pytest.skip('Chromium unavailable')
     base,_,cookie=test_server
     with pw.sync_playwright() as browser_api:
-        browser=browser_api.chromium.launch(executable_path=chromium,args=['--no-sandbox','--disable-dev-shm-usage'])
+        browser=browser_api.chromium.launch(executable_path=chromium,downloads_path=str(tmp_path/'downloads'),args=['--no-sandbox','--disable-dev-shm-usage'])
         context=browser.new_context(viewport={'width':1440,'height':900})
         name,value=cookie.split('=',1);context.add_cookies([{'name':name,'value':value,'url':base}])
         page=context.new_page();errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
@@ -65,6 +65,8 @@ def fake_router(page, *, drop_first=None, local_ready=True, autoip_ready=False, 
     account_id=str(uuid.uuid4())
     def respond(route):
         path=route.request.url.split('/api/compute',1)[1]
+        if path=='/preferences':
+            route.fulfill(json={'ok':True,'default_placement':'local','feature_placements':{}});return
         if path=='/preview':
             body=route.request.post_data_json;previews.append(body)
             selected='colab' if body['placement']=='auto' else body['placement']

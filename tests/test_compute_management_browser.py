@@ -14,6 +14,8 @@ def screenshot(page,name):
     directory=os.environ.get('WEB_COMFYUI_TEST_SCREENSHOTS')
     if directory:
         Path(directory).mkdir(parents=True,exist_ok=True)
+        page.evaluate('window.scrollTo(0,0)')
+        page.locator('.sheet-body:visible').evaluate_all('elements=>elements.forEach(element=>element.scrollTop=0)')
         page.screenshot(path=str(Path(directory)/name),full_page=True)
 
 
@@ -149,6 +151,7 @@ def fake_pipelines(page,*,lost=False):
     def respond(route):
         path=route.request.url.split('/api/compute/',1)[1]
         if path=='pipeline-recipes':route.fulfill(json={'ok':True,'recipes':recipes});return
+        if path=='pipeline-features':route.fulfill(json={'ok':True,'features':[]});return
         if path=='pipelines' and route.request.method=='GET':route.fulfill(json={'ok':True,'pipelines':list(jobs.values())[::-1]});return
         if path=='pipelines':
             body=route.request.post_data_json;creates.append(body);ident=body['pipeline_id']
@@ -160,7 +163,7 @@ def fake_pipelines(page,*,lost=False):
         ident=path.split('/')[1]
         if route.request.method=='POST':
             action=path.split('/')[2];actions.append((action,route.request.post_data_json))
-            if action=='retry':jobs[ident]['steps'][1].update(attempt=2,state='running');jobs[ident]['state']='running'
+            if action=='retry':jobs[ident]['steps'][1].update(attempt=2,state='running',placement=route.request.post_data_json['placement']);jobs[ident]['state']='running'
             if action=='cancel':jobs[ident]['state']='cancelling'
             route.fulfill(json={'ok':True,**jobs[ident]});return
         lookups.append(ident)
@@ -211,9 +214,13 @@ def test_multi_step_production_preserves_results_and_explicit_retry(compute_page
     page.get_by_role('button',name='繼續',exact=True).click()
     page.get_by_text('製作狀態已更新。',exact=True).wait_for()
     assert actions[-1]==('resume',{}) and len(creates)==1
+    page.get_by_label('影片製作重試平台',exact=True).select_option('runninghub')
+    page.get_by_role('button',name='更新紀錄',exact=True).click()
+    assert page.get_by_label('影片製作重試平台',exact=True).input_value()=='runninghub'
     page.get_by_role('button',name='重試失敗步驟',exact=True).click()
     page.locator('[data-pipeline-step=video]').get_by_text('製作中',exact=True).wait_for()
-    assert actions[-1]==('retry',{'step_id':'video'})
+    assert actions[-1]==('retry',{'step_id':'video','placement':'runninghub'})
+    assert job['steps'][1]['placement']=='runninghub' and len(creates)==1
     assert page.get_by_role('link',name='合成圖片成果',exact=True).count()==1
     assert job['steps'][0]['attempt']==1 and job['steps'][1]['attempt']==2
     page.get_by_role('button',name='停止',exact=True).click()

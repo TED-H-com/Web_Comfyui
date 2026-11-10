@@ -192,13 +192,37 @@ def _recipe(provider, recipe):
     bindings = result.get('bindings')
     if type(bindings) is not list or not 1 <= len(bindings) <= 128:
         fail('配方需要 1–128 個輸入映射')
-    targets = set()
+    targets, source_defaults = set(), {}
     for binding in bindings:
-        if type(binding) is not dict or set(binding) != {'source', 'node_id', 'input'}:
-            fail('輸入映射需要 source、node_id、input')
+        if type(binding) is not dict or not {'source', 'node_id', 'input'} <= set(binding) or set(binding) - {'source', 'node_id', 'input', 'default', 'value_map'}:
+            fail('輸入映射需要 source、node_id、input；只支援 default 與 value_map 選項')
         source = binding['source']
         if type(source) is not str or not re.fullmatch(r'prompt|(?:settings|files)\.[A-Za-z][A-Za-z0-9_-]{0,127}', source):
             fail('輸入映射來源不支援')
+        if ('default' in binding or 'value_map' in binding) and not source.startswith('settings.'):
+            fail('只有設定欄位可使用預設值與有限值映射')
+        def scalar(value):
+            return value is None or type(value) in (str, bool, int) or (type(value) is float and math.isfinite(value))
+        if 'default' in binding:
+            if not scalar(binding['default']):
+                fail('映射預設值必須是有限的純量')
+            if source in source_defaults and encoded(source_defaults[source]) != encoded(binding['default']):
+                fail('同一個設定來源不能指定不同預設值')
+            source_defaults[source] = binding['default']
+        if 'value_map' in binding:
+            mapping = binding['value_map']
+            if type(mapping) is not list or not 1 <= len(mapping) <= 128:
+                fail('value_map 必須是 1–128 組 from/to 清單')
+            seen = set()
+            for pair in mapping:
+                if type(pair) is not dict or set(pair) != {'from', 'to'} or not all(scalar(v) for v in pair.values()):
+                    fail('value_map 只接受有限純量的 from/to')
+                token = encoded(pair['from'])
+                if token in seen:
+                    fail('value_map 來源值不可重複')
+                seen.add(token)
+            if 'default' in binding and encoded(binding['default']) not in seen:
+                fail('映射預設值不在 value_map 接受範圍內')
         target = (identifier(binding['node_id']), identifier(binding['input']))
         if target in targets:
             fail('同一個節點輸入不能映射兩次')
@@ -217,16 +241,29 @@ def _prompt(feature, settings, slots):
         fail('角色畫風與生成設定不一致')
     used = {'visualStyle'} if 'visualStyle' in settings else set()
     if feature.startswith('h3-'):
+        character = bool(settings.get('_characterId') or settings.get('_characterVisualClass') or
+                         any(key in settings for key in ('description', 'motionProfile')))
+        if character and not style:
+            fail('角色影片需要已驗證的角色畫風')
+        style_prose = ('Use a consistent 2D anime illustration style across characters, clothing and scenery.' if style == 'anime'
+                       else 'Use a consistent realistic photographic style across people, clothing and scenery.') if style else ''
         if 'prompt' in settings:
-            if style or any(key in settings for key in (*H3.T2V_HEADINGS, *H3.REF2VA_HEADINGS, 'description', 'motionProfile')):
+            if character or any(key in settings for key in (*H3.T2V_HEADINGS, *H3.REF2VA_HEADINGS, 'description', 'motionProfile')):
                 fail('影片角色與結構化描述不可被單段提示取代')
             text = settings['prompt']
+            if style_prose:
+                text = style_prose + '\n\n' + str(text)
             used.add('prompt')
         else:
             uploads = {slot: slot + ('.mp4' if slot.startswith('video') else '.wav' if slot.startswith('audio') else '.png') for slot in slots}
             canonical = {**settings, 'seed': 0, 'acceleration': 'stock'}
+            if style_prose and not character:
+                heading = 'detailed_description' if feature == 'h3-reference-video' else 'integrated_multimodal_description'
+                if type(canonical.get(heading)) is not str or not canonical[heading].strip():
+                    fail('請保留完整的影片結構化描述')
+                canonical[heading] = style_prose + '\n\n' + canonical[heading]
             try:
-                graph = H3.compile_product_prompt(feature_id=feature, visual_class=style or None,
+                graph = H3.compile_product_prompt(feature_id=feature, visual_class=style if character else None,
                     settings=canonical, uploads=uploads, output_token='hosted')
             except ValueError:
                 fail('工作流程不能保留完整的影片或角色描述')
@@ -267,6 +304,13 @@ def _compile(recipe, request, uploaded=None, *, run_seed=0):
             fail('配方只接受明確的純量生成設定')
     for slot in files:
         identifier(slot, '素材欄位')
+    settings = dict(settings)
+    # Defaults are explicit recipe values, applied before prompt compilation so
+    # H3 alignment prose and latent frame counts use the same effective inputs.
+    # Presence (including null/empty/false/zero) always wins over a default.
+    for binding in recipe['bindings']:
+        if 'default' in binding and binding['source'].startswith('settings.'):
+            settings.setdefault(binding['source'][9:], copy.deepcopy(binding['default']))
     mapped, file_keys, values, consumed = set(), set(), [], set()
     text = None
     if any(b['source'] == 'prompt' for b in recipe['bindings']):
@@ -282,6 +326,11 @@ def _compile(recipe, request, uploaded=None, *, run_seed=0):
             if key not in settings:
                 fail('缺少配方要求的設定：' + key)
             value = settings[key]
+            if 'value_map' in binding:
+                candidates = [pair['to'] for pair in binding['value_map'] if encoded(pair['from']) == encoded(value)]
+                if len(candidates) != 1:
+                    fail('配方沒有對應這個設定值：' + key, 'setting_unsupported', 422)
+                value = copy.deepcopy(candidates[0])
             if key == 'seed':
                 if type(value) is str and re.fullmatch(r'-1|[0-9]{1,20}', value):
                     value = int(value)

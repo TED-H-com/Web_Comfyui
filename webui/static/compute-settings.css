@@ -16,3 +16,11 @@
 
 .compute-settings .compute-file-input { position:absolute; clip-path:inset(50%); width:1px; height:1px; overflow:hidden; }
 .compute-settings > .compute-note:empty { display:none; }
+
+.compute-settings-panel { display:grid; gap:var(--space-3); min-width:0; }
+.compute-settings [hidden] { display:none !important; }
+.compute-requirements { margin:0; padding-left:var(--space-4); color:var(--muted); font-size:var(--text-xs); line-height:1.5; }
+.compute-capability-list { display:grid; gap:var(--space-3); }
+.compute-capability-row { display:grid; gap:var(--space-2); border-bottom:1px solid var(--line); padding-bottom:var(--space-3); font-size:var(--text-sm); }
+.compute-capability-row > div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:var(--space-1) var(--space-3); font-size:var(--text-xs); }
+.compute-capability-row p { flex-basis:100%; }

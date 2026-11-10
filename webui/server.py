@@ -8357,6 +8357,26 @@ def plan_colab_generation_request(raw_body, submitted_by: dict | None, service_t
         files, _receipt = bind_character_capability_files(character, capability, files, settings)
     elif feature.get("characterOnly") or action_id or variant_id:
         raise ValueError("這個請求必須先選擇適用的角色")
+    if not character and feature_id == 'voice-speak':
+        if str(settings.get('voiceSource') or 'persona').strip() != 'library':
+            raise ValueError('角色聲音必須先選擇角色')
+        if not settings.get('voiceId'):
+            raise ValueError('請從聲音庫選擇參考音訊')
+        if str(settings.get('cloneEngine') or 'taiwan').strip() not in {'taiwan', 'f5'}:
+            raise ValueError('不支援的聲音庫克隆引擎')
+    if not character and feature_id == 'voxcpm-tts':
+        engine = str(settings.get('voiceEngine') or 'voxcpm').strip()
+        mode = str(settings.get('mode') or 'lora').strip()
+        if engine != 'voxcpm' or mode not in {'design', 'reference', 'ultimate', 'lora'}:
+            raise ValueError('此語音模式需要適用的角色或有效的引擎設定')
+        if mode == 'lora':
+            profile = str(settings.get('voiceProfile') or 'custom_english').strip()
+            if profile not in {str(item.get('value') or '') for item in VOXCPM_PROFILES}:
+                raise ValueError('不支援的語音模型設定')
+            if not is_operator_user(submitted_by):
+                raise PermissionError('Custom English 聲音只允許 operator 操作')
+    if feature_id == 'lipsync' and not (settings.get('voiceId') or files.get('voice')):
+        raise ValueError('請選擇或綁定要對嘴的語音')
     settings = apply_character_visual_class_hints(settings, context)
     if provider in {'comfy_cloud', 'runninghub'} and raw_body.get('computeVisualClass'):
         visual = raw_body['computeVisualClass']
@@ -8369,6 +8389,13 @@ def plan_colab_generation_request(raw_body, submitted_by: dict | None, service_t
     settings = validate_feature_option_contract(feature, settings)
     settings = enforce_p0_generation_options(feature_id, settings)
     settings = validate_voice_generation_contract(feature_id, settings, submitted_by, service_token)
+    if provider != 'colab' and settings.get('voiceId'):
+        if files.get('voice'):
+            raise ValueError('聲音庫與上傳音檔不能同時使用')
+        resolve_voice_reference(str(settings['voiceId']), submitted_by, service_token)
+        files = {**files, 'voice': {'_plannedServerBound': True}}
+        if provider in {'comfy_cloud', 'runninghub'}:
+            settings = {key: value for key, value in settings.items() if key != 'voiceId'}
     files = validate_generation_file_contract(feature, files)
     # Only the verified class is needed for prompt/style eligibility. Preserve
     # the complete binding privately in the eventual submission, not preview.
@@ -20325,7 +20352,24 @@ class Handler(BaseHTTPRequestHandler):
             web = ComputeWeb(self, sys.modules[__name__])
             body = self.read_provider_json(MAX_UPLOAD_BODY) if mutate else {}
             parts = path.split("/")[3:]
-            if not mutate and parts == ['providers']:
+            visible_features = [feature for feature in FEATURE_BY_ID.values()
+                if not feature.get('operatorOnly') or is_operator_user(web.user)]
+            if parts == ['preferences']:
+                result = (web.preferences.save(web.owner, body, {f['id'] for f in visible_features})
+                          if mutate else web.preferences.get(web.owner))
+            elif not mutate and parts == ['recipe-catalog']:
+                from compute_recipe_catalog import recipe_catalog
+                result = recipe_catalog()
+                allowed = {f['id'] for f in visible_features}
+                result['templates'] = [t for t in result['templates'] if t['feature_id'] in allowed]
+            elif not mutate and parts == ['capabilities']:
+                from compute_capabilities import capabilities
+                from compute_recipe_catalog import recipe_catalog
+                result = capabilities(visible_features, web.hosted.public_config(web.owner), recipe_catalog())
+            elif not mutate and parts == ['pipeline-features']:
+                from compute_recipes import feature_registry
+                result = {'features': feature_registry({f['id']: f for f in visible_features})}
+            elif not mutate and parts == ['providers']:
                 result = web.hosted.public_config(web.owner)
             elif mutate and len(parts) == 2 and parts[0] == 'providers':
                 if not is_operator_user(web.user):
@@ -20342,19 +20386,39 @@ class Handler(BaseHTTPRequestHandler):
             elif parts and parts[0] == 'pipelines':
                 execution = get_pipeline_execution()
                 if mutate and len(parts) == 1:
-                    from compute_recipes import build_plan
+                    from compute_recipes import build_plan, media_kinds
                     from compute_routing import _request_id
                     _request_id(body.get('pipeline_id'))
-                    plan = build_plan(body)
+                    plan = build_plan(body, features={f['id']: f for f in visible_features})
                     # Ownership is checked before the immutable parent is
                     # accepted and again by every real stage submission.
                     for step in plan['steps']:
+                        web._feature(step['request'])
+                        planned_files = {**(step['request'].get('files') or {}),
+                                         **{slot: {'name': 'upstream-' + slot} for slot in step.get('bindings', {})}}
+                        plan_colab_generation_request({**step['request'], 'files': planned_files}, web.user,
+                            False, provider='pipeline', provider_actor=web.h._provider_runtime_actor)
                         inputs = validate_client_generation_files(step['request'].get('files'), web.user)
                         for slot, file_info in inputs.items():
+                            if not file_info:
+                                continue
+                            upload = next(item for item in FEATURE_BY_ID[step['request']['featureId']].get('uploads', []) if item['id'] == slot)
+                            kinds = media_kinds(upload.get('accept'))
+                            expected = kinds[0] if len(kinds) == 1 else None
+                            temporary = None
                             if isinstance(file_info, dict) and file_info.get('serverFile'):
                                 source = COMFY_INPUT / resolve_server_file(file_info['serverFile'])
-                                frozen = execution.freeze_image(web.owner, web.user, source)
+                            elif isinstance(file_info, dict) and file_info.get('dataUrl'):
+                                temporary = COMFY_INPUT / stage_colab_uploaded_file(file_info, slot)
+                                source = temporary
+                            else:
+                                raise ComputeRoutingError('初始素材缺少已上傳檔案或圖片／影音內容')
+                            try:
+                                frozen = execution.freeze_media(web.owner, web.user, source, expected_kind=expected)
                                 step['request']['files'][slot] = frozen['file']
+                            finally:
+                                if temporary is not None:
+                                    temporary.unlink(missing_ok=True)
                     pipeline_creation_started = True
                     result = execution.engine.create(web.owner, body.get('pipeline_id'), plan)
                 elif not mutate and len(parts) == 1:
@@ -20366,7 +20430,10 @@ class Handler(BaseHTTPRequestHandler):
                 elif mutate and len(parts) == 3 and parts[2] == 'cancel':
                     result = execution.engine.cancel(web.owner, parts[1])
                 elif mutate and len(parts) == 3 and parts[2] == 'retry':
-                    result = execution.engine.retry(web.owner, parts[1], body.get('step_id'))
+                    if not isinstance(body, dict) or set(body) - {'step_id', 'placement', 'limits'}:
+                        raise ComputeRoutingError('不支援的重試設定')
+                    result = execution.engine.retry(web.owner, parts[1], body.get('step_id'),
+                        placement=body.get('placement'), limits=body.get('limits'))
                 else:
                     raise ComputeRoutingError('找不到這項製作操作', code='pipeline_not_found', status=404)
                 if mutate:
@@ -20374,8 +20441,7 @@ class Handler(BaseHTTPRequestHandler):
             elif mutate and path == "/api/compute/preview":
                 result = web.preview(body)
             elif mutate and path == "/api/compute/jobs":
-                result = web.router.submit(web.owner, body.get("request_id"), body.get("request"),
-                                           body.get("placement", "auto"), body.get("limits"))
+                result = web.submit(body)
             elif not mutate and path == "/api/compute/jobs":
                 jobs = web.router.list_jobs(web.owner, limit=50)
                 result = {"jobs": [web.router.status(web.owner, job["request_id"], refresh=index < 10)
@@ -20396,6 +20462,12 @@ class Handler(BaseHTTPRequestHandler):
             if mutate and path == "/api/compute/jobs" and code != "request_conflict":
                 payload["submission_state"] = "not_submitted"
             if mutate and path == '/api/compute/pipelines' and not pipeline_creation_started:
+                payload['submission_state'] = 'not_submitted'
+            if (mutate and path.startswith('/api/compute/pipelines/') and path.endswith('/retry')
+                    and code in {'step_retry_unsafe', 'pipeline_busy', 'pipeline_cancelled',
+                                 'invalid_request', 'pipeline_invalid', 'pipeline_not_found'}):
+                # These typed engine errors occur before its retry transaction
+                # commits. Unknown transport/server failures remain ambiguous.
                 payload['submission_state'] = 'not_submitted'
             self.send_json(payload, error.status)
         except HostedComputeError as error:
@@ -21923,6 +21995,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if compute_lane in {'comfy_cloud', 'runninghub'}:
             from compute_routing import ComputeRejected
+            settings = {key: value for key, value in settings.items() if key != 'voiceId'}
             if body.get('computeVisualClass'):
                 visual = body['computeVisualClass']
                 if visual not in {'anime', 'realistic'} or (character_context and normalized_visual_class(character_context.get('visualClass')) != visual):
@@ -21932,6 +22005,8 @@ class Handler(BaseHTTPRequestHandler):
                 settings['visualStyle'] = visual
             effective = {'featureId': feature_id, 'settings': settings,
                          'files': {slot: {} for slot, item in submitted_files.items() if item}}
+            if resolved_voice_reference:
+                effective['files']['voice'] = {}
             candidate = get_hosted_compute_service().inspect(str((submitted_by or {}).get('email') or ''),
                 compute_lane, effective, compute_limits or {})
             if not candidate.get('eligible'):

@@ -10,6 +10,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -28,6 +29,7 @@ except ModuleNotFoundError:
 _ID = re.compile(r'^[a-zA-Z][a-zA-Z0-9_-]{0,63}$')
 _SHA = re.compile(r'^[0-9a-f]{64}$')
 _ACTIVE = {'dispatching', 'queued', 'running', 'collecting', 'cancelling', 'submission_uncertain'}
+MEDIA_KINDS = {'image', 'audio', 'video'}
 
 
 class PipelineError(ComputeRoutingError):
@@ -88,13 +90,18 @@ def validate_plan(plan):
             _id(slot)
             if slot in files:
                 _fail('同一素材欄位不能同時指定上傳與前一步成果')
-            if not isinstance(binding, Mapping) or set(binding) != {'step_id', 'artifact_index'}:
+            if (not isinstance(binding, Mapping) or not {'step_id', 'artifact_index'} <= set(binding)
+                    or set(binding) - {'step_id', 'artifact_index', 'expected_kind'}):
                 _fail('成果依賴只能指定步驟與成果索引；不能提供網址或路徑')
             source = _id(binding['step_id'])
             index = binding['artifact_index']
             if type(index) is not int or not 0 <= index < 100:
                 _fail('成果索引需為 0–99')
             clean_bindings[slot] = {'step_id': source, 'artifact_index': index}
+            if 'expected_kind' in binding:
+                if not isinstance(binding['expected_kind'], str) or binding['expected_kind'] not in MEDIA_KINDS:
+                    _fail('成果類型必須是圖片、音訊或影片', 'artifact_kind_invalid')
+                clean_bindings[slot]['expected_kind'] = binding['expected_kind']
             if source not in dependencies:
                 dependencies.append(source)
         result.append({'id': ident, 'request': request, 'placement': placement,
@@ -121,7 +128,8 @@ def validate_plan(plan):
 
 def _binding(value):
     """Only the trusted resolver can produce an owned input receipt."""
-    if not isinstance(value, Mapping) or set(value) != {'file', 'sha256', 'artifact_id'}:
+    if (not isinstance(value, Mapping) or not {'file', 'sha256', 'artifact_id'} <= set(value)
+            or set(value) - {'file', 'sha256', 'artifact_id', 'media'}):
         _fail('成果解析器未提供完整的素材證明', 'artifact_unverified')
     file = value['file']
     if not isinstance(file, Mapping) or set(file) - {'serverFile', 'promptId', 'prompt_id', 'name', 'type', 'mimeType', 'size'}:
@@ -135,6 +143,18 @@ def _binding(value):
     artifact_id = value['artifact_id']
     if not isinstance(artifact_id, str) or not artifact_id or len(artifact_id) > 256 or any(ord(c) < 32 for c in artifact_id):
         _fail('成果缺少有效的素材識別碼', 'artifact_unverified')
+    if 'media' in value:
+        media = value['media']
+        if (not isinstance(media, Mapping) or not isinstance(media.get('kind'), str) or media['kind'] not in MEDIA_KINDS
+                or set(media) - {'kind', 'width', 'height', 'duration'}):
+            _fail('成果缺少有效的媒體驗證', 'artifact_unverified')
+        if media['kind'] == 'image':
+            if (any(type(media.get(key)) is not int or media[key] < 1 for key in ('width', 'height'))
+                    or media['width'] * media['height'] > 40_000_000):
+                _fail('圖片尺寸未通過驗證', 'artifact_unverified')
+        elif (type(media.get('duration')) not in (int, float) or not math.isfinite(media['duration'])
+              or not 0 < media['duration'] <= 3600):
+            _fail('影音長度未通過驗證', 'artifact_unverified')
     return json.loads(_json(dict(value)))
 
 
@@ -162,6 +182,17 @@ class ComputePipeline:
                   receipt_json TEXT NOT NULL, error_code TEXT, updated REAL NOT NULL,
                   PRIMARY KEY(owner,pipeline_id,step_id,attempt));
             ''')
+            # Additive migration preserves every previously accepted plan and
+            # request UUID. Old attempts inherit their original plan settings.
+            db.execute('BEGIN IMMEDIATE')
+            for table, columns in (
+                ('compute_pipelines', {'last_reconciled': 'REAL NOT NULL DEFAULT 0'}),
+                ('compute_pipeline_attempts', {'placement': 'TEXT', 'limits_json': 'TEXT'}),
+            ):
+                existing = {row[1] for row in db.execute('PRAGMA table_info(' + table + ')')}
+                for column, definition in columns.items():
+                    if column not in existing:
+                        db.execute('ALTER TABLE ' + table + ' ADD COLUMN ' + column + ' ' + definition)
 
     @contextmanager
     def _db(self):
@@ -194,11 +225,17 @@ class ComputePipeline:
                 if existing['plan_hash'] != digest:
                     _fail('同一生產流程識別碼不能更改內容', 'pipeline_conflict', 409)
             else:
-                db.execute('INSERT INTO compute_pipelines VALUES(?,?,?,?,0,?,?,NULL,0)', (owner, pipeline_id, digest, encoded, now, now))
+                db.execute('INSERT INTO compute_pipelines(owner,pipeline_id,plan_hash,plan_json,cancel_requested,created,updated,lease_token,lease_until) VALUES(?,?,?,?,0,?,?,NULL,0)', (owner, pipeline_id, digest, encoded, now, now))
                 for step in plan['steps']:
-                    db.execute('INSERT INTO compute_pipeline_attempts VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-                        (owner, pipeline_id, step['id'], 1, step_request_id(pipeline_id, step['id']), 'pending', None, '{}', '{}', None, now))
+                    db.execute('INSERT INTO compute_pipeline_attempts VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                        (owner, pipeline_id, step['id'], 1, step_request_id(pipeline_id, step['id']), 'pending', None, '{}', '{}', None, now,
+                         step['placement'], _json(step['limits'])))
         return self.status(owner, pipeline_id)
+
+    @staticmethod
+    def _attempt_config(row, spec):
+        return {'placement': row['placement'] or spec['placement'],
+                'limits': json.loads(row['limits_json']) if row['limits_json'] is not None else spec['limits']}
 
     @staticmethod
     def _view(parent, latest, attempts):
@@ -214,15 +251,17 @@ class ComputePipeline:
             receipt = json.loads(row['receipt_json'])
             dependencies = json.loads(row['dependencies_json'])
             item = {'id': spec['id'], 'index': index, 'attempt': row['attempt'], 'request_id': row['request_id'],
-                    'placement': spec['placement'], 'state': state, 'depends_on': spec['depends_on'],
+                    **ComputePipeline._attempt_config(row, spec), 'state': state, 'depends_on': spec['depends_on'],
                     'dependency_hashes': {slot: value['sha256'] for slot, value in dependencies.items()},
+                    'dependency_media': {slot: value['media'] for slot, value in dependencies.items() if 'media' in value},
                     'artifacts': receipt.get('artifacts', []), 'updated_at': row['updated'],
                     'retry_allowed': row['state'] in {'failed', 'rejected'}}
             if receipt:
                 item['job'] = receipt
             if row['error_code']:
                 item['error_code'] = row['error_code']
-            item['attempts'] = [{'attempt': old['attempt'], 'request_id': old['request_id'], 'state': old['state']}
+            item['attempts'] = [{'attempt': old['attempt'], 'request_id': old['request_id'], 'state': old['state'],
+                                 **ComputePipeline._attempt_config(old, spec)}
                                 for old in attempts if old['step_id'] == spec['id']]
             rows.append(item)
             if state == 'completed':
@@ -262,7 +301,7 @@ class ComputePipeline:
         if type(limit) is not int or not 1 <= limit <= 100:
             _fail('工作清單筆數需為 1–100')
         with self._db() as db:
-            rows = db.execute('SELECT owner,pipeline_id FROM compute_pipelines ORDER BY updated ASC').fetchall()
+            rows = db.execute('SELECT owner,pipeline_id FROM compute_pipelines WHERE lease_token IS NULL OR lease_until<=? ORDER BY last_reconciled ASC,created ASC,owner,pipeline_id', (self.clock(),)).fetchall()
         result = []
         for row in rows:
             status = self.status(row['owner'], row['pipeline_id'])
@@ -279,8 +318,8 @@ class ComputePipeline:
             parent, _, _ = self._rows(db, owner, ident)
             if parent['lease_token'] and parent['lease_until'] > now:
                 return None
-            db.execute('UPDATE compute_pipelines SET lease_token=?,lease_until=? WHERE owner=? AND pipeline_id=?',
-                       (token, now + self.lease_seconds, owner, ident))
+            db.execute('UPDATE compute_pipelines SET lease_token=?,lease_until=?,last_reconciled=? WHERE owner=? AND pipeline_id=?',
+                       (token, now + self.lease_seconds, now, owner, ident))
         return token
 
     def _write(self, owner, ident, token, step_id, attempt, *, state=None, request=None, dependencies=None, receipt=None, error=None, before_dispatch=False):
@@ -376,10 +415,14 @@ class ComputePipeline:
                         if upstream['state'] != 'completed' or binding['artifact_index'] >= len(artifacts):
                             _fail('前一步沒有可驗證的指定成果', 'artifact_missing')
                         resolved = _binding(self.artifact_resolver(owner, upstream_receipt, binding['artifact_index']))
+                        if binding.get('expected_kind') and resolved.get('media', {}).get('kind') != binding['expected_kind']:
+                            _fail('前一步成果類型不符合此輸入欄位', 'artifact_kind_mismatch')
                         request.setdefault('files', {})[slot] = resolved['file']
-                        dependencies[slot] = {key: resolved[key] for key in ('sha256', 'artifact_id')}
+                        dependencies[slot] = {key: resolved[key] for key in ('sha256', 'artifact_id', 'media') if key in resolved}
                     expected_dependencies = json.loads(row['dependencies_json'])
-                    if expected_dependencies and dependencies != expected_dependencies:
+                    if expected_dependencies and (set(dependencies) != set(expected_dependencies) or any(
+                        any(dependencies[slot].get(key) != value for key, value in expected.items())
+                        for slot, expected in expected_dependencies.items())):
                         _fail('重試素材與原先綁定的成果不同', 'dependency_changed')
                     if not self._write(owner, pipeline_id, token, step_id, attempt, state='dispatching',
                                        request=request, dependencies=dependencies, before_dispatch=True):
@@ -389,7 +432,8 @@ class ComputePipeline:
                     self._write(owner, pipeline_id, token, step_id, attempt, state='rejected', error=code)
                     continue
                 try:
-                    receipt = router.submit(owner, rid, request, spec['placement'], spec['limits'])
+                    config = self._attempt_config(row, spec)
+                    receipt = router.submit(owner, rid, request, config['placement'], config['limits'])
                     receipt = self._router_receipt(receipt, rid)
                     self._write(owner, pipeline_id, token, step_id, attempt, state=receipt['state'], receipt=receipt)
                 except ComputeRejected as error:
@@ -410,7 +454,7 @@ class ComputePipeline:
             _fail('已取消的流程不能恢復提交', 'pipeline_cancelled', 409)
         return self.tick(owner, pipeline_id)
 
-    def retry(self, owner, pipeline_id, step_id):
+    def retry(self, owner, pipeline_id, step_id, *, placement=None, limits=None):
         _owner(owner); _request_id(pipeline_id); _id(step_id)
         with self._db() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -420,10 +464,21 @@ class ComputePipeline:
                 _fail('只有已確認失敗或拒絕的步驟可以重試', 'step_retry_unsafe', 409)
             if parent['lease_token'] and parent['lease_until'] > self.clock():
                 _fail('流程仍在更新中，請稍後重試', 'pipeline_busy', 409)
+            spec = next(step for step in json.loads(parent['plan_json'])['steps'] if step['id'] == step_id)
+            config = self._attempt_config(row, spec)
+            if placement is not None:
+                if placement not in ('auto', *LANES):
+                    _fail('重試使用不支援的運算平台')
+                config['placement'] = placement
+            if limits is not None:
+                if not isinstance(limits, Mapping):
+                    _fail('重試預算必須是物件')
+                config['limits'] = _limits({**config['limits'], **limits})
             attempt = row['attempt'] + 1
             now = self.clock()
-            db.execute('INSERT INTO compute_pipeline_attempts VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-                       (owner, pipeline_id, step_id, attempt, step_request_id(pipeline_id, step_id, attempt), 'pending', None, row['dependencies_json'], '{}', None, now))
+            db.execute('INSERT INTO compute_pipeline_attempts VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                       (owner, pipeline_id, step_id, attempt, step_request_id(pipeline_id, step_id, attempt), 'pending', None, row['dependencies_json'], '{}', None, now,
+                        config['placement'], _json(config['limits'])))
             db.execute('UPDATE compute_pipelines SET updated=? WHERE owner=? AND pipeline_id=?', (now, owner, pipeline_id))
         return self.status(owner, pipeline_id)
 

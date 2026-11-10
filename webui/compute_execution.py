@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import os
 from pathlib import Path
 import re
@@ -115,17 +116,39 @@ class PipelineExecution:
                 self.s.provider_database_path().parent / 'production-edits')).path
         else:
             raise ComputeRejected('這類成果尚未支援跨步驟傳遞', code='artifact_unsupported')
-        return self.freeze_image(owner, user, Path(source))
+        expected = receipt.get('output_kind')
+        if expected not in {'image', 'audio', 'video'}:
+            expected = None
+        return self.freeze_media(owner, user, Path(source), expected_kind=expected)
 
     def freeze_image(self, owner, user, source):
-        """Copy and decode an image before recording its private input receipt."""
+        """Compatibility entry point for existing image-only admission."""
+        return self.freeze_media(owner, user, source, expected_kind='image')
+
+    def freeze_media(self, owner, user, source, *, expected_kind=None):
+        """Freeze owned media and validate its decoded image/stream metadata.
+
+        The caller must establish source ownership before calling this method.
+        Every accepted file is at most 64 MiB; images at most 40 MP, and audio
+        or video at most one hour. No client URL or path enters the resolver.
+        """
         from PIL import Image
+        from colab_service import validate_media
+        source = Path(source)
+        suffix = source.suffix.lower()
+        kinds = {'.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.webp': 'image',
+                 '.wav': 'audio', '.mp3': 'audio', '.flac': 'audio', '.m4a': 'audio',
+                 '.mp4': 'video', '.mov': 'video', '.webm': 'video'}
+        kind = kinds.get(suffix)
+        if kind is None or (expected_kind is not None and expected_kind != kind):
+            raise ComputeRejected('成果類型不符合此素材欄位', code='artifact_kind_mismatch')
+        extension = '.jpg' if suffix == '.jpeg' else suffix
         root = self.s.COMFY_INPUT
         root.mkdir(parents=True, exist_ok=True)
         temporary = None
         try:
             fd = os.open(source, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
-            with os.fdopen(fd, 'rb') as reader, tempfile.NamedTemporaryFile(dir=root, prefix='.pipeline-', delete=False) as writer:
+            with os.fdopen(fd, 'rb') as reader, tempfile.NamedTemporaryFile(dir=root, prefix='.pipeline-', suffix=extension, delete=False) as writer:
                 temporary = Path(writer.name)
                 before = os.fstat(reader.fileno())
                 if not stat.S_ISREG(before.st_mode) or not 0 < before.st_size <= 64 * 1024 * 1024:
@@ -144,11 +167,21 @@ class PipelineExecution:
                 fingerprint = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
                 if count != before.st_size or fingerprint(before) != fingerprint(after):
                     raise ValueError('source changed during copy')
-            with Image.open(temporary) as image:
-                extension = {'PNG': '.png', 'JPEG': '.jpg', 'WEBP': '.webp'}.get(image.format)
-                if not extension or image.width * image.height > 40_000_000:
-                    raise ValueError('unsupported image')
-                image.verify()
+            if kind == 'image':
+                with Image.open(temporary) as image:
+                    actual_extension = {'PNG': '.png', 'JPEG': '.jpg', 'WEBP': '.webp'}.get(image.format)
+                    if actual_extension != extension or image.width * image.height > 40_000_000:
+                        raise ValueError('unsupported image')
+            decoded = validate_media(temporary)
+            if decoded.get('kind') != kind:
+                raise ValueError('decoded media kind does not match')
+            if kind == 'image':
+                media = {key: decoded[key] for key in ('kind', 'width', 'height')}
+            else:
+                duration = decoded.get('duration')
+                if type(duration) not in (int, float) or not math.isfinite(duration) or not 0 < duration <= 3600:
+                    raise ValueError('invalid media duration')
+                media = {'kind': kind, 'duration': duration}
             user = self.context(owner).current_user()
             sha = digest.hexdigest()
             owner_key = hashlib.sha256(owner.encode()).hexdigest()[:24]
@@ -161,9 +194,10 @@ class PipelineExecution:
             temporary.unlink()
             temporary = None
             self.s.record_input_upload_owner(target.name, user)
-            return {'file': {'serverFile': target.name}, 'sha256': sha, 'artifact_id': f'image:{owner_key}:{sha}'}
+            return {'file': {'serverFile': target.name}, 'sha256': sha,
+                    'artifact_id': f'{kind}:{owner_key}:{sha}', 'media': media}
         except (OSError, ValueError, Image.DecompressionBombError):
-            raise ComputeRejected('前一步圖片未通過完整性驗證', code='artifact_unverified') from None
+            raise ComputeRejected('前一步素材未通過完整性驗證', code='artifact_unverified') from None
         finally:
             if temporary is not None:
                 temporary.unlink(missing_ok=True)

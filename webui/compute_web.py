@@ -14,6 +14,8 @@ class ComputeWeb:
         if not self.owner:
             raise PermissionError('請先登入')
         self.colab = server.get_colab_service()
+        from compute_preferences import ComputePreferences
+        self.preferences = ComputePreferences(self.colab.root.parent / 'compute-preferences.sqlite3')
         from hosted_compute import HostedComputeService
         self.hosted = (server.get_hosted_compute_service() if hasattr(server, 'get_hosted_compute_service')
                        else HostedComputeService(self.colab.root.parent / 'hosted-compute'))
@@ -416,10 +418,28 @@ class ComputeWeb:
             return None
         return self.status_autoip(owner, result['intent_id'])
 
+    def _placement(self, body):
+        if 'placement' in body:
+            return body['placement']
+        return self.preferences.placement(self.owner, (body.get('request') or {}).get('featureId'))
+
+    def submit(self, body):
+        # A replay without explicit placement keeps the original decision,
+        # even if defaults changed since the first submission.
+        placement = self._placement(body)
+        if 'placement' not in body:
+            try:
+                previous = self.router.status(self.owner, body.get('request_id'), refresh=False)
+                placement = previous['placement']
+            except ComputeRoutingError as error:
+                if error.code != 'not_found':
+                    raise
+        return self.router.submit(self.owner, body.get('request_id'), body.get('request'), placement, body.get('limits'))
+
     def preview(self, body):
         request = body.get('request') or {}
         limits = body.get('limits') or {}
-        result = self.router.preview(self.owner, request, body.get('placement', 'auto'), limits)
+        result = self.router.preview(self.owner, request, self._placement(body), limits)
         snapshot = self.colab.snapshot(self.owner)
         result['accounts'] = [{k: a.get(k) for k in ('id','label','authenticated','balance_compute_units')} for a in snapshot['accounts']]
         result['recipes'] = {'local':'本機既有工作流程', 'colab':colab_adapter.RECIPE_LABEL, 'autoip':'AutoIP 服務配方',

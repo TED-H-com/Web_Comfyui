@@ -65,10 +65,12 @@
     }
     return result;
   }
-  function mount(form,feature,{api,getRequest,onAvailability=()=>{}}) {
+  function mount(form,feature,{api,getRequest,onAvailability=()=>{},onOpenSettings=null}) {
     mounted.get(form)?.destroy();
     let disposed=false,turn=0,debounce=null,poll=null,inFlight=null,pending=null;
     const inputValues=new WeakMap();
+    let preferenceTask=null,placementTouched=false,appliedFeature=null;
+    const preferenceAbort=new AbortController();
     let availability={placement:'local',loading:true,eligible:false,selected_lane:null,candidates:[],error:''};
     let jobs=new Map();
     const placement=select([['local','本機'],['auto','自動安排'],['colab','Google Colab'],['autoip','AutoIP'],['comfy_cloud','Comfy Cloud'],['runninghub','RunningHub']]);
@@ -87,6 +89,7 @@
     const minutes=number(60,5,180),units=number(20,5,2000),credits=number(100,1,1000000);
     const comfyCredits=number(100,1,1000000),runninghubCoins=number(100,1,1000000);
     const accountNote=el('p',{class:'compute-note'});
+    const preferenceNote=el('p',{class:'compute-note'});preferenceNote.hidden=true;
     const notice=el('p',{class:'compute-note',role:'status','aria-live':'polite',text:'正在確認執行條件…'});
     const candidates=el('ul',{class:'compute-candidates','aria-label':'各執行方式的可用條件'});
     const recipe=el('p',{class:'compute-note'});
@@ -99,7 +102,7 @@
       el('p',{class:'compute-note',text:'各平台分別檢查預估用量；這些門檻並非平台硬性扣款上限。'}),accountNote,el('p',{class:'compute-note',text:'Colab 環境準備也會用點；停止門檻依餘額變化監測，並非 Google 的硬性扣款上限。'}),
     ]);
     const root=el('section',{class:'compute-placement','aria-label':'生成運算安排'},[
-      el('div',{class:'compute-toolbar'},[field('執行位置',placement),refresh]),visualField,videoFields,notice,recipe,differences,
+      el('div',{class:'compute-toolbar'},[field('執行位置',placement),refresh,...(onOpenSettings?[button('預設安排',event=>onOpenSettings(event.currentTarget))]:[])]),preferenceNote,visualField,videoFields,notice,recipe,differences,
       el('details',{class:'compute-compatibility'},[el('summary',{text:'查看各方式的支援條件'}),candidates]),controls,retry,
     ]);
     const jobList=el('div',{class:'compute-job-list'});
@@ -172,13 +175,29 @@
       root.querySelector('.compute-compatibility').open=!chosen;
       renderAccounts(data.accounts);publish();
     }
+    function loadPreferences(){
+      if(!preferenceTask){
+        const timeout=setTimeout(()=>preferenceAbort.abort(),5000);
+        preferenceTask=api('/api/compute/preferences',{signal:preferenceAbort.signal}).then(data=>data).catch(()=>null).finally(()=>clearTimeout(timeout));
+      }
+      return preferenceTask;
+    }
     async function preview(){
       if(!live())return;
       const current=++turn;
       availability={...availability,placement:placement.value,loading:true,eligible:false,error:''};publish();
       if(!pending)notice.textContent='正在確認執行條件…';
       try {
-        const request=metadata(withPlacementOptions(await getRequest()));
+        const [raw,preferences]=await Promise.all([getRequest(),loadPreferences()]);
+        if(!live()||current!==turn)return;
+        if(!placementTouched&&!pending&&!inFlight&&appliedFeature!==raw.featureId){
+          const preferred=preferences?.feature_placements?.[raw.featureId]??preferences?.default_placement;
+          placement.value=preferred==='auto'||Object.hasOwn(lanes,preferred)?preferred:'local';
+          appliedFeature=raw.featureId;
+          preferenceNote.textContent=preferences?`個人預設：${placement.value==='auto'?'自動安排':lanes[placement.value]}；本次可更改。`:'未能讀取個人預設，暫用本機；本次可更改。';
+          preferenceNote.hidden=false;
+        }
+        const request=metadata(withPlacementOptions(raw));
         const data=await api('/api/compute/preview',{method:'POST',body:JSON.stringify({request,placement:placement.value,limits:getLimits()})});
         if(live() && current===turn)renderPreview(data);
       } catch(_) {
@@ -249,6 +268,7 @@
     function changed(event){
       if(root.contains(event.target) && event.target.tagName==='BUTTON')return;
       const target=event.target;
+      if(target===placement){placementTouched=true;preferenceNote.hidden=true;}
       if(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)) {
         const value=target.type==='file'?JSON.stringify([...target.files].map(file=>[file.name,file.size,file.lastModified]))
           : JSON.stringify([target.value,target.checked]);
@@ -302,7 +322,7 @@
       finally{inFlight=null;if(live())locked();}
     }
     function destroy(){
-      disposed=true;turn++;clearTimeout(debounce);clearTimeout(poll);
+      disposed=true;turn++;preferenceAbort.abort();clearTimeout(debounce);clearTimeout(poll);
       form.removeEventListener('input',changed);form.removeEventListener('change',changed);
       root.remove();taskRoot.remove();pending=null;jobs.clear();mounted.delete(form);
       delete form.dataset.computePlacement;delete form.dataset.computeEligible;

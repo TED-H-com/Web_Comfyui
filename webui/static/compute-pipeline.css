@@ -27,3 +27,12 @@
 .compute-production .compute-file-input { position:absolute; clip-path:inset(50%); width:1px; height:1px; overflow:hidden; }
 .compute-production > .compute-note:empty { display:none; }
 @media (max-width:767px) { .compute-production-inputs { grid-template-columns:minmax(0,1fr); } }
+
+.compute-custom-steps, .compute-custom-fields, .compute-custom-step { display:grid; gap:var(--space-3); min-width:0; }
+.compute-custom-step { border-top:1px solid var(--line); padding-top:var(--space-3); }
+.compute-custom-step details > .field { margin-block:var(--space-3); }
+.compute-custom-step label:has(input[type=checkbox]) { display:flex; align-items:center; justify-content:space-between; min-height:var(--tap-min); }
+.compute-custom-step input[type=checkbox] { width:auto; }
+
+.compute-custom-selectors { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-3); }
+@media (max-width:767px) { .compute-custom-selectors { grid-template-columns:minmax(0,1fr); } }

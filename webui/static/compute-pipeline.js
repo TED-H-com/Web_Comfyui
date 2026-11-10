@@ -26,18 +26,20 @@
   });
   function mount(host,{api,onBack}){
     let disposed=false,poll=null,recipes=[],current=null,pending=null,submitting=false;
-    const jobs=new Map(),retryUnknown=new Map(),controls=new Map(),placements=new Map(),fieldRows=new Map();
+    let featureRegistry=[],preferences={default_placement:'local',feature_placements:{}},customSteps=[],stepSequence=0;
+    const jobs=new Map(),retryUnknown=new Map(),retryPlacements=new Map(),controls=new Map(),placements=new Map(),fieldRows=new Map();
     const root=el('section',{class:'panel compute-production','data-compute-pipeline-mounted':'true'});
     const notice=el('p',{class:'compute-note',role:'status','aria-live':'polite'});
     const recipe=el('select',{'aria-label':'製作方式'});
     const description=el('p',{class:'compute-note'});
     const inputs=el('div',{class:'compute-production-inputs'}),steps=el('ol',{class:'compute-production-steps'});
+    const customHost=el('div',{class:'compute-custom-steps',hidden:true}),stepsHeading=el('h2',{text:'執行步驟'});
     const submit=el('button',{type:'submit',class:'primary small',text:'開始製作',disabled:true});
     const confirm=button('確認原提交',()=>send().catch(()=>{}));confirm.hidden=true;
     const limitsSpec=[['max_minutes','每步最長分鐘',60,5,180],['max_units','Colab 點數停止門檻',20,5,2000],['max_credits','AutoIP 點數上限',100,1,1000000],['max_comfy_credits','Comfy Cloud 點數門檻',100,1,1000000],['max_runninghub_coins','RunningHub 金幣門檻',100,1,1000000]];
     const limitInputs=new Map(limitsSpec.map(([key,label,value,min,max])=>[key,el('input',{type:'number',value,min,max,step:1,required:true,'aria-label':label})]));
     const form=el('form',{class:'compute-production-form'},[
-      field('製作方式',recipe),description,inputs,el('h2',{text:'執行步驟'}),steps,
+      field('製作方式',recipe),description,inputs,customHost,stepsHeading,steps,
       el('details',{class:'compute-production-limits'},[
         el('summary',{text:'每步執行上限'}),el('div',{class:'compute-grid'},limitsSpec.map(([key,label])=>field(label,limitInputs.get(key)))),
         el('p',{class:'compute-note',text:'每一步分別檢查預估用量；平台門檻並非硬性扣款上限。整個製作可能包含多次計費。'}),
@@ -46,12 +48,12 @@
     const list=el('div',{class:'compute-production-jobs'});
     const listNotice=el('p',{class:'compute-note',role:'status','aria-live':'polite'});
     root.append(el('div',{class:'compute-production-heading'},[
-      el('div',{},[el('h1',{text:'多步製作'}),el('p',{class:'compute-note',text:'按順序製作圖片與影片，為每一步選擇運算平台。'})]),
+      el('div',{},[el('h1',{text:'多步製作'}),el('p',{class:'compute-note',text:'串接圖片、影片與聲音功能，為每一步選擇運算平台。'})]),
       el('div',{class:'compute-job-actions'},[...(onBack?[button('返回單步創作',onBack)]:[]),button('新增製作',newProduction)]),
     ]),notice,form,confirm,el('div',{class:'compute-production-heading'},[el('h2',{text:'製作紀錄'}),button('更新紀錄',refreshJobs)]),listNotice,list);
     host.append(root);
     const live=()=>!disposed&&root.isConnected;
-    function destroy(){disposed=true;delete root.dataset.computePipelineMounted;clearTimeout(poll);pending=null;controls.clear();instances.delete(destroy);}
+    function destroy(){disposed=true;delete root.dataset.computePipelineMounted;clearTimeout(poll);pending=null;controls.clear();retryPlacements.clear();instances.delete(destroy);}
     instances.add(destroy);
     function lock(){
       for(const input of form.querySelectorAll('input,textarea,select,button'))input.disabled=!!pending||submitting;
@@ -69,33 +71,139 @@
         row.hidden=!visible;input.required=visible&&spec.required===true;
       }
     }
+    function preferredPlacement(featureId){const value=preferences.feature_placements?.[featureId]??preferences.default_placement;return Object.hasOwn(lanes,value)?value:'local';}
     function renderRecipe(){
+      const custom=recipe.value==='custom';customHost.hidden=!custom;inputs.hidden=steps.hidden=stepsHeading.hidden=custom;
+      if(custom){current={id:'custom',fields:[]};description.textContent='新增步驟並選擇功能；素材可來自自己的檔案或前一步已驗證的第一份成果。角色專用功能請由角色工作室使用。';resetCustom();lock();return;}
       current=recipes.find(item=>item.id===recipe.value)||null;controls.clear();placements.clear();fieldRows.clear();inputs.replaceChildren();steps.replaceChildren();
       description.textContent=String(current?.description||'').slice(0,800);
       for(const spec of current?.fields||[]){
         if(!['text','textarea','number','select','file'].includes(spec.type)||typeof spec.id!=='string')continue;
         let input;
         if(spec.type==='select')input=el('select',{},(spec.options||[]).map(item=>el('option',{value:item.value,text:item.label})));
-        else if(spec.type==='textarea')input=el('textarea',{rows:3,maxlength:spec.max_length||12000});
-        else input=el('input',{type:spec.type,min:spec.min,max:spec.max,step:spec.step||1,...(spec.type==='file'?{accept:spec.accept||'image/png,image/jpeg,image/webp'}:{maxlength:spec.max_length||12000})});
+        else if(spec.type==='textarea')input=el('textarea',{rows:3,maxlength:spec.maxLength||spec.max_length||12000});
+        else input=el('input',{type:spec.type,min:spec.min,max:spec.max,step:spec.step||1,...(spec.type==='file'?{accept:spec.accept||'image/png,image/jpeg,image/webp'}:{maxlength:spec.maxLength||spec.max_length||12000})});
         if(spec.default!=null&&spec.type!=='file')input.value=String(spec.default);
         const row=field(spec.label||spec.id,input);
         if(['select','number'].includes(spec.type))row.classList.add('compute-production-small-field');
         if(spec.type==='file'){
           input.classList.add('compute-file-input');const filename=el('span',{class:'compute-note',text:'尚未選取檔案'});
           input.addEventListener('change',()=>{filename.textContent=input.files[0]?.name||'尚未選取檔案';});
-          row.append(el('div',{class:'compute-job-actions'},[button('選擇圖片',()=>input.click()),filename]));
+          row.append(el('div',{class:'compute-job-actions'},[button('選擇素材',()=>input.click()),filename]));
         }
         if(spec.description)row.append(el('span',{class:'compute-note',text:String(spec.description).slice(0,500)}));
         controls.set(spec.id,input);fieldRows.set(spec.id,row);inputs.append(row);
       }
       for(const [index,step] of (current?.steps||[]).entries()){
         const picker=el('select',{'aria-label':`${step.label||`步驟 ${index+1}`}執行位置`},Object.entries(lanes).map(([value,text])=>el('option',{value,text})));
-        picker.value=Object.hasOwn(lanes,step.placement)?step.placement:'local';picker.addEventListener('change',conditionalFields);placements.set(step.id,picker);
+        picker.value=Object.hasOwn(lanes,step.placement)?step.placement:preferredPlacement(step.feature_id);picker.addEventListener('change',conditionalFields);placements.set(step.id,picker);
         const dependencies=(step.depends_on||[]).map(id=>current.steps.find(item=>item.id===id)?.label||'前一步');
         steps.append(el('li',{},[el('div',{},[el('strong',{text:`${index+1}. ${step.label||'製作'}`}),el('p',{class:'compute-note',text:dependencies.length?`使用「${dependencies.join('、')}」的已完成成果。`:'使用本次輸入內容。'}),...(step.description?[el('p',{class:'compute-note',text:step.description})]:[])]),picker]));
       }
       conditionalFields();lock();
+    }
+    function customField(spec,prefix){
+      let input;
+      const choices=(spec.options||[]).map(option=>typeof option==='object'?{...option,value:option.value??`${option.width}x${option.height}`}:{value:option,label:String(option)});
+      if(['select','aspect'].includes(spec.type))input=el('select',{},choices.map(option=>el('option',{value:option.value,text:option.label||String(option.value)})));
+      else if(spec.type==='textarea')input=el('textarea',{rows:Math.min(4,spec.rows||3),maxlength:spec.maxLength||12000,placeholder:spec.placeholder});
+      else input=el('input',{type:spec.type==='slider'?'number':spec.type,min:spec.min,max:spec.max,step:spec.step??'any',maxlength:spec.maxLength||12000,placeholder:spec.placeholder});
+      input.required=spec.required===true;
+      if(spec.type==='checkbox')input.checked=spec.default===true;else if(spec.default!=null)input.value=String(spec.default);
+      const row=field(`${prefix} ${spec.label||spec.id}`,input);
+      if(spec.description||spec.hint)row.append(el('span',{class:'compute-note',text:String(spec.description||spec.hint).slice(0,400)}));
+      return {input,row,read:()=>spec.type==='checkbox'?input.checked:['number','slider'].includes(spec.type)?(input.value===''?undefined:Number(input.value)):['select','aspect'].includes(spec.type)?choices.find(item=>String(item.value)===input.value)?.value??input.value:input.value};
+    }
+    function resetCustom(){customSteps=[];stepSequence=0;customHost.replaceChildren(el('p',{class:'compute-note',text:'角色專用功能與尚未支援的表單控制不會出現在此選單。'}));addCustom();customHost.append(button('新增步驟',addCustom));}
+    function addCustom(){
+      if(customSteps.length>=8){notice.textContent='每個自訂製作最多 8 步。';return;}
+      const item={id:'step-'+(++stepSequence),fields:new Map(),slots:new Map(),feature:null,touched:false};
+      item.root=el('section',{class:'compute-custom-step'});
+      item.featureChoice=el('select',{'aria-label':`步驟 ${customSteps.length+1} 功能`,required:true},[el('option',{value:'',text:'請選擇功能'}),...featureRegistry.map(feature=>el('option',{value:feature.id,text:feature.label||feature.id}))]);
+      item.placement=el('select',{'aria-label':`步驟 ${customSteps.length+1} 執行位置`},Object.entries(lanes).map(([value,text])=>el('option',{value,text})));
+      item.placement.value=preferredPlacement('');
+      item.content=el('div',{class:'compute-custom-fields'});
+      const remove=button('移除此步驟',()=>{if(customSteps.length===1)return;customSteps=customSteps.filter(step=>step!==item);item.root.remove();refreshCustomSources();});
+      item.root.append(el('div',{class:'compute-production-heading'},[el('strong',{text:`步驟 ${customSteps.length+1}`}),remove]),el('div',{class:'compute-custom-selectors'},[field('功能',item.featureChoice),field('執行位置',item.placement)]),item.content);
+      customSteps.push(item);const add=customHost.lastElementChild;
+      if(add?.tagName==='BUTTON')customHost.insertBefore(item.root,add);else customHost.append(item.root);
+      item.featureChoice.setAttribute('aria-label',`步驟 ${customSteps.length} 功能`);item.placement.setAttribute('aria-label',`步驟 ${customSteps.length} 執行位置`);
+      item.featureChoice.addEventListener('change',()=>renderCustomFeature(item));
+      item.placement.addEventListener('change',()=>{item.touched=true;item.syncExtras?.();});
+    }
+    function renderCustomFeature(item){
+      item.feature=featureRegistry.find(feature=>feature.id===item.featureChoice.value)||null;item.fields.clear();item.slots.clear();item.content.replaceChildren();
+      if(!item.feature){refreshCustomSources();return;}
+      if(!item.touched)item.placement.value=preferredPlacement(item.feature.id);
+      const prefix=item.feature.label||item.feature.id,advanced=el('details',{},[el('summary',{text:'進階設定'})]);
+      for(const spec of item.feature.fields){
+        const value=customField(spec,prefix);item.fields.set(spec.id,value);
+        (['number','slider','checkbox'].includes(spec.type)?advanced:item.content).append(value.row);
+      }
+      if(advanced.children.length>1)item.content.append(advanced);
+      for(const slot of item.feature.uploads||[]){
+        const source=el('select',{'aria-label':`${prefix} ${slot.label||slot.id}來源`});
+        const file=el('input',{type:'file',class:'compute-file-input',accept:slot.accept,'aria-label':`${prefix} ${slot.label||slot.id}檔案`});
+        const filename=el('span',{class:'compute-note',text:'尚未選取檔案'});
+        file.addEventListener('change',()=>{filename.textContent=file.files[0]?.name||'尚未選取檔案';});
+        const picker=el('div',{class:'compute-job-actions'},[file,button('選擇素材',()=>file.click()),filename]);
+        const expected=el('select',{'aria-label':`${prefix} ${slot.label||slot.id}成果類型`},[el('option',{value:'',text:'請確認上游成果類型'}),...(slot.media_kinds||[]).map(value=>el('option',{value,text:{image:'圖片',video:'影片',audio:'聲音'}[value]}))]);
+        const typeRow=field('上游成果類型（執行時驗證）',expected);
+        item.content.append(field(`${slot.label||slot.id}來源`,source),picker,typeRow);source.setAttribute('aria-label',`${prefix} ${slot.label||slot.id}來源`);expected.setAttribute('aria-label',`${prefix} ${slot.label||slot.id}成果類型`);
+        const entry={spec:slot,source,file,picker,expected,typeRow};item.slots.set(slot.id,entry);
+        source.addEventListener('change',()=>syncCustomSlot(item,entry));
+      }
+      const visual=el('select',{},[el('option',{value:'',text:'未指定'}),el('option',{value:'anime',text:'動漫'}),el('option',{value:'realistic',text:'寫實'})]);
+      const visualRow=field(`${prefix} 圖片類型`,visual);
+      const seconds=el('input',{type:'number',min:2,max:15,step:1,value:8}),resolution=el('select',{},['480p','768p','2k'].map(value=>el('option',{value,text:value}))),aspect=el('select',{},['16:9','9:16'].map(value=>el('option',{value,text:value})));
+      const videoRow=el('div',{class:'compute-grid'},[field(`${prefix} AutoIP 秒數`,seconds),field(`${prefix} AutoIP 解析度`,resolution),field(`${prefix} AutoIP 比例`,aspect)]);
+      item.extras={visual,seconds,resolution,aspect,visualRow,videoRow};item.content.append(visualRow,videoRow);
+      item.syncExtras=()=>{
+        const cloud=['auto','autoip'].includes(item.placement.value),style=item.fields.get('visualStyle')?.read()||item.fields.get('visualClass')?.read();
+        visualRow.hidden=!(cloud&&['img2img','qwen21-edit','img2video','h3-image-video','first-last-frame'].includes(item.feature.id)&&!['anime','realistic'].includes(style));visual.required=!visualRow.hidden;
+        videoRow.hidden=!(cloud&&['h3-text-video','h3-image-video'].includes(item.feature.id));seconds.required=!videoRow.hidden;
+      };
+      item.content.oninput=item.syncExtras;item.syncExtras();refreshCustomSources();
+    }
+    function syncCustomSlot(item,entry){
+      const prior=customSteps.find(step=>step.id===entry.source.value),fromFile=entry.source.value==='file';
+      entry.picker.hidden=!fromFile;entry.file.required=fromFile&&entry.spec.required===true;
+      entry.typeRow.hidden=!prior||!!prior.feature?.output_kind;entry.expected.required=!entry.typeRow.hidden;
+    }
+    function refreshCustomSources(){
+      for(const [index,item] of customSteps.entries()){
+        item.root.querySelector('strong').textContent=`步驟 ${index+1}`;
+        item.featureChoice.setAttribute('aria-label',`步驟 ${index+1} 功能`);item.placement.setAttribute('aria-label',`步驟 ${index+1} 執行位置`);
+        for(const entry of item.slots.values()){
+          const selected=entry.source.value;
+          const choices=customSteps.slice(0,index).filter(prior=>prior.feature&&(entry.spec.media_kinds||[]).length&&(!prior.feature.output_kind||(entry.spec.media_kinds||[]).includes(prior.feature.output_kind)));
+          entry.source.replaceChildren(el('option',{value:'',text:entry.spec.required?'請選擇素材來源':'不使用此素材'}),el('option',{value:'file',text:'選擇自己的檔案'}),...choices.map(prior=>el('option',{value:prior.id,text:`步驟 ${customSteps.indexOf(prior)+1} · ${prior.feature.label}第一份成果${prior.feature.output_kind?'':'（類型待確認）'}`})));
+          entry.source.value=[...entry.source.options].some(option=>option.value===selected)?selected:'';entry.source.required=entry.spec.required===true;
+          syncCustomSlot(item,entry);
+        }
+      }
+    }
+    async function customPayload(){
+      const plan={version:1,steps:[]};let total=0;
+      const limits={...Object.fromEntries([...limitInputs].map(([key,input])=>[key,Number(input.value)])),gpu:'L4',account_id:''};
+      for(const item of customSteps){
+        if(!item.feature)throw new Error('custom_inputs');
+        const request={featureId:item.feature.id,settings:{},files:{}},bindings={},dependencies=new Set();
+        for(const [id,value] of item.fields){const result=value.read();if(result!==undefined)request.settings[id]=result;}
+        for(const [id,entry] of item.slots){
+          if(entry.source.value==='file'&&entry.file.files[0]){total+=entry.file.files[0].size;if(total>32*1024*1024)throw new Error('files_too_large');request.files[id]=await fileData(entry.file.files[0]);}
+          else if(entry.source.value&&entry.source.value!=='file'){
+            const upstream=customSteps.find(step=>step.id===entry.source.value),kind=upstream?.feature?.output_kind||entry.expected.value;
+            if(!(entry.spec.media_kinds||[]).includes(kind))throw new Error('custom_inputs');
+            bindings[id]={step_id:upstream.id,artifact_index:0,expected_kind:kind};dependencies.add(upstream.id);
+          }
+        }
+        if(Object.keys(request.files).length+Object.keys(bindings).length<(item.feature.minimumUploads||0))throw new Error('custom_inputs');
+        const extra=item.extras;if(extra&&!extra.visualRow.hidden)request.computeVisualClass=extra.visual.value;
+        if(extra&&!extra.videoRow.hidden)request.computeAutoipVideo={duration_seconds:Number(extra.seconds.value),resolution:extra.resolution.value,aspect_ratio:extra.aspect.value};
+        plan.steps.push({id:item.id,request,placement:item.placement.value,limits:{...limits},bindings,depends_on:[...dependencies]});
+      }
+      return {pipeline_id:crypto.randomUUID(),plan};
     }
     recipe.addEventListener('change',renderRecipe);
     function receipt(value,expected){
@@ -124,11 +232,15 @@
           actions.append(button('繼續',()=>mutate(item,'resume')),button('停止',()=>mutate(item,'cancel')));
         }
         const rows=item.steps.map((step,index)=>{
-          const label=String(step.label||({image:'圖片製作',video:'影片製作'}[step.id])||`步驟 ${index+1}`),outputs=step.artifacts?.length?step.artifacts:step.job?.artifacts;
+          const label=String(step.label||({image:'圖片製作',video:'影片製作',voice:'語音製作',lipsync:'對嘴影片'}[step.id])||`步驟 ${index+1}`),outputs=step.artifacts?.length?step.artifacts:step.job?.artifacts;
           const tools=el('div',{class:'compute-job-actions'},outputLinks(outputs));
           const key=item.pipeline_id+':'+step.id;
           if(['failed','rejected'].includes(step.state)&&!item.cancel_requested&&step.retry_allowed!==false){
-            const retry=button('重試失敗步驟',()=>mutate(item,'retry',step));retry.disabled=retryUnknown.has(key);tools.append(retry);
+            const retryLane=el('select',{'aria-label':`${label}重試平台`},Object.entries(lanes).map(([value,text])=>el('option',{value,text})));
+            retryLane.value=retryPlacements.get(key)||(Object.hasOwn(lanes,step.placement)?step.placement:'auto');
+            retryLane.disabled=retryUnknown.has(key);retryLane.addEventListener('change',()=>retryPlacements.set(key,retryLane.value));
+            const retry=button('重試失敗步驟',()=>mutate(item,'retry',step));retry.disabled=retryUnknown.has(key);
+            tools.append(field('重試平台',retryLane),retry);retryLane.setAttribute('aria-label',`${label}重試平台`);
           }
           return el('li',{'data-pipeline-step':step.id},[
             el('div',{class:'compute-production-step-state'},[el('strong',{text:label}),el('span',{text:states[step.state]||'等待確認'})]),
@@ -158,7 +270,7 @@
       if(key)retryUnknown.set(key,step.attempt||1);
       renderJobs();listNotice.textContent='正在更新製作…';
       try{
-        const value=await api('/api/compute/pipelines/'+item.pipeline_id+'/'+action,{method:'POST',body:JSON.stringify(step?{step_id:step.id}:{})});
+        const value=await api('/api/compute/pipelines/'+item.pipeline_id+'/'+action,{method:'POST',body:JSON.stringify(step?{step_id:step.id,placement:retryPlacements.get(key)||(Object.hasOwn(lanes,step.placement)?step.placement:'auto')}:{})});
         if(!live())return;accept(value,item.pipeline_id);listNotice.textContent=action==='cancel'?'停止要求已送出；已完成成果會保留。':'製作狀態已更新。';
       }catch(error){
         if(key&&error.submissionState==='not_submitted')retryUnknown.delete(key);
@@ -166,6 +278,7 @@
       }
     }
     async function payload(){
+      if(recipe.value==='custom')return customPayload();
       const values={},selectedFiles=[];
       for(const spec of current.fields||[]){
         const control=controls.get(spec.id);if(!control||fieldRows.get(spec.id).hidden)continue;
@@ -197,10 +310,12 @@
     form.addEventListener('submit',event=>{event.preventDefault();send();});
     async function init(){
       try{
-        const data=await api('/api/compute/pipeline-recipes');if(!live())return;
+        const [data,prefs,registry]=await Promise.all([api('/api/compute/pipeline-recipes'),api('/api/compute/preferences').catch(()=>null),api('/api/compute/pipeline-features').catch(()=>null)]);if(!live())return;
+        if(prefs)preferences=prefs;
+        featureRegistry=(registry?.features||[]).filter(item=>!item.characterOnly&&typeof item.id==='string'&&Array.isArray(item.fields)&&item.fields.every(field=>['text','textarea','select','aspect','number','slider','checkbox'].includes(field.type)));
         recipes=(data.recipes||[]).filter(item=>typeof item.id==='string'&&Array.isArray(item.fields)&&Array.isArray(item.steps));
-        recipe.replaceChildren(...recipes.map(item=>el('option',{value:item.id,text:item.label||item.id})));renderRecipe();
-        if(!recipes.length)notice.textContent='目前沒有可用的多步製作方式。';
+        recipe.replaceChildren(...recipes.map(item=>el('option',{value:item.id,text:item.label||item.id})),...(featureRegistry.length?[el('option',{value:'custom',text:'自訂多步流程'})]:[]));renderRecipe();
+        if(!recipes.length&&!featureRegistry.length)notice.textContent='目前沒有可用的多步製作方式。';
       }catch(_){if(live())notice.textContent='製作方式目前無法讀取，請稍後再試。';}
     }
     async function tick(){if(!live()){destroy();return;}await refreshJobs();if(live())poll=setTimeout(tick,10000);}

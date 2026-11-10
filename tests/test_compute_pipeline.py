@@ -327,3 +327,103 @@ def test_worker_inventory_has_only_owner_identity_and_resumes_fresh_context(driv
     for item in items:
         engine.tick(item['owner'], item['pipeline_id'])
     assert driver.factory_owners == ['first', 'second']
+
+
+def test_retry_pins_new_placement_and_merged_budget_without_mutating_original_attempt(driver):
+    engine, ident = driver.engine(), str(uuid.uuid4())
+    original = plan({'id': 'image', 'request': request(), 'placement': 'local',
+                     'limits': {'max_minutes': 5, 'max_credits': 2}})
+    accepted = engine.create('owner', ident, original)
+    first = engine.tick('owner', ident)
+    driver.finish('owner', first['steps'][0]['request_id'], 'failed', artifacts=False)
+    engine.tick('owner', ident)
+    retry = engine.retry('owner', ident, 'image', placement='autoip', limits={'max_credits': 3})
+    assert retry['plan_hash'] == accepted['plan_hash']
+    assert retry['steps'][0]['placement'] == 'autoip'
+    assert retry['steps'][0]['limits'] == {'max_minutes': 5, 'max_credits': 3}
+    assert retry['steps'][0]['attempts'][0]['placement'] == 'local'
+    assert retry['steps'][0]['attempts'][0]['limits']['max_credits'] == 2
+    with pytest.raises(PipelineError):
+        engine.retry('owner', ident, 'image', placement='local')
+    driver.engine().resume('owner', ident)
+    assert [call[0] for call in driver.calls] == ['local', 'autoip']
+    assert driver.calls[0][2] != driver.calls[1][2]
+    assert driver.calls[1][4] == {'max_minutes': 5, 'max_credits': 3}
+
+
+def test_uncertain_attempt_cannot_be_replaced_even_with_new_placement_and_limits(driver):
+    driver.failures['text2img'] = TimeoutError('uncertain')
+    engine, ident = driver.engine(), str(uuid.uuid4())
+    engine.create('owner', ident, plan())
+    engine.tick('owner', ident)
+    with pytest.raises(PipelineError, match='已確認'):
+        engine.retry('owner', ident, 'image', placement='autoip', limits={'max_credits': 1})
+    assert len(driver.calls) == 1
+
+
+@pytest.mark.parametrize('kind', ['audio', 'video'])
+def test_typed_dependency_persists_decoder_metadata_and_rejects_kind_mismatch(driver, kind):
+    engine, ident = driver.engine(), str(uuid.uuid4())
+    spec = chain()
+    spec['steps'][1]['bindings']['image']['expected_kind'] = kind
+    driver.resolver = lambda *args: {**driver.resolve(*args), 'media': {'kind': kind, 'duration': .25}}
+    engine.create('owner', ident, spec)
+    first = engine.tick('owner', ident)
+    driver.finish('owner', first['steps'][0]['request_id'])
+    second = engine.tick('owner', ident)
+    assert second['steps'][1]['dependency_media'] == {'image': {'kind': kind, 'duration': .25}}
+    driver.finish('owner', second['steps'][1]['request_id'], 'failed', artifacts=False)
+    engine.tick('owner', ident)
+    engine.retry('owner', ident, 'video', placement='local')
+    driver.resolver = lambda *args: {**driver.resolve(*args), 'media': {'kind': 'image', 'width': 8, 'height': 8}}
+    rejected = engine.tick('owner', ident)
+    assert rejected['steps'][1]['error_code'] == 'artifact_kind_mismatch'
+    assert len(driver.calls) == 2
+
+
+def test_ready_independent_steps_start_without_waiting_for_each_others_outputs(driver):
+    engine, ident = driver.engine(), str(uuid.uuid4())
+    engine.create('owner', ident, plan(
+        {'id': 'a', 'request': request('a'), 'placement': 'local'},
+        {'id': 'b', 'request': request('b'), 'placement': 'autoip'}))
+    state = engine.tick('owner', ident)
+    assert [step['state'] for step in state['steps']] == ['running', 'running']
+    assert [call[0] for call in driver.calls] == ['local', 'autoip']
+    engine.tick('owner', ident)
+    assert len(driver.calls) == 2
+
+
+def test_reconciliation_failure_does_not_starve_later_owner(driver):
+    engine = driver.engine()
+    for owner in ['disabled1', 'disabled2', 'disabled3', 'enabled']:
+        engine.create(owner, str(uuid.uuid4()), plan())
+    def factory(owner):
+        if owner.startswith('disabled'):
+            raise PermissionError('account disabled')
+        return driver.router(owner)
+    engine.router_factory = factory
+    visited = []
+    for _ in range(2):
+        for item in engine.work_items(limit=2):
+            visited.append(item['owner'])
+            try:
+                engine.tick(item['owner'], item['pipeline_id'])
+            except PermissionError:
+                pass
+    assert visited == ['disabled1', 'disabled2', 'disabled3', 'enabled']
+    assert len(driver.calls) == 1 and driver.calls[0][1] == 'enabled'
+
+
+def test_old_database_migration_keeps_identity_and_inherits_original_attempt_options(driver):
+    engine, ident = driver.engine(), str(uuid.uuid4())
+    initial = engine.create('owner', ident, plan())
+    # Reproduce the immediately previous schema with an accepted old row.
+    with sqlite3.connect(engine.path) as db:
+        db.execute('ALTER TABLE compute_pipeline_attempts DROP COLUMN placement')
+        db.execute('ALTER TABLE compute_pipeline_attempts DROP COLUMN limits_json')
+        db.execute('ALTER TABLE compute_pipelines DROP COLUMN last_reconciled')
+    migrated = driver.engine()
+    assert migrated.status('owner', ident)['steps'][0]['request_id'] == initial['steps'][0]['request_id']
+    assert migrated.status('owner', ident)['steps'][0]['placement'] == 'local'
+    migrated.tick('owner', ident)
+    assert len(driver.calls) == 1
