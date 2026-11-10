@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/hongye007/open-pose-costume",
+  "revision": "16e378aaf0dd021b8e06001b4e1ed781580287ba",
+  "catalogSha256": "86d58388d638b66d5d52ee27f7e2f596718f4ac18269bc659b5877d8352bd453",
+  "catalogUrl": "https://raw.githubusercontent.com/hongye007/open-pose-costume/16e378aaf0dd021b8e06001b4e1ed781580287ba/public/data/catalog.json",
+  "stats": {
+    "poseGroups": 343,
+    "poseImages": 1714,
+    "costumes": 2821,
+    "characters": 1539,
+    "references": 4703,
+    "images": 6074
+  }
+}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import copy
 
 MODEL = "qwen_image_2.1_int8_convrot.safetensors"
 CLIP = "qwen3vl_8b_int8_convrot.safetensors"
@@ -82,6 +83,51 @@ def feature_definitions() -> list[dict]:
             ),
         })
     return features
+
+
+def character_feature_definition() -> dict:
+    portrait = copy.deepcopy(feature_definitions()[1])
+    portrait.update(id='character-photoshoot', title='角色搭配寫真',
+                    subtitle='角色原圖 × 場景、穿著與姿勢', toolGroup='character-photoshoot',
+                    builder='qwen21_character', minimumUploads=1,
+                    note='使用 Qwen-Image 2.1 參考角色原圖生成新畫面；搭配圖卡只提供文字描述，畫風依角色原圖。臉部仍可能有差異。')
+    portrait['uploads']=[{'id':'image','label':'角色原圖','accept':'image/*','required':True}]
+    styles=[{'value':'anime','label':'動畫'},{'value':'realistic','label':'寫實'}]
+    portrait['fields'].insert(0, {
+        'id':'visualStyle','type':'select','label':'畫風','default':'realistic','options':styles,
+        'optionsByVisualClass':{v['value']:[v] for v in styles},
+        'hint':'服裝依畫風分開；人物、衣服與背景使用同一畫風。選角色時依角色分類套用。',
+    })
+    for field in portrait['fields']:
+        if field['id']=='instruction':
+            field.update(label='畫面描述',placeholder='選擇下方搭配，或描述想要的場景、服裝與動作。',hint='保持角色外觀，依描述重新安排畫面。')
+        if field['id'] in ('steps','cfg','seed'):
+            field['advanced']=True
+    return portrait
+
+
+def compile_character_prompt(settings: dict, uploads: dict, *, seed: int, prefix: str) -> dict:
+    if not uploads.get('image'):
+        raise ValueError('請先選擇角色原圖，不能只用文字生成角色寫真')
+    if set(uploads)-{'image'}:
+        raise ValueError('角色搭配寫真只接受一張角色原圖')
+    description=str(settings.get('instruction') or '').strip()
+    if not description:
+        raise ValueError('請選擇場景、穿著、姿勢，或輸入畫面描述')
+    visual_style=settings.get('_characterVisualClass') or settings.get('visualStyle') or ''
+    if visual_style not in ('', 'anime', 'realistic'):
+        raise ValueError('請選擇動畫或寫實畫風')
+    style={
+        'anime':'全畫面採用一致的動漫畫風：人物、身體、服裝、道具、場景與背景全部以二維動畫插畫呈現。使用協調的線稿與動畫上色，不使用真人皮膚、攝影材質或寫實照片背景，不把動漫頭部拼接在寫實身體上。',
+        'realistic':'全畫面採用一致的寫實攝影風格：人物、身體、服裝、道具、場景與背景全部以自然攝影呈現。使用一致的真實光線與材質，不混入動漫臉、插畫服裝或動畫背景。',
+    }.get(visual_style,'依角色原圖決定畫風，並讓人物、身體、服裝、場景與背景全部使用同一畫風，不混合動畫與寫實攝影。')
+    instruction=(
+        '以 <image1> 中的人物為唯一角色身分參考，生成同一角色的新畫面。'
+        '保持臉型、五官比例、眼睛、髮型髮色與可辨識外觀，不換成另一個人。'
+        +style+'依下方描述重新安排場景、服裝、姿勢與鏡頭構圖；未指定的外觀沿用角色原圖。'
+        '服裝與姿勢描述只代表設計，不代表更換人物或畫風。\n\n'+description
+    )
+    return compile_prompt({**settings,'instruction':instruction},uploads,edit=True,seed=seed,prefix=prefix)
 
 
 def _number(settings: dict, name: str, default: float, low: float, high: float) -> float:

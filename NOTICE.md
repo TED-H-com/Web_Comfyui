@@ -20,3 +20,7 @@ KohakuMossTrainer is an optional separate installation. Its own KohakuMoss licen
 including branding requirements, applies to that software; this project's GPL
 does not relicense it. Likewise ComfyUI extensions, NVIDIA runtime components and
 model weights have their own licenses and requirements.
+
+## Optional pose and costume references
+
+Open Pose & Costume metadata is pinned to revision `16e378aaf0dd021b8e06001b4e1ed781580287ba`. No upstream images are bundled. Source and custom-asset terms, runtime fetching, and verification limits are documented in [character-portraits.md](docs/character-portraits.md).

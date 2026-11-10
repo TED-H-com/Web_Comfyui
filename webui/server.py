@@ -48,6 +48,7 @@ if __name__ == '__main__':
 import library_service
 import workflow_library
 import material_collector
+import reference_sources
 
 import orchestrator as castle_orchestrator
 from media_projects import (
@@ -134,6 +135,8 @@ from minimax_h3_readiness import (
 from qwen_image21 import (
     MODEL_BYTES as QWEN21_MODEL_BYTES,
     compile_prompt as compile_qwen21_prompt,
+    compile_character_prompt as compile_character_photo_prompt,
+    character_feature_definition as qwen21_character_feature,
     feature_definitions as qwen21_feature_definitions,
 )
 
@@ -1682,6 +1685,7 @@ for _h3_feature in minimax_h3_feature_definitions():
     FEATURES.append(_h3_feature)
 
 FEATURES.extend(qwen21_feature_definitions())
+FEATURES.append(qwen21_character_feature())
 FEATURE_BY_ID = {feature["id"]: feature for feature in FEATURES}
 
 # ---- frontend presentation metadata --------------------------------------
@@ -7777,7 +7781,7 @@ def finalize_character_capabilities(
     return result
 
 
-def character_capabilities(character: dict, runtime: dict | None = None) -> list[dict]:
+def legacy_character_capabilities(character: dict, runtime: dict | None = None) -> list[dict]:
     """Return the fail-closed consumer variants supported by one character.
 
     Classification determines which variants exist.  The stored ``actions``
@@ -7924,6 +7928,21 @@ def character_capabilities(character: dict, runtime: dict | None = None) -> list
     return finalize_character_capabilities(character, result, runtime)
 
 
+def character_capabilities(character: dict, runtime: dict | None = None) -> list[dict]:
+    result = legacy_character_capabilities(character, runtime)
+    if not isinstance(character, dict):
+        return result
+    visual_class = normalized_visual_class(character.get("visualClass"))
+    if visual_class not in {"anime", "realistic"} or character.get("kind") not in {"ai_sister", "bestie", "human", "custom"}:
+        return result
+    portrait = _character_capability(character, "photoshoot",
+        f"photoshoot.{visual_class}.character-photoshoot.v1", "character-photoshoot",
+        {"visualStyle": [visual_class]})
+    portrait["serverBoundUploads"] = ["image"]
+    return finalize_character_capabilities(character,
+        [item for item in result if item["actionId"] != "photoshoot"] + [portrait], runtime)
+
+
 def resolve_character_capability(
     character: dict,
     action_id: str,
@@ -7939,7 +7958,7 @@ def resolve_character_capability(
     if not variant_id:
         raise ValueError("角色生成必須提供 variantId")
 
-    capabilities = character_capabilities(character)
+    capabilities = character_capabilities(character) + legacy_character_capabilities(character)
     capability = next((item for item in capabilities if item["variantId"] == variant_id), None)
     if capability is None:
         name = str(character.get("name") or character.get("id") or "此角色")
@@ -9154,6 +9173,17 @@ def bind_character_capability_files(
     if files is not None and not isinstance(files, dict):
         raise ValueError("files must be an object")
     client_files = files if isinstance(files, dict) else {}
+
+    if capability.get("featureId") == "character-photoshoot":
+        if client_files:
+            raise ValueError("角色搭配寫真只使用已選角色的原圖，不接受替換圖片")
+        source = character_asset_path(character, "avatar")
+        if source is None:
+            raise ValueError("此角色沒有可用的角色原圖")
+        digest = sha256_file(source)
+        return {"image": {"_characterAssetPath": str(source), "_characterAssetHash": digest,
+                          "_characterAssetTheme": "photoshoot-profile"}}, {
+            "slot": "image", "kind": "character-photoshoot-profile", "sha256": digest}
 
     h3_bindings = {
         "image-video.anime.h3-fl2va.v1": "image",
@@ -13036,7 +13066,13 @@ def qwen21_edit_prompt(settings: dict, uploads: dict | None = None) -> dict:
     )
 
 
+def character_photoshoot_prompt(settings: dict, uploads: dict | None = None) -> dict:
+    return compile_character_photo_prompt(settings, uploads or {},
+        seed=normalize_seed(settings.get("seed")), prefix=output_prefix(settings, "character-photoshoot"))
+
+
 BUILDERS = {
+    "qwen21_character": character_photoshoot_prompt,
     "qwen21_t2i": qwen21_t2i_prompt,
     "qwen21_edit": qwen21_edit_prompt,
     "zimage": zimage_prompt,
@@ -16655,6 +16691,10 @@ class Handler(BaseHTTPRequestHandler):
             if not self.require_auth():
                 return
             self.api_events()
+        elif parsed.path == "/api/reference-sources":
+            if not self.require_auth():
+                return
+            self.api_reference_sources(parsed.query)
         elif parsed.path == "/api/library/collect":
             if not self.require_auth():
                 return
@@ -20607,6 +20647,15 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": "找不到採集任務"}, 404)
         except (ValueError, OSError) as error:
             self.send_json({"ok": False, "error": str(error) if isinstance(error, ValueError) else "來源暫時無法連線"}, 400)
+
+    def api_reference_sources(self, query: str) -> None:
+        try:
+            params = {key: values[0] for key, values in urllib.parse.parse_qs(query).items()}
+            self.send_json(reference_sources.listing(params))
+        except ValueError as error:
+            self.send_json({"ok": False, "error": str(error)}, 400)
+        except Exception:
+            self.send_json({"ok": False, "error": "參考來源暫時無法讀取，請重試"}, 503)
 
     def api_library(self, path: str, query: str) -> None:
         try:

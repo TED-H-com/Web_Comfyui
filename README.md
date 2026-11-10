@@ -1,5 +1,7 @@
 # Web_Comfyui
 
+The installed app also includes [character portrait composition](docs/character-portraits.md): Qwen 2.1 identity-image conditioning, separate anime/realistic clothing references, scene and pose choices, and compact previews.
+
 A local front end for your own ComfyUI: image and video forms, a searchable workflow library, generation queues, and user-managed character, voice and media collections. Use the top-right **繁中 / English** control to switch the interface language on the documentation site or in the installed app.
 
 [Project overview](https://ted-h-com.github.io/Web_Comfyui/) · [Interactive demo](https://ted-h-com.github.io/Web_Comfyui/demo/) · [Install locally](docs/installation.md) · [繁體中文安裝與操作](README.zh-TW.md)

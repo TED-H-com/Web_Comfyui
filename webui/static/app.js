@@ -1658,6 +1658,7 @@ function characterCapabilities(character) {
 // realistic-only tool for anime (or vice versa). Illustration intentionally
 // has no entries until an illustration-specific module is qualified.
 const CHARACTER_FEATURE_VISUAL_POLICY = Object.freeze({
+  "character-photoshoot": Object.freeze({ actions: Object.freeze(["photoshoot"]), visualClasses: Object.freeze(["anime", "realistic"]) }),
   "anime-scene-card": Object.freeze({ actions: Object.freeze(["photoshoot"]), visualClasses: Object.freeze(["anime"]) }),
   img2video: Object.freeze({ actions: Object.freeze(["image-video"]), visualClasses: Object.freeze(["anime"]) }),
   dance: Object.freeze({ actions: Object.freeze(["dance"]), visualClasses: Object.freeze(["anime"]) }),
@@ -8691,6 +8692,13 @@ function renderAnimeDanceStudioForm(feature, capability, character) {
   return form;
 }
 
+function mountCharacterPhotoPresets(input, character = null, options = {}) {
+  return window.PhotoPromptPresets?.mount(input, {h,
+    browseReferences: window.ReferenceSources ? settings => window.ReferenceSources.open({h,api,openSheet,dismissTopSheet,captureSessionContext,assertSessionContext,isStaleSessionError,...settings}) : null,
+    visualStyle: ['anime','realistic'].includes(characterVisualClass(character)) ? characterVisualClass(character) : (options.visualStyle || 'realistic'),
+  });
+}
+
 function renderGenForm(feature, capability = null) {
   const character = activeCharacter();
   if (
@@ -8718,6 +8726,16 @@ function renderGenForm(feature, capability = null) {
     return renderAnimeDanceStudioForm(feature, capability, character);
   }
   const form = h("form", { class: "gen-form", onsubmit: (e) => onGenerate(e, feature) });
+  if (feature.id === 'character-photoshoot') {
+    const picker=h('select',{'aria-label':'寫真角色'},[
+      h('option',{value:'',text:'自行提供角色原圖'}),
+      ...libraryCharacters().filter(c=>enabledFeatureCapability(c,feature.id)).map(c=>h('option',{value:c.id,text:c.name})),
+    ]);
+    picker.value=character?.id || '';
+    picker.onchange=()=>navigate(studioRoute(feature.id,picker.value));
+    form.append(h('label',{class:'field'},[h('span',{class:'field-label',text:'角色'}),picker]));
+    if(character)form.append(renderHint(`使用「${character.name}」已設定的角色原圖；場景、穿著與姿勢由下方搭配決定。`));
+  }
   const minimumUploads = Number.isInteger(feature.minimumUploads) && feature.minimumUploads > 0
     ? feature.minimumUploads
     : 0;
@@ -8763,6 +8781,8 @@ function renderGenForm(feature, capability = null) {
   let lipsyncVoiceSelect = null;
   let lipsyncVoiceInput = null;
   let lipsyncVoiceHint = null;
+  let portraitComposer = null;
+  let portraitStyleInput = null;
   for (const field of basic) {
     if (feature.id === "dance" && field.id === "mode" && (field.options || []).length === 1) {
       const onlyMode = field.options[0].value;
@@ -8770,6 +8790,15 @@ function renderGenForm(feature, capability = null) {
       continue;
     }
     const fieldNode = renderField(field);
+    if (feature.id === 'character-photoshoot' && field.id === 'visualStyle') {
+      portraitStyleInput = fieldNode.querySelector('select');
+      portraitStyleInput.setAttribute('aria-label', '畫風');
+      portraitStyleInput.addEventListener('change', () => portraitComposer?.setVisualStyle(portraitStyleInput.value));
+    }
+    if (feature.id === "character-photoshoot" && field.id === "instruction" && window.PhotoPromptPresets) {
+      portraitComposer = mountCharacterPhotoPresets(fieldNode.querySelector("textarea"), activeCharacter(), {visualStyle:portraitStyleInput?.value});
+      form.appendChild(portraitComposer);
+    }
     form.appendChild(fieldNode);
     if (feature.id === "lipsync" && field.id === "voiceId") {
       lipsyncVoiceSelect = fieldNode.querySelector("select");
