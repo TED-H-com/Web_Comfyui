@@ -60,7 +60,7 @@ def compute_page(test_server):
         context.close();browser.close()
 
 
-def fake_router(page, *, drop_first=None, local_ready=True, autoip_ready=False):
+def fake_router(page, *, drop_first=None, local_ready=True, autoip_ready=False, hosted_ready=False):
     previews=[];submissions=[];lookups=[];jobs={};unknown_lookup=[False]
     account_id=str(uuid.uuid4())
     def respond(route):
@@ -70,7 +70,7 @@ def fake_router(page, *, drop_first=None, local_ready=True, autoip_ready=False):
             selected='colab' if body['placement']=='auto' else body['placement']
             route.fulfill(json={'ok':True,'selected_lane':None if selected=='autoip' and not autoip_ready or selected=='local' and not local_ready else selected,
                 'candidates':[{'lane':lane,'eligible':(lane!='autoip' or autoip_ready) and (lane!='local' or local_ready),'queue_depth':2 if lane=='local' else 0,
-                               'reasons':['internal-token-do-not-display'] if lane=='autoip' else ['local_not_ready'] if lane=='local' and not local_ready else []} for lane in ['local','colab','autoip']],
+                               'reasons':['internal-token-do-not-display'] if lane=='autoip' else ['local_not_ready'] if lane=='local' and not local_ready else []} for lane in (['local','colab','autoip','comfy_cloud','runninghub'] if hosted_ready else ['local','colab','autoip'])],
                 'accounts':[{'id':account_id,'label':'合成 Ultra 帳號','authenticated':True,'balance_compute_units':80}],
                 'recipes':{'local':'Qwen Image','colab':'PRISM / P-H3','autoip':'AutoIP'}})
         elif path=='/jobs' and route.request.method=='POST':
@@ -130,7 +130,7 @@ def test_unified_placement_limits_jobs_and_small_layout(compute_page,width):
     page.get_by_text('生成中',exact=True).wait_for()
     assert len(submissions)==1
     submitted=submissions[0]
-    assert submitted['placement']=='auto' and submitted['limits']=={'max_minutes':45,'max_units':15,'max_credits':60,'account_id':account_id,'gpu':'A100'}
+    assert submitted['placement']=='auto' and submitted['limits']=={'max_minutes':45,'max_units':15,'max_credits':60,'max_comfy_credits':100,'max_runninghub_coins':100,'account_id':account_id,'gpu':'A100'}
     assert submitted['request']['files']['image']['data']=='synthetic-private-pixels'
     assert str(uuid.UUID(submitted['request_id']))==submitted['request_id']
     actual=page.evaluate('window.receipts[0]');assert actual['lane']=='colab' and actual['downstream_id']==jobs[actual['request_id']]['downstream_id']
@@ -307,3 +307,20 @@ def test_explicit_autoip_video_spec_preserves_native_h3_settings(compute_page,wi
     page.get_by_text('整理成果中',exact=True).wait_for()
     assert page.get_by_role('button',name='停止任務',exact=True).count()==0
     assert not errors
+
+
+@pytest.mark.parametrize('lane',['comfy_cloud','runninghub'])
+def test_hosted_provider_choice_uses_real_router_receipt_and_separate_budget(compute_page,lane):
+    page,errors=compute_page
+    previews,submissions,_,_,_,_=fake_router(page,hosted_ready=True)
+    page.evaluate('window.mountCompute()');page.get_by_text('工作流：Qwen Image',exact=True).wait_for()
+    selector=page.get_by_label('執行位置',exact=True)
+    assert selector.locator('option').count()==6
+    selector.select_option(lane)
+    page.wait_for_function('window.ComputePlacement.getState(document.querySelector("form")).eligible')
+    page.evaluate('window.submitCompute()');page.get_by_text('生成中',exact=True).wait_for()
+    assert submissions[0]['placement']==lane
+    assert submissions[0]['limits']['max_comfy_credits']==100
+    assert submissions[0]['limits']['max_runninghub_coins']==100
+    assert page.evaluate('window.receipts[0].lane')==lane
+    assert previews[-1]['placement']==lane and not errors

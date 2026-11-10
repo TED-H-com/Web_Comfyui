@@ -49,6 +49,29 @@ def test_manual_lane_and_automatic_capacity_comparison(tmp_path):
     assert len(calls) == 1
 
 
+@pytest.mark.parametrize('lane,currency,key', [('comfy_cloud', 'comfy_credits', 'max_comfy_credits'),
+                                             ('runninghub', 'runninghub_coins', 'max_runninghub_coins')])
+def test_hosted_lanes_keep_currency_and_manual_verification_separate(tmp_path, lane, currency, key):
+    calls = []
+    qualified = [False]
+    def inspect(*args):
+        return {'eligible': True, 'auto_eligible': qualified[0], 'queue_depth': 0,
+                'estimated_cost': 3.5, 'currency': currency, 'budget_basis': 'configured_estimate'}
+    def submit(owner, rid, body, limits):
+        calls.append(rid)
+        return {'state': 'queued', 'downstream_id': rid}
+    router = ComputeRouter(tmp_path / 'routing.db', {lane: ComputeAdapter(inspect, submit)})
+    preview = router.preview('owner', {}, limits={key: 4})
+    row = next(row for row in preview['candidates'] if row['lane'] == lane)
+    assert row['eligible'] and not row['auto_eligible'] and row['currency'] == currency
+    assert row['budget_basis'] == 'configured_estimate' and preview['selected_lane'] is None
+    assert router.preview('owner', {}, lane, {key: 3})['selected_lane'] is None
+    assert router.submit('owner', new_id(), {}, lane, {key: 4})['lane'] == lane
+    assert len(calls) == 1
+    qualified[0] = True
+    assert router.preview('owner', {}, 'auto', {key: 4})['selected_lane'] == lane
+
+
 def test_unknown_feature_inspection_rejects_instead_of_claiming_universal_support(tmp_path):
     calls = []
     router = ComputeRouter(tmp_path / 'routing.db', {'local': adapter(calls, eligible=False)})

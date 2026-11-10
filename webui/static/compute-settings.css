@@ -1,0 +1,18 @@
+.compute-settings { display:grid; gap:var(--space-3); min-width:0; }
+.compute-config-form { display:grid; gap:var(--space-3); min-width:0; }
+.compute-settings .field { margin:0; min-width:0; font-size:var(--text-sm); }
+.compute-settings input:not([type=checkbox]), .compute-settings select { width:100%; min-width:0; box-sizing:border-box; font-size:var(--text-sm); }
+.compute-settings label:has(input[type=checkbox]) { display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); min-height:var(--tap-min); }
+.compute-settings input[type=checkbox] { width:auto; }
+.compute-settings summary { display:flex; align-items:center; min-height:var(--tap-min); font-size:var(--text-sm); color:var(--blue-dark); cursor:pointer; }
+.compute-config-advanced { border-top:1px solid var(--line); padding-top:var(--space-1); }
+.compute-config-advanced > :not(summary) { margin-bottom:var(--space-3); }
+.compute-config-recipes { display:grid; gap:var(--space-2); margin:0; padding:0; list-style:none; }
+.compute-config-recipes li { display:grid; gap:var(--space-1); font-size:var(--text-sm); overflow-wrap:anywhere; }
+.compute-settings button.small { justify-self:start; width:auto; min-height:var(--space-6); padding:var(--space-1) var(--space-3); font-size:var(--text-sm); }
+.compute-settings :is(button,input,select,summary):focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+@media (max-width:767px), (pointer:coarse) { .compute-settings button.small { min-height:var(--tap-min); } }
+@media (max-width:767px) { .compute-settings input:not([type=checkbox]), .compute-settings select { font-size:var(--text-md); } }
+
+.compute-settings .compute-file-input { position:absolute; clip-path:inset(50%); width:1px; height:1px; overflow:hidden; }
+.compute-settings > .compute-note:empty { display:none; }

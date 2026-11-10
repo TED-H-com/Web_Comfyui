@@ -1,5 +1,7 @@
 # Web_Comfyui
 
+[Unified compute placement and multi-step production](docs/compute-platforms.md) keep task controls in one Web UI across local ComfyUI, Colab, AutoIP, Comfy Cloud and RunningHub. Remote availability is checked per feature and configured recipe; showing a provider does not imply every model has been deployed or GPU-tested there.
+
 The installed app also includes [character portrait composition](docs/character-portraits.md): Qwen 2.1 identity-image conditioning, separate anime/realistic clothing references, scene and pose choices, and compact previews.
 
 The optional [Google Colab H3 lane](docs/colab.md) adds separate account connections, durable cloud jobs, output retrieval and verified GPU release. Its source, CPU and browser contracts are tested; real-account GPU qualification is still pending. The [exhaustive upstream audit](docs/workflow-audit/README.md) distinguishes indexed workflows, importable graphs and actual execution evidence.

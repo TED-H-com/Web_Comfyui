@@ -18,10 +18,15 @@ import time
 from typing import Callable, Mapping
 import uuid
 
-LANES = ('local', 'colab', 'autoip')
+LANES = ('local', 'colab', 'autoip', 'comfy_cloud', 'runninghub')
 TERMINAL = frozenset({'completed', 'failed', 'cancelled', 'rejected'})
 STATES = TERMINAL | {'reserved', 'dispatching', 'queued', 'running', 'collecting', 'cancelling', 'submission_uncertain'}
-LIMIT_KEYS = frozenset({'max_credits', 'max_units', 'max_minutes', 'max_concurrent', 'account_id', 'gpu'})
+LIMIT_KEYS = frozenset({'max_credits', 'max_units', 'max_comfy_credits', 'max_runninghub_coins',
+                        'max_minutes', 'max_concurrent', 'account_id', 'gpu'})
+CURRENCIES = {'local': 'local', 'colab': 'compute_units', 'autoip': 'credits',
+              'comfy_cloud': 'comfy_credits', 'runninghub': 'runninghub_coins'}
+BUDGET_KEYS = {'colab': 'max_units', 'autoip': 'max_credits',
+               'comfy_cloud': 'max_comfy_credits', 'runninghub': 'max_runninghub_coins'}
 
 
 class ComputeRoutingError(ValueError):
@@ -164,7 +169,7 @@ def _public_receipt(value):
 class ComputeRouter:
     def __init__(self, db_path, adapters: Mapping[str, ComputeAdapter], *, clock=time.time):
         if not isinstance(adapters, Mapping) or set(adapters) - set(LANES):
-            raise ValueError('adapters must use local, colab or autoip lane IDs')
+            raise ValueError('adapters must use a supported compute lane ID')
         if any(not isinstance(a, ComputeAdapter) or not callable(a.inspect) or not callable(a.submit) for a in adapters.values()):
             raise TypeError('each lane requires a ComputeAdapter')
         self.path, self.adapters, self.clock = Path(db_path), dict(adapters), clock
@@ -261,8 +266,8 @@ class ComputeRouter:
             if limits.get('max_concurrent') is not None and len(active) >= limits['max_concurrent']:
                 reasons.append('concurrency_limit')
             currency, amount = snapshot.get('currency'), snapshot.get('estimated_cost')
-            budget_key = {'autoip': 'max_credits', 'colab': 'max_units'}.get(lane)
-            expected_currency = {'autoip': 'credits', 'colab': 'compute_units', 'local': 'local'}[lane]
+            budget_key = BUDGET_KEYS.get(lane)
+            expected_currency = CURRENCIES[lane]
             if amount is not None and (not _number(amount) or currency != expected_currency):
                 amount = None
                 reasons.append('quote_invalid')
@@ -275,15 +280,21 @@ class ComputeRouter:
             if not isinstance(warnings, (list, tuple)) or len(warnings) > 10 or not all(isinstance(item, str) and len(item) <= 500 for item in warnings):
                 warnings = []
                 reasons.append('inspection_invalid')
-            rows.append({
+            row = {
                 'lane': lane, 'eligible': not reasons,
                 'reasons': list(dict.fromkeys(reasons)), 'queue_depth': queue,
                 'warnings': list(warnings),
                 'available_slots': slots,
                 'active_requests': sum(row['lane'] == lane for row in active),
                 'estimated_cost': amount, 'currency': expected_currency,
-            })
-        eligible = [row for row in rows if row['eligible'] and placement in ('auto', row['lane'])]
+                'auto_eligible': snapshot.get('auto_eligible', True) is True,
+            }
+            basis = snapshot.get('budget_basis')
+            if basis in {'configured_estimate', 'provider_quote', 'usage_stop_threshold'}:
+                row['budget_basis'] = basis
+            rows.append(row)
+        eligible = [row for row in rows if row['eligible'] and placement in ('auto', row['lane'])
+                    and (placement != 'auto' or row['auto_eligible'])]
         # Compare queue pressure, then a stable platform preference. Monetary
         # values in unrelated provider currencies are never compared.
         eligible.sort(key=lambda row: (row['queue_depth'] + row['active_requests'], LANES.index(row['lane'])))

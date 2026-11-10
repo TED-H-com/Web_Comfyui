@@ -14,12 +14,35 @@ class ComputeWeb:
         if not self.owner:
             raise PermissionError('請先登入')
         self.colab = server.get_colab_service()
+        from hosted_compute import HostedComputeService
+        self.hosted = (server.get_hosted_compute_service() if hasattr(server, 'get_hosted_compute_service')
+                       else HostedComputeService(self.colab.root.parent / 'hosted-compute'))
         self.router = ComputeRouter(self.colab.root.parent / 'compute-routing.sqlite3', {
             'local': ComputeAdapter(self.inspect_local, self.submit_local, self.status_local, self.cancel_local),
             'colab': ComputeAdapter(self.inspect_colab, self.submit_colab, self.status_colab, self.cancel_colab,
                                     recover=self.recover_colab),
             'autoip': ComputeAdapter(self.inspect_autoip, self.submit_autoip, self.status_autoip, recover=self.recover_autoip),
+            **{provider: ComputeAdapter(
+                lambda owner, request, limits, p=provider: self.inspect_hosted(p, owner, request, limits),
+                lambda owner, rid, request, limits, p=provider: self._run(request, p, rid, limits),
+                lambda owner, rid, p=provider: self.hosted.status(owner, p, rid),
+                lambda owner, rid, p=provider: self.hosted.cancel(owner, p, rid),
+                recover=lambda owner, rid, p=provider: self.hosted.recover(owner, p, rid),
+            ) for provider in ('comfy_cloud', 'runninghub')},
         })
+
+    def inspect_hosted(self, provider, owner, request, limits):
+        self._feature(request)
+        try:
+            plan = self.s.plan_colab_generation_request(request, self.user,
+                self.h.is_orchestrator_service_authenticated(),
+                provider_actor=getattr(self.h, '_provider_runtime_actor', None), provider=provider)
+            effective = {'featureId': request['featureId'], 'settings': plan['settings'],
+                         'files': {slot: {} for slot in plan['file_slots']}}
+            return self.hosted.inspect(owner, provider, effective, limits)
+        except (ValueError, PermissionError, KeyError):
+            return {'eligible': False, 'auto_eligible': False, 'reasons': ['input_validation_failed'],
+                    'currency': 'comfy_credits' if provider == 'comfy_cloud' else 'runninghub_coins'}
 
     def _feature(self, request):
         feature = self.s.FEATURE_BY_ID.get(request.get('featureId'))
@@ -289,7 +312,9 @@ class ComputeWeb:
 
     def _autoip_plan(self, request, limits):
         from compute_autoip import build_autoip_plan
-        settings, _, _ = self._autoip_inputs(request)
+        settings, visual, _ = self._autoip_inputs(request)
+        if visual:
+            settings = {**settings, 'visualClass': visual}
         if request.get('files'):
             raise ComputeRejected('文字生成不能附帶圖片', code='unsupported_inputs')
         return build_autoip_plan(request['featureId'], settings, max_credits=limits.get('max_credits', 100))
@@ -397,7 +422,8 @@ class ComputeWeb:
         result = self.router.preview(self.owner, request, body.get('placement', 'auto'), limits)
         snapshot = self.colab.snapshot(self.owner)
         result['accounts'] = [{k: a.get(k) for k in ('id','label','authenticated','balance_compute_units')} for a in snapshot['accounts']]
-        result['recipes'] = {'local':'本機既有工作流程', 'colab':colab_adapter.RECIPE_LABEL, 'autoip':'AutoIP 服務配方'}
+        result['recipes'] = {'local':'本機既有工作流程', 'colab':colab_adapter.RECIPE_LABEL, 'autoip':'AutoIP 服務配方',
+                             'comfy_cloud': 'Comfy Cloud 已部署工作流', 'runninghub': 'RunningHub 已發布工作流'}
         try:
             result['colab_compatibility'], result['colab_warnings'] = self._colab_plan(request)
         except (ValueError, PermissionError, KeyError): pass

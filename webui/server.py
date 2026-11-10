@@ -8322,7 +8322,7 @@ def validate_client_generation_files(files, user: dict | None) -> dict:
     return files
 
 
-def plan_colab_generation_request(raw_body, submitted_by: dict | None, service_token: bool = False, *, provider_actor=None) -> dict:
+def plan_colab_generation_request(raw_body, submitted_by: dict | None, service_token: bool = False, *, provider_actor=None, provider='colab') -> dict:
     """Read-only authorization/binding plan for the existing Studio form.
 
     Return settings and slot names, never asset paths, bytes or ownership
@@ -8336,7 +8336,7 @@ def plan_colab_generation_request(raw_body, submitted_by: dict | None, service_t
         raise ValueError("request body must be an object")
     feature_id = str(raw_body.get("featureId") or "").strip()
     feature = FEATURE_BY_ID.get(feature_id)
-    if feature_id not in SUPPORTED_FEATURES or not feature or feature.get("apiEnabled") is False or not feature.get("builder"):
+    if (provider == 'colab' and feature_id not in SUPPORTED_FEATURES) or not feature or feature.get("apiEnabled") is False or not feature.get("builder"):
         raise ValueError("這項功能尚未提供 PRISM / P-H3 執行方式")
     if feature.get("operatorOnly") and not is_operator_user(submitted_by):
         raise PermissionError("這項功能只允許 operator 操作")
@@ -8358,6 +8358,13 @@ def plan_colab_generation_request(raw_body, submitted_by: dict | None, service_t
     elif feature.get("characterOnly") or action_id or variant_id:
         raise ValueError("這個請求必須先選擇適用的角色")
     settings = apply_character_visual_class_hints(settings, context)
+    if provider in {'comfy_cloud', 'runninghub'} and raw_body.get('computeVisualClass'):
+        visual = raw_body['computeVisualClass']
+        if visual not in {'anime', 'realistic'} or (context and normalized_visual_class(context.get('visualClass')) != visual):
+            raise ValueError('畫面風格與角色不一致')
+        if settings.get('visualStyle') not in (None, '', visual):
+            raise ValueError('畫面風格設定不一致')
+        settings['visualStyle'] = visual
     settings = resolve_generation_presets(feature_id, settings)
     settings = validate_feature_option_contract(feature, settings)
     settings = enforce_p0_generation_options(feature_id, settings)
@@ -15859,6 +15866,9 @@ def owned_asset_generation_detail(store, owner_user_id: str, projection_id: str)
 
 _COLAB_SERVICE = None
 _COLAB_LOCK = threading.Lock()
+_HOSTED_COMPUTE_SERVICE = None
+_PIPELINE_EXECUTION = None
+_COMPUTE_SERVICES_LOCK = threading.Lock()
 
 
 def get_colab_service():
@@ -15869,6 +15879,24 @@ def get_colab_service():
                 "CASTLE_COLAB_ROOT", _CASTLE_DATA_HOME / "web-comfyui/colab",
             )))
         return _COLAB_SERVICE
+
+
+def get_hosted_compute_service():
+    global _HOSTED_COMPUTE_SERVICE
+    with _COMPUTE_SERVICES_LOCK:
+        if _HOSTED_COMPUTE_SERVICE is None:
+            from hosted_compute import HostedComputeService
+            _HOSTED_COMPUTE_SERVICE = HostedComputeService(get_colab_service().root.parent / 'hosted-compute')
+        return _HOSTED_COMPUTE_SERVICE
+
+
+def get_pipeline_execution():
+    global _PIPELINE_EXECUTION
+    with _COMPUTE_SERVICES_LOCK:
+        if _PIPELINE_EXECUTION is None:
+            from compute_execution import PipelineExecution
+            _PIPELINE_EXECUTION = PipelineExecution(sys.modules[__name__])
+        return _PIPELINE_EXECUTION
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -16858,7 +16886,7 @@ class Handler(BaseHTTPRequestHandler):
             if not self.require_auth():
                 return
             self.api_events()
-        elif parsed.path == "/api/compute/jobs" or parsed.path.startswith("/api/compute/jobs/"):
+        elif parsed.path.startswith("/api/compute/"):
             if not self.require_auth():
                 return
             self.api_compute(parsed.path, False)
@@ -17135,7 +17163,7 @@ class Handler(BaseHTTPRequestHandler):
             if not self.require_auth():
                 return
             self.api_google_drive_import()
-        elif path in ("/api/compute/preview", "/api/compute/jobs") or path.startswith("/api/compute/jobs/"):
+        elif path.startswith("/api/compute/"):
             if not self.require_auth():
                 return
             self.api_compute(path, True)
@@ -20291,11 +20319,59 @@ class Handler(BaseHTTPRequestHandler):
     def api_compute(self, path: str, mutate: bool) -> None:
         from compute_web import ComputeWeb
         from compute_routing import ComputeRoutingError
+        from hosted_compute import HostedComputeError
+        pipeline_creation_started = False
         try:
             web = ComputeWeb(self, sys.modules[__name__])
             body = self.read_provider_json(MAX_UPLOAD_BODY) if mutate else {}
             parts = path.split("/")[3:]
-            if mutate and path == "/api/compute/preview":
+            if not mutate and parts == ['providers']:
+                result = web.hosted.public_config(web.owner)
+            elif mutate and len(parts) == 2 and parts[0] == 'providers':
+                if not is_operator_user(web.user):
+                    raise ComputeRoutingError('需要管理員權限', code='forbidden', status=403)
+                result = {'provider': web.hosted.configure(web.owner, parts[1], body)}
+            elif not mutate and len(parts) == 5 and parts[0] == 'hosted' and parts[3] == 'files':
+                media, metadata = web.hosted.artifact(web.owner, parts[1], parts[2], urllib.parse.unquote(parts[4]))
+                self.send_local_file(media, content_type=mimetypes.guess_type(media.name)[0],
+                    inline_filename=media.name, cache_control='private, no-store')
+                return
+            elif not mutate and parts == ['pipeline-recipes']:
+                from compute_recipes import recipes
+                result = {'recipes': recipes()}
+            elif parts and parts[0] == 'pipelines':
+                execution = get_pipeline_execution()
+                if mutate and len(parts) == 1:
+                    from compute_recipes import build_plan
+                    from compute_routing import _request_id
+                    _request_id(body.get('pipeline_id'))
+                    plan = build_plan(body)
+                    # Ownership is checked before the immutable parent is
+                    # accepted and again by every real stage submission.
+                    for step in plan['steps']:
+                        inputs = validate_client_generation_files(step['request'].get('files'), web.user)
+                        for slot, file_info in inputs.items():
+                            if isinstance(file_info, dict) and file_info.get('serverFile'):
+                                source = COMFY_INPUT / resolve_server_file(file_info['serverFile'])
+                                frozen = execution.freeze_image(web.owner, web.user, source)
+                                step['request']['files'][slot] = frozen['file']
+                    pipeline_creation_started = True
+                    result = execution.engine.create(web.owner, body.get('pipeline_id'), plan)
+                elif not mutate and len(parts) == 1:
+                    result = {'pipelines': execution.engine.list_jobs(web.owner)}
+                elif not mutate and len(parts) == 2:
+                    result = execution.engine.status(web.owner, parts[1])
+                elif mutate and len(parts) == 3 and parts[2] == 'resume':
+                    result = execution.engine.resume(web.owner, parts[1])
+                elif mutate and len(parts) == 3 and parts[2] == 'cancel':
+                    result = execution.engine.cancel(web.owner, parts[1])
+                elif mutate and len(parts) == 3 and parts[2] == 'retry':
+                    result = execution.engine.retry(web.owner, parts[1], body.get('step_id'))
+                else:
+                    raise ComputeRoutingError('找不到這項製作操作', code='pipeline_not_found', status=404)
+                if mutate:
+                    execution.start()
+            elif mutate and path == "/api/compute/preview":
                 result = web.preview(body)
             elif mutate and path == "/api/compute/jobs":
                 result = web.router.submit(web.owner, body.get("request_id"), body.get("request"),
@@ -20319,9 +20395,18 @@ class Handler(BaseHTTPRequestHandler):
             # refer to an existing task, so it must retain the original request.
             if mutate and path == "/api/compute/jobs" and code != "request_conflict":
                 payload["submission_state"] = "not_submitted"
+            if mutate and path == '/api/compute/pipelines' and not pipeline_creation_started:
+                payload['submission_state'] = 'not_submitted'
             self.send_json(payload, error.status)
+        except HostedComputeError as error:
+            self.send_json({'ok': False, 'error': {'code': error.code, 'message': str(error)}}, error.status)
+        except PermissionError:
+            self.send_json({'ok': False, 'error': {'code': 'forbidden', 'message': '目前帳號沒有這項操作權限'}}, 403)
         except (RequestBodyError, ValueError):
-            self.send_json({"ok": False, "error": {"code": "compute_request_invalid", "message": "運算請求格式不正確"}}, 400)
+            payload = {"ok": False, "error": {"code": "compute_request_invalid", "message": "運算請求格式不正確"}}
+            if mutate and path == '/api/compute/pipelines' and not pipeline_creation_started:
+                payload['submission_state'] = 'not_submitted'
+            self.send_json(payload, 400)
         except Exception:
             self.send_json({"ok": False, "error": {"code": "compute_unavailable", "message": "運算狀態暫時無法確認；請查詢原任務"}}, 503)
 
@@ -21836,6 +21921,22 @@ class Handler(BaseHTTPRequestHandler):
             if not compatibility["supported"]:
                 raise AdapterError(compatibility["code"], compatibility["reason"])
 
+        if compute_lane in {'comfy_cloud', 'runninghub'}:
+            from compute_routing import ComputeRejected
+            if body.get('computeVisualClass'):
+                visual = body['computeVisualClass']
+                if visual not in {'anime', 'realistic'} or (character_context and normalized_visual_class(character_context.get('visualClass')) != visual):
+                    raise ValueError('畫面風格與角色不一致')
+                if settings.get('visualStyle') not in (None, '', visual):
+                    raise ValueError('畫面風格設定不一致')
+                settings['visualStyle'] = visual
+            effective = {'featureId': feature_id, 'settings': settings,
+                         'files': {slot: {} for slot, item in submitted_files.items() if item}}
+            candidate = get_hosted_compute_service().inspect(str((submitted_by or {}).get('email') or ''),
+                compute_lane, effective, compute_limits or {})
+            if not candidate.get('eligible'):
+                raise ComputeRejected('所選平台尚未提供相容且已設定的工作流', code='hosted_recipe_unavailable')
+
         # All capability and option checks happen before files are copied
         # into ComfyUI input, so rejected requests leave no upload debris.
         if compute_lane == "local":
@@ -21878,13 +21979,22 @@ class Handler(BaseHTTPRequestHandler):
                 uploads[slot] = stage_character_asset_for_comfy(file_info, character_id)
             elif isinstance(file_info, dict) and file_info.get("serverFile"):
                 uploads[slot] = resolve_server_file(file_info["serverFile"])
-            elif compute_lane == "colab":
+            elif compute_lane in {"colab", "comfy_cloud", "runninghub"}:
                 uploads[slot] = stage_colab_uploaded_file(file_info, slot)
             else:
                 uploads[slot] = save_uploaded_file(file_info, slot)
 
         if resolved_voice_reference:
             uploads["voice"] = resolved_voice_reference
+        if compute_lane in {'comfy_cloud', 'runninghub'}:
+            effective = {'featureId': feature_id, 'settings': settings, 'files': {slot: {} for slot in uploads}}
+            resolved = {slot: (COMFY_INPUT / filename).resolve() for slot, filename in uploads.items()}
+            self._compute_dispatch_started = True
+            service = get_hosted_compute_service()
+            result = service.submit(str((submitted_by or {}).get('email') or ''), compute_lane,
+                request_id, effective, compute_limits or {}, resolved_files=resolved)
+            service.start()
+            return result
         if compute_lane == "colab":
             from compute_adapters import normalise_intent, build_colab_request
             from compute_routing import ComputeRejected
@@ -22872,6 +22982,10 @@ def main() -> None:
     colab_root = Path(os.environ.get("CASTLE_COLAB_ROOT", _CASTLE_DATA_HOME / "web-comfyui/colab"))
     if (colab_root / "state.sqlite3").exists():
         get_colab_service().start()
+    if (colab_root.parent / 'compute-pipelines.sqlite3').exists():
+        get_pipeline_execution().start()
+    if (colab_root.parent / 'hosted-compute').exists():
+        get_hosted_compute_service().start()
     library_service.start_indexer(library_server_context())
     try:
         castle_orchestrator.initialize()

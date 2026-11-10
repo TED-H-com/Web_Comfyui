@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const mounted = new Map();
-  const lanes = {local:'本機',colab:'Google Colab',autoip:'AutoIP'};
+  const lanes = {local:'本機',colab:'Google Colab',autoip:'AutoIP',comfy_cloud:'Comfy Cloud',runninghub:'RunningHub'};
   const terminal = new Set(['completed','failed','cancelled','rejected']);
   const uncertain = new Set(['reserved','dispatching','submission_uncertain']);
   const states = {reserved:'已保留任務',dispatching:'正在提交',queued:'排隊中',running:'生成中',cancelling:'正在停止',
@@ -15,6 +15,13 @@
     budget_exceeded:'預估用量超過設定上限',account_required:'請先連接可用帳號',account_unavailable:'目前沒有可用帳號',
     not_authenticated:'帳號尚未連線',insufficient_balance:'可用餘額不足',runtime_unavailable:'執行環境尚未就緒',
     local_unavailable:'本機環境尚未就緒',missing_dependencies:'執行環境尚有缺件',provider_not_configured:'尚未設定服務連線',
+    hosted_not_configured:'尚未設定平台連線',hosted_disabled:'此平台已停用',recipe_unavailable:'尚未設定此功能的雲端配方',
+    recipe_not_configured:'尚未設定此功能的雲端配方',workflow_not_configured:'尚未設定此功能的雲端工作流',
+    provider_unavailable:'平台目前無法使用',provider_auth_failed:'平台金鑰尚未通過驗證',
+    hosted_inputs_unsupported:'此雲端配方不支援目前的參考素材',hosted_settings_unsupported:'此雲端配方無法保留目前設定',
+    hosted_budget_exceeded:'配方預估用量超過此平台的費用門檻',hosted_deadline_required:'請設定有效的執行期限',
+    hosted_concurrency_invalid:'同時執行上限不符合此平台要求',auto_not_verified:'此配方尚無驗證成果，請先手動選用平台',
+    input_validation_failed:'參考素材、角色綁定或描述尚未通過檢查',
     local_not_ready:'本機必要模型或元件尚未就緒',colab_not_installed:'尚未安裝 Colab 連線環境',colab_account_unavailable:'沒有符合餘額與使用狀態的 Colab 帳號',
     autoip_operation_unavailable:'此功能尚未提供 AutoIP 執行契約',autoip_feature_unsupported:'此功能尚未提供 AutoIP 執行方式',
     feature_unavailable:'此工具尚未開放生成',operator_required:'此工具需要操作員權限',canonical_binding_required:'此功能必須保留角色與素材綁定',
@@ -64,7 +71,7 @@
     const inputValues=new WeakMap();
     let availability={placement:'local',loading:true,eligible:false,selected_lane:null,candidates:[],error:''};
     let jobs=new Map();
-    const placement=select([['local','本機'],['auto','自動安排'],['colab','Google Colab'],['autoip','AutoIP']]);
+    const placement=select([['local','本機'],['auto','自動安排'],['colab','Google Colab'],['autoip','AutoIP'],['comfy_cloud','Comfy Cloud'],['runninghub','RunningHub']]);
     const account=select([['','自動選擇可用帳號']]);
     const visualClass=select([['','未指定'],['anime','動漫'],['realistic','寫實']]);
     const visualField=field('圖片類型',visualClass);visualField.hidden=true;
@@ -78,6 +85,7 @@
     ]);
     const gpu=select([['L4','L4'],['G4','G4'],['A100','A100'],['H100','H100']]);
     const minutes=number(60,5,180),units=number(20,5,2000),credits=number(100,1,1000000);
+    const comfyCredits=number(100,1,1000000),runninghubCoins=number(100,1,1000000);
     const accountNote=el('p',{class:'compute-note'});
     const notice=el('p',{class:'compute-note',role:'status','aria-live':'polite',text:'正在確認執行條件…'});
     const candidates=el('ul',{class:'compute-candidates','aria-label':'各執行方式的可用條件'});
@@ -87,8 +95,8 @@
     const retry=button('確認並重試原請求',()=>send().catch(()=>{}));retry.hidden=true;
     const controls=el('details',{class:'compute-limits'},[
       el('summary',{text:'執行上限與 Colab 帳號'}),
-      el('div',{class:'compute-grid'},[field('最長執行分鐘',minutes),field('Colab 點數停止門檻',units),field('AutoIP 點數上限',credits),field('Colab 執行帳號',account),field('Colab GPU',gpu)]),
-      accountNote,el('p',{class:'compute-note',text:'Colab 環境準備也會用點；停止門檻依餘額變化監測，並非 Google 的硬性扣款上限。'}),
+      el('div',{class:'compute-grid'},[field('最長執行分鐘',minutes),field('Colab 點數停止門檻',units),field('AutoIP 點數上限',credits),field('Comfy Cloud 點數門檻',comfyCredits),field('RunningHub 金幣門檻',runninghubCoins),field('Colab 執行帳號',account),field('Colab GPU',gpu)]),
+      el('p',{class:'compute-note',text:'各平台分別檢查預估用量；這些門檻並非平台硬性扣款上限。'}),accountNote,el('p',{class:'compute-note',text:'Colab 環境準備也會用點；停止門檻依餘額變化監測，並非 Google 的硬性扣款上限。'}),
     ]);
     const root=el('section',{class:'compute-placement','aria-label':'生成運算安排'},[
       el('div',{class:'compute-toolbar'},[field('執行位置',placement),refresh]),visualField,videoFields,notice,recipe,differences,
@@ -114,8 +122,8 @@
       return result;
     }
     function getLimits(){
-      for(const input of [minutes,units,credits])if(!input.checkValidity())throw new Error('請檢查執行上限的數字範圍。');
-      return {max_minutes:Number(minutes.value),max_units:Number(units.value),max_credits:Number(credits.value),account_id:account.value,gpu:gpu.value};
+      for(const input of [minutes,units,credits,comfyCredits,runninghubCoins])if(!input.checkValidity())throw new Error('請檢查執行上限的數字範圍。');
+      return {max_minutes:Number(minutes.value),max_units:Number(units.value),max_credits:Number(credits.value),max_comfy_credits:Number(comfyCredits.value),max_runninghub_coins:Number(runninghubCoins.value),account_id:account.value,gpu:gpu.value};
     }
     function publish(){
       if(!live())return;
@@ -124,7 +132,7 @@
       onAvailability(state);
     }
     function locked(){
-      for(const control of [placement,minutes,units,credits,account,gpu,visualClass,videoDuration,videoResolution,videoAspect])control.disabled=!!pending;
+      for(const control of [placement,minutes,units,credits,comfyCredits,runninghubCoins,account,gpu,visualClass,videoDuration,videoResolution,videoAspect])control.disabled=!!pending;
       retry.hidden=!pending;retry.disabled=!!inFlight;
       publish();
     }
@@ -151,13 +159,14 @@
       candidates.replaceChildren(...Object.entries(lanes).map(([lane,label])=>{
         const item=rows.find(row=>row.lane===lane);
         const eligible=item?.eligible===true;
+        const manualOnly=eligible&&item.auto_eligible===false;
         const queue=Number.isInteger(item?.queue_depth)&&item.queue_depth>=0?` · 排隊 ${item.queue_depth}`:'';
-        const why=eligible?'':(item?.reasons?.length?item.reasons:['operation_unavailable']).map(code=>Object.hasOwn(reasons,code)?reasons[code]:'目前不符合此方式的執行條件').join('；');
-        return el('li',{'data-compute-lane':lane},[el('strong',{text:label}),el('span',{text:eligible?'可用'+queue:'不可用'}),...(why?[el('span',{class:'compute-reason',text:why})]:[])]);
+        const why=manualOnly?reasons.auto_not_verified:eligible?'':(item?.reasons?.length?item.reasons:['operation_unavailable']).map(code=>Object.hasOwn(reasons,code)?reasons[code]:'目前不符合此方式的執行條件').join('；');
+        return el('li',{'data-compute-lane':lane},[el('strong',{text:label}),el('span',{text:eligible?(manualOnly?'僅限手動':'可用')+queue:'不可用'}),...(why?[el('span',{class:'compute-reason',text:why})]:[])]);
       }));
       const selectedRecipe=chosen && data.recipes?.[chosen.lane];
       recipe.textContent=typeof selectedRecipe==='string'?`工作流：${selectedRecipe.slice(0,160)}`:'';recipe.hidden=!recipe.textContent;
-      const warnings=chosen?.lane==='colab'?data.colab_warnings:chosen?.lane==='autoip'?data.autoip_warnings:[];
+      const warnings=chosen?.warnings?.length?chosen.warnings:chosen?.lane==='colab'?data.colab_warnings:chosen?.lane==='autoip'?data.autoip_warnings:[];
       differences.replaceChildren(...(Array.isArray(warnings)?warnings:[]).filter(value=>typeof value==='string').slice(0,8).map(text=>el('li',{text:text.slice(0,360)})));
       differences.hidden=!differences.children.length;
       root.querySelector('.compute-compatibility').open=!chosen;

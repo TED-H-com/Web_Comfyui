@@ -1,5 +1,7 @@
 # Web_Comfyui
 
+[統一運算平台與多步製作](docs/compute-platforms.md)：所有操作留在 Web，每一步可選本機、Colab、AutoIP、Comfy Cloud 或 RunningHub。系統逐項檢查相容性與已設定配方；列出平台不代表所有模型都已部署或完成實際 GPU 驗證。
+
 安裝版新增[角色搭配寫真](docs/character-portraits.md)：以 Qwen 2.1 參考角色原圖，搭配場景、服裝與姿勢。動畫／寫實服裝分開，圖卡使用小型預覽視窗。
 
 選用的 [Google Colab H3 整合](docs/colab.md) 提供分開的帳號連線、可恢復的雲端任務、成果下載與 GPU 釋放確認；已通過來源、CPU 與瀏覽器測試，真實帳號的 GPU 生成仍待驗證。[完整上游逐條研究](docs/workflow-audit/README.md) 分清楚已收錄、可匯入及有實跑證據的工作流。

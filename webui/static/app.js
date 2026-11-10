@@ -587,6 +587,7 @@ function parseRoute() {
     return { view: "characters" };
   }
   if (!parts.length) return { view: "characters" };
+  if (parts[0] === "compute-production" && !window.WebComfyDocs) return { view: "compute-production" };
   if (parts[0] === "studio") {
     if (parts.length <= 2) return { view: "studio", featureId: parts[1] || "" };
     return { view: "characters" };
@@ -680,6 +681,7 @@ function parseRoute() {
 
 function routePath(route) {
   if (!route || route.view === "characters") return "#/";
+  if (route.view === "compute-production") return "#/compute-production";
   if (route.view === "studio") {
     const featurePart = route.featureId ? `/${encodeURIComponent(route.featureId)}` : "";
     if (route.characterId) return `#/c/${encodeURIComponent(route.characterId)}/studio${featurePart}`;
@@ -869,6 +871,7 @@ function applyRoute() {
   currentView = ["studio", "projects", "library", "resources", "workflows", "dance-library", "orchestrator", "admin-users", "admin"].includes(currentRoute.view)
     ? currentRoute.view
     : "characters";
+  if (currentRoute.view === "compute-production") currentView = "studio";
   const routeCharacterId = routeCharacterContextId(currentRoute);
   activeCharacterId = routeCharacterId;
   if (routeCharacterId) selectedCharacterId = routeCharacterId;
@@ -1190,6 +1193,8 @@ async function logout() {
 function resetSessionUi(options = {}) {
   sessionEpoch += 1;
   window.ComputePlacement?.reset();
+  window.ComputeSettings?.reset();
+  window.ComputePipeline?.reset();
   localHistoryOpenRevision += 1;
   pendingProviderIntent = null;
   pendingProviderAutoStart = false;
@@ -1471,6 +1476,7 @@ function renderAccountMenuContent({ managementOnly = false } = {}) {
   if (isAdmin() || isOperator()) {
     wrap.appendChild(h("hr", { class: "shell-menu-divider" }));
     wrap.appendChild(shellMenuButton("專案規劃（不執行）", () => navigate({ view: "projects" })));
+    if (!window.WebComfyDocs && window.ComputeSettings) wrap.appendChild(shellMenuButton("運算平台", () => openComputeSettings(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
   }
   if (isOperator()) {
     wrap.appendChild(shellMenuButton("舞蹈模板庫", () => {
@@ -2183,6 +2189,7 @@ function statusDot(feature) {
 function renderSidebar() {
   const wrap = $("sidebarGroups");
   clear(wrap);
+  if (!window.WebComfyDocs && window.ComputePipeline) wrap.appendChild(h("button", {class: `side-tool${currentRoute.view === "compute-production" ? " active" : ""}`, type: "button", text: "多步製作", onclick: () => navigate({view:"compute-production"})}));
   for (const studio of studios) {
     const list = studioFeatures(studio.id);
     if (!list.length) continue;
@@ -2192,7 +2199,7 @@ function renderSidebar() {
         h("button", {
           id: `studio-side-tool-${feature.id}`,
           "data-hardware-feature": feature.id,
-          class: `side-tool${feature.id === currentFeatureId && currentView === "studio" ? " active" : ""}`,
+          class: `side-tool${feature.id === currentFeatureId && currentRoute.view === "studio" ? " active" : ""}`,
           type: "button",
           onclick: () => selectFeature(feature.id),
         }, [
@@ -2263,6 +2270,11 @@ function renderWorkspace() {
   else if (currentRoute.view === "character-library") renderCharacterLibraryRoute();
   else if (currentRoute.view === "character-wardrobe") renderCharacterWardrobeRoute();
   else if (currentRoute.view === "character-settings") renderCharacterSettingsRoute();
+  else if (currentRoute.view === "compute-production" && window.ComputePipeline && !window.WebComfyDocs) {
+    if ($("workspace").querySelector('.compute-production[data-compute-pipeline-mounted="true"]')) return;
+    const host = beginWorkspaceRender();
+    window.ComputePipeline.mount(host, {api, onBack: () => navigate({view:"studio"})});
+  }
   else if (currentView === "characters") renderCharactersView();
   else if (currentView === "library") renderLibraryView();
   else if (currentView === "projects") renderProjectPreviewView();
@@ -8438,6 +8450,7 @@ function renderStage() {
   }
   ws.appendChild(h("div", { class: "tool-view" }, [
     renderStudioToolSelector(feature),
+    !window.WebComfyDocs && !activeCharacter() && window.ComputePipeline ? h("button", {class:"ghost small compute-production-entry", type:"button", text:"多步製作", onclick:()=>navigate({view:"compute-production"})}) : null,
     renderFeaturePanel(feature),
     renderRecentPanel(),
   ]));
@@ -13256,6 +13269,11 @@ function renderOrchestratorView() {
 
 // ---- admin users ----------------------------------------------------------
 
+function openComputeSettings(opener) {
+  if (!(isAdmin() || isOperator()) || window.WebComfyDocs || !window.ComputeSettings) return;
+  window.ComputeSettings.open(opener, {api, openSheet, openColabAccounts});
+}
+
 function openColabAccounts(opener) {
   if (!isAdmin() || window.WebComfyDocs || !window.WebComfyColab) return;
   window.WebComfyColab.openAccounts(opener, {api, openSheet});
@@ -13270,6 +13288,7 @@ function renderAdminHome() {
       h("button", { class: "shell-menu-row", text: "採集圖片與影片", onclick: openMaterialCollect }),
       h("button", { class: "shell-menu-row", text: "外部角色與資源", onclick: () => navigate({ view: "resources" }) }),
       h("button", { class: "shell-menu-row", text: "使用者管理", onclick: () => navigate({ view: "admin-users" }) }),
+      !window.WebComfyDocs && window.ComputeSettings ? h("button", {class:"shell-menu-row", type:"button", text:"運算平台", "aria-haspopup":"dialog", onclick:event=>openComputeSettings(event.currentTarget)}) : null,
       !window.WebComfyDocs && window.WebComfyColab ? h("button", { class: "shell-menu-row", type: "button", text: "Google Colab 帳號", "aria-haspopup": "dialog", onclick: event => openColabAccounts(event.currentTarget) }) : null,
       h("button", { class: "shell-menu-row", text: "工作流監控", onclick: () => navigate({ view: "orchestrator" }) }),
       h("a", { class: "shell-menu-row", href: "http://127.0.0.1:8188/", target: "_blank", rel: "noopener noreferrer", text: "開啟 ComfyUI 節點編輯器 ↗" }),
@@ -14267,6 +14286,7 @@ async function startAppData() {
 function primeRouteBeforePaint() {
   currentRoute = parseRoute();
   currentView = ["studio", "projects", "library", "resources", "workflows", "dance-library", "orchestrator", "admin-users", "admin"].includes(currentRoute.view) ? currentRoute.view : "characters";
+  if (currentRoute.view === "compute-production") currentView = "studio";
   activeCharacterId = routeCharacterContextId(currentRoute);
   if (activeCharacterId) selectedCharacterId = activeCharacterId;
   if (currentRoute.view === "studio" && currentRoute.featureId) currentFeatureId = currentRoute.featureId;
