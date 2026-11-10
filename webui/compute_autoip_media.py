@@ -20,6 +20,7 @@ import uuid
 try:
     from compute_autoip import _choice, _reject, normalise_autoip_intent
     from provider_fabric.autoip_profiles import candidate_autoip_profiles
+    from provider_fabric.autoip_input_geometry import FIT_POLICY, KNOWN_CANVASES
     from provider_fabric.media_signatures import classify_declared_media, SIGNATURE_PROBE_BYTES
     from provider_fabric.models import CostQuote, MediaKind, RouteDecision, RouteIntent, VisualClass
     from provider_fabric.owned_media_source import owned_provider_asset_uri
@@ -27,6 +28,7 @@ try:
 except ModuleNotFoundError:
     from webui.compute_autoip import _choice, _reject, normalise_autoip_intent
     from webui.provider_fabric.autoip_profiles import candidate_autoip_profiles
+    from webui.provider_fabric.autoip_input_geometry import FIT_POLICY, KNOWN_CANVASES
     from webui.provider_fabric.media_signatures import classify_declared_media, SIGNATURE_PROBE_BYTES
     from webui.provider_fabric.models import CostQuote, MediaKind, RouteDecision, RouteIntent, VisualClass
     from webui.provider_fabric.owned_media_source import owned_provider_asset_uri
@@ -179,7 +181,7 @@ def ingest_owned_image(store, owner_user_id, account_id, source_path, *, source_
 
 
 def _media_plan_spec(feature_id, settings, file_slots, *, request_id,
-                     visual_class, character_id='', max_credits=None):
+                     visual_class, character_id='', max_credits=None, fit_video_frame=True):
     """Validate metadata only; the returned skeleton must never be submitted."""
     operation = _OPERATIONS.get(feature_id) if isinstance(feature_id, str) else None
     if operation is None or not isinstance(settings, Mapping):
@@ -225,6 +227,12 @@ def _media_plan_spec(feature_id, settings, file_slots, *, request_id,
                 'aspect_ratio': _choice(values, ('aspect', 'aspect_ratio'), '16:9'), 'seed': 'random'})
     if any(isinstance(value, bool) or value not in profile.option_values[key] for key, value in options.items()):
         _reject('選項不在目前 AutoIP 圖片契約內')
+    if operation == 'image_to_video' and fit_video_frame:
+        if (options['resolution'], options['aspect_ratio']) in KNOWN_CANVASES:
+            options['frame_fit'] = FIT_POLICY
+            warnings.append('AutoIP 480p 橫式影片會保留完整圖片，等比例縮放至 864×480 並補黑邊。')
+        else:
+            warnings.append('此尺寸目前沿用原圖，尚未套用等比例補邊。')
     instruction = {'schema_version': 'castle.creative-instruction.v1', 'shot_id': 'compute-' + uid.hex,
                    'frame_intent': prompt.strip(), 'observable_action': 'Follow the user description using the supplied image.',
                    'camera': 'Use the composition requested by the user.',

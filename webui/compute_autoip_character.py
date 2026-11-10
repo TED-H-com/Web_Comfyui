@@ -190,7 +190,8 @@ cannot grant capability/rights, accept a quote or schedule a provider task.
         converted['prompt'] = prompt
         converted['audio_intent'] = 'Preserve the complete authored scene/audio instructions in the prompt; do not add dialogue or music.'
         plan, _, media_warnings = _media_plan_spec('h3-image-video', converted, ['image'],
-            request_id=request_id, visual_class=visual, max_credits=max_credits)
+            request_id=request_id, visual_class=visual, max_credits=max_credits,
+            fit_video_frame=expected['operation'] == 'image_to_video')
         warnings += translated + media_warnings
     profile = next(p for p in candidate_autoip_profiles()
                    if p.capability.value == expected['operation'] and p.visual_class.value == visual)

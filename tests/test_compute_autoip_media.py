@@ -128,6 +128,7 @@ def test_media_plan_passes_real_fabric_parser_and_worker_slot_assignment(context
     asset = ingest(context)
     plan = build_autoip_media_plan(feature, settings, {slot: asset for slot in slots},
                                   request_id=str(uuid.uuid4()), visual_class='realistic')
+    assert ('frame_fit' in plan['options']) == (feature != 'img2img')
     parsed = _parse_plan_request(plan)
     service = object.__new__(ProviderFabricService)
     assert service._materialize_character_capability(ActorContext('owner', 'operator'), parsed) is parsed

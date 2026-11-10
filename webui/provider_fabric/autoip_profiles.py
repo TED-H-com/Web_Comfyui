@@ -21,6 +21,7 @@ from .variant_profiles import (
     VariantProfile,
 )
 from .quality import GoldenCase, GoldenReceipt, RouteOrigin, evaluate_route_golden
+from .autoip_input_geometry import FIT_POLICY, FIT_PROFILE_REVISION
 
 
 # v4 reviews the 2026-10-22 skill: short shots, 480p up to 15s, and i2i v3.
@@ -46,7 +47,7 @@ def _profile(
         feature_id=f"provider-{operation.replace('_', '-')}",
         capability=capability,
         visual_class=visual_class,
-        profile_revision=PROFILE_REVISION,
+        profile_revision=FIT_PROFILE_REVISION if operation == 'image_to_video' else PROFILE_REVISION,
         option_values=options,
         required_option_keys=(
             frozenset(options)
@@ -101,6 +102,9 @@ def candidate_autoip_profiles() -> tuple[VariantProfile, ...]:
                     # remove it from multipart fields so AutoIP chooses and
                     # reports the actual seed.
                     "seed": ("random",),
+                    # Internal, signed preparation policy; never a provider field.
+                    # Optional preserves existing queued jobs without the policy.
+                    "frame_fit": (FIT_POLICY,),
                 },
                 required_option_keys=frozenset({
                     "duration_seconds", "resolution", "aspect_ratio",

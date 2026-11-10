@@ -65,4 +65,4 @@ def test_profiles_offer_short_shots_and_extended_480p_without_changing_default()
             assert durations[0] == 5
             assert 15 in durations
             assert (2 in durations) == (profile.capability.value != "multi_subject_video")
-            assert profile.profile_revision.endswith("v4")
+            assert profile.profile_revision.endswith("v5-frame-fit" if profile.capability.value == "image_to_video" else "v4")

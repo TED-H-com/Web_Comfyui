@@ -126,6 +126,8 @@ def test_actual_form_retains_original_binding_and_materialized_provider_grant(ch
     assert receipt['downstream_id'] == 'intent:synthetic'
     assert body == before and len(f.accepted) == 1
     plan = f.accepted[0]['plan']
+    assert ('frame_fit' in plan['options']) == (operation == 'image_to_video')
+    assert any('補黑邊' in warning for warning in inspected['warnings']) == (operation == 'image_to_video')
     assert plan['action_id'] == operation.replace('_','-')
     assert plan['feature_id'] == 'provider-' + operation.replace('_','-')
     assert plan['characters'][0]['character_id'] == f.character['id']

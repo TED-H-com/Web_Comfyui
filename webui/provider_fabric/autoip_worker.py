@@ -27,6 +27,9 @@ from .models import CostQuote, MediaAsset, MediaKind, RouteDecision, RouteIntent
 from .provider_worker import DefiniteLocalFailure, DefiniteProviderRejection
 from .service import _decision_from_mapping, _intent_from_mapping, _quote_from_mapping
 from .variant_profiles import VariantProfile
+from .autoip_input_geometry import (
+    AutoIPInputGeometry, FIT_POLICY, FIT_PROFILE_REVISION, LEGACY_PROFILE_REVISION,
+)
 
 
 class AutoIPClientLike(Protocol):
@@ -235,6 +238,8 @@ class AutoIPSubmissionProcessor:
         *,
         profile_resolver: ProfileResolver | None = None,
         quote_verifier: QuoteVerifier | None = None,
+        input_geometry_root: Path | None = None,
+        input_geometry_preparer: Callable | None = None,
     ) -> None:
         if not callable(client_resolver) or not callable(asset_loader):
             raise TypeError("client_resolver and asset_loader are required")
@@ -246,6 +251,11 @@ class AutoIPSubmissionProcessor:
         if quote_verifier is not None and not callable(quote_verifier):
             raise TypeError("quote_verifier must be callable")
         self._quote_verifier = quote_verifier
+        if input_geometry_preparer is not None and not callable(input_geometry_preparer):
+            raise TypeError('input_geometry_preparer must be callable')
+        # Lazy: old jobs and other operations never create a cache directory.
+        self._input_geometry = input_geometry_preparer
+        self._input_geometry_root = input_geometry_root
 
     def __call__(self, bundle: Mapping[str, object]) -> TaskReceipt:
         try:
@@ -280,15 +290,21 @@ class AutoIPSubmissionProcessor:
             identity_bound = bool(intent.characters) or any(
                 asset.character_ids for asset in intent.assets
             )
+            options = _mapping(payload.get("options"), "selected options")
             capability_binding = payload.get("capability_grant")
             if identity_bound:
-                if dict(_mapping(
-                    capability_binding, "AutoIP capability binding"
-                )) != _profile_binding(profile):
+                actual_binding = dict(_mapping(capability_binding, "AutoIP capability binding"))
+                expected_binding = _profile_binding(profile)
+                # A previously accepted v4 character job retains its original
+                # bytes. This is an exact legacy binding, not a policy upgrade.
+                legacy_binding = {**expected_binding, 'profile_revision': LEGACY_PROFILE_REVISION}
+                legacy = (intent.capability.value == 'image_to_video'
+                    and profile.profile_revision == FIT_PROFILE_REVISION
+                    and 'frame_fit' not in options and actual_binding == legacy_binding)
+                if actual_binding != expected_binding and not legacy:
                     raise DefiniteLocalFailure("AutoIP technical readiness evidence changed")
             elif capability_binding is not None:
                 raise DefiniteLocalFailure("generic AutoIP media has a character capability binding")
-            options = _mapping(payload.get("options"), "selected options")
             option_keys = set(options)
             if (
                 not set(profile.required_option_keys).issubset(option_keys)
@@ -306,6 +322,9 @@ class AutoIPSubmissionProcessor:
             if fields.get("seed") == "random":
                 fields.pop("seed")
             fields.pop("native_audio", None)
+            frame_fit = fields.pop('frame_fit', None)
+            if frame_fit is not None and (operation is not AutoIPOperation.IMAGE_TO_VIDEO or frame_fit != FIT_POLICY):
+                raise DefiniteLocalFailure('AutoIP input geometry policy is invalid')
             if "seed" in instruction and instruction.get("seed") != options.get("seed"):
                 raise DefiniteLocalFailure("creative instruction seed differs from selected options")
             if operation is AutoIPOperation.LIP_SYNC:
@@ -350,6 +369,17 @@ class AutoIPSubmissionProcessor:
                 _verified_file(self._asset_loader, owner_user_id, asset, role)
                 for asset, role in zip(intent.assets, roles, strict=True)
             )
+            if frame_fit is not None:
+                try:
+                    if self._input_geometry is None:
+                        self._input_geometry = AutoIPInputGeometry(self._input_geometry_root)
+                    files = tuple(self._input_geometry(owner_user_id, str(task['client_request_id']), asset, loaded,
+                        policy=frame_fit, resolution=fields['resolution'], aspect_ratio=fields['aspect_ratio'])
+                        for asset, loaded in zip(intent.assets, files, strict=True))
+                except Exception as error:
+                    # This is entirely local and precedes any provider call.
+                    # Decode/disk failures must not imply an uncertain POST.
+                    raise DefiniteLocalFailure('AutoIP input preparation failed') from error
             spend_guard = _mapping(payload.get("spend_guard"), "spend guard")
             if (
                 set(spend_guard) != {"max_credits", "quoted_credits", "currency"}
