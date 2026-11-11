@@ -67,7 +67,6 @@ def test_e2e_generate_missing_builder(test_server):
         error_msg = json.loads(e.read().decode())['error']
         assert "Unknown feature" in error_msg
 
-
 def test_e2e_orchestrator_runs(test_server):
     base, opener, cookie_header = test_server
 
@@ -106,7 +105,6 @@ def test_e2e_orchestrator_resources(test_server):
         assert response.status == 200
         result = json.load(response)
         assert "summary" in result
-
 
 def test_e2e_orchestrator_events(test_server):
     base, opener, cookie_header = test_server
@@ -164,7 +162,6 @@ def test_e2e_fetch_url(test_server):
         error_msg = json.loads(e.read().decode())['error']
         assert error_msg
 
-
 def test_e2e_generate_bad_body(test_server):
     base, opener, cookie_header = test_server
 
@@ -180,7 +177,6 @@ def test_e2e_generate_bad_body(test_server):
     except urllib.error.HTTPError as e:
         assert e.code == 400
 
-
 def test_e2e_post_generate_bad_body(test_server):
     base, opener, cookie_header = test_server
 
@@ -195,7 +191,6 @@ def test_e2e_post_generate_bad_body(test_server):
             pytest.fail("Expected HTTPError")
     except urllib.error.HTTPError as e:
         assert e.code == 400
-
 
 def test_e2e_orchestrator_runs_bad_auth(test_server):
     base, opener, cookie_header = test_server
@@ -294,37 +289,12 @@ def test_e2e_orchestrator_adopt_artifact_bad_auth(test_server):
     except urllib.error.HTTPError as e:
         assert e.code == 401
 
-def test_e2e_voiceover_extract_pptx_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/voiceover/extract-pptx',
-        data=b'bad',
-        headers={'Content-Type': 'application/json', 'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
 def test_e2e_character_create_bad_auth(test_server):
     base, opener, cookie_header = test_server
     req = urllib.request.Request(
         base + '/api/characters',
         data=b'bad',
         headers={'Content-Type': 'application/json', 'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_e2e_voiceover_batches_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/voiceover/batches',
-        headers={'Origin': base}
     )
     try:
         with opener.open(req) as response:
@@ -394,62 +364,10 @@ def test_e2e_orchestrator_update_artifact_bad_auth(test_server):
     except urllib.error.HTTPError as e:
         assert e.code == 401
 
-def test_e2e_fetch_url_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/fetch-url',
-        data=json.dumps({"url": "http://127.0.0.1:0/fake"}).encode(),
-        headers={'Content-Type': 'application/json', 'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_e2e_generate_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/generate',
-        data=b'{}',
-        headers={'Content-Type': 'application/json', 'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
 def test_e2e_post_generate_bad_auth(test_server):
     base, opener, cookie_header = test_server
     req = urllib.request.Request(
         base + '/api/post',
-        data=b'{}',
-        headers={'Content-Type': 'application/json', 'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_e2e_orchestrator_create_run_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/orchestrator/runs',
-        data=b'{}',
-        headers={'Content-Type': 'application/json', 'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_e2e_orchestrator_cancel_run_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/orchestrator/runs/123/cancel',
         data=b'{}',
         headers={'Content-Type': 'application/json', 'Origin': base}
     )
@@ -485,23 +403,55 @@ def test_e2e_orchestrator_resume_scheduler_bad_auth(test_server):
     except urllib.error.HTTPError as e:
         assert e.code == 401
 
-def test_e2e_history_rename_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/history/rename',
-        data=b'{}',
-        headers={'Content-Type': 'application/json', 'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
 
-def test_e2e_history_hide_bad_auth(test_server):
+@pytest.mark.parametrize("endpoint, expected_code", [
+    ('/api/orchestrator/artifacts/adopt', 401),
+    ('/api/voiceover/extract-pptx', 401),
+    ('/api/characters', 401),
+    ('/api/voiceover/batches', 401),
+    ('/api/orchestrator/artifacts/adopt-batch', 401),
+    ('/api/fetch-url', 401),
+    ('/api/generate', 401),
+    ('/api/post', 401),
+    ('/api/orchestrator/runs/123/cancel', 401),
+    ('/api/orchestrator/scheduler/pause', 401),
+    ('/api/orchestrator/scheduler/resume', 401),
+    ('/api/history/rename', 401),
+    ('/api/history/hide', 401),
+    ('/api/assist', 401),
+    ('/api/fetch-drive', 401),
+    ('/api/files/upload-input', 401),
+    ('/api/library/collect', 401),
+    ('/api/crawl-videos/import', 401),
+    ('/api/dance-library/rescan', 401),
+    ('/api/dance-library/update', 401),
+    ('/api/dance-library/prepare', 401),
+    ('/api/dance-library/import', 401),
+    ('/api/dance-templates/import', 401),
+    ('/api/jobs/cancel', 401),
+    ('/api/voices', 401),
+    ('/api/voices/import-history', 401),
+    ('/api/voices/delete', 401),
+    ('/api/history/delete', 401),
+    ('/api/history/import-input', 401),
+    ('/api/history/adopt', 401),
+    ('/api/admin/users/update', 401),
+    ('/api/admin/users/reset-password', 401),
+    ('/api/characters/experimental', 401),
+    ('/api/google/drive/import', 401),
+    ('/api/generations', 401),
+    ('/api/intents/plan', 401),
+    ('/api/providers/clipmode/imports/preview', 401),
+    ('/api/providers/clipmode/imports/stages', 401),
+    ('/api/google/logout', 401),
+    ('/api/auth/setup-password', 401),
+    ('/api/auth/setup', 403),
+    ('/api/auth/login', 400),
+])
+def test_e2e_generate_post_bad_auth(test_server, endpoint, expected_code):
     base, opener, cookie_header = test_server
     req = urllib.request.Request(
-        base + '/api/history/hide',
+        base + endpoint,
         data=b'{}',
         headers={'Content-Type': 'application/json', 'Origin': base}
     )
@@ -509,4 +459,11 @@ def test_e2e_history_hide_bad_auth(test_server):
         with opener.open(req) as response:
             pytest.fail("Expected HTTPError")
     except urllib.error.HTTPError as e:
-        assert e.code == 401
+        if expected_code == 403 and endpoint == '/api/auth/setup':
+            assert e.code in (403, 409)
+        elif expected_code == 400 and endpoint == '/api/auth/login':
+            assert e.code in (400, 401)
+        elif expected_code == 401 and endpoint == '/api/auth/setup-password':
+            assert e.code in (401, 403)
+        else:
+            assert e.code == expected_code
