@@ -374,6 +374,9 @@ Grok 風格（Claude 本機模擬）|Grok style (simulated by local Claude)
 預覽直式 9:16|Preview portrait 9:16
 預覽橫式 16:9|Preview landscape 16:9
 預覽方形 1:1|Preview square 1:1
+方 1K · 1024×1024|Square 1K · 1024×1024
+橫 1K · 1024×768|Landscape 1K · 1024×768
+直 1K · 768×1024|Portrait 1K · 768×1024
 Stock · 官方 20 步|Stock · Official 20 steps
 SageAttention · 20 步|SageAttention · 20 steps
 1 MP · 正方形 1024 × 1024|1 MP · Square 1024 × 1024
@@ -529,6 +532,7 @@ API 金鑰|API key
 角色與服裝像素保持不變，只把核准的透明角色圖放進核准的動漫場景。|Preserves character and clothing pixels by compositing the approved transparent character image onto an approved anime scene.
 這是 AI 重新生成，不是逐像素修圖；人物臉孔、服裝細節與透明背景可能改變。需要角色一致性時，請從角色頁使用已驗證功能。|This regenerates the image rather than editing individual pixels. Faces, clothing details and transparency may change. Use verified character-page features when identity consistency is required.
 首格、尾格皆可單獨使用；至少上傳一張。角色入口仍會套用動漫／真人 guardrail。|Use a first frame, last frame or both; upload at least one. Character entries still apply their anime or realistic-character constraints.
+首格、尾格皆可單獨使用；至少上傳一張。角色入口仍會套用動漫／真人 guardrail。本機原生流程：首尾格保留完整畫面，比例不同時等比例補黑邊。|Use a first frame, last frame or both; upload at least one. Character entries still apply their anime or realistic-character constraints. The native local workflow preserves each complete frame and fits it with black padding when aspect ratios differ.
 生成資源|Generation resources
 先看清楚每個來源現在能不能用；未通過的項目一律不會被自動選中。|Check each source's availability. Sources that have not passed checks are not selected automatically.
 金鑰採只寫保存，介面與 API 都不提供讀回。|Credentials are write-only; neither the UI nor API returns their values.

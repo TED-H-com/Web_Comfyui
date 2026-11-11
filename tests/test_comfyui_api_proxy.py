@@ -107,7 +107,9 @@ def test_websocket_progress():
         assert messages == ["1234567890"]
 
 def test_api_generate_submit_workflow():
-    class DummyHandler:
+    # Exercise the real _generate_result delegate added to the HTTP handler.
+    # Only the network and attribution sinks below are synthetic.
+    class DummyHandler(server.Handler):
         def __init__(self):
             self.sent_json = None
             self.error_json = None
@@ -145,10 +147,12 @@ def test_api_generate_submit_workflow():
 
         server.Handler.api_generate(handler)
 
+        assert handler.error_json is None
         assert handler.sent_json is not None
         assert handler.sent_json.get("prompt_id") == "test-prompt-123"
-
-        args, kwargs = mock_request_json.call_args
+        prompt_calls = [call for call in mock_request_json.call_args_list if call.args[0] == "/prompt"]
+        assert len(prompt_calls) == 1
+        args, kwargs = prompt_calls[0]
         assert args[0] == "/prompt"
         assert "payload" in kwargs or len(args) > 1
 

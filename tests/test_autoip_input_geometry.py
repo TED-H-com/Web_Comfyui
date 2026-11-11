@@ -178,7 +178,13 @@ def test_unknown_targets_keep_old_plan_and_warn_instead_of_guessing(resolution, 
     plan, _, warnings = _media_plan_spec('h3-image-video',
         {'prompt': 'A synthetic paper kite.', 'resolution': resolution, 'aspect_ratio': aspect}, ['image'],
         request_id='00000000-0000-0000-0000-000000000001', visual_class='anime')
-    assert 'frame_fit' not in plan['options'] and any('不涵蓋' in x for x in warnings)
+    legacy, _, legacy_warnings = _media_plan_spec('h3-image-video',
+        {'prompt': 'A synthetic paper kite.', 'resolution': resolution, 'aspect_ratio': aspect}, ['image'],
+        request_id='00000000-0000-0000-0000-000000000001', visual_class='anime', fit_video_frame=False)
+    assert 'frame_fit' not in plan['options'] and plan['options'] == legacy['options']
+    assert plan['options']['resolution'] == resolution and plan['options']['aspect_ratio'] == aspect
+    added_warnings = [warning for warning in warnings if warning not in legacy_warnings]
+    assert len(added_warnings) == 1 and isinstance(added_warnings[0], str) and added_warnings[0].strip()
     asset, loaded = source(tmp_path)
     with pytest.raises(ValueError, match='canvas'):
         AutoIPInputGeometry(tmp_path / 'private')('owner', 'request:one', asset, loaded,
@@ -317,9 +323,16 @@ def test_unknown_targets_still_execute_original_upload_without_preparation(worke
         request_id='00000000-0000-0000-0000-000000000001', visual_class='anime')
     bundle = fixture.bundle()
     bundle['intent']['payload']['options'] = plan['options']
+    before = fixture.path.read_bytes()
     fixture.processor()(bundle)
-    assert fixture.client.calls[0][2].files[0].path == fixture.path
-    assert any('不涵蓋' in warning for warning in warnings)
+    assert len(fixture.client.calls) == 1
+    submitted = fixture.client.calls[0][2]
+    assert submitted.files[0].path == fixture.path
+    assert submitted.files[0].path.read_bytes() == before
+    assert hashlib.sha256(before).hexdigest() == fixture.asset.sha256
+    assert 'frame_fit' not in plan['options'] and 'frame_fit' not in submitted.fields
+    assert submitted.fields['resolution'] == resolution and submitted.fields['aspect_ratio'] == aspect
+    assert len(warnings) == 1 and isinstance(warnings[0], str) and warnings[0].strip()
 
 
 def test_first_and_last_frame_keep_order_and_each_gets_its_own_source_receipt(worker_harness, tmp_path):
