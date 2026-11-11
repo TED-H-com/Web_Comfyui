@@ -22,8 +22,9 @@ NUMBER_FIELDS = frozenset(('width','height','steps','cfg','denoise','guidance','
     'threshold','value','refine_iterations','x','y',
     'face_restore_visibility','codeformer_weight','resize_type.megapixels','resize_type.multiple'))
 ENUM_FIELDS = frozenset(('sampler_name','scheduler','weight_dtype','type','crop','format',
-    'resize_type','scale_method','weight_type','combine_embeds','embeds_scaling','provider'))
-ENUM_VALUES = frozenset(('default','flux','lumina2','wan','qwen_image','minimax','res_multistep','simple','euler','karras','dpmpp_2m','none','center','mp4','video/h264-mp4','scale total pixels','scale to multiple','nearest-exact','linear','concat','V only','CPU','CUDA','average','match size','lanczos'))
+    'resize_type','scale_method','weight_type','combine_embeds','embeds_scaling','provider',
+    'padding_color','interpolation'))
+ENUM_VALUES = frozenset(('default','flux','lumina2','wan','qwen_image','minimax','res_multistep','simple','euler','karras','dpmpp_2m','none','center','mp4','video/h264-mp4','scale total pixels','scale to multiple','nearest-exact','linear','concat','V only','CPU','CUDA','average','match size','lanczos','black'))
 SECRET = re.compile(r'(?:sk-|aip_|gh[pousr]_|hf_)[A-Za-z0-9_-]{12,}', re.I)
 
 
@@ -201,6 +202,53 @@ def qwen(source,edit):
         '這是應用程式 builder 的連線，並非官方參考 JSON 的逐字複本。'])
 
 
+def h3_first_frame(source,fn,raw,conditioning):
+    """Read the reviewed keyframe loop at index zero, without executing it."""
+    def matches(node,expression):
+        return ast.dump(node)==ast.dump(ast.parse(expression,mode='eval').body)
+    def changed():
+        raise ValueError('H3 keyframe graph structure changed')
+    keyframes=[n for n in fn.body if isinstance(n,ast.Assign) and len(n.targets)==1
+               and isinstance(n.targets[0],ast.Name) and n.targets[0].id=='keyframes']
+    loops=[n for n in fn.body if isinstance(n,ast.For)]
+    if (len(keyframes)!=1 or len(loops)!=1
+        or not matches(keyframes[0].value,'[("first_frame", clean_first), ("last_frame", clean_last)]')):
+        changed()
+    loop=loops[0]
+    # Store/Load contexts differ on assignment targets, so check their names.
+    if (ast.unparse(loop.target)!='(index, (field, image_name))'
+        or not matches(loop.iter,'enumerate((item for item in keyframes if item[1] is not None))')
+        or loop.orelse or len(loop.body)!=4):
+        changed()
+    ids,loader,padding,binding=loop.body
+    if (not isinstance(ids,ast.Assign) or len(ids.targets)!=1
+        or ast.unparse(ids.targets[0])!='(loader_id, pad_id)'
+        or not isinstance(ids.value,ast.Tuple) or len(ids.value.elts)!=2):
+        changed()
+    local={'index':0,'field':'first_frame'}
+    for name,expr in zip(('loader_id','pad_id'),ids.value.elts):
+        if (not isinstance(expr,ast.Call) or not isinstance(expr.func,ast.Name)
+            or expr.func.id!='str' or len(expr.args)!=1 or expr.keywords):
+            changed()
+        value=source.value(expr.args[0],local)
+        if type(value) is not int or not 0<=value<100_000_000:changed()
+        local[name]=str(value)
+    if local['loader_id']==local['pad_id'] or set(local[n] for n in ('loader_id','pad_id'))&set(raw):changed()
+    for stmt,name,kind in ((loader,'loader_id','LoadImage'),(padding,'pad_id','ResizeAndPadImage')):
+        if (not isinstance(stmt,ast.Assign) or len(stmt.targets)!=1
+            or ast.unparse(stmt.targets[0])!='graph['+name+']'):changed()
+        node=source.value(stmt.value,local)
+        if not isinstance(node,dict) or node.get('class_type')!=kind or not isinstance(node.get('inputs'),dict):changed()
+        raw[local[name]]=node
+    if (not isinstance(binding,ast.Assign) or len(binding.targets)!=1
+        or ast.unparse(binding.targets[0])!='conditioning_inputs[field]'):changed()
+    link=source.value(binding.value,local)
+    fitted=raw[local['pad_id']]['inputs']
+    if (link!=[local['pad_id'],0] or fitted.get('image')!=[local['loader_id'],0]
+        or fitted.get('padding_color')!='black' or fitted.get('interpolation')!='lanczos'):changed()
+    conditioning[local['field']]=link
+
+
 def h3(source,id):
     symbol={'h3-text-video':'build_t2v_prompt','h3-image-video':'build_i2v_prompt','h3-reference-video':'build_ref2va_prompt'}[id]
     fn=source.function(symbol)
@@ -214,11 +262,7 @@ def h3(source,id):
     raw,_,_=primary_graph(source,'_build_graph',scope=scope)
     conditioning=raw['5']['inputs']
     if id=='h3-image-video':
-        branch=next(n for n in fn.body if isinstance(n,ast.If) and ast.unparse(n.test)=='clean_first is not None' and any(isinstance(x,ast.Assign) and isinstance(x.targets[0],ast.Subscript) for x in n.body))
-        local={'node_id':'15'};fixed_additions(source,branch.body,raw,local)
-        for stmt in branch.body:
-            if isinstance(stmt,ast.Assign) and isinstance(stmt.targets[0],ast.Subscript) and isinstance(stmt.targets[0].value,ast.Name) and stmt.targets[0].value.id=='conditioning_inputs':
-                conditioning[source.value(stmt.targets[0].slice,local)]=source.value(stmt.value,local)
+        h3_first_frame(source,fn,raw,conditioning)
     elif id=='h3-reference-video':
         loops=[n for n in fn.body if isinstance(n,ast.For)]
         for loop,node_id in zip(loops,['15','30','40']):
@@ -227,7 +271,7 @@ def h3(source,id):
                 if isinstance(stmt,ast.Assign) and isinstance(stmt.targets[0],ast.Subscript) and isinstance(stmt.targets[0].value,ast.Name) and stmt.targets[0].value.id=='conditioning_inputs':
                     conditioning[source.value(stmt.targets[0].slice,local)]=source.value(stmt.value,local)
     notes=['Stock 代表分支；Sage／EasyCache／TeaCache 的可選包裝不在此圖。']
-    if id=='h3-image-video':notes.append('顯示首格一張的分支；尾格或首尾兩張會加入相應 LoadImage。')
+    if id=='h3-image-video':notes.append('顯示首格一張的分支，LoadImage 經 ResizeAndPadImage 等比例補黑邊後送入條件節點；尾格或首尾兩張各有對應的載入與補邊節點。')
     if id=='h3-reference-video':notes.append('顯示一圖、一影片、一音訊；影片的影像與音訊分別連入條件節點，實際支援更多參考槽。')
     return diagram(raw,'webui/minimax_h3_native.py#'+symbol,notes)
 
@@ -325,7 +369,7 @@ ENGLISH_NOTES = {
  '文生圖分支：ResolutionSelector 決定空白 latent 尺寸。': 'Text-to-image branch: ResolutionSelector determines the empty latent dimensions.',
  '這是應用程式 builder 的連線，並非官方參考 JSON 的逐字複本。': 'These are application builder connections, not a verbatim copy of the official reference JSON.',
  'Stock 代表分支；Sage／EasyCache／TeaCache 的可選包裝不在此圖。': 'Representative Stock branch. Optional Sage, EasyCache and TeaCache wrappers are not shown.',
- '顯示首格一張的分支；尾格或首尾兩張會加入相應 LoadImage。': 'Shows one first-frame image. A last frame or both frames adds the corresponding LoadImage nodes.',
+ '顯示首格一張的分支，LoadImage 經 ResizeAndPadImage 等比例補黑邊後送入條件節點；尾格或首尾兩張各有對應的載入與補邊節點。': 'Shows one first-frame image: LoadImage passes through ResizeAndPadImage to preserve aspect ratio with black padding before conditioning. Last-frame and combined inputs each use corresponding loader and padding nodes.',
  '顯示一圖、一影片、一音訊；影片的影像與音訊分別連入條件節點，實際支援更多參考槽。': 'Shows one image, one video and one audio reference. Video frames and audio connect separately to conditioning; additional reference slots are supported.',
  '角色／聲音資料須由本機提供；流程會依入口與選項分支。': 'Character and voice data must be supplied locally. The route depends on the entry point and options.',
  '分支二擇一；此圖省略可變段數的重複節點與本機參考資料。': 'Choose one branch. Repeated nodes for variable text chunks and local reference data are omitted.',

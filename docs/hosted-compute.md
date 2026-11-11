@@ -6,7 +6,11 @@
 
 Comfy 接受 `https://cloud.comfy.org`，或已建立的 `https://<deployment>.run.comfy.app`。專用部署必須先準備 Build、Release 與 Deployment，包含模型、節點及 Python 相依套件；目前官方說明要求 Standard 或更高付費方案。設定網址不會替使用者部署或啟動 GPU。[Comfy API 部署說明](https://support.comfy.org/articles/2703236295-comfy-api-deploy-your-comfyui-workflow-as-an-api)
 
-RunningHub 使用 `https://www.runninghub.ai`。先在供應商平台儲存並成功手動執行自己的工作流程，取得 workflow ID 與各節點的輸入欄位。API key 的資格、資源及餘額仍由供應商判定；本介面中的「已設定」並不代表已驗證帳戶或節點可用。[RunningHub 錯誤碼說明](https://www.runninghub.ai/runninghub-api-doc-en/doc-8287467)
+RunningHub 使用 `https://www.runninghub.ai`。先在供應商工作台儲存並成功手動執行自己的工作流程，取得 workflow ID 與各節點的輸入欄位；不必公開發布到社群。API key 的資格、資源及餘額仍由供應商判定；本介面中的「已設定」並不代表已驗證帳戶或節點可用。[RunningHub 工作流程部署說明](https://www.runninghub.ai/runninghub-api-doc-en/doc-8287465)、[錯誤碼說明](https://www.runninghub.ai/runninghub-api-doc-en/doc-8287467)
+
+目前整合的是 RunningHub 的 **workflow-ID REST API**：以 `workflowId` 與 `nodeInfoList` 呼叫 `/task/openapi/create`。官方 Advanced API 雖另有完整圖 JSON 字串的 `workflow` override 欄位，其 schema 仍將 `workflowId` 列為必填；本程式也尚未支援該 inline 欄位。[Advanced API](https://www.runninghub.ai/runninghub-api-doc-en/api-425761093)、[請求 schema](https://www.runninghub.ai/runninghub-api-doc-en/schema-252340070)
+
+RunningHub 另有宣稱相容本機 ComfyUI 的 **Native proxy**，以及不需要 workflow ID、使用個別模型端點的 **Standard Model API**；兩者目前都未整合到本介面。Standard Model API 官方要求 Enterprise-Shared key。它們的模型、節點、輸入控制與計費需分別確認，不能視為本目錄原工作流程已可執行，也不能由帳號查詢成功推定功能可用。[Native proxy 指南](https://www.runninghub.ai/runninghub-api-doc-en/doc-8287466)、[API 類型與資格](https://www.runninghub.ai/runninghub-api-doc-en/doc-8287463)、[Standard Model 端點範例](https://www.runninghub.ai/runninghub-api-doc-en/api-448184514)
 
 ## 配方與映射
 
@@ -71,7 +75,9 @@ RunningHub 可以匯入同一個圖後，使用相同的 `bindings`、`fixed_set
 
 ## 額度、期限與恢復
 
-費用維度分開：Comfy 為 `max_comfy_credits`，RunningHub 為 `max_runninghub_coins`，另外必須設定 `max_minutes`。這裡檢查的是配方的 `estimated_cost`，不是供應商即時報價，也不是硬性帳單上限。Comfy 的部署 GPU 時間包括啟動、模型載入及暖機待命；模型儲存也可能持續收費。RunningHub 回傳的 `consumeCoins` 與 `chargedPoint` 是不同欄位，本程式不假裝它們能互換。實際計價應以自己的供應商儀表板為準。[Comfy 官方計價](https://comfy.org/pricing/)、[RunningHub 成果欄位](https://www.runninghub.ai/runninghub-api-doc-en/api-425761034)
+費用維度分開：Comfy 為 `max_comfy_credits`，目前的 RunningHub 整合為 `max_runninghub_coins`，另外必須設定 `max_minutes`。這裡檢查的是配方的 `estimated_cost`，不是供應商即時報價，也不是硬性帳單上限。Comfy 的部署 GPU 時間包括啟動、模型載入及暖機待命；模型儲存也可能持續收費。[Comfy 官方計價](https://comfy.org/pricing/)
+
+RunningHub 官方帳號欄位分別列出 `remainPoint`、`remainCoins` 與 `remainMoney`；V2 結果亦有 `usage.settleMode: "POINT"`、`chargedPoint`，可同時回傳 null 的 money／coins 欄位。因此 **0 coins 或 null wallet 不能單獨判定沒有可用額度**，帳號查詢成功也不能證明特定生成可用。POINT 與 coins 不可自行換算；目前 `max_runninghub_coins` 沒有整合 POINT 使用量核算或點數上限，不能當成點數支出保證。啟用前須確認所用契約的實際計價與預算單位，不能將點數金額填入 coins 欄位冒充相同額度。[RunningHub 帳號欄位](https://www.runninghub.ai/runninghub-api-doc-en/api-425761030)、[V2 結果與 POINT 結算](https://www.runninghub.ai/runninghub-api-doc-en/api-425767807)
 
 工作使用不可變的本機請求 UUID，另存供應商回傳的遠端 ID。送出前先持久化狀態；若提交的回應遺失，保留 `submission_uncertain`，不自動重送、不切換到另一個平台。這種工作仍占用同時執行名額。
 

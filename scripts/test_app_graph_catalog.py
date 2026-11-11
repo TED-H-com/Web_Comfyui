@@ -100,7 +100,50 @@ def test_h3_audio_video_and_references(registry):
     assert ('40','5',0,'ref_audios.ref_audio_0') in e
     assert ('12','13',0,'audio') in e and ('11','13',0,'images') in e
     assert any(n.get('inputs',{}).get('unet_name')=='minimax_h3_ref2va_pruned_int8_convrot.safetensors' for n in ref['nodes'])
-    assert ('15','5',0,'first_frame') in edges(output['h3-image-video'])
+    assert ('15','17',0,'image') in edges(output['h3-image-video'])
+    assert ('17','5',0,'first_frame') in edges(output['h3-image-video'])
+
+
+def test_h3_first_frame_diagram_matches_actual_padded_builder(registry):
+    from webui.minimax_h3_native import build_i2v_prompt
+    native=build_i2v_prompt(prompt='A synthetic landscape stays still.',resolution=(864,480),
+        seed=1,output_prefix='Castle/minimax-h3/i2v/static-fixture',first_frame='synthetic.png',frames=124)
+    result=graphs(ROOT,registry)['h3-image-video']
+    assert {n['id']:n['type'] for n in result['nodes']}=={
+        node_id:node['class_type'] for node_id,node in native.items()}
+    expected={(value[0],node_id,value[1],key) for node_id,node in native.items()
+              for key,value in node['inputs'].items() if isinstance(value,list)
+              and len(value)==2 and value[0] in native and type(value[1]) is int}
+    assert edges(result)==expected
+    padding=next(n for n in result['nodes'] if n['type']=='ResizeAndPadImage')
+    assert padding['inputs']=={'padding_color':'black','interpolation':'lanczos'}
+    assert 'black padding' in result['notes_en'][1]
+    assert 'synthetic.png' not in json.dumps(result)
+
+
+def test_h3_padding_node_ids_follow_source_without_execution(fixture_root,registry):
+    path=fixture_root/'webui/minimax_h3_native.py'
+    path.write_text(path.read_text().replace('str(17 + index)','str(27 + index)')
+                    + '\nraise AssertionError("BUILDER MUST NOT EXECUTE")\n')
+    result=graphs(fixture_root,registry)['h3-image-video']
+    assert ('15','27',0,'image') in edges(result)
+    assert ('27','5',0,'first_frame') in edges(result)
+    assert not any(n['id']=='17' for n in result['nodes'])
+
+
+@pytest.mark.parametrize('old,new',[
+    ('if item[1] is not None','if item[1]'),
+    ('str(17 + index)','str(open("SHOULD_NOT_BE_OPENED").read())'),
+    ('"class_type": "ResizeAndPadImage"','"class_type": "UnreviewedResize"'),
+    ('"padding_color": "black"','"padding_color": "white"'),
+])
+def test_changed_h3_keyframe_structure_requires_review(fixture_root,registry,old,new):
+    path=fixture_root/'webui/minimax_h3_native.py'
+    text=path.read_text()
+    assert old in text
+    path.write_text(text.replace(old,new))
+    with pytest.raises(ValueError,match='H3 keyframe graph structure changed'):
+        graphs(fixture_root,registry)
 
 
 def test_variants_not_combined_and_character_create_is_process(registry):

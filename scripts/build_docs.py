@@ -28,6 +28,9 @@ MARKER = '.web-comfyui-docs'
 ASSETS = {
     'webui/static/colab.js': 'assets/colab.js',
     'webui/static/colab.css': 'assets/colab.css',
+    **{'webui/static/'+name+suffix: 'assets/'+name+suffix
+       for name in ('compute-placement', 'compute-settings', 'compute-pipeline')
+       for suffix in ('.js', '.css')},
     **{'webui/static/'+name: 'assets/'+name for name in ('reference-sources.js', 'reference-sources.css', 'photo-presets.js', 'photo-presets.css')},
     'webui/docs/landing.css': 'assets/landing.css',
     'webui/docs/landing.js': 'assets/landing.js',
