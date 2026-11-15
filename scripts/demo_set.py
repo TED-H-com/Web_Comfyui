@@ -98,6 +98,10 @@ def _validate_structure(data: dict, errors: list[str]) -> tuple[dict[str, dict],
         if missing:
             errors.append(f'subject {subj.get("id", index)} missing keys: {missing}')
             continue
+        unknown = sorted(subj.keys() - SUBJECT_KEYS)
+        if unknown:
+            errors.append(f'subject {subj.get("id", index)} unknown keys: {unknown}')
+            continue
         sid = subj['id']
         if not _is_nonempty_str(sid):
             errors.append(f'subjects[{index}].id must be non-empty string')
@@ -135,6 +139,10 @@ def _validate_structure(data: dict, errors: list[str]) -> tuple[dict[str, dict],
         missing = sorted(MATERIAL_KEYS - mat.keys())
         if missing:
             errors.append(f'material {mat.get("id", index)} missing keys: {missing}')
+            continue
+        unknown = sorted(mat.keys() - MATERIAL_KEYS)
+        if unknown:
+            errors.append(f'material {mat.get("id", index)} unknown keys: {unknown}')
             continue
         mid = mat['id']
         if not _is_nonempty_str(mid):
@@ -176,6 +184,10 @@ def _validate_structure(data: dict, errors: list[str]) -> tuple[dict[str, dict],
         missing = sorted(CASE_KEYS - case.keys())
         if missing:
             errors.append(f'case {case.get("id", index)} missing keys: {missing}')
+            continue
+        unknown = sorted(case.keys() - CASE_KEYS)
+        if unknown:
+            errors.append(f'case {case.get("id", index)} unknown keys: {unknown}')
             continue
         cid = case['id']
         if not _is_nonempty_str(cid):
@@ -219,6 +231,10 @@ def _validate_structure(data: dict, errors: list[str]) -> tuple[dict[str, dict],
                 out_missing = sorted(OUTPUT_KEYS - out.keys())
                 if out_missing:
                     errors.append(f'case {cid}.outputs[{out_idx}] missing keys: {out_missing}')
+                    continue
+                out_unknown = sorted(out.keys() - OUTPUT_KEYS)
+                if out_unknown:
+                    errors.append(f'case {cid}.outputs[{out_idx}] unknown keys: {out_unknown}')
                     continue
                 if not _is_nonempty_str(out['file']):
                     errors.append(f'case {cid}.outputs[{out_idx}].file must be non-empty string')

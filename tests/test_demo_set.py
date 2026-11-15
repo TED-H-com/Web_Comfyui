@@ -458,6 +458,40 @@ def test_rule1_schema_status_uniqueness_keys_text_and_order():
     assert any('order must be null' in err for err in demo_set.validate_demo_set(bad_order, **ctx))
 
 
+def test_unknown_keys_are_rejected():
+    ctx = _real_inputs()
+    base = demo_set.load_demo_set(ROOT)
+
+    bad_subj = copy.deepcopy(base)
+    bad_subj['subjects'][0]['extra'] = 1
+    assert any(
+        err.startswith('subject ') and "unknown keys: ['extra']" in err
+        for err in demo_set.validate_demo_set(bad_subj, **ctx)
+    )
+
+    bad_mat = copy.deepcopy(base)
+    bad_mat['materials'][0]['extra'] = 1
+    assert any(
+        err.startswith('material ') and "unknown keys: ['extra']" in err
+        for err in demo_set.validate_demo_set(bad_mat, **ctx)
+    )
+
+    bad_case = copy.deepcopy(base)
+    bad_case['cases'][0]['extra'] = 1
+    assert any(
+        err.startswith('case ') and "unknown keys: ['extra']" in err
+        for err in demo_set.validate_demo_set(bad_case, **ctx)
+    )
+
+    bad_out = copy.deepcopy(base)
+    first_with_out = next(c for c in bad_out['cases'] if c.get('outputs'))
+    first_with_out['outputs'][0]['extra'] = 1
+    assert any(
+        '.outputs[' in err and "unknown keys: ['extra']" in err
+        for err in demo_set.validate_demo_set(bad_out, **ctx)
+    )
+
+
 def test_rule2_assets_membership_and_sha256(tmp_path):
     ctx = _real_inputs()
     base = demo_set.load_demo_set(ROOT)

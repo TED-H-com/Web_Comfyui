@@ -1142,13 +1142,6 @@
       links.push({ href, zh, en });
     };
 
-    if (Array.isArray(c.what_next)) {
-      for (const item of c.what_next) {
-        if (item.href) pushLink(item.href, item.label_zh || item.label_en, item.label_en || item.label_zh);
-      }
-      return links;
-    }
-
     const outMats = new Set((c.outputs || []).map((o) => o.material).filter(Boolean));
     for (const matId of outMats) {
       for (const cand of app?.demo_set?.cases || []) {
