@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import time
 
@@ -81,7 +82,7 @@ DEMO2_CASES = [('qingqing-hello',
   'An energetic adult woman in her early twenties, sparkling playful Taiwan Mandarin like an animation '
   'voice actress, bright crisp high voice.',
   '星羽登場！準備好了嗎？跟我一起飛到雲上的浮島去冒險吧！',
-  523),
+  1523),
  ('chenyi-hello',
   '辰翼登場',
   'A confident adult man in his late twenties, deep resonant cool voice like an animation hero, clear '
@@ -109,20 +110,18 @@ DEMO2_CASES = [('qingqing-hello',
   'A mature adult male narrator in his forties, rich low voice, composed documentary-style Taiwan '
   'Mandarin, measured pacing.',
   '第一頁：清晨的山谷還在沉睡，雲海靜靜地鋪在稜線下方。',
-  981),
- ('mountain-slide-two',
+  1981)]
+DEMO2_CLONES = [('mountain-slide-two',
   '山景簡報第二頁',
-  'A mature adult male narrator in his forties, rich low voice, composed documentary-style Taiwan '
-  'Mandarin, measured pacing.',
+  'mountain-slide-one',
   '第二頁：第一道陽光越過山頭，把整片雲海染成金色。',
-  981),
+  982),
  ('mountain-slide-three',
   '山景簡報第三頁',
-  'A mature adult male narrator in his forties, rich low voice, composed documentary-style Taiwan '
-  'Mandarin, measured pacing.',
+  'mountain-slide-one',
   '第三頁：霧氣慢慢散開，山路上的旅人準備出發，新的一天開始了。',
-  981)]
-DEMO2_CLONES = [('qingqing-clone',
+  983),
+ ('qingqing-clone',
   '晴晴聲音克隆',
   'qingqing-hello',
   '這段話是用晴晴的聲音樣本克隆出來的：換上全新的台詞，聽起來還是同一個人。',
@@ -131,7 +130,116 @@ DEMO2_CLONES = [('qingqing-clone',
   '志遠聲音克隆',
   'zhiyuan-hello',
   '這句話是用志遠的聲音樣本克隆出來的：同一個聲音，說出全新的內容。',
-  978)]
+  978),
+ ('xingyu-clone',
+  '星羽聲音克隆',
+  'xingyu-hello',
+  '這段話是用星羽的聲音樣本克隆的：同樣的聲音，喊出全新的冒險口號！',
+  977),
+ ('chenyi-clone',
+  '辰翼聲音克隆',
+  'chenyi-hello',
+  '這句話也是用辰翼的聲音樣本克隆出來的：今晚的巡邏，換我用新台詞報告。',
+  976),
+ ('qingqing-english-clone',
+  '晴晴英文克隆',
+  'qingqing-english',
+  "This line was cloned from Qingqing's English voice sample: same voice, brand-new words.",
+  975),
+ ('zhiyuan-english-clone',
+  '志遠英文克隆',
+  'zhiyuan-english',
+  "This line was cloned from Zhiyuan's English voice sample: the same calm voice, saying something new.",
+  974)]
+DEMO2_POSTPROCESS = {
+    "frame_ms": 10,
+    "threshold_db_below_loudest_frame": 40.0,
+    "floor_rms": 0.0001,
+    "edge_keep_ms": 120,
+    "max_pause_ms": 700,
+    "crossfade_ms": 10,
+    "edge_fade_ms": 5,
+}
+
+
+def frame_rms(samples, frame):
+    if frame <= 0:
+        raise ValueError("frame must be positive")
+    return [
+        math.sqrt(sum(float(x) * float(x) for x in samples[i:i + frame]) / len(samples[i:i + frame]))
+        for i in range(0, len(samples), frame)
+    ]
+
+
+def plan_keep_segments(rms, n_samples, sample_rate, params=DEMO2_POSTPROCESS):
+    if not rms or n_samples <= 0:
+        raise ValueError("silent waveform")
+    frame = round(sample_rate * params["frame_ms"] / 1000)
+    threshold = max(max(rms) * 10 ** (-params["threshold_db_below_loudest_frame"] / 20), params["floor_rms"])
+    voiced = [idx for idx, val in enumerate(rms) if val >= threshold]
+    if not voiced:
+        raise ValueError("silent waveform")
+    first_voiced = voiced[0]
+    last_voiced = voiced[-1]
+    edge = round(sample_rate * params["edge_keep_ms"] / 1000)
+    start = max(0, first_voiced * frame - edge)
+    end = min(n_samples, (last_voiced + 1) * frame + edge)
+    pause = round(sample_rate * params["max_pause_ms"] / 1000)
+    segments = []
+    cur = start
+    for v_prev, v_next in zip(voiced, voiced[1:]):
+        a = v_prev + 1
+        b = v_next
+        if (b - a) * frame > pause:
+            cut_start = a * frame + pause // 2
+            cut_end = b * frame - (pause - pause // 2)
+            segments.append((cur, cut_start))
+            cur = cut_end
+    segments.append((cur, end))
+    return segments
+
+
+def join_segments(samples, segments, crossfade, edge_fade):
+    if not segments or crossfade < 0 or edge_fade < 0:
+        raise ValueError("invalid segments or fade parameters")
+    if any(s < 0 or e > len(samples) or e - s < crossfade for s, e in segments):
+        raise ValueError("segment shorter than crossfade")
+    parts = [[float(x) for x in samples[s:e]] for s, e in segments]
+    out = list(parts[0])
+    for right in parts[1:]:
+        if crossfade > 0:
+            base = len(out) - crossfade
+            for i in range(crossfade):
+                w_i = (i + 1) / (crossfade + 1)
+                out[base + i] = (1.0 - w_i) * out[base + i] + w_i * right[i]
+            out.extend(right[crossfade:])
+        else:
+            out.extend(right)
+    fade_len = min(edge_fade, len(out))
+    for i in range(fade_len):
+        w_i = (i + 1) / (edge_fade + 1)
+        out[i] *= w_i
+        out[len(out) - 1 - i] *= w_i
+    return out
+
+
+def postprocess_demo2(samples, sample_rate):
+    params = DEMO2_POSTPROCESS
+    frame = round(sample_rate * params["frame_ms"] / 1000)
+    crossfade = round(sample_rate * params["crossfade_ms"] / 1000)
+    edge_fade = round(sample_rate * params["edge_fade_ms"] / 1000)
+    n_samples = len(samples)
+    rms = frame_rms(samples, frame)
+    segments = plan_keep_segments(rms, n_samples, sample_rate, params)
+    processed = join_segments(samples, segments, crossfade, edge_fade)
+    record = {
+        **params,
+        "name": "demo2-silence-trim-v1",
+        "raw_duration_seconds": round(n_samples / sample_rate, 3),
+        "removed_seconds": round((n_samples - len(processed)) / sample_rate, 3),
+        "internal_cuts": len(segments) - 1,
+    }
+    return processed, record
 
 
 def sha256(path):
@@ -254,6 +362,10 @@ def main(argv=None):
         if not len(wav) or not np.all(np.isfinite(wav)):
             raise ValueError("Invalid generated waveform")
         sr = model.tts_model.sample_rate
+        postprocess = None
+        if args.set == "demo2":
+            processed, postprocess = postprocess_demo2(wav.tolist(), sr)
+            wav = np.asarray(processed, dtype=np.float32)
         path = args.output / (slug + ".wav")
         sf.write(path, wav, sr, subtype="PCM_16")
         sample = {"id": slug, "label": label, "file": path.name, "text": text,
@@ -261,7 +373,8 @@ def main(argv=None):
                   "duration_seconds": len(wav) / sr, "render_seconds": round(time.monotonic() - start, 3),
                   "sha256": sha256(path), "peak": float(np.max(np.abs(wav))),
                   "rms": float(np.sqrt(np.mean(wav ** 2))),
-                  "review_status": "generated; automated review recorded separately; listening quality not assessed", **(extra or {})}
+                  "review_status": "generated; automated review recorded separately; listening quality not assessed",
+                  **(extra or {}), **({"postprocess": postprocess} if postprocess is not None else {})}
         receipt["samples"].append(sample)
         receipt_path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n")
         print(json.dumps(sample, ensure_ascii=False), flush=True)
