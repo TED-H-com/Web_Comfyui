@@ -27,6 +27,7 @@
   const formStates = new WeakMap();
   const observedButtons = new WeakSet();
   const activeForms = new Set();
+  let reattachRouteParams = null;
 
   const drive = () => window.WebComfyDemoDrive;
   const isEn = () => window.WebComfyI18n?.language === 'en' || document.documentElement.lang.startsWith('en');
@@ -154,14 +155,23 @@
   function readRouteParams(featureId) {
     const consumed = drive()?.consumePendingRoute?.('#/studio/' + featureId) || {};
     const hq = hashQueryParams();
-    return {
+    const params = {
       caseId: hq.get('case') || consumed.caseId || consumed.case || '',
       fromId: hq.get('from') || consumed.from || '',
       voiceId: hq.get('voice') || consumed.voice || '',
     };
+    if (params.caseId || params.fromId || params.voiceId) {
+      reattachRouteParams = { featureId, hash: location.hash, params };
+      return params;
+    }
+    if (reattachRouteParams && reattachRouteParams.featureId === featureId && reattachRouteParams.hash === location.hash) {
+      return reattachRouteParams.params;
+    }
+    return params;
   }
 
   function handleHashChange() {
+    reattachRouteParams = null;
     const hash = location.hash || '';
     const match = /^#\/studio\/([^/?]+)/.exec(hash);
     if (!match) return;
@@ -277,10 +287,9 @@
   }
 
   function findVoiceCloneLibSelect(form) {
-    return [...form.querySelectorAll('select')].find((sel) => {
-      const box = sel.closest('.post-mode-panel, .field, label');
-      return box && !box.hidden && !box.classList.contains('hidden');
-    }) || form.querySelector('select');
+    return form.querySelector('.post-mode-panel select')
+      || [...form.querySelectorAll('select')].find((sel) => !sel.closest('.compute-placement, .app-demo, .demo-case-strip'))
+      || null;
   }
 
   function findVoiceSpeakClonePanel(form) {
@@ -503,6 +512,14 @@
     return entries;
   }
 
+  function syncDemoHeading(form, c) {
+    const titleNode = form?.querySelector?.('.app-demo h3');
+    if (!titleNode || !c) return false;
+    titleNode.dataset.explorerCopy = 'true';
+    setI18n(titleNode, c.title_zh || c.id, c.title_en || c.title_zh || c.id);
+    return true;
+  }
+
   function resetDemoBox(form) {
     const demoBox = form.querySelector('.app-demo');
     if (!demoBox || demoBox.dataset.state === 'idle') return;
@@ -528,6 +545,7 @@
     st.unfilled = new Set();
     form.dataset.demoCase = chosen.id;
     form.dataset.demoEdited = 'false';
+    syncDemoHeading(form, chosen);
 
     // Reset case buttons active state and keep active chip visible inside strip (scrollLeft only)
     let activeBtn = null;
@@ -580,7 +598,15 @@
         }
       }
       for (const [slotId, matId] of Object.entries(wantInputs)) {
-        if (st.featureId === 'voice-clone' && slotId === 'voice') ensureVoiceCloneUploadTab(form);
+        if (st.featureId === 'voice-clone' && slotId === 'voice') {
+          if (opts.keepVoiceCloneTab && isVoiceCloneLibraryTab(form)) {
+            drive()?.clearSlot?.(form, slotId);
+            const libSel = findVoiceCloneLibSelect(form);
+            if (libSel && selectContainsValue(libSel, matId)) libSel.value = matId;
+            continue;
+          }
+          ensureVoiceCloneUploadTab(form);
+        }
         drive()?.fillSlot?.(form, slotId, matId, 'case');
       }
     } finally {
@@ -652,6 +678,7 @@
 
   function handleMaterialChange(form, st, opts = {}) {
     if (st.selecting) return;
+    reattachRouteParams = null;
     const clearedSlot = opts.clearedSlot || null;
     const filled = readFilledSlots(form);
     const filledCount = Object.keys(filled).length;
@@ -808,6 +835,7 @@
   }
 
   function handleSelectMatch(form, st, sel) {
+    reattachRouteParams = null;
     if (st.featureId === 'voice-clone' && isVoiceCloneLibraryTab(form) && sel === findVoiceCloneLibSelect(form)) {
       const matId = sel.value || '';
       if (!matId) {
@@ -815,7 +843,7 @@
         return;
       }
       const candidates = st.cases.filter((c) => c.inputs?.voice === matId);
-      if (candidates.length > 0) select(form, candidates[0].id, { switchedFromMaterial: matId });
+      if (candidates.length > 0) select(form, candidates[0].id, { switchedFromMaterial: matId, keepVoiceCloneTab: true });
       else clearSelectionState(form, st, 'nomatch.other');
       return;
     }
@@ -1003,7 +1031,7 @@
       }
 
       btn.append(titleSpan, badge);
-      btn.addEventListener('click', () => select(form, c.id, { userInitiated: true }));
+      btn.addEventListener('click', () => { reattachRouteParams = null; select(form, c.id, { userInitiated: true }); });
       row.append(btn);
     }
 
@@ -1123,7 +1151,7 @@
       const libSel = findVoiceCloneLibSelect(form);
       if (libSel?.value) {
         const hit = st.cases.find((c) => c.inputs?.voice === libSel.value);
-        if (hit) select(form, hit.id, { switchedFromMaterial: libSel.value });
+        if (hit) select(form, hit.id, { switchedFromMaterial: libSel.value, keepVoiceCloneTab: true });
         else clearSelectionState(form, st, 'nomatch.other');
       } else {
         clearSelectionState(form, st, '');
@@ -1266,11 +1294,13 @@
     recordCaseOutputsToSession(c);
 
     // Header
-    const head = el('div', 'demo-result-head');
-    const heading = el('h4');
-    setI18n(heading, c.title_zh || c.id, c.title_en || c.title_zh || c.id);
-    head.append(heading);
-    container.append(head);
+    if (!syncDemoHeading(form, c)) {
+      const head = el('div', 'demo-result-head');
+      const heading = el('h4');
+      setI18n(heading, c.title_zh || c.id, c.title_en || c.title_zh || c.id);
+      head.append(heading);
+      container.append(head);
+    }
 
     // Provenance / Disclosure line
     if (c.kind === 'recorded') {

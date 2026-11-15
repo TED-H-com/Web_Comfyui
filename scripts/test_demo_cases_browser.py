@@ -615,6 +615,11 @@ def test_u1c_final_data_e8(tmp_path):
                 page.evaluate('() => { location.hash = "#/studio/voice-clone"; }')
                 vc_form = page.locator('form[data-demo-id="voice-clone"]')
                 vc_form.wait_for(timeout=12000)
+                vc_form.locator('.seg-btn').first.click()
+                page.wait_for_function(
+                    '() => [...document.querySelectorAll(\'form[data-demo-id="voice-clone"] .post-mode-panel:not(.hidden) select option\')].some(o => o.value === "zhiyuan-hello")',
+                    timeout=5000,
+                )
                 vc_sel = vc_form.locator('.post-mode-panel:not(.hidden) select').first
                 vc_sel.select_option('zhiyuan-hello')
                 page.wait_for_function(
@@ -722,11 +727,11 @@ def test_u1c_final_data_e8(tmp_path):
                             arg=feature_id,
                             timeout=5000,
                         )
-                        rendered_outputs = form.locator('.demo-result [data-comparison-after] img, .demo-result .demo-gallery:not(.demo-comparison) img, .demo-result .demo-video-result video, .demo-result .demo-audio-track audio').count()
+                        rendered_outputs = form.locator('.demo-output [data-comparison-after] img, .demo-output .demo-gallery:not(.demo-comparison) img, .demo-output .demo-video-result video, .demo-output .demo-audio-track audio').count()
                         assert rendered_outputs == len(case['outputs']), (feature_id, case['id'], rendered_outputs, len(case['outputs']))
-                        assert form.locator('.demo-result .demo-run-record').count() == 1, (feature_id, case['id'])
-                        form.locator('.demo-result .demo-run-record summary').click()
-                        rec_text = form.locator('.demo-result .demo-run-record pre').inner_text()
+                        assert form.locator('.demo-output .demo-run-record').count() == 1, (feature_id, case['id'])
+                        form.locator('.demo-output .demo-run-record summary').click()
+                        rec_text = form.locator('.demo-output .demo-run-record pre').inner_text()
                         assert case['id'] in rec_text or case['run_id'] in rec_text, (feature_id, case['id'])
 
                 _assert_clean_page(page, errors, external, filechoosers)
@@ -825,6 +830,7 @@ def test_u1c2_rule3_rule7_matching(tmp_path):
 
                 # (d) face-swap: select detection -> YOLOv5l is an edit (rule 5: non-differing key)
                 form = open_case('face-swap', 'fs-qingqing-meiling')
+                form.locator('details.advanced > summary').click()
                 form.locator('select[data-field-id="detection"]').select_option('YOLOv5l')
                 page.wait_for_function(
                     '() => document.querySelector(\'form[data-demo-id="face-swap"]\')?.dataset.demoEdited === "true"',
