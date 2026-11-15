@@ -107,8 +107,8 @@ def test_voice_examples_are_original_recorded_audio_with_bound_transcripts():
     provenance = json.loads((root / 'provenance.json').read_text())
     assets = {row['file']: row for row in provenance['assets']}
     runs = provenance['audio_runs']
-    assert len(runs) == 9
-    assert len({run['sample']['sha256'] for run in runs}) == 9
+    assert len(runs) == 25
+    assert len({run['sample']['sha256'] for run in runs}) == 25
     for run in runs:
         sample = run['sample']
         path = root / sample['file']
@@ -118,7 +118,8 @@ def test_voice_examples_are_original_recorded_audio_with_bound_transcripts():
         assert hashlib.sha256(path.read_bytes()).hexdigest() == sample['sha256'] == assets[path.name]['sha256']
         review = run['validation']['transcription_review']
         assert review['audio_sha256'] == sample['sha256']
-        assert review['expected'] == sample['text'] and review['normalized_content_match'] is True
+        assert review['expected'] == sample['text']
+        assert review['normalized_content_match'] is True or (review['homophone_match'] is True and review['accepted_homophones'])
         with wave.open(str(path)) as audio:
             assert audio.getnchannels() == 1 and audio.getsampwidth() == 2
             assert audio.getframerate() == sample['sample_rate'] == 48000

@@ -570,6 +570,214 @@
       "width": 832,
       "height": 1216,
       "metadata_policy": "Lossless RGB WebP with no EXIF or text metadata."
+    },
+    {
+      "file": "qingqing-hello.wav",
+      "kind": "audio",
+      "sha256": "3c13e29c90ff8a7d583a048534b8cb655dbf4b6db0c4fe8a3e0357011d178727",
+      "bytes": 445484,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-qingqing-hello",
+      "duration_seconds": 4.64,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "zhiyuan-hello.wav",
+      "kind": "audio",
+      "sha256": "e795caff587a43bb8c5d79019ad52509a4f2e9bdfd17f9a60b9ad3c6519518ea",
+      "bytes": 772844,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-zhiyuan-hello",
+      "duration_seconds": 8.05,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "xingyu-hello.wav",
+      "kind": "audio",
+      "sha256": "164d852ae42c5dfb94c6e60135c362d2fff2f80f1bddea2fe41f5f8c32da0877",
+      "bytes": 561644,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-xingyu-hello",
+      "duration_seconds": 5.85,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "chenyi-hello.wav",
+      "kind": "audio",
+      "sha256": "11123751f5b3f53b078a535120311afc1121954d5ef5f2bd55b1511d33605128",
+      "bytes": 414764,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-chenyi-hello",
+      "duration_seconds": 4.32,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "qingqing-english.wav",
+      "kind": "audio",
+      "sha256": "c3b6911e96e41c2d1755ab6c1237f34290bcff68e50eed87982126b138a26f67",
+      "bytes": 418604,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-qingqing-english",
+      "duration_seconds": 4.36,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "zhiyuan-english.wav",
+      "kind": "audio",
+      "sha256": "2effa23b54418abda306dabbd115bd0eb1843db9602c68394dfe7ae27df714f8",
+      "bytes": 542444,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-zhiyuan-english",
+      "duration_seconds": 5.65,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "male-announcement.wav",
+      "kind": "audio",
+      "sha256": "01da7c4830a8b76cd950f7ae92701278a860dc64e06e897b4b6454f23bce86d2",
+      "bytes": 627884,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-male-announcement",
+      "duration_seconds": 6.54,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "mountain-slide-one.wav",
+      "kind": "audio",
+      "sha256": "0bdf8310948905f793291011374bffe3e66691149db401178f3d9df8a2271ef9",
+      "bytes": 603884,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-mountain-slide-one",
+      "duration_seconds": 6.29,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "mountain-slide-two.wav",
+      "kind": "audio",
+      "sha256": "91eeebb5200422ab12f8d397f0736fda72255b019b459c768d8036787579b016",
+      "bytes": 578924,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-mountain-slide-two",
+      "duration_seconds": 6.03,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "mountain-slide-three.wav",
+      "kind": "audio",
+      "sha256": "3e95d9774ace4c03001857cac3c7f6b3526e78723fb9fd84d31b0bc92910c41a",
+      "bytes": 777644,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-mountain-slide-three",
+      "duration_seconds": 8.1,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "qingqing-clone.wav",
+      "kind": "audio",
+      "sha256": "1c15c1f5ca93dade19a04770ad6ff6ec36ec9a875917f0d843023bece32c56f8",
+      "bytes": 625964,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-qingqing-clone",
+      "duration_seconds": 6.52,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "zhiyuan-clone.wav",
+      "kind": "audio",
+      "sha256": "591565fea4c6f6cf29b9fa58def1524d9762da590dcda7fc03e5879ad7f1bc1f",
+      "bytes": 725804,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-zhiyuan-clone",
+      "duration_seconds": 7.56,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "xingyu-clone.wav",
+      "kind": "audio",
+      "sha256": "feddaec75543e737bbb395af3e2ec24a509a4d673e979482a772dd3a4552d4a3",
+      "bytes": 603884,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-xingyu-clone",
+      "duration_seconds": 6.29,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "chenyi-clone.wav",
+      "kind": "audio",
+      "sha256": "87ff4426a8a8216bb915a4a90d0cf5a409ac7faf97d37f021700fb0a77f5de51",
+      "bytes": 697004,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-chenyi-clone",
+      "duration_seconds": 7.26,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "qingqing-english-clone.wav",
+      "kind": "audio",
+      "sha256": "082416af64605e008d4f82cbe80d6cffbf9ae4d3331a5ba48dec376b2c310b4f",
+      "bytes": 498284,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-qingqing-english-clone",
+      "duration_seconds": 5.19,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
+    },
+    {
+      "file": "zhiyuan-english-clone.wav",
+      "kind": "audio",
+      "sha256": "390776ea24a493866efd492e57e5b2533a3fb5c0a293495aee7fc9f870bf55e4",
+      "bytes": 570284,
+      "source": "Actual VoxCPM2 CPU synthesis of an original script; no private or real-person reference recording.",
+      "tool": "VoxCPM2 + soundfile",
+      "run_id": "voxcpm2-zhiyuan-english-clone",
+      "duration_seconds": 5.94,
+      "sample_rate": 48000,
+      "channels": 1,
+      "metadata_policy": "PCM16 WAV; only fmt and data chunks, no tags or private metadata."
     }
   ],
   "runs": [
@@ -3611,6 +3819,1250 @@
           "audio_sha256": "91c9bccfcdef34fbfa359135aa2b05de51b29c9f1352046e9f2cb5d467a4f04a",
           "normalized_content_match": true,
           "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals."
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-qingqing-hello",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "qingqing-hello",
+        "label": "晴晴自我介紹",
+        "file": "qingqing-hello.wav",
+        "text": "嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！",
+        "voice_description": "A cheerful adult woman in her mid-twenties, bright warm Taiwan Mandarin, lively and friendly, clear mid-high voice.",
+        "full_prompt": "(A cheerful adult woman in her mid-twenties, bright warm Taiwan Mandarin, lively and friendly, clear mid-high voice.)嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！",
+        "seed": 311,
+        "sample_rate": 48000,
+        "duration_seconds": 4.64,
+        "render_seconds": 10.843,
+        "sha256": "3c13e29c90ff8a7d583a048534b8cb655dbf4b6db0c4fe8a3e0357011d178727",
+        "peak": 0.4659562110900879,
+        "rms": 0.07543118298053741,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design; qingqing-clone clone this voice",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 4.64,
+          "removed_seconds": 0.0,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "qingqing-hello",
+          "expected": "嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！",
+          "transcription": "嗨 我是晴晴今天陽光超好我們一起去拍一組新的照片吧",
+          "audio_sha256": "3c13e29c90ff8a7d583a048534b8cb655dbf4b6db0c4fe8a3e0357011d178727",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": false,
+          "accepted_homophones": []
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-zhiyuan-hello",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "zhiyuan-hello",
+        "label": "志遠自我介紹",
+        "file": "zhiyuan-hello.wav",
+        "text": "我是志遠，平常在山上拍照。好的畫面，要耐心等光線剛剛好的那一刻。",
+        "voice_description": "A calm adult man in his early thirties, warm low-mid baritone, relaxed natural Taiwan Mandarin, steady unhurried pacing.",
+        "full_prompt": "(A calm adult man in his early thirties, warm low-mid baritone, relaxed natural Taiwan Mandarin, steady unhurried pacing.)我是志遠，平常在山上拍照。好的畫面，要耐心等光線剛剛好的那一刻。",
+        "seed": 412,
+        "sample_rate": 48000,
+        "duration_seconds": 8.05,
+        "render_seconds": 23.425,
+        "sha256": "e795caff587a43bb8c5d79019ad52509a4f2e9bdfd17f9a60b9ad3c6519518ea",
+        "peak": 0.3139794170856476,
+        "rms": 0.046169716864824295,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design; zhiyuan-clone clone this voice",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 10.08,
+          "removed_seconds": 2.03,
+          "internal_cuts": 3
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "zhiyuan-hello",
+          "expected": "我是志遠，平常在山上拍照。好的畫面，要耐心等光線剛剛好的那一刻。",
+          "transcription": "我是志遠平常在山上拍照好的畫面要耐心等光線剛剛好的那一刻",
+          "audio_sha256": "e795caff587a43bb8c5d79019ad52509a4f2e9bdfd17f9a60b9ad3c6519518ea",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": false,
+          "accepted_homophones": []
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-xingyu-hello",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "xingyu-hello",
+        "label": "星羽登場",
+        "file": "xingyu-hello.wav",
+        "text": "大家好，我是星羽！準備好了嗎？跟我一起飛到雲朵上面去冒險吧！",
+        "voice_description": "An energetic adult woman in her early twenties, sparkling playful Taiwan Mandarin like an animation voice actress, bright crisp high voice.",
+        "full_prompt": "(An energetic adult woman in her early twenties, sparkling playful Taiwan Mandarin like an animation voice actress, bright crisp high voice.)大家好，我是星羽！準備好了嗎？跟我一起飛到雲朵上面去冒險吧！",
+        "seed": 1523,
+        "sample_rate": 48000,
+        "duration_seconds": 5.85,
+        "render_seconds": 16.433,
+        "sha256": "164d852ae42c5dfb94c6e60135c362d2fff2f80f1bddea2fe41f5f8c32da0877",
+        "peak": 0.5167215466499329,
+        "rms": 0.10218270868062973,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design; xingyu-clone clone this voice",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 6.08,
+          "removed_seconds": 0.23,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "xingyu-hello",
+          "expected": "大家好，我是星羽！準備好了嗎？跟我一起飛到雲朵上面去冒險吧！",
+          "transcription": "大家好我是星宇準備好了嗎跟我一起飛到雲朵上面去冒險吧",
+          "audio_sha256": "164d852ae42c5dfb94c6e60135c362d2fff2f80f1bddea2fe41f5f8c32da0877",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "xingyu-hello",
+              "expected": "星羽",
+              "heard": "星宇",
+              "reason": "星羽 and 星宇 are both xing yu."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-chenyi-hello",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "chenyi-hello",
+        "label": "辰翼登場",
+        "file": "chenyi-hello.wav",
+        "text": "我是辰翼。這座城市的夜晚，由我來守護。",
+        "voice_description": "A confident adult man in his late twenties, deep resonant cool voice like an animation hero, clear Taiwan Mandarin, slow dramatic delivery.",
+        "full_prompt": "(A confident adult man in his late twenties, deep resonant cool voice like an animation hero, clear Taiwan Mandarin, slow dramatic delivery.)我是辰翼。這座城市的夜晚，由我來守護。",
+        "seed": 634,
+        "sample_rate": 48000,
+        "duration_seconds": 4.32,
+        "render_seconds": 9.737,
+        "sha256": "11123751f5b3f53b078a535120311afc1121954d5ef5f2bd55b1511d33605128",
+        "peak": 0.5587048530578613,
+        "rms": 0.05779912322759628,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design; chenyi-clone clone this voice",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 4.48,
+          "removed_seconds": 0.16,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "chenyi-hello",
+          "expected": "我是辰翼。這座城市的夜晚，由我來守護。",
+          "transcription": "我是陳毅這座城市的夜晚由我來守護",
+          "audio_sha256": "11123751f5b3f53b078a535120311afc1121954d5ef5f2bd55b1511d33605128",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "chenyi-hello",
+              "expected": "辰翼",
+              "heard": "陳毅",
+              "reason": "辰翼 and 陳毅 are both chen yi."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-qingqing-english",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "qingqing-english",
+        "label": "晴晴英文",
+        "file": "qingqing-english.wav",
+        "text": "Hi, I'm Qingqing! The sun is out, so let's go shoot some new photos together!",
+        "voice_description": "A cheerful adult woman in her mid-twenties, bright friendly American English with a light playful tone.",
+        "full_prompt": "(A cheerful adult woman in her mid-twenties, bright friendly American English with a light playful tone.)Hi, I'm Qingqing! The sun is out, so let's go shoot some new photos together!",
+        "seed": 745,
+        "sample_rate": 48000,
+        "duration_seconds": 4.36,
+        "render_seconds": 9.669,
+        "sha256": "c3b6911e96e41c2d1755ab6c1237f34290bcff68e50eed87982126b138a26f67",
+        "peak": 0.4306144118309021,
+        "rms": 0.048419564962387085,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design; qingqing-english-clone clone this voice",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 4.48,
+          "removed_seconds": 0.12,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "qingqing-english",
+          "expected": "Hi, I'm Qingqing! The sun is out, so let's go shoot some new photos together!",
+          "transcription": "Hi, I'm Ching Ching, the sun is out, so let's go shoot some new photos together.",
+          "audio_sha256": "c3b6911e96e41c2d1755ab6c1237f34290bcff68e50eed87982126b138a26f67",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "qingqing-english",
+              "expected": "qingqing",
+              "heard": "chingching",
+              "reason": "Chingching is an English spelling of the fictional name Qingqing."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-zhiyuan-english",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "zhiyuan-english",
+        "label": "志遠英文",
+        "file": "zhiyuan-english.wav",
+        "text": "Hi, I'm Zhiyuan. I photograph mountains, and the best shots come to those who wait for the light.",
+        "voice_description": "A calm adult man in his early thirties, warm baritone, relaxed natural American English, steady pacing.",
+        "full_prompt": "(A calm adult man in his early thirties, warm baritone, relaxed natural American English, steady pacing.)Hi, I'm Zhiyuan. I photograph mountains, and the best shots come to those who wait for the light.",
+        "seed": 856,
+        "sample_rate": 48000,
+        "duration_seconds": 5.65,
+        "render_seconds": 13.008,
+        "sha256": "2effa23b54418abda306dabbd115bd0eb1843db9602c68394dfe7ae27df714f8",
+        "peak": 0.41026464104652405,
+        "rms": 0.05221303552389145,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design; zhiyuan-english-clone clone this voice",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 5.76,
+          "removed_seconds": 0.11,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "zhiyuan-english",
+          "expected": "Hi, I'm Zhiyuan. I photograph mountains, and the best shots come to those who wait for the light.",
+          "transcription": "Hi, I'm Zhi Yuan. I photograph mountains, and the best shots come to those who wait for the light.",
+          "audio_sha256": "2effa23b54418abda306dabbd115bd0eb1843db9602c68394dfe7ae27df714f8",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": false,
+          "accepted_homophones": []
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-male-announcement",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "male-announcement",
+        "label": "男聲廣播",
+        "file": "male-announcement.wav",
+        "text": "各位旅客您好，本班列車即將抵達山城車站，請帶好隨身物品，準備下車。",
+        "voice_description": "A mature adult male announcer in his forties, rich low voice, composed clear Taiwan Mandarin, measured pacing and precise diction.",
+        "full_prompt": "(A mature adult male announcer in his forties, rich low voice, composed clear Taiwan Mandarin, measured pacing and precise diction.)各位旅客您好，本班列車即將抵達山城車站，請帶好隨身物品，準備下車。",
+        "seed": 967,
+        "sample_rate": 48000,
+        "duration_seconds": 6.54,
+        "render_seconds": 16.341,
+        "sha256": "01da7c4830a8b76cd950f7ae92701278a860dc64e06e897b4b6454f23bce86d2",
+        "peak": 0.5439541935920715,
+        "rms": 0.050373855978250504,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 6.56,
+          "removed_seconds": 0.02,
+          "internal_cuts": 1
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "male-announcement",
+          "expected": "各位旅客您好，本班列車即將抵達山城車站，請帶好隨身物品，準備下車。",
+          "transcription": "各位旅客您好本班列車即將抵達山城車站請帶好隨身物品準備下車",
+          "audio_sha256": "01da7c4830a8b76cd950f7ae92701278a860dc64e06e897b4b6454f23bce86d2",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": false,
+          "accepted_homophones": []
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-mountain-slide-one",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "mountain-slide-one",
+        "label": "山景簡報第一頁",
+        "file": "mountain-slide-one.wav",
+        "text": "第一頁：清晨的山谷還在沉睡，雲海靜靜地鋪在群山之間。",
+        "voice_description": "A mature adult male narrator in his forties, rich low voice, composed documentary-style Taiwan Mandarin, measured pacing.",
+        "full_prompt": "(A mature adult male narrator in his forties, rich low voice, composed documentary-style Taiwan Mandarin, measured pacing.)第一頁：清晨的山谷還在沉睡，雲海靜靜地鋪在群山之間。",
+        "seed": 1981,
+        "sample_rate": 48000,
+        "duration_seconds": 6.29,
+        "render_seconds": 14.112,
+        "sha256": "0bdf8310948905f793291011374bffe3e66691149db401178f3d9df8a2271ef9",
+        "peak": 0.473314106464386,
+        "rms": 0.04039892926812172,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "voice_consistency": "Independent synthetic voice design; mountain-slide-two, mountain-slide-three clone this voice",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 6.4,
+          "removed_seconds": 0.11,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "mountain-slide-one",
+          "expected": "第一頁：清晨的山谷還在沉睡，雲海靜靜地鋪在群山之間。",
+          "transcription": "第一夜清晨的山谷還在沉睡雲海靜靜的鋪在群山之間",
+          "audio_sha256": "0bdf8310948905f793291011374bffe3e66691149db401178f3d9df8a2271ef9",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "mountain-slide-one",
+              "expected": "第一頁",
+              "heard": "第一夜",
+              "reason": "頁 and 夜 are both ye."
+            },
+            {
+              "id": "mountain-slide-one",
+              "expected": "靜靜地",
+              "heard": "靜靜的",
+              "reason": "地 and 的 are both the particle de here."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-mountain-slide-two",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "mountain-slide-two",
+        "label": "山景簡報第二頁",
+        "file": "mountain-slide-two.wav",
+        "text": "第二頁：第一道陽光越過山頭，把整片雲海染成金色。",
+        "full_prompt": "第二頁：第一道陽光越過山頭，把整片雲海染成金色。",
+        "seed": 982,
+        "sample_rate": 48000,
+        "duration_seconds": 6.03,
+        "render_seconds": 17.017,
+        "sha256": "91eeebb5200422ab12f8d397f0736fda72255b019b459c768d8036787579b016",
+        "peak": 0.49297621846199036,
+        "rms": 0.04801502078771591,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "mode": "synthetic-reference cloning",
+        "reference_file": "mountain-slide-one.wav",
+        "reference_sha256": "0bdf8310948905f793291011374bffe3e66691149db401178f3d9df8a2271ef9",
+        "reference_transcript": "第一頁：清晨的山谷還在沉睡，雲海靜靜地鋪在群山之間。",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 6.4,
+          "removed_seconds": 0.37,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "mountain-slide-two",
+          "expected": "第二頁：第一道陽光越過山頭，把整片雲海染成金色。",
+          "transcription": "第二夜第一道陽光越過山頭把整片雲海染成金色",
+          "audio_sha256": "91eeebb5200422ab12f8d397f0736fda72255b019b459c768d8036787579b016",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "mountain-slide-two",
+              "expected": "第二頁",
+              "heard": "第二夜",
+              "reason": "頁 and 夜 are both ye."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-mountain-slide-three",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "mountain-slide-three",
+        "label": "山景簡報第三頁",
+        "file": "mountain-slide-three.wav",
+        "text": "第三頁：山谷慢慢醒來，山路上的旅人準備出發，新的一天開始了。",
+        "full_prompt": "第三頁：山谷慢慢醒來，山路上的旅人準備出發，新的一天開始了。",
+        "seed": 3983,
+        "sample_rate": 48000,
+        "duration_seconds": 8.1,
+        "render_seconds": 21.497,
+        "sha256": "3e95d9774ace4c03001857cac3c7f6b3526e78723fb9fd84d31b0bc92910c41a",
+        "peak": 0.7500814199447632,
+        "rms": 0.048928264528512955,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "mode": "synthetic-reference cloning",
+        "reference_file": "mountain-slide-one.wav",
+        "reference_sha256": "0bdf8310948905f793291011374bffe3e66691149db401178f3d9df8a2271ef9",
+        "reference_transcript": "第一頁：清晨的山谷還在沉睡，雲海靜靜地鋪在群山之間。",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 8.48,
+          "removed_seconds": 0.38,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "mountain-slide-three",
+          "expected": "第三頁：山谷慢慢醒來，山路上的旅人準備出發，新的一天開始了。",
+          "transcription": "第三夜山谷慢慢醒來山路上的旅人準備出發新的一天開始了",
+          "audio_sha256": "3e95d9774ace4c03001857cac3c7f6b3526e78723fb9fd84d31b0bc92910c41a",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "mountain-slide-three",
+              "expected": "第三頁",
+              "heard": "第三夜",
+              "reason": "頁 and 夜 are both ye."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-qingqing-clone",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "qingqing-clone",
+        "label": "晴晴聲音克隆",
+        "file": "qingqing-clone.wav",
+        "text": "這段話是用晴晴的聲音樣本克隆出來的：換上全新的台詞，聽起來還是同一個人。",
+        "full_prompt": "這段話是用晴晴的聲音樣本克隆出來的：換上全新的台詞，聽起來還是同一個人。",
+        "seed": 979,
+        "sample_rate": 48000,
+        "duration_seconds": 6.52,
+        "render_seconds": 17.041,
+        "sha256": "1c15c1f5ca93dade19a04770ad6ff6ec36ec9a875917f0d843023bece32c56f8",
+        "peak": 0.53751140832901,
+        "rms": 0.06488037109375,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "mode": "synthetic-reference cloning",
+        "reference_file": "qingqing-hello.wav",
+        "reference_sha256": "3c13e29c90ff8a7d583a048534b8cb655dbf4b6db0c4fe8a3e0357011d178727",
+        "reference_transcript": "嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 6.56,
+          "removed_seconds": 0.04,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "qingqing-clone",
+          "expected": "這段話是用晴晴的聲音樣本克隆出來的：換上全新的台詞，聽起來還是同一個人。",
+          "transcription": "這段話是用秦清的聲音樣本克隆出來的換上全新的台詞聽起來還是同一個人",
+          "audio_sha256": "1c15c1f5ca93dade19a04770ad6ff6ec36ec9a875917f0d843023bece32c56f8",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "qingqing-clone",
+              "expected": "晴晴",
+              "heard": "秦清",
+              "reason": "qing qing and qin qing: the same syllables once tones are ignored and -in/-ing count as one final."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-zhiyuan-clone",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "zhiyuan-clone",
+        "label": "志遠聲音克隆",
+        "file": "zhiyuan-clone.wav",
+        "text": "這句話是用志遠的聲音樣本克隆出來的：同一個聲音，說出全新的內容。",
+        "full_prompt": "這句話是用志遠的聲音樣本克隆出來的：同一個聲音，說出全新的內容。",
+        "seed": 978,
+        "sample_rate": 48000,
+        "duration_seconds": 7.56,
+        "render_seconds": 21.831,
+        "sha256": "591565fea4c6f6cf29b9fa58def1524d9762da590dcda7fc03e5879ad7f1bc1f",
+        "peak": 0.36217546463012695,
+        "rms": 0.04617280140519142,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "mode": "synthetic-reference cloning",
+        "reference_file": "zhiyuan-hello.wav",
+        "reference_sha256": "e795caff587a43bb8c5d79019ad52509a4f2e9bdfd17f9a60b9ad3c6519518ea",
+        "reference_transcript": "我是志遠，平常在山上拍照。好的畫面，要耐心等光線剛剛好的那一刻。",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 8.0,
+          "removed_seconds": 0.44,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "zhiyuan-clone",
+          "expected": "這句話是用志遠的聲音樣本克隆出來的：同一個聲音，說出全新的內容。",
+          "transcription": "這句話是用志遠的聲音樣本克隆出來的同一個聲音說出全新的內容",
+          "audio_sha256": "591565fea4c6f6cf29b9fa58def1524d9762da590dcda7fc03e5879ad7f1bc1f",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": false,
+          "accepted_homophones": []
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-xingyu-clone",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "xingyu-clone",
+        "label": "星羽聲音克隆",
+        "file": "xingyu-clone.wav",
+        "text": "這段話是用星羽的聲音樣本克隆的：同樣的聲音，喊出全新的冒險口號！",
+        "full_prompt": "這段話是用星羽的聲音樣本克隆的：同樣的聲音，喊出全新的冒險口號！",
+        "seed": 977,
+        "sample_rate": 48000,
+        "duration_seconds": 6.29,
+        "render_seconds": 18.576,
+        "sha256": "feddaec75543e737bbb395af3e2ec24a509a4d673e979482a772dd3a4552d4a3",
+        "peak": 0.5983518958091736,
+        "rms": 0.09228400886058807,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "mode": "synthetic-reference cloning",
+        "reference_file": "xingyu-hello.wav",
+        "reference_sha256": "164d852ae42c5dfb94c6e60135c362d2fff2f80f1bddea2fe41f5f8c32da0877",
+        "reference_transcript": "大家好，我是星羽！準備好了嗎？跟我一起飛到雲朵上面去冒險吧！",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 6.4,
+          "removed_seconds": 0.11,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "xingyu-clone",
+          "expected": "這段話是用星羽的聲音樣本克隆的：同樣的聲音，喊出全新的冒險口號！",
+          "transcription": "這段話是用新語的聲音樣本克隆的同樣的聲音喊出全新的冒險口號",
+          "audio_sha256": "feddaec75543e737bbb395af3e2ec24a509a4d673e979482a772dd3a4552d4a3",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "xingyu-clone",
+              "expected": "星羽",
+              "heard": "新語",
+              "reason": "xing yu and xin yu: the same syllables once -in/-ing count as one final."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-chenyi-clone",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "chenyi-clone",
+        "label": "辰翼聲音克隆",
+        "file": "chenyi-clone.wav",
+        "text": "這句話也是用辰翼的聲音樣本克隆出來的：今晚的巡邏，換我用新台詞報告。",
+        "full_prompt": "這句話也是用辰翼的聲音樣本克隆出來的：今晚的巡邏，換我用新台詞報告。",
+        "seed": 976,
+        "sample_rate": 48000,
+        "duration_seconds": 7.26,
+        "render_seconds": 19.162,
+        "sha256": "87ff4426a8a8216bb915a4a90d0cf5a409ac7faf97d37f021700fb0a77f5de51",
+        "peak": 0.7020516991615295,
+        "rms": 0.06693420559167862,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "mode": "synthetic-reference cloning",
+        "reference_file": "chenyi-hello.wav",
+        "reference_sha256": "11123751f5b3f53b078a535120311afc1121954d5ef5f2bd55b1511d33605128",
+        "reference_transcript": "我是辰翼。這座城市的夜晚，由我來守護。",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 7.68,
+          "removed_seconds": 0.42,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "chenyi-clone",
+          "expected": "這句話也是用辰翼的聲音樣本克隆出來的：今晚的巡邏，換我用新台詞報告。",
+          "transcription": "這句話也是用陳毅的聲音樣本克隆出來的今晚的巡邏換我用新台詞報告",
+          "audio_sha256": "87ff4426a8a8216bb915a4a90d0cf5a409ac7faf97d37f021700fb0a77f5de51",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "chenyi-clone",
+              "expected": "辰翼",
+              "heard": "陳毅",
+              "reason": "辰翼 and 陳毅 are both chen yi."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-qingqing-english-clone",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "qingqing-english-clone",
+        "label": "晴晴英文克隆",
+        "file": "qingqing-english-clone.wav",
+        "text": "This line was cloned from Qingqing's English voice sample: same voice, brand-new words.",
+        "full_prompt": "This line was cloned from Qingqing's English voice sample: same voice, brand-new words.",
+        "seed": 975,
+        "sample_rate": 48000,
+        "duration_seconds": 5.19,
+        "render_seconds": 14.371,
+        "sha256": "082416af64605e008d4f82cbe80d6cffbf9ae4d3331a5ba48dec376b2c310b4f",
+        "peak": 0.36280131340026855,
+        "rms": 0.040285296738147736,
+        "review_status": "Automated signal and transcription checks passed; the speech recognizer wrote the listed same-sounding words; human listening not performed.",
+        "mode": "synthetic-reference cloning",
+        "reference_file": "qingqing-english.wav",
+        "reference_sha256": "c3b6911e96e41c2d1755ab6c1237f34290bcff68e50eed87982126b138a26f67",
+        "reference_transcript": "Hi, I'm Qingqing! The sun is out, so let's go shoot some new photos together!",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 5.44,
+          "removed_seconds": 0.25,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "qingqing-english-clone",
+          "expected": "This line was cloned from Qingqing's English voice sample: same voice, brand-new words.",
+          "transcription": "This line was cloned from Ching Ching's English voice sample, same voice brand new words.",
+          "audio_sha256": "082416af64605e008d4f82cbe80d6cffbf9ae4d3331a5ba48dec376b2c310b4f",
+          "normalized_content_match": false,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": true,
+          "accepted_homophones": [
+            {
+              "id": "qingqing-english-clone",
+              "expected": "qingqing",
+              "heard": "chingching",
+              "reason": "Chingching is an English spelling of the fictional name Qingqing."
+            }
+          ]
+        },
+        "human_listening_review": false
+      }
+    },
+    {
+      "id": "voxcpm2-zhiyuan-english-clone",
+      "status": "success",
+      "engine": "VoxCPM2",
+      "device": "CPU",
+      "model_id": "openbmb/VoxCPM2",
+      "model_revision": "32279effe8c19989596f05d353d1447f51d9e915",
+      "model_sha256": {
+        "model.safetensors": "f7f964cfa9da23653baec6e6f7750719977ad944ed9f95fe52fe3a620506891d",
+        "audiovae.pth": "94b5d51e107e0507d4acc976cfdadb64edd6fd06d1f751dadbf2fd1594274bf1",
+        "config.json": "405f0dcd92f7feba6011ed4eac5c8d4f74cba9712f07fd5cfa3063bbdd95402c"
+      },
+      "code_revision": "30118a33522ef2d8698fca9bebac7224af242395",
+      "license": "Apache-2.0",
+      "license_source": "https://huggingface.co/openbmb/VoxCPM2",
+      "input_rights": "Original scripts and generic adult voice descriptions; no private or real-person reference audio, presets, or LoRA.",
+      "settings": {
+        "cfg_value": 2.0,
+        "inference_timesteps": 10,
+        "normalize": false,
+        "denoise": false,
+        "retry_badcase": false,
+        "max_len": 768,
+        "device": "cpu",
+        "cpu_threads": 8,
+        "optimize": false
+      },
+      "sample": {
+        "id": "zhiyuan-english-clone",
+        "label": "志遠英文克隆",
+        "file": "zhiyuan-english-clone.wav",
+        "text": "This line was cloned from Zhiyuan's English voice sample: the same calm voice, saying something new.",
+        "full_prompt": "This line was cloned from Zhiyuan's English voice sample: the same calm voice, saying something new.",
+        "seed": 974,
+        "sample_rate": 48000,
+        "duration_seconds": 5.94,
+        "render_seconds": 18.723,
+        "sha256": "390776ea24a493866efd492e57e5b2533a3fb5c0a293495aee7fc9f870bf55e4",
+        "peak": 0.35423722863197327,
+        "rms": 0.05021281540393829,
+        "review_status": "Automated signal and normalized transcription checks passed; human listening not performed.",
+        "mode": "synthetic-reference cloning",
+        "reference_file": "zhiyuan-english.wav",
+        "reference_sha256": "2effa23b54418abda306dabbd115bd0eb1843db9602c68394dfe7ae27df714f8",
+        "reference_transcript": "Hi, I'm Zhiyuan. I photograph mountains, and the best shots come to those who wait for the light.",
+        "postprocess": {
+          "frame_ms": 10,
+          "threshold_db_below_loudest_frame": 40.0,
+          "floor_rms": 0.0001,
+          "edge_keep_ms": 120,
+          "max_pause_ms": 700,
+          "crossfade_ms": 10,
+          "edge_fade_ms": 5,
+          "name": "demo2-silence-trim-v1",
+          "raw_duration_seconds": 6.4,
+          "removed_seconds": 0.46,
+          "internal_cuts": 0
+        }
+      },
+      "validation": {
+        "signal": "48 kHz mono PCM16; finite samples, no clipped sample values; published bytes match synthesis receipt.",
+        "transcription_review": {
+          "id": "zhiyuan-english-clone",
+          "expected": "This line was cloned from Zhiyuan's English voice sample: the same calm voice, saying something new.",
+          "transcription": "This line was cloned from Zhi Yuan's English voice sample, the same calm voice, saying something new.",
+          "audio_sha256": "390776ea24a493866efd492e57e5b2533a3fb5c0a293495aee7fc9f870bf55e4",
+          "normalized_content_match": true,
+          "normalization": "Remove punctuation and whitespace; lowercase English; convert recognized digits 1,2,3,10 to matching Chinese numerals.",
+          "homophone_match": false,
+          "accepted_homophones": []
         },
         "human_listening_review": false
       }
