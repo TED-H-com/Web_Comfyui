@@ -587,7 +587,7 @@ function parseRoute() {
     return { view: "characters" };
   }
   if (!parts.length) return { view: "characters" };
-  if (parts[0] === "compute-production" && !window.WebComfyDocs) return { view: "compute-production" };
+  if (parts[0] === "compute-production") return { view: "compute-production" };
   if (parts[0] === "studio") {
     if (parts.length <= 2) return { view: "studio", featureId: parts[1] || "" };
     return { view: "characters" };
@@ -1470,7 +1470,7 @@ function renderAccountMenuContent({ managementOnly = false } = {}) {
       h("span", { text: "服務狀態" }),
       h("strong", { text: $("servicePill").textContent || "未知" }),
     ]));
-    if (!window.WebComfyDocs && window.ComputeSettings) wrap.appendChild(shellMenuButton("我的運算平台", () => openComputeSettings(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
+    if (window.ComputeSettings) wrap.appendChild(shellMenuButton("我的運算平台", () => openComputeSettings(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
     wrap.appendChild(shellMenuButton("重新整理", refreshAllData));
     wrap.appendChild(shellMenuButton("角色創作資源中心", () => navigate({ view: "resources" })));
   }
@@ -1493,7 +1493,7 @@ function renderAccountMenuContent({ managementOnly = false } = {}) {
     wrap.appendChild(shellMenuButton("工作流監控", () => navigate({ view: "orchestrator" })));
     wrap.appendChild(h("a", { class: "shell-menu-row", href: "/admin", text: "管理中心" }));
     wrap.appendChild(shellMenuButton("使用者管理", () => navigate({ view: "admin-users" })));
-    if (!window.WebComfyDocs && window.WebComfyColab) wrap.appendChild(shellMenuButton("Google Colab 帳號", () => openColabAccounts(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
+    if (window.WebComfyColab) wrap.appendChild(shellMenuButton("Google Colab 帳號", () => openColabAccounts(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
   }
   if (!managementOnly) {
     wrap.appendChild(h("hr", { class: "shell-menu-divider" }));
@@ -2190,7 +2190,7 @@ function statusDot(feature) {
 function renderSidebar() {
   const wrap = $("sidebarGroups");
   clear(wrap);
-  if (!window.WebComfyDocs && window.ComputePipeline) wrap.appendChild(h("button", {class: `side-tool${currentRoute.view === "compute-production" ? " active" : ""}`, type: "button", text: "多步製作", onclick: () => navigate({view:"compute-production"})}));
+  if (window.ComputePipeline) wrap.appendChild(h("button", {class: `side-tool${currentRoute.view === "compute-production" ? " active" : ""}`, type: "button", text: "多步製作", onclick: () => navigate({view:"compute-production"})}));
   for (const studio of studios) {
     const list = studioFeatures(studio.id);
     if (!list.length) continue;
@@ -2271,7 +2271,7 @@ function renderWorkspace() {
   else if (currentRoute.view === "character-library") renderCharacterLibraryRoute();
   else if (currentRoute.view === "character-wardrobe") renderCharacterWardrobeRoute();
   else if (currentRoute.view === "character-settings") renderCharacterSettingsRoute();
-  else if (currentRoute.view === "compute-production" && window.ComputePipeline && !window.WebComfyDocs) {
+  else if (currentRoute.view === "compute-production" && window.ComputePipeline) {
     if ($("workspace").querySelector('.compute-production[data-compute-pipeline-mounted="true"]')) return;
     const host = beginWorkspaceRender();
     window.ComputePipeline.mount(host, {api, onBack: () => navigate({view:"studio"})});
@@ -2358,7 +2358,7 @@ function providerFabricCharacterVisualClass(character) {
 
 function renderProviderFabricView() {
   const ws = beginWorkspaceRender("workspace-route-root provider-fabric-route");
-  if (!window.WebComfyDocs && window.WebComfyColab) window.WebComfyColab.mount(ws, {api, openSheet});
+  if (window.WebComfyColab) window.WebComfyColab.mount(ws, {api, openSheet});
   const host = h("div", { class: "provider-fabric-host" });
   ws.appendChild(host);
   if (!window.CastleProviderFabric || typeof window.CastleProviderFabric.mount !== "function") {
@@ -8479,7 +8479,7 @@ function renderStage() {
   }
   ws.appendChild(h("div", { class: "tool-view" }, [
     renderStudioToolSelector(feature),
-    !window.WebComfyDocs && !activeCharacter() && window.ComputePipeline ? h("button", {class:"ghost small compute-production-entry", type:"button", text:"多步製作", onclick:()=>navigate({view:"compute-production"})}) : null,
+    !activeCharacter() && window.ComputePipeline ? h("button", {class:"ghost small compute-production-entry", type:"button", text:"多步製作", onclick:()=>navigate({view:"compute-production"})}) : null,
     renderFeaturePanel(feature),
     renderRecentPanel(),
   ]));
@@ -8578,7 +8578,7 @@ function computeActionReason(form, action, state, feature) {
 }
 
 function mountComputeForm(form, feature, {character = null, capability = null, state = {}, getRequest = null, onAvailability = null} = {}) {
-  if (!window.ComputePlacement || window.WebComfyDocs || !form) return;
+  if (!window.ComputePlacement || !form) return;
   const currentFeature = () => typeof form.computeFeature === "function" ? form.computeFeature() : feature;
   const currentCapability = () => character ? enabledFeatureCapability(character, currentFeature().id) : capability;
   const request = getRequest || (() => ({featureId: currentFeature().id, settings: collectSettings(currentFeature()),
@@ -13345,12 +13345,12 @@ function renderOrchestratorView() {
 // ---- admin users ----------------------------------------------------------
 
 function openComputeSettings(opener, initialSection = "connections") {
-  if (!currentUser || window.WebComfyDocs || !window.ComputeSettings) return;
+  if (!currentUser || !window.ComputeSettings) return;
   window.ComputeSettings.open(opener, {api, openSheet, isAdmin: isAdmin(), initialSection});
 }
 
 function openColabAccounts(opener) {
-  if (!currentUser || window.WebComfyDocs || !window.WebComfyColab) return;
+  if (!currentUser || !window.WebComfyColab) return;
   window.WebComfyColab.openAccounts(opener, {api, openSheet});
 }
 
@@ -13363,8 +13363,8 @@ function renderAdminHome() {
       h("button", { class: "shell-menu-row", text: "採集圖片與影片", onclick: openMaterialCollect }),
       h("button", { class: "shell-menu-row", text: "外部角色與資源", onclick: () => navigate({ view: "resources" }) }),
       h("button", { class: "shell-menu-row", text: "使用者管理", onclick: () => navigate({ view: "admin-users" }) }),
-      !window.WebComfyDocs && window.ComputeSettings ? h("button", {class:"shell-menu-row", type:"button", text:"我的運算平台", "aria-haspopup":"dialog", onclick:event=>openComputeSettings(event.currentTarget)}) : null,
-      !window.WebComfyDocs && window.WebComfyColab ? h("button", { class: "shell-menu-row", type: "button", text: "Google Colab 帳號", "aria-haspopup": "dialog", onclick: event => openColabAccounts(event.currentTarget) }) : null,
+      window.ComputeSettings ? h("button", {class:"shell-menu-row", type:"button", text:"我的運算平台", "aria-haspopup":"dialog", onclick:event=>openComputeSettings(event.currentTarget)}) : null,
+      window.WebComfyColab ? h("button", { class: "shell-menu-row", type: "button", text: "Google Colab 帳號", "aria-haspopup": "dialog", onclick: event => openColabAccounts(event.currentTarget) }) : null,
       h("button", { class: "shell-menu-row", text: "工作流監控", onclick: () => navigate({ view: "orchestrator" }) }),
       h("a", { class: "shell-menu-row", href: "http://127.0.0.1:8188/", target: "_blank", rel: "noopener noreferrer", text: "開啟 ComfyUI 節點編輯器 ↗" }),
     ]),

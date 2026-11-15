@@ -128,7 +128,9 @@ def site_html(root):
     html = html.replace('/static/', '../assets/')
     html = html.replace('<title>Web ComfyUI</title>', '<title>Web ComfyUI · 介面示範</title>')
     html = html.replace('class="auth-gate"', 'class="auth-gate hidden"')
-    policy = "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
+    # The app uses style attributes for its existing controls. Permit those in
+    # the demo while keeping scripts, stylesheets and network sources restricted.
+    policy = "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
     html = html.replace('</head>', '<meta http-equiv="Content-Security-Policy" content="' + policy + '">\n<link rel="stylesheet" href="../assets/docs.css">\n<link rel="stylesheet" href="../assets/explorers.css">\n<link rel="stylesheet" href="../assets/hardware.css">\n</head>')
     banner = '''<aside class="app-docs-banner" id="docsBanner"><div><strong data-i18n-zh="介面示範 · 非實際服務" data-i18n-en="Interface demo · Not a live service">介面示範 · 非實際服務</strong><p data-i18n-zh="每個工具都能體驗固定範例：實測成果與預製介面範例分別標示。可試聽女聲、播放影片；本站不即時生成、不上傳檔案，實際創作請自行安裝。" data-i18n-en="Every tool offers a fixed example, labeled as a recorded result or a prepared interface example. Audition voices and play videos; this site does not generate live or upload files. Install locally to create your own.">每個工具都能體驗固定範例：實測成果與預製介面範例分別標示。可試聽女聲、播放影片；本站不即時生成、不上傳檔案，實際創作請自行安裝。</p></div><nav aria-label="Demo information"><a class="ghost small workflow-link" href="../" data-i18n-zh="專案介紹" data-i18n-en="Project overview">專案介紹</a><button id="docsHelpButton" class="ghost small" type="button">安裝與使用說明</button><span data-i18n-zh="沒有顯卡？雲端推薦連結：" data-i18n-en="No GPU? Cloud referrals:">沒有顯卡？雲端推薦連結：</span> <a class="ghost small workflow-link" href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND" target="_blank" rel="sponsored noopener noreferrer" data-i18n-zh="AutoIP" data-i18n-en="AutoIP">AutoIP</a> · <a class="ghost small workflow-link" href="https://www.runninghub.ai?inviteCode=qqgzxufp" target="_blank" rel="sponsored noopener noreferrer" data-i18n-zh="RunningHub" data-i18n-en="RunningHub">RunningHub</a></nav></aside>'''
     html = html.replace('</header>', '</header>' + banner, 1)
@@ -182,6 +184,7 @@ def build(root: Path = ROOT, output: Path | None = None) -> dict:
     app_guide['graphs'] = graphs(root, app_guide)
     app_guide['demos'] = demos(app_guide)
     app_guide['translations'] = source_json(root, 'manifests/app_guides/en.json')
+    app_guide['computeDemo'] = source_json(root, 'webui/docs/demo-compute.json')
     from scripts.hardware_catalog import catalog as hardware_catalog
     app_guide['hardware'] = hardware_catalog(app_guide)
     execution_summary = provenance_summary(source_json(root, 'webui/docs/examples/provenance.json'))
