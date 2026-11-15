@@ -47,6 +47,9 @@ class ExecutionContext:
     def _cancel_job_result(self, *args, **kwargs):
         return self.s.Handler._cancel_job_result(self, *args, **kwargs)
 
+    def _provider_console(self):
+        return self.s.Handler._provider_console(self)
+
     def _provider_runtime(self):
         return self.s.Handler._provider_runtime(self)
 

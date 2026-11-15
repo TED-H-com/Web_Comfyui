@@ -65,7 +65,7 @@ def feature_definitions() -> list[dict]:
         nodes += ["LoadImage", "QwenImage21Cache"] if edit else ["ResolutionSelector", "EmptyLatentImage"]
         features.append({
             "id": feature_id, "studio": "image", "kind": "generate",
-            "title": "Qwen 2.1 指令改圖" if edit else "Qwen 2.1 文生圖",
+            "title": "AI 指令改圖" if edit else "Qwen 2.1 文生圖",
             "subtitle": "Qwen-Image-2.1 · 多圖參考" if edit else "Qwen-Image-2.1 · 中文排版與原生 2K",
             "builder": "qwen21_edit" if edit else "qwen21_t2i",
             "toolGroup": "img2img" if edit else "text2img",

@@ -189,7 +189,9 @@ def import_input(server, user, fid, slot):
         if item['root'] == 'crawl':
             return server.import_crawl_video(item['relative'], slot)
     suffix = source.suffix.lower()
-    filename = f'library_{item["id"][:24]}_{hashlib.sha256(item["signature"].encode()).hexdigest()[:12]}{suffix}'
+    owner = str((user or {}).get('email') or '').lower()
+    signature = item['signature'] + '\0' + owner
+    filename = f'library_{item["id"][:24]}_{hashlib.sha256(signature.encode()).hexdigest()[:12]}{suffix}'
     target = server.COMFY_INPUT / filename
     target.parent.mkdir(parents=True, exist_ok=True)
     if not target.is_file():

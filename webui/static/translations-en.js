@@ -177,6 +177,7 @@ AI 指令改圖|Instruction-based image editing
 動漫場景寫真|Anime scene composition
 AI 參考圖融合|Reference image blending
 真人臉參考肖像|Face-reference portraits
+Qwen 2.1 · 保留原圖身份與色彩的多角度肖像|Qwen 2.1 · Multi-angle portraits that keep the original identity and colors
 角色身份寫真|Character identity portraits
 AI 圖生影片|Image to video
 首尾幀影片|First/last-frame video
@@ -200,6 +201,7 @@ Qwen 2.1 指令改圖|Qwen 2.1 image editing
 聲音生成 · 簡報配音 · 聲音庫|Speech generation · Presentation voiceover · Voice library
 Flux Kontext 重新生成式編輯|Regenerative editing with Flux Kontext
 角色原圖合成 · 不會轉成真人|Original character compositing · Keeps the illustrated style
+角色原圖|Original character image
 保留人物原貌 · AI 去背合成|Keep the original subject · AI background compositing
 人物原圖|Original subject image
 背景參考圖|Background reference
@@ -516,6 +518,7 @@ API 金鑰|API key
 上傳一段目標影片與一張來源臉部照片，ReActor 會逐格把影片中的臉換成來源臉，可選 GFPGAN／CodeFormer 修復臉部，輸出為動畫 webp。|Upload a target video and source face. ReActor swaps faces frame by frame, with optional GFPGAN or CodeFormer restoration, and outputs animated WebP.
 依圖片 1 的比例輸出；參考圖請按順序加入，指令以 <image1> 至 <image4> 指定。|Output uses image 1's aspect ratio. Add references in sequence and refer to them as <image1> through <image4>.
 只接受單一、清楚、近正面的真人臉照片；動漫角色、插畫、多人照與遮擋臉孔不適用。|Use one clear, nearly frontal real face. Anime, illustrations, group photos and obscured faces are not supported.
+只接受單一、清楚、近正面的真人臉照片；動漫角色、插畫、多人照與遮擋臉孔不適用。保留原圖色彩，逐張生成不同朝向的候選肖像。|Use one clear, nearly frontal real face. Anime, illustrations, group photos and obscured faces are not supported. Keeps the original colors and generates each candidate portrait at a different facing.
 可直接使用最多 9 圖、3 影片、3 音訊；六段提示詞與上傳 reference tag 必須一致。|Use up to 9 images, 3 videos and 3 audio clips. The six prompt sections must match the uploaded reference tags.
 可直接描述中文海報與排版；PNG 輸出支援透明背景。|Describe Chinese posters and typography directly. PNG output supports transparent backgrounds.
 可直接測試，不綁角色；Stock、Sage、EasyCache、TeaCache 都是明確選項。|Use without a bound character. Stock, Sage, EasyCache and TeaCache are explicit choices.
@@ -863,6 +866,7 @@ Drive 狀態讀取失敗：此資料由安裝後的本機服務提供；說明�
 目標平台|Target platform
 至少選一個參考|Select at least one reference
 
+動作參考|Motion reference
 `;
   const map = Object.fromEntries(pairs.trim().split('\n').map(line => {const i=line.indexOf('|');return [line.slice(0,i),line.slice(i+1)];}));
   window.WebComfyEnglish = Object.freeze(map);

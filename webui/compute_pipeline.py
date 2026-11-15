@@ -246,7 +246,7 @@ class ComputePipeline:
             state = row['state']
             if state == 'dispatching':
                 state = 'submission_uncertain'
-            if state == 'pending' and any(latest[dep]['state'] in {'failed', 'rejected', 'cancelled'} for dep in spec['depends_on']):
+            if state == 'pending' and any(latest[dep]['state'] in {'closed_no_execution_evidence', 'closed_execution_outcome_unknown', 'quality_rejected', 'failed', 'rejected', 'cancelled'} for dep in spec['depends_on']):
                 state = 'blocked'
             receipt = json.loads(row['receipt_json'])
             dependencies = json.loads(row['dependencies_json'])
@@ -255,7 +255,7 @@ class ComputePipeline:
                     'dependency_hashes': {slot: value['sha256'] for slot, value in dependencies.items()},
                     'dependency_media': {slot: value['media'] for slot, value in dependencies.items() if 'media' in value},
                     'artifacts': receipt.get('artifacts', []), 'updated_at': row['updated'],
-                    'retry_allowed': row['state'] in {'failed', 'rejected'}}
+                    'retry_allowed': row['state'] in {'closed_no_execution_evidence', 'failed', 'rejected'}}
             if receipt:
                 item['job'] = receipt
             if row['error_code']:
@@ -275,7 +275,7 @@ class ComputePipeline:
             state = 'submission_uncertain'
         elif states & {'preparing', 'queued', 'running', 'collecting', 'cancelling'}:
             state = 'running'
-        elif states & {'failed', 'rejected', 'cancelled', 'blocked'}:
+        elif states & {'closed_no_execution_evidence', 'closed_execution_outcome_unknown', 'quality_rejected', 'failed', 'rejected', 'cancelled', 'blocked'}:
             state = 'blocked'
         else:
             state = 'queued'
@@ -460,8 +460,8 @@ class ComputePipeline:
             db.execute('BEGIN IMMEDIATE')
             parent, latest, _ = self._rows(db, owner, pipeline_id)
             row = latest.get(step_id)
-            if parent['cancel_requested'] or row is None or row['state'] not in {'failed', 'rejected'}:
-                _fail('只有已確認失敗或拒絕的步驟可以重試', 'step_retry_unsafe', 409)
+            if parent['cancel_requested'] or row is None or row['state'] not in {'closed_no_execution_evidence', 'failed', 'rejected'}:
+                _fail('只有已確認失敗、拒絕或無執行證據結案的步驟可建立新嘗試', 'step_retry_unsafe', 409)
             if parent['lease_token'] and parent['lease_until'] > self.clock():
                 _fail('流程仍在更新中，請稍後重試', 'pipeline_busy', 409)
             spec = next(step for step in json.loads(parent['plan_json'])['steps'] if step['id'] == step_id)

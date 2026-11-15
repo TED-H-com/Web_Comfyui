@@ -8900,7 +8900,15 @@ def run_castle_voxcpm_tts(payload: dict, work_dir: Path, cancel_file: Path) -> l
             "--speaker-python", str(_trusted_existing_path("CASTLE_VOICE_LAB_PYTHON", Path.home() / ".local/share/web-comfyui/integrations/voice/.venv/bin/python", "speaker_python")),
             "--speaker-script", str(_trusted_existing_path("CASTLE_VOXCPM_SPEAKER_SCRIPT", WEBUI_ROOT / "speaker_similarity.py", "speaker_script")),
         ]
-    subprocess.check_call(gpu_queue_cmd(inner, payload), cwd=str(worker.parent))
+    diagnostic_path=Path(str(tmp_sidecar)+'.quality.json')
+    diagnostic_path.unlink(missing_ok=True)
+    try:subprocess.check_call(gpu_queue_cmd(inner, payload), cwd=str(worker.parent))
+    except subprocess.CalledProcessError:
+        from quality_rejection import QualityRejected,from_error
+        diagnostic=from_error(diagnostic_path.read_text()) if diagnostic_path.is_file() else {}
+        if diagnostic:raise QualityRejected(diagnostic) from None
+        raise
+    finally:diagnostic_path.unlink(missing_ok=True)
     if _cancelled(cancel_file):
         raise KeyboardInterrupt()
     _atomic_copy(tmp_output, output)
@@ -8986,12 +8994,13 @@ def run_castle_voxcpm_tts_batch(payload: dict, work_dir: Path, cancel_file: Path
         raise KeyboardInterrupt()
 
     manifest_path = output_dir / manifest_name
-    manifest = {}
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except Exception:
-        manifest = {}
-    manifest_segments = manifest.get("segments") if isinstance(manifest.get("segments"), list) else []
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError):
+        raise RuntimeError("VoxCPM batch produced no usable manifest") from None
+    manifest_segments = manifest.get("segments") if isinstance(manifest, dict) else None
+    if not isinstance(manifest_segments, list) or not manifest_segments:
+        raise RuntimeError("VoxCPM batch produced no usable manifest")
     artifacts = []
     for item in manifest_segments:
         name = Path(str(item.get("file") or "")).name

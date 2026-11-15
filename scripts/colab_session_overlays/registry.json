@@ -1,0 +1,36 @@
+[
+  {
+    "repository": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git",
+    "commit": "4ee72c065db22c9d96c2427954dc69e7b908444b",
+    "path": "videohelpersuite/utils.py",
+    "upstream_sha256": "ea3d02e0f41dc6b59685fcf6de9217d4b7729766e05e44200433c74e75466a6a",
+    "pinned_sha256": "57a5ca6b4d3ea6c2306675235711ab82f7c3ceac6aab87441b7f9e357ccff425",
+    "patch": "vhs-audio.patch",
+    "patch_sha256": "0ffcce8956a0f9635a018a40caf06c53905965e370d0d71f9ddef9acb5172b5a",
+    "source_mtime_ns": 1792746473955798328,
+    "source_mtime": "2026-10-23T09:07:53.955798+00:00",
+    "source_label": "local VHS working tree"
+  },
+  {
+    "repository": "https://github.com/mtkresearch/BreezyVoice.git",
+    "commit": "d592c9d3e8927a0f53f68616387060dcd32a05ea",
+    "path": "cosyvoice/cli/frontend.py",
+    "upstream_sha256": "0bacdd576fb2948390eebfb34885caabf3b65cb48565a3b216b60c741ac8b4f1",
+    "pinned_sha256": "32c475961d4ac98c14607c790c8d3ce980542243543010358c4f90b23f1dcd82",
+    "patch": "breezy-frontend.patch",
+    "patch_sha256": "6784cb30fffc606dd28f085b6ee0db28a0e3210927470ce8add6ef0c1c3b5ee4",
+    "source_label": "local BreezyVoice working tree",
+    "source_mtime_ns": 1781219954295464677
+  },
+  {
+    "repository": "https://github.com/mtkresearch/BreezyVoice.git",
+    "commit": "d592c9d3e8927a0f53f68616387060dcd32a05ea",
+    "path": "single_inference.py",
+    "upstream_sha256": "16623c98c1ec1efc8fbb1e2421d876b337ea20b4f020a8bb216ffb71171bba51",
+    "pinned_sha256": "33052e3f77cfb7d568039478610d79625f102a18a45d5d01e384630691a3597d",
+    "patch": "breezy-inference.patch",
+    "patch_sha256": "cb9eb93195ce2ecd636e948de4bc10ffde3c94b28367e36750a87ae72920e7c9",
+    "source_label": "local BreezyVoice working tree",
+    "source_mtime_ns": 1784635730314701533
+  }
+]

@@ -52,10 +52,10 @@ ASPECTS = {'auto', '16:9', '9:16', '1:1', '4:3', '3:4', '21:9'}
 IMAGE = {'.png', '.jpg', '.jpeg', '.webp', '.bmp'}
 VIDEO = {'.mp4', '.mov', '.webm', '.mkv', '.avi'}
 AUDIO = {'.wav', '.mp3', '.flac', '.ogg', '.m4a', '.aac'}
-DIAGNOSTIC_STAGES = frozenset({'bootstrap', 'templates', 'source_checkout', 'venv',
+DIAGNOSTIC_STAGES = frozenset({'upload', 'provisioning', 'bootstrap', 'templates', 'source_checkout', 'venv',
     'torch_install', 'requirements_install', 'cuda_check', 'model_inventory',
     'model_download', 'model_verify', 'comfy_start', 'generation', 'artifact_validation',
-    'watchdog_start', 'worker_status'})
+    'watchdog_start', 'worker_status', 'node_start', 'prompt_validation', 'execute', 'ffprobe'})
 DIAGNOSTIC_ERRORS = frozenset({'Exception', 'ValidationError', 'SubmissionUncertain',
     'Cancelled', 'CalledProcessError', 'TimeoutExpired', 'ModuleNotFoundError',
     'ImportError', 'SyntaxError', 'JSONDecodeError', 'KeyError', 'AttributeError',
@@ -75,6 +75,17 @@ def sanitize_diagnostics(value):
     for key, low, high in (('exit_code', -255, 255), ('http_status', 100, 599)):
         if type(value.get(key)) is int and low <= value[key] <= high:
             result[key] = value[key]
+    if isinstance(value.get('error_code'),str) and value['error_code'] in {'stage_failed','node_validation_failed','node_execution_failed','output_contract_failed','allocation_unavailable','allocation_rejected','allocation_uncertain','input_upload_failed'}:
+        result['error_code']=value['error_code']
+    if isinstance(value.get('node_class'),str) and value['node_class'] in {'RepeatImageBatch', 'GetImageSize', 'WanVideoSampler', 'VHS_LoadVideo', 'ResizeImageMaskNode', 'LoadImage', 'VAELoader', 'ModelSamplingSD3', 'LoraLoaderModelOnly', 'UNETLoader', 'CLIPLoader', 'CLIPVisionLoader', 'KSampler', 'WanSCAILToVideo', 'BatchImagesNode', 'WanContextWindowsManual', 'GetImageRangeFromBatch', 'BasicScheduler', 'CastleVoxCPM', 'CLIPVisionEncode', 'CastleBreezyVoiceTTS', 'CheckpointLoaderSimple', 'VAEDecode', 'SAM3_VideoTrack', 'CLIPTextEncode', 'VHS_LoadVideoPath', 'KSamplerSelect', 'SamplerCustom', 'SaveAudio', 'SCAIL2ColoredMask', 'ImageResizeKJv2', 'VHS_VideoCombine'}:
+        result['node_class']=value['node_class']
+    # Mirrored fixed upload vocabulary: this runner is shipped without web modules.
+    for key, allowed in (
+        ('upload_substage', {'runtime_lookup','directory_put','file_put','local_validation'}),
+        ('bridge_error_code', {'upload_http_error','upload_timeout','upload_transport_failed','upload_local_invalid','upload_integrity_error'})):
+        if isinstance(value.get(key),str) and value[key] in allowed: result[key]=value[key]
+    nid=value.get('node_id')
+    if isinstance(nid,str) and nid.isascii() and nid.isdigit() and len(nid)<=8:result['node_id']=nid
     return result
 
 
@@ -836,6 +847,10 @@ def main(argv=None):
         parser.error('--job-dir must be /content/web-comfyui/<UUID>')
     if fcntl is None:
         parser.error('The remote worker requires Linux file locking')
+    manifest = json.loads((args.job_dir / 'manifest.json').read_text())
+    if any(j.get('engine') == 'castle_native_p1' for j in manifest.get('jobs', [])):
+        from native_runner import run_native
+        return run_native(args.job_dir, args.manifest_sha256)
     return run_job(args.job_dir, args.manifest_sha256)
 
 

@@ -1,7 +1,7 @@
 [
   {
     "name": "default_legacy",
-    "settings": {},
+    "settings": {"length": 133},
     "uploads": {
       "reference": "ref.png",
       "video": "drive.mp4"

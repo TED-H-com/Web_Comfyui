@@ -1,0 +1,11 @@
+# Edit the service paths if the checkout lives elsewhere.
+[Unit]
+Description=Web_Comfyui Colab lease sweeper timer
+
+[Timer]
+OnStartupSec=30s
+OnUnitActiveSec=5min
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

@@ -3,11 +3,24 @@
   'use strict';
   const mounted = new Map();
   const lanes = {local:'本機',colab:'Google Colab',autoip:'AutoIP',comfy_cloud:'Comfy Cloud',runninghub:'RunningHub'};
-  const terminal = new Set(['completed','failed','cancelled','rejected']);
+  const terminal = new Set(['completed','failed','cancelled','rejected','closed_no_execution_evidence','closed_execution_outcome_unknown','quality_rejected']);
   const uncertain = new Set(['reserved','dispatching','submission_uncertain']);
-  const states = {reserved:'已保留任務',dispatching:'正在提交',queued:'排隊中',running:'生成中',cancelling:'正在停止',
-    collecting:'整理成果中',completed:'已完成',failed:'執行失敗',cancelled:'已取消',rejected:'未通過提交檢查',submission_uncertain:'提交狀態待確認'};
+  const states = {quality_rejected:'音色未達門檻',closed_execution_outcome_unknown:'執行結果未知，已結案',reserved:'已保留任務',dispatching:'正在提交',queued:'排隊中',running:'生成中',cancelling:'正在停止',
+    collecting:'整理成果中',completed:'已完成',failed:'執行失敗',cancelled:'已取消',rejected:'未通過提交檢查',closed_no_execution_evidence:'無執行證據，原請求已結案',submission_uncertain:'提交狀態待確認'};
   const reasons = {
+    rh_membership_required:'企業共享金鑰不接受原生工作；請在 RunningHub 建立會員金鑰後更換',
+    rh_key_type_unknown:'尚未確認 RunningHub 金鑰類型；請先在我的運算平台測試連線',
+    provisioning_retry_wait:'Colab 配置重試至少間隔 10 分鐘，請稍後再試。',
+    provisioning_retry_cap:'Colab 工作階段配置已達滾動 24 小時 24 回合，請稍後再試。',
+    lane_stopped:'相同原因連續失敗，等待修正後重新驗證',attempt_cap:'本案在此平台已達三次上限（跨重新驗證）',
+    local_permission_required:'尚未取得本機使用權',use_disabled:'尚未開啟使用',credential_required:'請先儲存金鑰',login_required:'請先登入 Google',connection_test_required:'請先通過測試連線',recipe_not_ready:'此平台功能準備中',
+    parity_build_only:'原生配方已建置，待校準授權',voice_consent_required:'請先同意遠端語音上傳',
+    colab_a100_quote_required:'尚缺 A100 專屬費率估價；不以目前閒置費率推算',
+    voice_node_contract_required:'此平台尚缺相同聲音節點與權重載入環境',
+    parity_case_required:'請選擇核准的校準素材',parity_material_owner:'此帳號沒有素材權限',parity_voice_gap:'這名角色尚未提供自己的聲音',
+    parity_models_missing:'帳號缺少原模型或節點；請查看平台就緒清單',quote_changed:'報價已變更，請重新確認',
+    quote_unavailable:'供應商未提供可確認的報價',input_hash_mismatch:'素材已變更，請重新固定版本',
+    parity_input_or_consent_required:'需確認素材權限與本次語音上傳同意',parity_probe_quote_required:'需先確認此帳號模型與正確單位報價',
     adapter_unavailable:'尚未設定此執行方式',operation_unavailable:'此功能目前不支援',unsupported_feature:'此功能目前不支援',
     feature_unsupported:'此功能目前不支援',unsupported_inputs:'參考素材不符合此方式的要求',input_unsupported:'參考素材不符合此方式的要求',
     inspection_unavailable:'目前無法確認執行條件',capacity_unknown:'目前無法確認可用容量',capacity_exhausted:'目前沒有可用容量',
@@ -53,7 +66,7 @@
   };
   function metadata(request) {
     const result={};
-    for(const key of ['featureId','settings','characterId','action','variantId','computeVisualClass','computeAutoipVideo'])if(request?.[key]!=null)result[key]=request[key];
+    for(const key of ['featureId','settings','characterId','action','variantId','computeVisualClass','computeAutoipVideo','remote_voice_consent','parity_case_id'])if(request?.[key]!=null)result[key]=request[key];
     if(request?.files && typeof request.files==='object') {
       result.files={};
       for(const [slot,file] of Object.entries(request.files)) {
@@ -74,8 +87,9 @@
     const preferenceAbort=new AbortController();
     let availability={placement:'local',loading:true,eligible:false,selected_lane:null,candidates:[],error:''};
     let jobs=new Map(),visibleJobCount=8;
+    const currentJobs=new Map();
     let nextCursor=null,olderPagesLoaded=false,loadingOlder=false;
-    const placement=select([['local','本機'],['auto','自動安排'],['colab','Google Colab'],['autoip','AutoIP'],['comfy_cloud','Comfy Cloud'],['runninghub','RunningHub']]);
+    const placement=select([['','尚未選擇'],['local','本機'],['auto','自動安排'],['colab','Google Colab'],['autoip','AutoIP'],['comfy_cloud','Comfy Cloud'],['runninghub','RunningHub']]);
     const account=select([['','自動選擇可用帳號']]);
     const visualClass=select([['','未指定'],['anime','動漫'],['realistic','寫實']]);
     const visualField=field('圖片類型',visualClass);visualField.hidden=true;
@@ -90,6 +104,8 @@
     const gpu=select([['L4','L4'],['G4','G4'],['A100','A100'],['H100','H100']]);
     const minutes=number(60,5,180),units=number(20,5,2000),credits=number(100,1,1000000);
     const comfyCredits=number(100,1,1000000),runninghubCoins=number(100,1,1000000);
+    const runninghubPoints=number(1,1,1000000);
+    const isParity=['dance','video-replace','voice-speak','voxcpm-tts'].includes(feature?.id||feature);
     const accountNote=el('p',{class:'compute-note'});
     const preferenceNote=el('p',{class:'compute-note'});preferenceNote.hidden=true;
     const notice=el('p',{class:'compute-note',role:'status','aria-live':'polite',text:'正在確認執行條件…'});
@@ -100,9 +116,17 @@
     const retry=button('確認並重試原請求',()=>send().catch(()=>{}));retry.hidden=true;
     const controls=el('details',{class:'compute-limits'},[
       el('summary',{text:'執行上限與 Colab 帳號'}),
-      el('div',{class:'compute-grid'},[field('最長執行分鐘',minutes),field('Colab 點數停止門檻',units),field('AutoIP 點數上限',credits),field('Comfy Cloud 點數門檻',comfyCredits),field('RunningHub 金幣門檻',runninghubCoins),field('Colab 執行帳號',account),field('Colab GPU',gpu)]),
+      el('div',{class:'compute-grid'},[field('最長執行分鐘',minutes),field('Colab 點數停止門檻',units),field('AutoIP 點數上限',credits),field('Comfy Cloud 點數門檻',comfyCredits),field('RunningHub 金幣門檻',runninghubCoins),field('RunningHub Native POINT 上限',runninghubPoints),field('Colab 執行帳號',account),field('Colab GPU',gpu)]),
       el('p',{class:'compute-note',text:'各平台分別檢查預估用量；這些門檻並非平台硬性扣款上限。'}),accountNote,el('p',{class:'compute-note',text:'Colab 環境準備也會用點；停止門檻依餘額變化監測，並非 Google 的硬性扣款上限。'}),
     ]);
+    if(isParity){
+      for(const control of [units,credits,comfyCredits,runninghubCoins,runninghubPoints])control.closest('label').hidden=true;
+      const notes=controls.querySelectorAll('.compute-note');
+      if(notes[0])notes[0].textContent='先估價；每案每平台跨重新驗證最多三次。執行失敗停平台，契約失敗只停該功能類別；品質判斷不停止。';
+      if(notes[2])notes[2].textContent='Colab 準備與閒置 CU 列工作階段帳目；各工作 CU 另列。工作階段保留期限與釋放控制。';
+      gpu.replaceChildren(el('option',{value:'A100',text:'A100 → H100 → G4（依供應）'}));
+      gpu.value='A100';
+    }
     const root=el('section',{class:'compute-placement','aria-label':'生成運算安排'},[
       el('div',{class:'compute-toolbar'},[field('執行位置',placement),refresh,...(onOpenSettings?[button('預設安排',event=>onOpenSettings(event.currentTarget))]:[])]),preferenceNote,visualField,videoFields,notice,recipe,differences,
       el('details',{class:'compute-compatibility'},[el('summary',{text:'查看各方式的支援條件'}),candidates]),controls,retry,
@@ -114,6 +138,7 @@
       el('div',{class:'compute-task-heading'},[el('strong',{text:'運算任務'}),button('更新任務',()=>refreshJobs())]),jobNotice,jobList,el('div',{class:'compute-job-actions'},[moreJobs]),
     ]);
     form.prepend(root);form.append(taskRoot);
+    const parity=window.CastleComputeParity?.mount(root,()=>refreshAll(),{api,feature,submit:body=>send(body),limits:getLimits});
     function live(){return !disposed && form.isConnected;}
     function withPlacementOptions(request){
       const current=request?.computeVisualClass || request?.settings?.visualStyle || request?.settings?.visualClass;
@@ -137,11 +162,15 @@
       videoSummary.textContent=`AutoIP 影片規格 · ${videoDuration.value} 秒 / ${videoResolution.value} / ${videoAspect.value}`;
       let result=needed && visualClass.value ? {...request,computeVisualClass:visualClass.value} : request;
       if(videoNeeded)result={...result,computeAutoipVideo:{duration_seconds:Number(videoDuration.value),resolution:videoResolution.value,aspect_ratio:videoAspect.value}};
-      return result;
+      return parity ? parity.request(result,placement.value) : result;
     }
     function getLimits(){
-      for(const input of [minutes,units,credits,comfyCredits,runninghubCoins])if(!input.checkValidity())throw new Error('請檢查執行上限的數字範圍。');
-      return {max_minutes:Number(minutes.value),max_units:Number(units.value),max_credits:Number(credits.value),max_comfy_credits:Number(comfyCredits.value),max_runninghub_coins:Number(runninghubCoins.value),account_id:account.value,gpu:gpu.value};
+      if(isParity){
+        if(!minutes.checkValidity())throw new Error('請檢查執行時間。');
+        return {max_minutes:Number(minutes.value),account_id:account.value,gpu:gpu.value};
+      }
+      for(const input of [minutes,units,credits,comfyCredits,runninghubCoins,runninghubPoints])if(!input.checkValidity())throw new Error('請檢查執行上限的數字範圍。');
+      return {max_minutes:Number(minutes.value),max_units:Number(units.value),max_credits:Number(credits.value),max_comfy_credits:Number(comfyCredits.value),max_runninghub_coins:Number(runninghubCoins.value),max_runninghub_points:Number(runninghubPoints.value),account_id:account.value,gpu:gpu.value};
     }
     function publish(){
       if(!live())return;
@@ -150,7 +179,7 @@
       onAvailability(state);
     }
     function locked(){
-      for(const control of [placement,minutes,units,credits,comfyCredits,runninghubCoins,account,gpu,visualClass,videoDuration,videoResolution,videoAspect])control.disabled=!!pending;
+      for(const control of [placement,minutes,units,credits,comfyCredits,runninghubCoins,runninghubPoints,account,gpu,visualClass,videoDuration,videoResolution,videoAspect])control.disabled=!!pending;
       retry.hidden=!pending;retry.disabled=!!inFlight;
       publish();
     }
@@ -169,6 +198,7 @@
     }
     function renderPreview(data){
       const rows=Array.isArray(data.candidates)?data.candidates.filter(item=>Object.hasOwn(lanes,item.lane)):[];
+      window.CastleComputeParity?.render(placement,rows);
       const chosen=rows.find(item=>item.lane===data.selected_lane && item.eligible===true && (placement.value==='auto'||item.lane===placement.value));
       availability={placement:placement.value,loading:false,eligible:!!chosen,selected_lane:chosen?.lane||null,candidates:rows,error:''};
       notice.textContent=pending?'上一筆提交仍待確認，會沿用原請求識別碼。':chosen
@@ -179,8 +209,18 @@
         const eligible=item?.eligible===true;
         const manualOnly=eligible&&item.auto_eligible===false;
         const queue=Number.isInteger(item?.queue_depth)&&item.queue_depth>=0?` · 排隊 ${item.queue_depth}`:'';
+        const cost=Number.isFinite(item?.estimated_cost)?` · ${lane==='autoip'&&isParity?'報價上限':'估計'} ${item.estimated_cost} ${{credits:'credits',compute_units:'CU',runninghub_points:'POINT',comfy_credits:'credits',local:'本機'}[item.currency]||''}`:'';
         const why=manualOnly?reasons.auto_not_verified:eligible?'':(item?.reasons?.length?item.reasons:['operation_unavailable']).map(code=>Object.hasOwn(reasons,code)?reasons[code]:'目前不符合此方式的執行條件').join('；');
-        return el('li',{'data-compute-lane':lane},[el('strong',{text:label}),el('span',{text:eligible?(manualOnly?'僅限手動':'可用')+queue:'不可用'}),...(why?[el('span',{class:'compute-reason',text:why})]:[])]);
+        const actions=[];
+        if(isParity&&lane==='colab')actions.push(el('span',{class:'compute-reason',text:item?.session?.phase==='ready'?`將使用已開啟工作階段 · ${item.session.gpu_name||item.session.gpu}`:item?.session?.phase&&item.session.phase!=='closed'?'將等候目前工作階段配置完成':'將開啟新的工作階段 · A100 → H100 → G4'}));
+        if(isParity&&['colab','runninghub'].includes(lane)&&(item?.reasons?.includes('lane_stopped')||(lane==='runninghub'&&['dance','video-replace'].includes(feature.id))))actions.push(button('修正後重新驗證',async event=>{
+          if(!window.confirm(`修正已部署後，授權重新驗證 ${label}？失敗歷史保留，每案三次上限不重設。`))return;
+          const action=event.currentTarget;action.disabled=true;
+          try{await api('/api/compute/parity/revalidate',{method:'POST',body:JSON.stringify({lane,authorize:true})});await preview();}
+          catch(_){notice.textContent='重新驗證尚未開放；請先確認修正版與原任務狀態。';}
+          finally{action.disabled=false;}
+        }));
+        return el('li',{'data-compute-lane':lane},[el('strong',{text:label+(item?.recipe_mode_label?' · '+item.recipe_mode_label:'')}),...(item?.recipe_difference?[el('span',{class:'compute-reason',text:item.recipe_difference})]:[]),el('span',{class:'compute-execution-status',text:eligible?'可執行'+(manualOnly?'（手動）':'')+queue+cost:(item?.recipe_mode_label==='不支援'?'不支援':'目前不可執行')}),...(isParity?[el('span',{class:'compute-reason compute-quality-status',text:item?.identity_style_calibrated===true?'身份／畫風已校準':'身份／畫風尚未校準'})]:[]),...(why?[el('span',{class:'compute-reason',text:why})]:[]),...actions]);
       }));
       const selectedRecipe=chosen && data.recipes?.[chosen.lane];
       recipe.textContent=typeof selectedRecipe==='string'?`工作流：${selectedRecipe.slice(0,160)}`:'';recipe.hidden=!recipe.textContent;
@@ -203,13 +243,13 @@
       availability={...availability,placement:placement.value,loading:true,eligible:false,error:''};publish();
       if(!pending)notice.textContent='正在確認執行條件…';
       try {
-        const [raw,preferences]=await Promise.all([getRequest(),loadPreferences()]);
+        const [raw,preferences]=await Promise.all([parity?.selected() || getRequest(),loadPreferences()]);
         if(!live()||current!==turn)return;
         if(!placementTouched&&!pending&&!inFlight&&appliedFeature!==raw.featureId){
           const preferred=preferences?.feature_placements?.[raw.featureId]??preferences?.default_placement;
-          placement.value=preferred==='auto'||Object.hasOwn(lanes,preferred)?preferred:'local';
+          placement.value=preferred==='auto'||Object.hasOwn(lanes,preferred)?preferred:'';
           appliedFeature=raw.featureId;
-          preferenceNote.textContent=preferences?`個人預設：${placement.value==='auto'?'自動安排':lanes[placement.value]}；本次可更改。`:'未能讀取個人預設，暫用本機；本次可更改。';
+          preferenceNote.textContent=preferences?`個人預設：${placement.value==='auto'?'自動安排':lanes[placement.value]||'尚未選擇'}；本次可更改。`:'未能讀取個人預設，請選擇執行位置。';
           preferenceNote.hidden=false;
         }
         const request=metadata(withPlacementOptions(raw));
@@ -248,9 +288,18 @@
           const url=safeLink(output.url);if(!url)continue;
           actions.append(el('a',{href:url,target:'_blank',rel:'noopener noreferrer',text:String(output.name||`成果 ${index+1}`).slice(0,120)}));
         }
+        if(!terminal.has(job.state))actions.append(button('更新這筆任務',()=>refreshOne(job.request_id)));
+        if(job.lane==='local'&&job.state==='submission_uncertain'&&job.downstream_id&&!job.case_id)actions.append(button('以結果未知結案',async()=>{
+          if(!window.confirm('授權查核此原任務並以執行結果未知結案？不會宣稱未執行，也不會重送。首次查核後至少等 60 秒再操作一次。'))return;
+          try{accept(await api('/api/compute/jobs/'+job.request_id+'/close-unknown',{method:'POST',body:JSON.stringify({authorize:true,downstream_id:job.downstream_id})}));jobNotice.textContent='查核已記錄；尚未結案時請至少 60 秒後再次查核。';}
+          catch(_){jobNotice.textContent='查核尚未符合結案條件，已保留原任務。';}
+        }));
         if(!terminal.has(job.state) && job.cancel_supported!==false)actions.append(button('停止任務',()=>cancel(job.request_id)));
         jobList.append(el('article',{class:'compute-job','data-compute-request':job.request_id},[
           el('div',{class:'compute-job-heading'},[el('strong',{text:states[job.state]}),el('span',{class:'compute-note',text:lanes[job.lane]})]),
+          ...(job.diagnostics?.stage==='speaker_gate'?[el('p',{class:'compute-note',text:`音色相似度 ${Number(job.diagnostics.best_similarity).toFixed(3)}，未達 ${Number(job.diagnostics.threshold).toFixed(3)}（${job.diagnostics.attempts} 次候選）`})]:[]),
+          ...(job.gpu?[el('p',{class:'compute-note',text:`GPU：${job.gpu_name||job.gpu}${job.session_id?' · 工作階段 '+job.session_id.slice(0,8):''}`})]:[]),
+          ...(job.estimated_cost?[el('p',{class:'compute-note',text:`報價${job.estimated_cost.upper_bound?'上限':''} ${job.estimated_cost.amount} ${job.estimated_cost.unit} · 實扣 ${job.actual_cost?job.actual_cost.amount+' '+job.actual_cost.unit:'待對帳'}${Number.isFinite(job.actual_minus_quote)?' · 實扣−報價 '+job.actual_minus_quote:''}${job.lane==='autoip'?'；離峰折扣可能適用，非保證':''}`})]:[]),
           ...(uncertain.has(job.state)?[el('p',{class:'compute-note',text:'請先更新這筆任務；不會自動改用另一個服務。'})]:[]),actions,
         ]));
       }
@@ -276,6 +325,10 @@
       } catch(_) {if(live())jobNotice.textContent='較早的任務暫時無法載入，請再試一次。';}
       finally {loadingOlder=false;if(live())renderJobs();}
     }
+    async function refreshOne(id){
+      try{const value=receipt(await api('/api/compute/jobs/'+id),id);if(live())accept(value);}
+      catch(_){if(live())jobNotice.textContent='原任務查詢尚未確認，已保留紀錄。';}
+    }
     async function refreshJobs(){
       if(!live())return;
       try {
@@ -284,13 +337,17 @@
         const next=cursor(result.next_cursor);
         if(!olderPagesLoaded)nextCursor=next;
         for(const value of [...(result.jobs||[])].reverse())accept(value);
-        const active=[...jobs.values()].filter(job=>!terminal.has(job.state)).slice(-8);
+        const inCurrentScope=id=>{
+          const scope=currentJobs.get(id);
+          return scope&&scope.lane===placement.value&&scope.caseId===(parity?.selected()?.parity_case_id||null);
+        };
+        const active=[...jobs.values()].filter(job=>!terminal.has(job.state)&&inCurrentScope(job.request_id)).slice(-8);
         await Promise.allSettled(active.map(async job=>{
           const value=receipt(await api('/api/compute/jobs/'+job.request_id),job.request_id);
           if(live())accept(value);
         }));
         if(!live())return;
-        if(pending) {
+        if(pending && inCurrentScope(pending.id) && !active.some(job=>job.request_id===pending.id)) {
           try {const result=receipt(await api('/api/compute/jobs/'+pending.id),pending.id);if(live())accept(result);}
           catch(_){/* An absent/unreachable receipt is never permission to clear the identity. */}
         }
@@ -330,6 +387,8 @@
         if(!body || availability.loading || !availability.eligible)throw new Error('請先確認所選方式可執行。');
         const id=crypto.randomUUID();
         pending={id,payload:JSON.stringify({request:withPlacementOptions(body),placement:placement.value,limits:getLimits(),request_id:id})};
+        currentJobs.set(id,{lane:placement.value,caseId:parity?.selected()?.parity_case_id||null});
+        parity?.reset();
       }
       const original=pending;
       const operation=async()=>{

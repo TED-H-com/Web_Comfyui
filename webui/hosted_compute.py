@@ -13,6 +13,7 @@ import copy
 import fcntl
 import hashlib
 import json
+import logging
 import math
 import mimetypes
 import os
@@ -48,6 +49,14 @@ SUFFIX = {'.png': 'image', '.jpg': 'image', '.jpeg': 'image', '.webp': 'image',
           '.mp4': 'video', '.mov': 'video', '.webm': 'video',
           '.wav': 'audio', '.mp3': 'audio', '.flac': 'audio', '.m4a': 'audio'}
 WARNING = '費用依設定的估計值檢查；供應商未提供已驗證的單項帳單硬上限，取消前的運算仍可能收費。'
+logger = logging.getLogger(__name__)
+_HOSTED_TICK_LOGGED = set()
+
+def _safe_log(message, *args):
+    try:
+        logger.warning(message, *args)
+    except Exception:
+        pass
 
 
 class HostedComputeError(ValueError):
@@ -363,6 +372,7 @@ class HostedComputeService:
         self.transport = transport or HTTPS()
         self.clock, self.media_validator = clock, media_validator
         self._stop, self._thread = threading.Event(), None
+        self.poll_failures = 0
 
     def _owner(self, owner):
         if type(owner) is not str or not owner.strip() or len(owner) > 320:
@@ -376,7 +386,11 @@ class HostedComputeService:
 
     def _config(self, folder):
         provider = folder.name
-        return _read(folder / 'config.json', {'enabled': False, 'endpoint': PROVIDERS[provider], 'api_key': '', 'recipes': [], 'credential_epoch': uuid.uuid4().hex})
+        config = _read(folder / ('console-config.json' if (folder / 'console-config.json').exists() else 'config.json'), {'enabled': False, 'endpoint': PROVIDERS[provider], 'api_key': '', 'recipes': [], 'credential_epoch': uuid.uuid4().hex})
+        if config.get('credential_ref'):
+            from provider_fabric.config import SecretReference
+            config['api_key'] = SecretReference.from_mapping(config['credential_ref']).resolve().reveal()
+        return config
 
     def _fingerprint(self, config, recipe):
         return digest({'endpoint': config['endpoint'], 'credential_epoch': config['credential_epoch'], 'recipe': recipe})
@@ -394,6 +408,8 @@ class HostedComputeService:
                               for folder in [self._provider(owner, provider)]]}
 
     def configure(self, owner, provider, body):
+        if set(body) & {'api_key','clear_api_key'}:
+            fail('請使用只寫金鑰介面', 'legacy_write_disabled', 409)
         if type(body) is not dict or set(body) - {'enabled', 'endpoint', 'api_key', 'clear_api_key', 'recipes'} or len(encoded(body)) > MAX_JSON:
             fail('供應商設定格式不正確')
         folder = self._provider(owner, provider)
@@ -423,7 +439,9 @@ class HostedComputeService:
                 config['recipes'] = [_recipe(provider, item) for item in body['recipes']]
                 if len({r['feature_id'] for r in config['recipes']}) != len(config['recipes']) or len({r['recipe_id'] for r in config['recipes']}) != len(config['recipes']):
                     fail('每個功能與配方識別碼只能設定一次')
-            _write(folder / 'config.json', config)
+            stored = dict(config)
+            if stored.get('credential_ref'): stored.pop('api_key', None)
+            _write(folder / 'console-config.json', stored)
             return self._public_config(folder, config)
 
     def _inspection(self, folder, config, request, limits):
@@ -873,6 +891,13 @@ class HostedComputeService:
                         self._poll(folder, path, job)
             except (BlockingIOError, HostedComputeError, OSError):
                 continue
+            except Exception as error:
+                self.poll_failures += 1
+                job_name = jobfile.parent.name
+                if job_name not in _HOSTED_TICK_LOGGED:
+                    _HOSTED_TICK_LOGGED.add(job_name)
+                    _safe_log('hosted_job_tick_failed job=%s exception=%s', job_name, type(error).__name__)
+                continue
 
     def start(self, interval=10):
         if self._thread and self._thread.is_alive():
@@ -880,7 +905,11 @@ class HostedComputeService:
         self._stop.clear()
         def run():
             while not self._stop.is_set():
-                self.tick()
+                try:
+                    self.tick()
+                except Exception as error:
+                    self.poll_failures += 1
+                    _safe_log('hosted_poller_iteration_failed exception=%s', type(error).__name__)
                 self._stop.wait(interval)
         self._thread = threading.Thread(target=run, name='hosted-compute', daemon=True)
         self._thread.start()

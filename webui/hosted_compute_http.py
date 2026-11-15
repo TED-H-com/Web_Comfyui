@@ -16,6 +16,11 @@ import threading
 import time
 from urllib.parse import urlsplit
 
+try:
+    from .egress_guard import address_allowed
+except ImportError:
+    from egress_guard import address_allowed
+
 
 class TransportError(Exception):
     pass
@@ -45,7 +50,7 @@ def public_url(url):
             if '.' not in host or host.endswith('.'):
                 raise ValueError()
         else:
-            if not ip.is_global:
+            if not address_allowed(str(ip)):
                 raise ValueError()
         return parts
     except (ValueError, TypeError, AttributeError) as error:
@@ -65,7 +70,7 @@ def _resolve(host, timeout):
     if not done.wait(timeout) or not result:
         raise TransportError('DNS unavailable')
     # Reject mixed public/private DNS answers as well as direct local addresses.
-    if any(not ipaddress.ip_address(item[4][0]).is_global for item in result):
+    if any(not address_allowed(item[4][0]) for item in result):
         raise TransportError('non-public destination')
     return result[0]
 

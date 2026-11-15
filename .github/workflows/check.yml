@@ -62,12 +62,56 @@ jobs:
           test_tmp="$(mktemp -d "$HOME/agent-work/tmp/pytest/public-ci-XXXXXX")"
           trap 'rm -rf "$test_tmp"' EXIT
           export TMPDIR="$test_tmp"
-          python -m pytest -q --basetemp="$test_tmp/bt" tests scripts/test_app_guide_catalog.py scripts/test_app_graph_catalog.py scripts/test_hardware_catalog.py scripts/test_demo_catalog.py scripts/test_guide_translations.py scripts/test_community_workflows.py scripts/test_community_workflow_sources.py scripts/test_moss_trainer.py scripts/test_workflow_library.py scripts/test_workflow_guides.py scripts/test_autoip_oct22.py scripts/test_autoip_contract.py scripts/test_autoip_worker.py scripts/test_autoip_quote.py scripts/test_provider_autoip_profiles.py
+          python -m pytest -q --basetemp="$test_tmp/bt" tests scripts/test_app_guide_catalog.py scripts/test_app_graph_catalog.py scripts/test_hardware_catalog.py scripts/test_demo_catalog.py scripts/test_guide_translations.py scripts/test_community_workflows.py scripts/test_community_workflow_sources.py scripts/test_moss_trainer.py scripts/test_workflow_library.py scripts/test_workflow_guides.py scripts/test_autoip_oct22.py scripts/test_autoip_contract.py scripts/test_autoip_worker.py scripts/test_autoip_quote.py scripts/test_provider_autoip_profiles.py \
+            scripts/test_character_original.py \
+            scripts/test_collector_r35_integration.py \
+            scripts/test_compute_collector.py \
+            scripts/test_compute_parity_hosted_h1.py \
+            scripts/test_compute_parity_p1.py \
+            scripts/test_compute_r29.py \
+            scripts/test_compute_r29b.py \
+            scripts/test_compute_r29c.py \
+            scripts/test_compute_r30.py \
+            scripts/test_compute_r31.py \
+            scripts/test_compute_r32.py \
+            scripts/test_compute_r33.py \
+            scripts/test_compute_r34.py \
+            scripts/test_compute_r35.py \
+            scripts/test_compute_r36.py \
+            scripts/test_compute_r36b.py \
+            scripts/test_compute_r36c.py \
+            scripts/test_compute_r37.py \
+            scripts/test_compute_r38.py \
+            scripts/test_compute_r39.py \
+            scripts/test_compute_r40.py \
+            scripts/test_compute_r40b.py \
+            scripts/test_compute_r40c.py \
+            scripts/test_compute_r40v4.py \
+            scripts/test_compute_r40v5.py scripts/test_egress_guard.py scripts/test_security_s1.py scripts/test_security_s1d.py scripts/test_compute_r40v6_robustness.py scripts/test_compute_r40v6_unsent_faults.py scripts/test_compute_r40v6_voice_toolchain.py scripts/test_h3_provider_worker.py \
+            scripts/test_compute_r40v5_log_stats.py \
+            scripts/test_compute_r40v5_restart_hold.py \
+            scripts/test_compute_r40v5_worker_yield.py \
+            scripts/test_review2_fixes_r35.py \
+            scripts/test_review2_original_r35.py \
+            scripts/test_review2_safety_r35.py \
+            scripts/test_review3_boundaries_r35.py \
+            scripts/test_review3_grace_r35.py \
+            scripts/test_review_r35.py \
+            scripts/test_review_r36c.py \
+            scripts/test_review_r37.py \
+            scripts/test_review_r38_caps.py \
+            scripts/test_review_r38_diagnostics.py \
+            scripts/test_review_r38_faults.py \
+            scripts/test_review_r38b_edges.py \
+            scripts/test_session_safety_r35.py
       - name: JavaScript syntax
         run: |
           node --check webui/static/app.js
           node --check webui/static/workflow-library.js
           node --check webui/static/colab.js
+          node --check webui/static/compute-parity.js
+          node --check scripts/test_compute_r32_poll.cjs
+          node --check scripts/test_session_controls_r38.js
           node --check webui/docs/docs.js
           node --check webui/docs/explorers.js
           node --check webui/docs/tour.js
@@ -77,6 +121,10 @@ jobs:
           node --check webui/static/guide-translations-en.js
           node --check webui/docs/landing.js
           node --check webui/docs/hardware.js
+      - name: Offline JavaScript regressions
+        run: |
+          node scripts/test_compute_r32_poll.cjs
+          node scripts/test_session_controls_r38.js
   browser:
     runs-on: ubuntu-latest
     steps:
@@ -102,4 +150,4 @@ jobs:
           browser_test_tmp="$(mktemp -d "$HOME/agent-work/tmp/pytest/browser-ci-XXXXXX")"
           trap 'rm -rf "$browser_test_tmp"' EXIT
           export TMPDIR="$browser_test_tmp"
-          python -m pytest -q --basetemp="$browser_test_tmp/bt" scripts/test_docs_browser.py scripts/test_landing_browser.py scripts/test_tour_browser.py scripts/test_explorers_browser.py scripts/test_hardware_catalog.py scripts/test_i18n_browser.py tests/test_portrait_browser.py tests/test_colab_browser.py tests/test_workflow_review_browser.py
+          python -m pytest -q --basetemp="$browser_test_tmp/bt" scripts/test_docs_browser.py scripts/test_landing_browser.py scripts/test_tour_browser.py scripts/test_explorers_browser.py scripts/test_hardware_catalog.py scripts/test_i18n_browser.py tests/test_portrait_browser.py tests/test_colab_browser.py tests/test_workflow_review_browser.py tests/test_provider_console_browser.py

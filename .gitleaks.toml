@@ -1,0 +1,26 @@
+# Gitleaks settings for this repository: all default rules, plus one reviewed exception.
+# The Colab overlay manifests map file paths to SHA-256 digests of pinned upstream files.
+# File names such as "api.py" or "...ArgsEntry.py" next to a 64-character hex digest trip
+# the generic-api-key and sentry-access-token rules. For those two rules only, a value that
+# is exactly 64 lowercase hex characters in one of these two files is allowed; everything
+# else, in these files or elsewhere, is still reported.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+[[rules.allowlists]]
+description = "SHA-256 file digests in the Colab overlay manifests"
+condition = "AND"
+paths = ['''(^|/)scripts/colab_session_overlays/(breezy-inventory|voice-environments)\.json$''']
+regexTarget = "secret"
+regexes = ['''^[0-9a-f]{64}$''']
+
+[[rules]]
+id = "sentry-access-token"
+[[rules.allowlists]]
+description = "SHA-256 file digests in the Colab overlay manifests"
+condition = "AND"
+paths = ['''(^|/)scripts/colab_session_overlays/(breezy-inventory|voice-environments)\.json$''']
+regexTarget = "secret"
+regexes = ['''^[0-9a-f]{64}$''']

@@ -8,7 +8,6 @@ from __future__ import annotations
 import hashlib
 import http.client
 import io
-import ipaddress
 import json
 import os
 import socket
@@ -21,6 +20,7 @@ import uuid
 from html.parser import HTMLParser
 from pathlib import Path
 
+from egress_guard import address_allowed
 import library_service
 
 MAX_IMAGE = 25 * 1024 * 1024
@@ -35,7 +35,7 @@ def public_target(url):
     if p.scheme not in ('http', 'https') or not p.hostname or p.username or p.password or p.port not in (None, 80, 443):
         raise ValueError('請使用公開網站的 HTTP 或 HTTPS 網址')
     addresses = list(dict.fromkeys(row[4][0] for row in socket.getaddrinfo(p.hostname, p.port or (443 if p.scheme == 'https' else 80), type=socket.SOCK_STREAM)))
-    if not addresses or any(not ipaddress.ip_address(a).is_global for a in addresses):
+    if not addresses or any(not address_allowed(a) for a in addresses):
         raise ValueError('採集來源必須是公開網站')
     return p, addresses[0]
 
