@@ -587,7 +587,7 @@ function parseRoute() {
     return { view: "characters" };
   }
   if (!parts.length) return { view: "characters" };
-  if (parts[0] === "compute-production" && !window.WebComfyDocs) return { view: "compute-production" };
+  if (parts[0] === "compute-production") return { view: "compute-production" };
   if (parts[0] === "studio") {
     if (parts.length <= 2) return { view: "studio", featureId: parts[1] || "" };
     return { view: "characters" };
@@ -1470,13 +1470,14 @@ function renderAccountMenuContent({ managementOnly = false } = {}) {
       h("span", { text: "服務狀態" }),
       h("strong", { text: $("servicePill").textContent || "未知" }),
     ]));
+    if (window.ComputeSettings) wrap.appendChild(shellMenuButton("我的運算平台", () => openComputeSettings(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
     wrap.appendChild(shellMenuButton("重新整理", refreshAllData));
     wrap.appendChild(shellMenuButton("角色創作資源中心", () => navigate({ view: "resources" })));
   }
   if (isAdmin() || isOperator()) {
     wrap.appendChild(h("hr", { class: "shell-menu-divider" }));
     wrap.appendChild(shellMenuButton("專案規劃（不執行）", () => navigate({ view: "projects" })));
-    if (!window.WebComfyDocs && window.ComputeSettings) wrap.appendChild(shellMenuButton("運算平台", () => openComputeSettings(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
+
   }
   if (isOperator()) {
     wrap.appendChild(shellMenuButton("舞蹈模板庫", () => {
@@ -1492,7 +1493,7 @@ function renderAccountMenuContent({ managementOnly = false } = {}) {
     wrap.appendChild(shellMenuButton("工作流監控", () => navigate({ view: "orchestrator" })));
     wrap.appendChild(h("a", { class: "shell-menu-row", href: "/admin", text: "管理中心" }));
     wrap.appendChild(shellMenuButton("使用者管理", () => navigate({ view: "admin-users" })));
-    if (!window.WebComfyDocs && window.WebComfyColab) wrap.appendChild(shellMenuButton("Google Colab 帳號", () => openColabAccounts(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
+    if (window.WebComfyColab) wrap.appendChild(shellMenuButton("Google Colab 帳號", () => openColabAccounts(window.matchMedia("(max-width: 767px)").matches ? $("moreMenuBtn") : $("managementMenuBtn"))));
   }
   if (!managementOnly) {
     wrap.appendChild(h("hr", { class: "shell-menu-divider" }));
@@ -2189,7 +2190,7 @@ function statusDot(feature) {
 function renderSidebar() {
   const wrap = $("sidebarGroups");
   clear(wrap);
-  if (!window.WebComfyDocs && window.ComputePipeline) wrap.appendChild(h("button", {class: `side-tool${currentRoute.view === "compute-production" ? " active" : ""}`, type: "button", text: "多步製作", onclick: () => navigate({view:"compute-production"})}));
+  if (window.ComputePipeline) wrap.appendChild(h("button", {class: `side-tool${currentRoute.view === "compute-production" ? " active" : ""}`, type: "button", text: "多步製作", onclick: () => navigate({view:"compute-production"})}));
   for (const studio of studios) {
     const list = studioFeatures(studio.id);
     if (!list.length) continue;
@@ -2270,7 +2271,7 @@ function renderWorkspace() {
   else if (currentRoute.view === "character-library") renderCharacterLibraryRoute();
   else if (currentRoute.view === "character-wardrobe") renderCharacterWardrobeRoute();
   else if (currentRoute.view === "character-settings") renderCharacterSettingsRoute();
-  else if (currentRoute.view === "compute-production" && window.ComputePipeline && !window.WebComfyDocs) {
+  else if (currentRoute.view === "compute-production" && window.ComputePipeline) {
     if ($("workspace").querySelector('.compute-production[data-compute-pipeline-mounted="true"]')) return;
     const host = beginWorkspaceRender();
     window.ComputePipeline.mount(host, {api, onBack: () => navigate({view:"studio"})});
@@ -2357,7 +2358,7 @@ function providerFabricCharacterVisualClass(character) {
 
 function renderProviderFabricView() {
   const ws = beginWorkspaceRender("workspace-route-root provider-fabric-route");
-  if (!window.WebComfyDocs && window.WebComfyColab) window.WebComfyColab.mount(ws, {api, openSheet});
+  if (window.WebComfyColab) window.WebComfyColab.mount(ws, {api, openSheet});
   const host = h("div", { class: "provider-fabric-host" });
   ws.appendChild(host);
   if (!window.CastleProviderFabric || typeof window.CastleProviderFabric.mount !== "function") {
@@ -3056,7 +3057,8 @@ function normalizeDanceTemplate(raw) {
 }
 
 function danceLibraryCharacterType(character, capability) {
-  if (!character || !capability) return "";
+  if (!character) return "all";
+  if (!capability) return "";
   const type = characterVisualClass(character);
   const variantId = String(capability.variantId || "");
   if (type === "anime" && variantId.startsWith("dance.anime.")) return "anime";
@@ -3066,19 +3068,20 @@ function danceLibraryCharacterType(character, capability) {
 
 async function loadDanceTemplates(characterTypeValue, force = false) {
   const characterTypeKey = String(characterTypeValue || "").trim();
-  if (!["anime", "realistic"].includes(characterTypeKey)) return [];
+  if (!["all", "anime", "realistic"].includes(characterTypeKey)) return [];
   const session = captureSessionContext();
   if (!force && danceTemplateCache.has(characterTypeKey)) {
     return danceTemplateCache.get(characterTypeKey).templates;
   }
-  const params = new URLSearchParams({ character_type: characterTypeKey });
+  const params = new URLSearchParams({ character_type: characterTypeKey === "all" ? "" : characterTypeKey });
   const data = await api(`${DANCE_LIBRARY_ENDPOINTS.catalog}?${params.toString()}`);
   assertSessionContext(session);
   const templates = (Array.isArray(data.templates) ? data.templates : [])
     .map(normalizeDanceTemplate)
     .filter((template) => (
       template.id
-      && template.compatibleCharacterTypes.includes(characterTypeKey)
+      && template.status === "approved"
+      && (characterTypeKey === "all" ? template.compatibleCharacterTypes.some(type => ["anime", "realistic"].includes(type)) : template.compatibleCharacterTypes.includes(characterTypeKey))
     ));
   danceTemplateCache.set(characterTypeKey, {
     revision: String(data.revision || ""),
@@ -4019,6 +4022,7 @@ function renderProviderPhotoshootForm(character, entrypoint) {
     __draftDirty: false,
     __draftRetired: false,
   };
+  state.__reference = makeCharacterReference(character, "providerOriginal");
   let saveTimer = null;
   let form = null;
   const clearSaveTimer = () => {
@@ -4088,6 +4092,8 @@ function renderProviderPhotoshootForm(character, entrypoint) {
       h("div", { class: "bound-value", text: `${character.name} 的專屬角色模型` }),
       renderHint("模型已由角色綁定；不需要選模型，也不會套用到其他角色。"),
     ]),
+    renderHint(character.visualClass === "anime" ? "SDXL 角色 LoRA + IPAdapter · 使用下方角色原圖" : "SDXL + InstantID + ReActor · 使用下方角色原圖"),
+    state.__reference.node,
     promptField,
     negativeField,
     radioCards("畫面比例", aspectOptions, state.aspectRatio, (value) => update({ aspectRatio: value })),
@@ -4156,11 +4162,13 @@ async function submitProviderCharacterPhotoshoot(event, character, action, featu
   }, { force: true });
   showAlert("");
   try {
+    const files = await state.__reference.collect();
     requestSent = true;
     setGenerationFsm("submitting", { detail: "可能已送出，正在確認", composerKey: submitKey }, { force: true });
     const result = await api("/api/generate", {
       method: "POST",
       body: JSON.stringify({
+        files,
         featureId: currentContract.featureId,
         characterId: character.id,
         action: currentContract.actionId,
@@ -5090,7 +5098,7 @@ function renderDanceTemplatePicker(feature, state, update, options = {}) {
       state,
       () => {
         state.__danceTemplateValidated = false;
-        if (state.danceTemplateId) update({ danceTemplateId: "" });
+        update({ danceTemplateId: "" });
         wrap.dataset.selectedId = "";
         repaintActive();
         renderSelectedSummary();
@@ -5868,8 +5876,22 @@ function uploadSlot(feature, uploadId, labelOverride = "", state = null, onChang
   return renderDropzone({ ...up, label: labelOverride || up.label, required: up.required, serverFileLabel: labels[uploadId] || "", onFileChange });
 }
 
+function makeCharacterReference(character, slot = "trainingOriginal") {
+  delete fileInputs[slot]; delete serverFiles[slot];
+  const feature = {id: "character-photoshoot", uploads: [{id: slot, label: "角色原圖", required: true, accept: "image/*"}]};
+  const state = {defaultFiles: {[slot]: characterProfilePicUrl(character)}, libraryPicks: {}, serverFiles: {}, serverFileLabels: {}};
+  return {node: replaceablePhotoSlot(character, feature, slot, state, patch => Object.assign(state, patch),
+    {defaultUrl: characterProfilePicUrl(character), defaultLabel: `角色原圖：${character.name}`}),
+    collect: async () => ({image: (await collectMinimalFiles(feature, state, true))[slot]})};
+}
+
 function replaceablePhotoSlot(character, feature, slot, state, update, options = {}) {
+  feature = {...feature, uploads: (feature.uploads || []).map(up => up.id === slot
+    ? {...up, materialCharacterId: character.id, materialCharacterName: character.name} : up)};
   const defaultUrl = options.defaultUrl || state.defaultFiles[slot] || "";
+  if ((character.kind === "provider_character" || isProviderLibraryCharacter(character)) && defaultUrl === characterProfilePicUrl(character)) {
+    state.canonicalProviderDefaults = { ...(state.canonicalProviderDefaults || {}), [slot]: defaultUrl };
+  }
   if (!defaultUrl) return renderComposerUploadSlot(feature, slot, options.uploadLabel || "", state, () => update({}));
   const defaultLabel = options.defaultLabel || "使用預設照片";
   let expanded = false;
@@ -6088,11 +6110,18 @@ function collectAdvancedSettings(feature) {
   return settings;
 }
 
+function isCanonicalProviderDefault(state, slot) {
+  return Boolean(state?.canonicalProviderDefaults?.[slot]
+    && state.defaultFiles?.[slot] === state.canonicalProviderDefaults[slot]
+    && !state.libraryPicks?.[slot] && !state.userPhotoPicks?.[slot]
+    && !fileInputs[slot]?.files?.length && !serverFiles[slot] && !state.serverFiles?.[slot]);
+}
+
 async function collectMinimalFiles(feature, state, rawInputs = false) {
   const session = captureSessionContext();
   const files = {};
   for (const up of feature.uploads || []) {
-    if ((state.serverBoundUploads || []).includes(up.id)) continue;
+    if ((state.serverBoundUploads || []).includes(up.id) || isCanonicalProviderDefault(state, up.id)) continue;
     if (feature.id === "lipsync" && up.id === "voice" && state.voiceSource !== "upload") continue;
     if (feature.id === "dance" && up.id === "video" && state.danceTemplateId && state.__danceTemplateValidated === true) {
       const imported = await importSelectedDanceTemplate(state.danceTemplateId, up.id);
@@ -6236,7 +6265,7 @@ function slotHasFile(slot, state) {
     (input && input.files && input.files[0])
     || serverFiles[slot]
     || (state.defaultFiles && state.defaultFiles[slot])
-    || (slot === "video" && state.danceTemplateId && state.__danceTemplateValidated === true)
+    || (slot === "video" && ((state.danceTemplateId && state.__danceTemplateValidated === true) || fieldGetters.danceTemplateId?.()))
   );
 }
 
@@ -6728,7 +6757,7 @@ function renderMinimalActionPanel(character, action) {
   if (action.id === "multi-angle-selfie" && characterProfilePicUrl(character)) state.defaultFiles.face = characterProfilePicUrl(character);
   const newest = newestPhotoWork(character.id);
   if (action.id === "image-video" && newest && !serverFiles.image && !capabilityServerBindsUpload(capability, "image")) {
-    state.defaultFiles.image = newest.url;
+    state.defaultFiles.image = characterProfilePicUrl(character);
   }
   for (const [slot, url] of Object.entries(state.libraryPicks)) {
     if (typeof url === "string" && url) state.defaultFiles[slot] = url;
@@ -6835,8 +6864,8 @@ function renderMinimalActionPanel(character, action) {
       form.appendChild(radioCards("動作", motionPresetChoice.options, state.motionPreset, (value) => update({ motionPreset: value })));
     } else {
       form.appendChild(replaceablePhotoSlot(character, feature, "image", state, update, {
-        defaultUrl: newest ? newest.url : "",
-        defaultLabel: newest ? `起始照片：使用最新作品 ${newest.filename}` : "起始照片",
+        defaultUrl: characterProfilePicUrl(character),
+        defaultLabel: "角色原圖：使用角色頭像作為起始照片",
         uploadLabel: "起始照片",
       }));
       form.appendChild(inputMini("動作描述", state.motion, ACTION_PLACEHOLDERS["image-video"], (value) => update({ motion: value })));
@@ -8450,7 +8479,7 @@ function renderStage() {
   }
   ws.appendChild(h("div", { class: "tool-view" }, [
     renderStudioToolSelector(feature),
-    !window.WebComfyDocs && !activeCharacter() && window.ComputePipeline ? h("button", {class:"ghost small compute-production-entry", type:"button", text:"多步製作", onclick:()=>navigate({view:"compute-production"})}) : null,
+    !activeCharacter() && window.ComputePipeline ? h("button", {class:"ghost small compute-production-entry", type:"button", text:"多步製作", onclick:()=>navigate({view:"compute-production"})}) : null,
     renderFeaturePanel(feature),
     renderRecentPanel(),
   ]));
@@ -8549,12 +8578,12 @@ function computeActionReason(form, action, state, feature) {
 }
 
 function mountComputeForm(form, feature, {character = null, capability = null, state = {}, getRequest = null, onAvailability = null} = {}) {
-  if (!window.ComputePlacement || window.WebComfyDocs || !form) return;
+  if (!window.ComputePlacement || !form) return;
   const currentFeature = () => typeof form.computeFeature === "function" ? form.computeFeature() : feature;
   const currentCapability = () => character ? enabledFeatureCapability(character, currentFeature().id) : capability;
   const request = getRequest || (() => ({featureId: currentFeature().id, settings: collectSettings(currentFeature()),
     characterId: character?.id || "", action: currentCapability()?.actionId || "", variantId: currentCapability()?.variantId || "",
-    files: computeUploadMetadata(currentFeature(), currentCapability(), state)}));
+    files: computeUploadMetadata(currentFeature(), currentCapability(), form.characterReferenceState || state)}));
   const sync = () => {
     const placement = window.ComputePlacement.getState(form);
     const target = currentFeature(), bound = currentCapability();
@@ -8567,7 +8596,7 @@ function mountComputeForm(form, feature, {character = null, capability = null, s
     const missingTheme = bound && allowedOptionValues(bound, "wardrobeTheme") !== null && !String(settings.wardrobeTheme || fieldGetters.wardrobeTheme?.() || "").trim();
     const missingScene = bound && allowedOptionValues(bound, "sceneTheme") !== null && !String(settings.sceneTheme || fieldGetters.sceneTheme?.() || "").trim();
     const customReady = typeof form.computeValidate === "function" ? form.computeValidate() : true;
-    const reason = missing ? `請先提供「${missing.label}」` : count < (target.minimumUploads || 0) ? "至少選一個參考"
+    const reason = missing ? `請先提供「${missing.label}」` : count < (target.minimumUploads || 0) ? (target.minimumUploads === 2 ? "請選擇兩位角色的參考圖" : "至少選一個參考")
       : missingTheme ? "請先選擇角色造型" : missingScene ? "請先選擇動漫場景" : !customReady ? "請完成必要輸入" : "";
     btn.disabled = !placement.eligible || Boolean(reason);
     btn.textContent = placement.submitting ? "送出中…" : reason || (placement.eligible ? (target.kind === "audio" ? "生成語音" : "開始生成") : "請選擇可用的執行方式");
@@ -8839,15 +8868,17 @@ function renderGenForm(feature, capability = null) {
     picker.value=character?.id || '';
     picker.onchange=()=>navigate(studioRoute(feature.id,picker.value));
     form.append(h('label',{class:'field'},[h('span',{class:'field-label',text:'角色'}),picker]));
-    if(character)form.append(renderHint(`使用「${character.name}」已設定的角色原圖；場景、穿著與姿勢由下方搭配決定。`));
+    if(character)form.append(renderHint(`使用「${character.name}」已設定的角色原圖，可在下方更換；場景、穿著與姿勢由搭配決定。`));
   }
   const minimumUploads = Number.isInteger(feature.minimumUploads) && feature.minimumUploads > 0
     ? feature.minimumUploads
     : 0;
   let minimumUploadHint = null;
   let btn = null;
+  const referenceState = { defaultFiles: {}, libraryPicks: {}, serverFiles: {}, serverFileLabels: {} };
+  form.characterReferenceState = referenceState;
   const selectedUploadCount = () => (feature.uploads || []).filter((up) => (
-    capabilityServerBindsUpload(capability, up.id) || slotHasFile(up.id, {})
+    capabilityServerBindsUpload(capability, up.id) || slotHasFile(up.id, referenceState)
   )).length;
   const syncMinimumUploads = () => {
     if (!btn || !minimumUploads) return;
@@ -8855,7 +8886,7 @@ function renderGenForm(feature, capability = null) {
     btn.disabled = !feature.ready || !enough;
     btn.textContent = !feature.ready
       ? "缺件，暫不能送出"
-      : (enough ? "開始生成" : "至少選一個參考");
+      : (enough ? "開始生成" : minimumUploads === 2 ? "請選擇兩位角色的參考圖" : "至少選一個參考");
     if (minimumUploadHint) minimumUploadHint.classList.toggle("hidden", !feature.ready || enough);
   };
 
@@ -8863,6 +8894,15 @@ function renderGenForm(feature, capability = null) {
     const grid = h("div", { class: "upload-grid" });
     for (const up of feature.uploads) {
       if (!capabilityServerBindsUpload(capability, up.id)) {
+        if (feature.id === "dance" && up.id === "video" && !window.WebComfyDocs) continue;
+        if (character && characterSourceSlot(feature.id) === up.id) {
+          referenceState.defaultFiles[up.id] = characterProfilePicUrl(character);
+          grid.appendChild(replaceablePhotoSlot(character, feature, up.id, referenceState, patch => {
+            Object.assign(referenceState, patch); syncMinimumUploads();
+            form.dispatchEvent(new Event("change", { bubbles: true }));
+          }, { defaultUrl: characterProfilePicUrl(character), defaultLabel: `角色原圖：${character.name} · ${feature.subtitle || "圖片參考"}` }));
+          continue;
+        }
         grid.appendChild(renderDropzone({
           ...up,
           onFileChange: (...args) => {
@@ -8873,8 +8913,16 @@ function renderGenForm(feature, capability = null) {
       }
     }
     form.appendChild(grid);
+    if (feature.id === "dance" && !window.WebComfyDocs) {
+      const danceState = { defaultFiles: {}, serverFiles: {}, serverFileLabels: {}, danceTemplateId: "" };
+      form.appendChild(renderDanceTemplatePicker(feature, danceState, patch => {
+        Object.assign(danceState, patch);
+        syncMinimumUploads();
+        form.dispatchEvent(new Event("change", { bubbles: true }));
+      }, { character, capability }));
+    }
     if (minimumUploads) {
-      minimumUploadHint = renderHint("至少選一個參考");
+      minimumUploadHint = renderHint(minimumUploads === 2 ? "請選擇兩位角色的參考圖" : "至少選一個參考");
       minimumUploadHint.classList.add("minimum-upload-hint");
       form.appendChild(minimumUploadHint);
     }
@@ -9654,6 +9702,17 @@ function renderVoxcpmForm(feature) {
   return h("div", { class: "text-studio" }, [form]);
 }
 
+function characterSourceSlot(featureId) {
+  return ({
+    "text2img": "image", "qwen21-text2img": "image", "h3-text-video": "image",
+    "character-photoshoot": "image",
+    "qwen21-edit": "image", "img2img": "image", "img2video": "image",
+    "ipadapter-reference": "image1", "image-blend": "image1", "character-angles": "face",
+    "dance": "reference", "video-replace": "reference",
+    "h3-image-video": "image", "h3-reference-video": "reference", "lipsync": "face",
+  })[featureId] || "";
+}
+
 function renderDropzone(up) {
   const preview = h("div", { class: "drop-preview" });
   const hint = h("div", { class: "drop-hint" }, [
@@ -9697,7 +9756,7 @@ function renderDropzone(up) {
   if (!up.urlFetch) return h("div", { class: "upload-slot" }, [dropzone, materialButton]);
   const extraSources = [renderUrlFetch(up, input, preview, hint)];
   if ((up.accept || "").startsWith("video/")) {
-    extraSources.push(renderCrawlVideoPicker(up, input, preview));
+    if (isAdmin()) extraSources.push(renderCrawlVideoPicker(up, input, preview));
     extraSources.push(renderDriveFetch(up, input, preview));
   }
   return h("div", { class: "upload-slot" }, [
@@ -9879,139 +9938,150 @@ function renderCrawlVideoPicker(up, fileInput, preview) {
 }
 
 function renderDriveFetch(up, fileInput, preview) {
-  const accountStatus = h("div", { class: "url-status" });
-  const loginBtn = h("button", { type: "button", class: "ghost small url-btn", text: "登入 Google Drive" });
-  const logoutBtn = h("button", { type: "button", class: "ghost small url-btn hidden", text: "登出 Drive" });
-  const search = h("input", {
-    type: "search",
-    class: "url-input",
-    placeholder: "搜尋 Drive 影片檔名",
-  });
-  const refresh = h("button", { type: "button", class: "ghost small url-btn", text: "搜尋" });
-  const sel = h("select", { class: "server-video-select" });
-  const useFileBtn = h("button", { type: "button", class: "ghost small url-btn", text: "匯入選取影片" });
-  const listStatus = h("div", { class: "url-status" });
-  const pickerPanel = h("div", { class: "drive-picker hidden" }, [
-    h("div", { class: "url-row" }, [search, refresh]),
-    sel,
-    h("div", { class: "url-row" }, [useFileBtn, logoutBtn]),
-    listStatus,
-  ]);
+  function renderDriveAccount() {
+    const accountStatus = h("div", { class: "url-status" });
+    const loginBtn = h("button", { type: "button", class: "ghost small url-btn", text: "登入 Google Drive" });
+    const logoutBtn = h("button", { type: "button", class: "ghost small url-btn hidden", text: "登出 Drive" });
+    const search = h("input", {
+      type: "search",
+      class: "url-input",
+      placeholder: "搜尋 Drive 影片檔名",
+    });
+    const refresh = h("button", { type: "button", class: "ghost small url-btn", text: "搜尋" });
+    const sel = h("select", { class: "server-video-select" });
+    const useFileBtn = h("button", { type: "button", class: "ghost small url-btn", text: "匯入選取影片" });
+    const listStatus = h("div", { class: "url-status" });
+    const pickerPanel = h("div", { class: "drive-picker hidden" }, [
+      h("div", { class: "url-row" }, [search, refresh]),
+      sel,
+      h("div", { class: "url-row" }, [useFileBtn, logoutBtn]),
+      listStatus,
+    ]);
 
-  async function loadDriveStatus() {
-    accountStatus.textContent = "檢查 Google Drive 狀態...";
-    accountStatus.className = "url-status";
-    try {
-      const data = await api("/api/google/status");
-      if (!data.configured) {
-        loginBtn.classList.add("hidden");
-        logoutBtn.classList.add("hidden");
-        pickerPanel.classList.add("hidden");
-        accountStatus.textContent = `需要設定 Google OAuth。Redirect URI: ${data.redirectUri || "/api/google/callback"}`;
+    async function loadDriveStatus() {
+      accountStatus.textContent = "檢查 Google Drive 狀態...";
+      accountStatus.className = "url-status";
+      try {
+        const data = await api("/api/google/status");
+        if (!data.configured) {
+          loginBtn.classList.add("hidden");
+          logoutBtn.classList.add("hidden");
+          pickerPanel.classList.add("hidden");
+          accountStatus.textContent = `需要設定 Google OAuth。Redirect URI: ${data.redirectUri || "/api/google/callback"}`;
+          accountStatus.className = "url-status err";
+          return;
+        }
+        loginBtn.classList.toggle("hidden", !!data.connected);
+        logoutBtn.classList.toggle("hidden", !data.connected);
+        pickerPanel.classList.toggle("hidden", !data.connected);
+        accountStatus.textContent = data.connected ? "Google Drive 已登入" : "尚未登入 Google Drive";
+        accountStatus.className = data.connected ? "url-status ok" : "url-status";
+        if (data.connected) loadDriveFiles();
+      } catch (error) {
+        accountStatus.textContent = `Drive 狀態讀取失敗：${error.message}`;
         accountStatus.className = "url-status err";
+      }
+    }
+
+    async function loadDriveFiles() {
+      refresh.disabled = true;
+      refresh.textContent = "讀取中...";
+      listStatus.textContent = "讀取 Google Drive 影片...";
+      listStatus.className = "url-status";
+      try {
+        const params = new URLSearchParams({ max_items: "50" });
+        if (search.value.trim()) params.set("q", search.value.trim());
+        const data = await api(`/api/google/drive/files?${params.toString()}`);
+        sel.textContent = "";
+        const files = data.files || [];
+        if (!files.length) {
+          sel.appendChild(h("option", { value: "", text: "找不到 Drive 影片" }));
+          listStatus.textContent = "找不到符合的 Drive 影片";
+        } else {
+          for (const file of files) {
+            sel.appendChild(h("option", {
+              value: file.id,
+              text: `${file.name} (${formatBytes(file.size || 0)})`,
+            }));
+          }
+          listStatus.textContent = `找到 ${files.length} 支影片`;
+        }
+        listStatus.className = "url-status ok";
+      } catch (error) {
+        sel.textContent = "";
+        sel.appendChild(h("option", { value: "", text: "讀取失敗" }));
+        listStatus.textContent = `讀取失敗：${error.message}`;
+        listStatus.className = "url-status err";
+      } finally {
+        refresh.disabled = false;
+        refresh.textContent = "搜尋";
+      }
+    }
+
+    loginBtn.addEventListener("click", () => {
+      window.location.href = "/api/google/login";
+    });
+    logoutBtn.addEventListener("click", async () => {
+      logoutBtn.disabled = true;
+      try {
+        await api("/api/google/logout", { method: "POST", body: "{}" });
+        await loadDriveStatus();
+      } catch (error) {
+        accountStatus.textContent = `Drive 登出失敗：${error.message}`;
+        accountStatus.className = "url-status err";
+      } finally {
+        logoutBtn.disabled = false;
+      }
+    });
+    refresh.addEventListener("click", loadDriveFiles);
+    search.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        loadDriveFiles();
+      }
+    });
+    useFileBtn.addEventListener("click", async () => {
+      const fileId = sel.value;
+      if (!fileId) {
+        listStatus.textContent = "請先選擇 Drive 影片";
+        listStatus.className = "url-status err";
         return;
       }
-      loginBtn.classList.toggle("hidden", !!data.connected);
-      logoutBtn.classList.toggle("hidden", !data.connected);
-      pickerPanel.classList.toggle("hidden", !data.connected);
-      accountStatus.textContent = data.connected ? "Google Drive 已登入" : "尚未登入 Google Drive";
-      accountStatus.className = data.connected ? "url-status ok" : "url-status";
-      if (data.connected) loadDriveFiles();
-    } catch (error) {
-      accountStatus.textContent = `Drive 狀態讀取失敗：${error.message}`;
-      accountStatus.className = "url-status err";
-    }
-  }
-
-  async function loadDriveFiles() {
-    refresh.disabled = true;
-    refresh.textContent = "讀取中...";
-    listStatus.textContent = "讀取 Google Drive 影片...";
-    listStatus.className = "url-status";
-    try {
-      const params = new URLSearchParams({ max_items: "50" });
-      if (search.value.trim()) params.set("q", search.value.trim());
-      const data = await api(`/api/google/drive/files?${params.toString()}`);
-      sel.textContent = "";
-      const files = data.files || [];
-      if (!files.length) {
-        sel.appendChild(h("option", { value: "", text: "找不到 Drive 影片" }));
-        listStatus.textContent = "找不到符合的 Drive 影片";
-      } else {
-        for (const file of files) {
-          sel.appendChild(h("option", {
-            value: file.id,
-            text: `${file.name} (${formatBytes(file.size || 0)})`,
-          }));
-        }
-        listStatus.textContent = `找到 ${files.length} 支影片`;
+      useFileBtn.disabled = true;
+      useFileBtn.textContent = "匯入中...";
+      listStatus.textContent = "從 Google Drive 下載到 ComfyUI input...";
+      listStatus.className = "url-status";
+      try {
+        const data = await api("/api/google/drive/import", {
+          method: "POST",
+          body: JSON.stringify({ fileId, slot: up.id }),
+        });
+        useServerVideo(up, fileInput, preview, data.name || data.filename, data, "☁️");
+        listStatus.textContent = `已匯入（${formatBytes(data.size || 0)}）`;
+        listStatus.className = "url-status ok";
+      } catch (error) {
+        listStatus.textContent = `匯入失敗：${error.message}`;
+        listStatus.className = "url-status err";
+      } finally {
+        useFileBtn.disabled = false;
+        useFileBtn.textContent = "匯入選取影片";
       }
-      listStatus.className = "url-status ok";
-    } catch (error) {
-      sel.textContent = "";
-      sel.appendChild(h("option", { value: "", text: "讀取失敗" }));
-      listStatus.textContent = `讀取失敗：${error.message}`;
-      listStatus.className = "url-status err";
-    } finally {
-      refresh.disabled = false;
-      refresh.textContent = "搜尋";
-    }
-  }
+    });
 
-  loginBtn.addEventListener("click", () => {
-    window.location.href = "/api/google/login";
-  });
-  logoutBtn.addEventListener("click", async () => {
-    logoutBtn.disabled = true;
-    try {
-      await api("/api/google/logout", { method: "POST", body: "{}" });
-      await loadDriveStatus();
-    } catch (error) {
-      accountStatus.textContent = `Drive 登出失敗：${error.message}`;
-      accountStatus.className = "url-status err";
-    } finally {
-      logoutBtn.disabled = false;
-    }
-  });
-  refresh.addEventListener("click", loadDriveFiles);
-  search.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      loadDriveFiles();
-    }
-  });
-  useFileBtn.addEventListener("click", async () => {
-    const fileId = sel.value;
-    if (!fileId) {
-      listStatus.textContent = "請先選擇 Drive 影片";
-      listStatus.className = "url-status err";
-      return;
-    }
-    useFileBtn.disabled = true;
-    useFileBtn.textContent = "匯入中...";
-    listStatus.textContent = "從 Google Drive 下載到 ComfyUI input...";
-    listStatus.className = "url-status";
-    try {
-      const data = await api("/api/google/drive/import", {
-        method: "POST",
-        body: JSON.stringify({ fileId, slot: up.id }),
-      });
-      useServerVideo(up, fileInput, preview, data.name || data.filename, data, "☁️");
-      listStatus.textContent = `已匯入（${formatBytes(data.size || 0)}）`;
-      listStatus.className = "url-status ok";
-    } catch (error) {
-      listStatus.textContent = `匯入失敗：${error.message}`;
-      listStatus.className = "url-status err";
-    } finally {
-      useFileBtn.disabled = false;
-      useFileBtn.textContent = "匯入選取影片";
-    }
-  });
+    setTimeout(loadDriveStatus, 0);
+    return [
+      h("div", { class: "method-tag", text: "方式四：Google Drive 登入 / 分享連結" }),
+      h("div", { class: "url-row" }, [loginBtn]),
+      accountStatus,
+      pickerPanel,
+    ];
+  }
+  const accountNodes = isOperator() ? renderDriveAccount() : [];
 
   const url = h("input", {
     type: "url",
     class: "url-input",
-    placeholder: "貼上 Google Drive 檔案分享連結",
+    placeholder: isOperator() ? "貼上 Google Drive 檔案分享連結" : "貼上公開分享的 Google Drive 連結",
   });
   const status = h("div", { class: "url-status" });
   const btn = h("button", { type: "button", class: "ghost small url-btn", text: "匯入" });
@@ -10042,13 +10112,9 @@ function renderDriveFetch(up, fileInput, preview) {
       btn.textContent = "匯入";
     }
   };
-  setTimeout(loadDriveStatus, 0);
   return h("div", { class: "url-fetch drive-fetch" }, [
-    h("div", { class: "method-tag", text: "方式四：Google Drive 登入 / 分享連結" }),
-    h("div", { class: "url-row" }, [loginBtn]),
-    accountStatus,
-    pickerPanel,
-    h("div", { class: "method-tag", text: "或貼上分享連結" }),
+    ...accountNodes,
+    h("div", { class: "method-tag", text: isOperator() ? "或貼上分享連結" : "Google Drive 分享連結" }),
     h("div", { class: "url-row" }, [url, btn]),
     status,
   ]);
@@ -10876,10 +10942,10 @@ async function onGenerate(event, feature) {
     : 0;
   if (minimumUploads) {
     const selected = (feature.uploads || []).filter((up) => (
-      capabilityServerBindsUpload(capability, up.id) || slotHasFile(up.id, {})
+      capabilityServerBindsUpload(capability, up.id) || slotHasFile(up.id, submittedForm.characterReferenceState || {})
     )).length;
     if (selected < minimumUploads) {
-      showAlert("至少選一個參考", true);
+      showAlert(minimumUploads === 2 ? "請選擇兩位角色的參考圖" : "至少選一個參考", true);
       return;
     }
   }
@@ -10890,15 +10956,15 @@ async function onGenerate(event, feature) {
   if (btn) { btn.disabled = true; btn.textContent = "送出中..."; }
   showAlert("");
   try {
-    const files = {};
+    const files = submittedForm.characterReferenceState
+      ? await collectMinimalFiles({...feature, uploads: (feature.uploads || []).filter(up => up.id === characterSourceSlot(feature.id))}, submittedForm.characterReferenceState, true) : {};
     const selectedDanceTemplateId = (
-      capability
-      && capability.variantId === "dance.anime.animate.v1"
+      feature.id === "dance"
       && fieldGetters.danceTemplateId
     ) ? String(fieldGetters.danceTemplateId() || "") : "";
     for (const up of feature.uploads || []) {
       assertSubmittedFormCurrent();
-      if (capabilityServerBindsUpload(capability, up.id)) continue;
+      if (files[up.id] || capabilityServerBindsUpload(capability, up.id) || isCanonicalProviderDefault(submittedForm.characterReferenceState, up.id)) continue;
       if (feature.id === "dance" && up.id === "video" && selectedDanceTemplateId) {
         const imported = await importSelectedDanceTemplate(selectedDanceTemplateId, up.id);
         assertSessionContext(session);
@@ -10906,7 +10972,7 @@ async function onGenerate(event, feature) {
         files[up.id] = { serverFile: imported.serverFile };
         continue;
       }
-      if (!slotHasFile(up.id, {})) {
+      if (!slotHasFile(up.id, submittedForm.characterReferenceState || {})) {
         if (up.required) throw new Error(`請上傳「${up.label}」`);
         continue;
       }
@@ -13279,12 +13345,12 @@ function renderOrchestratorView() {
 // ---- admin users ----------------------------------------------------------
 
 function openComputeSettings(opener, initialSection = "connections") {
-  if (!currentUser || window.WebComfyDocs || !window.ComputeSettings) return;
-  window.ComputeSettings.open(opener, {api, openSheet, openColabAccounts: isAdmin() ? openColabAccounts : null, canConfigure: isAdmin() || isOperator(), initialSection});
+  if (!currentUser || !window.ComputeSettings) return;
+  window.ComputeSettings.open(opener, {api, openSheet, isAdmin: isAdmin(), initialSection});
 }
 
 function openColabAccounts(opener) {
-  if (!isAdmin() || window.WebComfyDocs || !window.WebComfyColab) return;
+  if (!currentUser || !window.WebComfyColab) return;
   window.WebComfyColab.openAccounts(opener, {api, openSheet});
 }
 
@@ -13297,8 +13363,8 @@ function renderAdminHome() {
       h("button", { class: "shell-menu-row", text: "採集圖片與影片", onclick: openMaterialCollect }),
       h("button", { class: "shell-menu-row", text: "外部角色與資源", onclick: () => navigate({ view: "resources" }) }),
       h("button", { class: "shell-menu-row", text: "使用者管理", onclick: () => navigate({ view: "admin-users" }) }),
-      !window.WebComfyDocs && window.ComputeSettings ? h("button", {class:"shell-menu-row", type:"button", text:"運算平台", "aria-haspopup":"dialog", onclick:event=>openComputeSettings(event.currentTarget)}) : null,
-      !window.WebComfyDocs && window.WebComfyColab ? h("button", { class: "shell-menu-row", type: "button", text: "Google Colab 帳號", "aria-haspopup": "dialog", onclick: event => openColabAccounts(event.currentTarget) }) : null,
+      window.ComputeSettings ? h("button", {class:"shell-menu-row", type:"button", text:"我的運算平台", "aria-haspopup":"dialog", onclick:event=>openComputeSettings(event.currentTarget)}) : null,
+      window.WebComfyColab ? h("button", { class: "shell-menu-row", type: "button", text: "Google Colab 帳號", "aria-haspopup": "dialog", onclick: event => openColabAccounts(event.currentTarget) }) : null,
       h("button", { class: "shell-menu-row", text: "工作流監控", onclick: () => navigate({ view: "orchestrator" }) }),
       h("a", { class: "shell-menu-row", href: "http://127.0.0.1:8188/", target: "_blank", rel: "noopener noreferrer", text: "開啟 ComfyUI 節點編輯器 ↗" }),
     ]),
@@ -14380,6 +14446,15 @@ function setupChromeMeasurements() {
 }
 
 function boot() {
+  const callbackUrl = new URL(window.location.href);
+  if (callbackUrl.searchParams.has("google_drive")) {
+    const result = callbackUrl.searchParams.get("google_drive");
+    showToast(result === "connected" ? "Google Drive 已連結" : result === "session_error"
+      ? "請在登入本站的同一個瀏覽器與網址完成 Google Drive 連結"
+      : "Google Drive 連結未完成，請再試一次");
+    callbackUrl.searchParams.delete("google_drive");
+    history.replaceState(history.state, "", callbackUrl.toString());
+  }
   primeRouteBeforePaint();
   $("authForm").addEventListener("submit", submitAuth);
   $("statusPill").addEventListener("click", (event) => openTaskTray(event.currentTarget));

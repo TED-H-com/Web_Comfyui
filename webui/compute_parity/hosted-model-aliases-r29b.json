@@ -1,0 +1,34 @@
+{
+  "version": "20261111-r29b",
+  "aliases": {
+    "runninghub": {
+      "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors": {
+        "source_name": "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
+        "target_name": "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64_official.safetensors",
+        "source_sha256": "8833bd4fd7c8eabebf0bc8ee5cfaf47f4f310ce116928a02c1adf8941dd4b0f1",
+        "bytes": 739472104,
+        "verification": "public_page_md5",
+        "evidence": {
+          "page_id": "1945379281314750465",
+          "md5": "2d59a66a1a8bbfa4d3abc65105167fe2",
+          "url": "https://www.runninghub.ai/model/public/1945379281314750465"
+        }
+      }
+    },
+    "comfy_cloud": {
+      "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors": {
+        "source_name": "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
+        "target_name": "DeepBeepMeep__Wan21__Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
+        "source_sha256": "8833bd4fd7c8eabebf0bc8ee5cfaf47f4f310ce116928a02c1adf8941dd4b0f1",
+        "bytes": 739472104,
+        "verification": "provenance_verified",
+        "evidence": {
+          "revision": "176bbae94db7b26f00e5b698d95d4f578debc51c",
+          "lfs_sha256": "8833bd4fd7c8eabebf0bc8ee5cfaf47f4f310ce116928a02c1adf8941dd4b0f1",
+          "url": "https://huggingface.co/DeepBeepMeep/Wan2.1/resolve/176bbae94db7b26f00e5b698d95d4f578debc51c/loras_accelerators/Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
+          "remote_sha256_verified": false
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,159 @@
+diff --git a/single_inference.py b/single_inference.py
+index 7e99a2d..f8ffc80 100755
+--- a/single_inference.py
++++ b/single_inference.py
+@@ -264,16 +264,54 @@ class CustomCosyVoice:
+         return {'tts_speech': torch.concat(tts_speeches, dim=1)}
+         
+     def inference_zero_shot_no_normalize(self, tts_text, prompt_text, prompt_speech_16k):
+-        prompt_text = prompt_text
+-        tts_speeches = []
+-        for i in re.split(r'(?<=[？！。.?!])\s*', tts_text):
+-            if not len(i):
+-                continue
+-            print("Synthesizing:",i)
+-            model_input = self.frontend.frontend_zero_shot(i, prompt_text, prompt_speech_16k)
+-            model_output = self.model.inference(**model_input)
+-            tts_speeches.append(model_output['tts_speech'])
+-        return {'tts_speech': torch.concat(tts_speeches, dim=1)}
++        # Group sentences into breath-length chunks instead of splitting on EVERY
++        # 。？！ — per-sentence generation resets prosody and inserts ragged gaps
++        # (the "斷句" choppiness). Most lines now synth as a single utterance, so the
++        # model produces its own natural intra-sentence pauses.
++        def vis_len(s):
++            return len(re.sub(r'\[:.*?\]', '', s))  # don't count 注音 annotations
++        sents = [p for p in re.split(r'(?<=[？！。.?!])\s*', tts_text) if p.strip()]
++        chunks, cur = [], ""
++        for s in sents:
++            if cur and vis_len(cur) + vis_len(s) > 70:  # stay under the ~80-token gen limit
++                chunks.append(cur)
++                cur = s
++            else:
++                cur += s
++        if cur:
++            chunks.append(cur)
++        if not chunks:
++            chunks = [tts_text]
++
++        tts_speeches = []
++        for idx, i in enumerate(chunks, start=1):
++            print(f"Synthesizing chunk {idx}/{len(chunks)} ({vis_len(i)} chars)")
++            model_input = self.frontend.frontend_zero_shot(i, prompt_text, prompt_speech_16k)
++            model_output = self.model.inference(**model_input)
++            tts_speeches.append(model_output['tts_speech'])
++
++        if len(tts_speeches) == 1:
++            return {'tts_speech': tts_speeches[0]}
++        # Smooth the seams of any multi-chunk line: trim ragged edge-silence,
++        # normalize the inter-chunk pause to a natural ~110ms, and short-fade the
++        # edges so the boundary doesn't click.
++        sr = 22050
++        fade = int(sr * 0.012)
++        gap = torch.zeros(1, int(sr * 0.11))
++        out = []
++        for k, w in enumerate(tts_speeches):
++            w = w.clone()
++            nz = (w.abs().squeeze(0) > 0.015).nonzero()
++            if len(nz):
++                w = w[:, int(nz[0]):int(nz[-1]) + 1]
++            if w.shape[1] > 2 * fade:
++                ramp = torch.linspace(0, 1, fade)
++                w[:, :fade] = w[:, :fade] * ramp
++                w[:, -fade:] = w[:, -fade:] * ramp.flip(0)
++            out.append(w)
++            if k < len(tts_speeches) - 1:
++                out.append(gap)
++        return {'tts_speech': torch.cat(out, dim=1)}
+         
+ ####wav2text
+ def transcribe_audio(audio_file):
+@@ -291,7 +329,15 @@ def transcribe_audio(audio_file):
+     traditional_text = converter.convert(result["text"])
+     return traditional_text
+ 
+-def get_bopomofo_rare(text, converter):
++def get_bopomofo_rare(text, converter, *, annotate_contextual_polyphones=False):
++    """Attach pronunciation hints without changing the visible source text.
++
++    Rare characters keep the legacy behavior.  For synthesis content, callers
++    may also retain a lexical G2PW context-selected reading whenever it differs
++    from the lexicon default. Productive 一/不 tone sandhi and inferred neutral
++    tones stay unannotated: BreezyVoice handles those surface forms naturally,
++    while forcing them into the token stream can destabilize an earlier phrase.
++    """
+     res = converter(text)
+     text_w_bopomofo = [x for x in zip(list(text), res[0])]
+     reconstructed_text = ""
+@@ -308,8 +354,25 @@ def get_bopomofo_rare(text, converter):
+             # Add the char and the pronunciation
+             reconstructed_text += t[0] + f"[:{t[1]}]"
+         
+-        elif len(char2phn[t[0]]) >= 2:
+-            if t[1] != char2phn[t[0]][0] and (word_to_dataset_frequency[t[0]] < 10000 or t[0] in always_augment_chars) and next_t_char != '[':  # Not most common pronunciation
++        elif len(char2phn[t[0]]) >= 2:
++            pronunciations = char2phn[t[0]]
++            default_pronunciation = pronunciations[0]
++            productive_tone_sandhi = (
++                t[0] in ("一", "不")
++                and isinstance(t[1], str)
++                and isinstance(default_pronunciation, str)
++                and t[1][:-1] == default_pronunciation[:-1]
++            )
++            contextual_lexical_reading = (
++                annotate_contextual_polyphones
++                and t[1] in pronunciations
++                and not productive_tone_sandhi
++            )
++            if (t[1] != default_pronunciation
++                    and (contextual_lexical_reading
++                         or word_to_dataset_frequency[t[0]] < 10000
++                         or t[0] in always_augment_chars)
++                    and next_t_char != '['):  # Not most common pronunciation
+                 # Add the char and the pronunciation
+                 reconstructed_text += t[0] + f"[:{t[1]}]"
+             else:
+@@ -353,7 +416,10 @@ def parse_transcript(text, end):
+     parsed_output = "".join([p[2] for p in parsed_output])
+     return parsed_output, start
+ 
+-def single_inference(speaker_prompt_audio_path, content_to_synthesize, output_path, cosyvoice, bopomofo_converter, speaker_prompt_text_transcription=None):
++def single_inference(
++        speaker_prompt_audio_path, content_to_synthesize, output_path,
++        cosyvoice, bopomofo_converter, speaker_prompt_text_transcription=None,
++        *, annotate_contextual_polyphones=False):
+     prompt_speech_16k = load_wav(speaker_prompt_audio_path, 16000)
+     content_to_synthesize = content_to_synthesize
+     output_path = output_path.strip()
+@@ -373,19 +439,24 @@ def single_inference(speaker_prompt_audio_path, content_to_synthesize, output_pa
+     content_to_synthesize = cosyvoice.frontend.text_normalize_new(
+         content_to_synthesize, 
+         split=False
+-    )
+-    speaker_prompt_text_transcription_bopomo = get_bopomofo_rare(speaker_prompt_text_transcription, bopomofo_converter)
+-    print("Speaker prompt audio transcription:",speaker_prompt_text_transcription_bopomo)
+-    
+-    #print("Content to be synthesized before bopomofo:",content_to_synthesize)
+-    content_to_synthesize_bopomo = get_bopomofo_rare(content_to_synthesize, bopomofo_converter)
+-    print("Content to be synthesized:",content_to_synthesize_bopomo)
++    )
++    speaker_prompt_text_transcription_bopomo = get_bopomofo_rare(speaker_prompt_text_transcription, bopomofo_converter)
++    print("Speaker prompt audio transcription chars:", len(speaker_prompt_text_transcription_bopomo))
++    
++    #print("Content to be synthesized before bopomofo:",content_to_synthesize)
++    content_to_synthesize_bopomo = get_bopomofo_rare(
++        content_to_synthesize,
++        bopomofo_converter,
++        annotate_contextual_polyphones=annotate_contextual_polyphones,
++    )
++    print("Content to be synthesized chars:", len(content_to_synthesize_bopomo))
+     start = time.time()
+     output = cosyvoice.inference_zero_shot_no_normalize(content_to_synthesize_bopomo, speaker_prompt_text_transcription_bopomo, prompt_speech_16k)
+     end = time.time()
+     print("Elapsed time:",end - start)
+     print("Generated audio length:", output['tts_speech'].shape[1]/22050, "seconds")
+-    torchaudio.save(output_path, output['tts_speech'], 22050)
++    import soundfile as sf
++    sf.write(output_path, output['tts_speech'].squeeze(0).cpu().numpy(), 22050)
+     print(f"Generated voice saved to {output_path}")
+ 
+ def main():

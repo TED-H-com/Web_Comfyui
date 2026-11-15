@@ -1,0 +1,248 @@
+{
+  "input": {
+    "required": {
+      "input": [
+        "COMFY_MATCHTYPE_V3",
+        {
+          "template": {
+            "template_id": "input_type",
+            "allowed_types": "IMAGE,MASK"
+          }
+        }
+      ],
+      "resize_type": [
+        "COMFY_DYNAMICCOMBO_V3",
+        {
+          "tooltip": "Select how to resize: by exact dimensions, scale factor, matching another image, etc.",
+          "options": [
+            {
+              "key": "scale dimensions",
+              "inputs": {
+                "required": {
+                  "width": [
+                    "INT",
+                    {
+                      "tooltip": "Target width in pixels. Set to 0 to auto-calculate from height while preserving aspect ratio.",
+                      "default": 512,
+                      "min": 0,
+                      "max": 16384,
+                      "step": 1
+                    }
+                  ],
+                  "height": [
+                    "INT",
+                    {
+                      "tooltip": "Target height in pixels. Set to 0 to auto-calculate from width while preserving aspect ratio.",
+                      "default": 512,
+                      "min": 0,
+                      "max": 16384,
+                      "step": 1
+                    }
+                  ],
+                  "crop": [
+                    "COMBO",
+                    {
+                      "tooltip": "How to handle aspect ratio mismatch: 'disabled' stretches to fit, 'center' crops to maintain aspect ratio.",
+                      "default": "center",
+                      "multiselect": false,
+                      "options": [
+                        "disabled",
+                        "center"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "key": "scale by multiplier",
+              "inputs": {
+                "required": {
+                  "multiplier": [
+                    "FLOAT",
+                    {
+                      "tooltip": "Scale factor (e.g., 2.0 doubles size, 0.5 halves size).",
+                      "default": 1.0,
+                      "min": 0.01,
+                      "max": 8.0,
+                      "step": 0.01
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "key": "scale longer dimension",
+              "inputs": {
+                "required": {
+                  "longer_size": [
+                    "INT",
+                    {
+                      "tooltip": "The longer edge will be resized to this value. Aspect ratio is preserved.",
+                      "default": 512,
+                      "min": 0,
+                      "max": 16384,
+                      "step": 1
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "key": "scale shorter dimension",
+              "inputs": {
+                "required": {
+                  "shorter_size": [
+                    "INT",
+                    {
+                      "tooltip": "The shorter edge will be resized to this value. Aspect ratio is preserved.",
+                      "default": 512,
+                      "min": 0,
+                      "max": 16384,
+                      "step": 1
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "key": "scale width",
+              "inputs": {
+                "required": {
+                  "width": [
+                    "INT",
+                    {
+                      "tooltip": "Target width in pixels. Height auto-adjusts to preserve aspect ratio.",
+                      "default": 512,
+                      "min": 0,
+                      "max": 16384,
+                      "step": 1
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "key": "scale height",
+              "inputs": {
+                "required": {
+                  "height": [
+                    "INT",
+                    {
+                      "tooltip": "Target height in pixels. Width auto-adjusts to preserve aspect ratio.",
+                      "default": 512,
+                      "min": 0,
+                      "max": 16384,
+                      "step": 1
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "key": "scale total pixels",
+              "inputs": {
+                "required": {
+                  "megapixels": [
+                    "FLOAT",
+                    {
+                      "tooltip": "Target total megapixels (e.g., 1.0 \u2248 1024\u00d71024). Aspect ratio is preserved.",
+                      "default": 1.0,
+                      "min": 0.01,
+                      "max": 16.0,
+                      "step": 0.01
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "key": "match size",
+              "inputs": {
+                "required": {
+                  "match": [
+                    "IMAGE,MASK",
+                    {
+                      "tooltip": "Resize input to match the dimensions of this reference image or mask."
+                    }
+                  ],
+                  "crop": [
+                    "COMBO",
+                    {
+                      "tooltip": "How to handle aspect ratio mismatch: 'disabled' stretches to fit, 'center' crops to maintain aspect ratio.",
+                      "default": "center",
+                      "multiselect": false,
+                      "options": [
+                        "disabled",
+                        "center"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "key": "scale to multiple",
+              "inputs": {
+                "required": {
+                  "multiple": [
+                    "INT",
+                    {
+                      "tooltip": "Resize so width and height are divisible by this number. Useful for latent alignment (e.g., 8 or 64).",
+                      "default": 8,
+                      "min": 1,
+                      "max": 16384,
+                      "step": 1
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "scale_method": [
+        "COMBO",
+        {
+          "tooltip": "Interpolation algorithm. 'area' is best for downscaling, 'lanczos' for upscaling, 'nearest-exact' for pixel art.",
+          "default": "area",
+          "multiselect": false,
+          "options": [
+            "nearest-exact",
+            "bilinear",
+            "area",
+            "bicubic",
+            "lanczos"
+          ]
+        }
+      ]
+    }
+  },
+  "input_order": {
+    "required": [
+      "input",
+      "resize_type",
+      "scale_method"
+    ]
+  },
+  "output": [
+    "COMFY_MATCHTYPE_V3"
+  ],
+  "output_is_list": [
+    false
+  ],
+  "output_name": [
+    "resized"
+  ],
+  "name": "ResizeImageMaskNode",
+  "display_name": "Resize Image/Mask",
+  "description": "Resize an image or mask using various scaling methods.",
+  "python_module": "comfy_extras.nodes_post_processing",
+  "category": "image/transform",
+  "output_node": false,
+  "has_intermediate_output": false,
+  "output_tooltips": [
+    null
+  ],
+  "api_node": false
+}

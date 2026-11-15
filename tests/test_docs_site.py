@@ -21,6 +21,7 @@ MANIFESTS = (
     'manifests/workflow_coverage/imported_sources.json',
     'manifests/community_recipes/recipes.json',
     'manifests/app_guides/en.json',
+    'webui/docs/demo-compute.json',
 )
 
 
@@ -309,7 +310,17 @@ def test_project_homepage_is_separate_from_simulated_app(source, tmp_path):
     assert "connect-src 'none'" in home
     assert 'TEDH2FND' in home and 'rel="sponsored noopener noreferrer"' in home
     assert 'autoip-referral.svg' in home
+    assert 'https://www.runninghub.ai?inviteCode=qqgzxufp' in home
+    assert 'qqgzxufp' in home
+    assert (output / 'assets/runninghub-referral.svg').is_file()
+    referral_svg = (output / 'assets/runninghub-referral.svg').read_text()
+    assert '<desc>' in referral_svg and 'qqgzxufp' in referral_svg
+    for forbidden in ('<script', '<image', 'foreignObject', 'href'):
+        assert forbidden not in referral_svg
     assert '介面示範 · 非實際服務' in demo and 'Not a live service' in demo
+    assert 'href="https://www.runninghub.ai?inviteCode=qqgzxufp"' in demo
+    assert 'href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND"' in demo
+    assert demo.count('target="_blank"') >= 2 and demo.count('rel="sponsored noopener noreferrer"') >= 2
     assert 'href="../"' in demo
     hardware = read_json(output / 'app-guide.json')['hardware']
     assert hardware and 'none' in {profile['id'] for profile in hardware['profiles']}
@@ -349,8 +360,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const calls = [], listeners = {};
-const password = {value: 'synthetic-old-value', disabled: false};
-const app = {studios: [], features: [], guides: []};
+const password = {type: 'password', value: 'synthetic-old-value', disabled: false};
+const app = {studios: [], features: [], guides: [], computeDemo: {
+  '/api/compute/capabilities': {status: 200, body: {features: [{id: 'synthetic-feature'}]}}
+}};
 const library = {items: []};
 const window = {addEventListener() {}, fetch: async (url, options) => {
   calls.push({url: String(url), options});
@@ -361,7 +374,7 @@ for (const key of ['localStorage', 'sessionStorage']) Object.defineProperty(wind
 });
 const context = {window, URL, Request, Response, console, setTimeout,
   location: {href: 'https://example.test/Web_Comfyui/demo/', origin: 'https://example.test', hash: '#/studio/text2img'},
-  document: {documentElement: {}, querySelectorAll: () => [password], getElementById: () => null,
+  document: {documentElement: {}, querySelectorAll: selector => selector === 'input' ? [password] : [], getElementById: () => null,
     addEventListener: (name, callback) => {listeners[name] = callback;}},
   history: {replaceState() {}}, navigator: {sendBeacon() {throw Error('Native beacon must not run');}},
   MutationObserver: class {observe() {}}
@@ -382,6 +395,12 @@ vm.runInNewContext(fs.readFileSync(process.argv[1], 'utf8'), context);
   assert.equal((await window.fetch('http://127.0.0.1:8188/object_info')).status, 405);
   assert.equal((await window.fetch('https://external.example/api')).status, 405);
   assert.equal((await window.fetch('/api/characters')).status, 200);
+  const capabilities = await window.fetch('/api/compute/capabilities');
+  assert.equal(capabilities.status, 200);
+  assert.equal((await capabilities.json()).features[0].id, 'synthetic-feature');
+  const history = await (await window.fetch('/api/history?max_items=500&scope=own')).json();
+  for (const key of ['images', 'jobs', 'recent_errors']) assert.deepEqual(history[key], []);
+  assert.equal(window.WebComfyDocs.unknownRequests.join(','), '/api/unrecognized-private-api');
   assert.equal(calls.length, 2);
   assert.equal(context.navigator.sendBeacon('/api/write', 'data'), false);
   assert.throws(() => new window.WebSocket('ws://127.0.0.1:8188'));
@@ -400,3 +419,50 @@ vm.runInNewContext(fs.readFileSync(process.argv[1], 'utf8'), context);
     result = subprocess.run(['node', '-e', script, str(source / 'webui/docs/docs.js')],
                             capture_output=True, text=True, timeout=20)
     assert result.returncode == 0, result.stderr
+
+
+def test_compute_demo_is_embedded_without_extra_native_requests(source, tmp_path):
+    from scripts.record_demo_compute import ENDPOINTS, validate
+    recorded = read_json(ROOT / 'webui/docs/demo-compute.json')
+    assert set(recorded) == set(ENDPOINTS)
+    validate(recorded)
+    assert '/home/' not in json.dumps(recorded)
+    assert recorded['/api/compute/connections']['body']['owner'] == 'demo@example.invalid'
+    assert [row['provider'] for row in recorded['/api/compute/connections']['body']['connections']] == [
+        'local', 'colab', 'autoip', 'comfy_cloud', 'runninghub']
+    output = tmp_path / 'compute-site'
+    build_docs.build(source, output)
+    assert read_json(output / 'app-guide.json')['computeDemo'] == recorded
+    assert (ROOT / 'webui/docs/docs.js').read_text().count('nativeFetch(') == 2
+
+
+@pytest.mark.parametrize('value', [
+    'person@outside.invalid', '/home/synthetic/data.json', '/tmp/synthetic',
+    r'C:\synthetic\data.json', 'sk-' + 'synthetic' * 5,
+    'a' * 64, {'access_token': 'synthetic-test-token-1'},
+])
+def test_compute_recorder_rejects_unsafe_responses_without_echo(value):
+    from scripts.record_demo_compute import validate
+    with pytest.raises(ValueError) as caught:
+        validate({'response': value})
+    assert str(value) not in str(caught.value)
+
+
+def test_compute_recorder_normalization_preserves_evidence_and_only_maps_builtin_identity():
+    from scripts.record_demo_compute import normalize, validate
+    identity = {'email': 'built-in@example.invalid', 'displayName': 'Built in'}
+    original = {'owner': identity['email'], 'displayName': identity['displayName'],
+                'created_at': 1794614400, 'updated_at': '2026-11-15T01:02:03Z',
+                'id': '00000000-0000-4000-8000-000000000001',
+                'feature': 'character-angles', 'other': 'person@outside.invalid'}
+    normalized = normalize(original, identity)
+    assert normalized['owner'] == 'demo@example.invalid'
+    assert normalized['displayName'] == 'Demo'
+    assert normalized['created_at'] == 0
+    assert normalized['updated_at'] == '2026-11-14T00:00:00Z'
+    assert normalized['id'] == 'demo-id-1'
+    assert normalized['feature'] == original['feature']
+    assert normalized['other'] == original['other']
+    assert normalize('prefix' + identity['email'], identity) == 'prefix' + identity['email']
+    with pytest.raises(ValueError, match='Non-example'):
+        validate(normalized)

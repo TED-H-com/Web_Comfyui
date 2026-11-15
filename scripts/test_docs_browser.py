@@ -1,5 +1,6 @@
 """Exercise the built guide with Chromium under the real Pages project subpath."""
 import json
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -59,9 +60,12 @@ ASSERT = r'''(async () => {
   if(WebComfyTour.demoFor('text2img').output.kind==='unavailable') assert(!document.querySelector('.demo-output img'),'untested text2img has no borrowed image');
   else await until(()=>document.querySelector('.demo-output img')?.naturalWidth>0);
   await feature('AI 指令改圖');
-  detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors'),'actual editing checkpoint');await close();
-  assert(location.hash.includes('img2img'), 'feature route matches selected button');
-  await until(()=>document.querySelector('[data-demo-id="img2img"]'));
+  detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('qwen_image_2.1_int8_convrot.safetensors')&&!detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors'),'actual editing checkpoint');await close();
+  assert(location.hash.includes('qwen21-edit'), 'feature route matches selected button');
+  await until(()=>document.querySelector('[data-demo-id="qwen21-edit"]'));
+  location.hash='#/studio/img2img';await until(()=>document.querySelector('[data-demo-id="img2img"]'));
+  document.querySelector('.app-guide-button button').click();await until(()=>document.querySelector('.app-feature-guide'));
+  detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors')&&detail.textContent.includes('目前一般工具選單隱藏'),'hidden Flux Kontext form stays documented at its direct route');await close();
   const editingDemo=WebComfyTour.demoFor('img2img');
   if(editingDemo.inputs?.length) {
     const original=document.querySelector('.demo-input-preview img');
@@ -217,12 +221,20 @@ ASSERT = r'''(async () => {
   location.hash='#/studio/text2img';await until(()=>document.querySelector('form[data-demo-id="text2img"]'));
   const hardwareForm=document.querySelector('form[data-demo-id="text2img"]');
   const hardwarePrompt=hardwareForm.querySelector('textarea');hardwarePrompt.value='Preserve this hardware-switch input';
+  const bannerLinks=[...document.querySelectorAll('#docsBanner a[target="_blank"]')];
+  assert(bannerLinks.length>=2&&bannerLinks.every(a=>a.rel.includes('sponsored')&&a.target==='_blank'),'banner referrals');
+  assert(bannerLinks.some(a=>a.href.includes('ref=TEDH2FND'))&&bannerLinks.some(a=>a.href.includes('inviteCode=qqgzxufp')),'banner hrefs');
   await chooseHardware('none');
+  const cloud=hardwareForm.querySelector('.hardware-cloud-option');
+  const cloudLinks=[...cloud.querySelectorAll('a')];
+  assert(cloud&&!cloud.hidden&&cloudLinks.length===2&&cloud.textContent.includes('TEDH2FND')&&cloud.textContent.includes('qqgzxufp'),'hardware referrals when blocked');
+  assert(cloudLinks.every(a=>a.rel.includes('sponsored')&&a.target==='_blank'),'hardware referral rel');
   assert(!WebComfyHardware.canUse('text2img')&&hardwareForm.querySelector('.generate-btn').disabled,'no GPU disables generation');
   assert(await WebComfyTour.start(hardwareForm)===false,'direct generation also blocked');
   if(innerWidth>=1280)assert(document.getElementById('studio-side-tool-text2img').getAttribute('aria-disabled')==='true','sidebar indicates unavailable workflow');
   if(innerWidth>=1280)for(const card of document.querySelectorAll('.side-tool'))for(const child of card.children)assert(!child.getBoundingClientRect().width||child.getBoundingClientRect().right<=card.getBoundingClientRect().right+1,'hardware status stays inside sidebar');
   await chooseHardware('vram-24');assert(WebComfyHardware.canUse('text2img')&&!WebComfyHardware.canUse('dance'),'24 GB planning threshold');
+  assert(hardwareForm.querySelector('.hardware-cloud-option').hidden,'hardware referrals hidden when allowed');
   await chooseHardware('dual-24');assert(!WebComfyHardware.canUse('dance'),'dual GPUs do not pool VRAM');
   await chooseHardware('autoip');assert(features.every(entry=>WebComfyHardware.canUse(entry.id)),'AutoIP opens every demonstration');
   assert(!hardwareForm.querySelector('.generate-btn').disabled&&hardwarePrompt.value==='Preserve this hardware-switch input','mode switch restores action and preserves inputs');
@@ -297,5 +309,135 @@ def test_static_docs_browser(tmp_path, initial_page):
                         assert page.evaluate("WebComfyCharacterSession.list().length") == 0
         assert not any('/api/' in path or path.startswith('POST ') for path in requests)
         assert any('/downloads/' in path for path in requests)
+    finally:
+        server.shutdown(); server.server_close()
+
+
+@pytest.mark.parametrize('language', ['zh-Hant', 'en'])
+@pytest.mark.parametrize('width', [390, 1440])
+def test_compute_screens_are_canned_and_read_only(tmp_path, language, width):
+    from functools import partial
+    from http.server import SimpleHTTPRequestHandler
+    playwright = pytest.importorskip('playwright.sync_api')
+    browser = shutil.which('chromium')
+    if not browser:
+        pytest.skip('Chromium not installed')
+    output = tmp_path / 'Web_Comfyui'
+    build(ROOT, output)
+    requests = []
+
+    class Handler(SimpleHTTPRequestHandler):
+        def log_message(self, *args): pass
+        def do_GET(self):
+            requests.append(self.path)
+            super().do_GET()
+        def do_POST(self):
+            requests.append('POST ' + self.path)
+            self.send_error(405)
+
+    server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=str(tmp_path)))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    origin = f'http://127.0.0.1:{server.server_port}'
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                page = instance.new_page(viewport={'width': width, 'height': 1000})
+                errors, external = [], []
+                page.on('pageerror', lambda error: errors.append(str(error)))
+                page.on('console', lambda message: errors.append(message.text) if message.type == 'error' else None)
+                def local_only(route):
+                    if route.request.url.startswith(origin + '/'):
+                        route.continue_()
+                    else:
+                        external.append(route.request.url)
+                        route.abort()
+                page.route('**/*', local_only)
+                page.goto(f'{origin}/Web_Comfyui/demo/?lang={language}')
+                try:
+                    page.locator('form[data-demo-id="text2img"] .compute-placement').wait_for()
+                except playwright.TimeoutError:
+                    pytest.fail(f'Compute chooser did not mount: {errors}; {page.locator("body").inner_text()[:2500]}')
+                page.wait_for_function("document.documentElement.lang === " + json.dumps(language))
+                page.locator('.compute-placement > .docs-compute-action').wait_for()
+                page.evaluate("""() => {
+                  window.computeReads = [];
+                  const original = window.fetch;
+                  window.fetch = (input, options) => {
+                    computeReads.push(typeof input === 'string' ? input : input.url);
+                    return original(input, options);
+                  };
+                }""")
+                notice = ('Documentation site: screens only. Nothing connects, no keys are accepted and nothing is saved.'
+                          if language == 'en' else '說明站只展示畫面：不會連線、不接受金鑰，也不會保存設定。')
+                placeholder = ('Keys are not accepted on the documentation site' if language == 'en' else '說明站不接受金鑰')
+                def check_screen(selector, name):
+                    screen = page.locator(selector)
+                    assert screen.locator(':scope > .docs-compute-notice').inner_text() == notice
+                    for credential in screen.locator('input[type=password]').all():
+                        assert credential.is_disabled()
+                        assert credential.input_value() == ''
+                        assert credential.get_attribute('placeholder') == placeholder
+                    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+                    shots = os.environ.get('WEB_COMFYUI_TEST_SCREENSHOTS')
+                    if shots:
+                        target = Path(shots); target.mkdir(parents=True, exist_ok=True)
+                        in_sheet = screen.evaluate("screen => {const sheet = screen.closest('[role=dialog]'); if (!sheet) return false; sheet.querySelector('.sheet-body').scrollTop = 0; return true;}")
+                        page.screenshot(path=str(target / f'{name}-{language}-{width}.png'), full_page=not in_sheet)
+
+                def menu(label):
+                    # The ported desktop app keeps platforms/resources in Account,
+                    # and Colab accounts in Management; mobile combines both.
+                    selector = '#moreMenuBtn' if width < 768 else ('#managementMenuBtn' if label == 'Google Colab 帳號' else '#identityChip')
+                    page.locator(selector).click()
+                    translated = page.evaluate('(text) => WebComfyI18n.t(text)', label)
+                    page.locator('.shell-menu-row').filter(has_text=translated).first.click()
+
+                check_screen('.compute-placement', 'studio')
+                menu('我的運算平台')
+                cards = page.locator('.compute-settings [data-provider]')
+                cards.nth(4).wait_for()
+                for lane, label in [('local', '本機'), ('colab', 'Google Colab'), ('autoip', 'AutoIP'),
+                                    ('comfy_cloud', 'Comfy Cloud'), ('runninghub', 'RunningHub')]:
+                    heading = page.locator(f'.compute-settings [data-provider="{lane}"] h3')
+                    heading.scroll_into_view_if_needed()
+                    assert heading.is_visible()
+                    assert heading.inner_text() == page.evaluate('(text) => WebComfyI18n.t(text)', label)
+                page.locator('.console-exceptions summary').click()
+                page.locator('.console-exceptions select').first.wait_for()
+                assert page.locator('.console-exceptions select').first.locator('option').count() > 0
+                assert '/api/compute/capabilities' in page.evaluate('computeReads')
+                shots = os.environ.get('WEB_COMFYUI_TEST_SCREENSHOTS')
+                if shots:
+                    page.locator('.console-exceptions').screenshot(path=str(Path(shots) / f'platform-exceptions-{language}-{width}.png'))
+                check_screen('.compute-settings', 'platforms')
+                tabs = page.locator('.compute-settings > .console-actions button')
+                if tabs.count() == 2:
+                    tabs.nth(1).click()
+                    page.locator('.compute-settings > div:last-child > h3').wait_for()
+                    assert page.locator('.console-admin-row').count() == 0
+                    assert '/api/compute/platform-admin' in page.evaluate('computeReads')
+                    check_screen('.compute-settings', 'platform-admin')
+                    tabs.nth(0).click()
+                # A real mutation reaches only the 405 documentation adapter.
+                page.locator('.compute-settings .console-test button').filter(has_text=page.evaluate("WebComfyI18n.t('儲存金鑰')")).first.click()
+                page.wait_for_function("document.querySelector('.compute-settings .docs-compute-action')?.textContent.length > 0")
+                assert page.evaluate("fetch('/api/compute/connections').then(r=>r.json()).then(d=>d.connections.every(c=>!c.credential_present))")
+                page.locator('.sheet-close').click()
+                page.locator('.compute-production-entry').click()
+                page.locator('.compute-production form').wait_for()
+                check_screen('.compute-production', 'production')
+                menu('Google Colab 帳號')
+                page.locator('.colab-content select').first.wait_for()
+                assert page.locator('.colab-content select').first.locator('option').count() == 1
+                assert page.locator('.colab-content select').first.input_value() == ''
+                check_screen('.colab-content', 'colab')
+                page.locator('.sheet-close').click()
+                menu('角色創作資源中心')
+                page.locator('castle-provider-fabric .provider-fabric__inner').wait_for()
+                check_screen('castle-provider-fabric', 'resources')
+                assert page.evaluate('WebComfyDocs.unknownRequests') == []
+                assert errors == []
+                assert external == []
+                assert not any('/api/' in request or request.startswith('POST ') for request in requests)
     finally:
         server.shutdown(); server.server_close()

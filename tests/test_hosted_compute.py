@@ -6,8 +6,10 @@ import io
 import json
 import os
 from pathlib import Path
+import sys
 import threading
 import time
+from types import SimpleNamespace
 import uuid
 
 from PIL import Image
@@ -67,10 +69,32 @@ class FakeHTTP:
         return item
 
 
-def configured(tmp_path, provider='comfy_cloud', *, image=False, http=None, endpoint=None, clock=None):
+def configured(tmp_path, provider='comfy_cloud', *, image=False, http=None, endpoint=None, clock=None, standard_layout=False):
+    # Follow the write-only vault setup in test_provider_console.py::write.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'webui'))
+    from colab_service import ColabService
+    from provider_console import ProviderConsole
+    from provider_fabric.runtime import actor_context_from_castle, load_or_create_identity_key
+    from provider_fabric.store import ProviderFabricStore
+
+    tmp_path.mkdir(mode=0o700, parents=True, exist_ok=True)
+    identity = load_or_create_identity_key(tmp_path / 'actor-identity.key')
+    runtime = SimpleNamespace(
+        config=SimpleNamespace(credential_root=tmp_path / 'provider-secrets'),
+        store=ProviderFabricStore(tmp_path / 'provider-fabric.sqlite3'),
+        actor_context=lambda email, role: actor_context_from_castle(email, role, identity_key=identity),
+    )
+    colab = ColabService(tmp_path / 'colab')
+    console = ProviderConsole(tmp_path, runtime, {'email': OWNER, 'role': 'member'}, colab)
+    console.write_credential(provider, {'credential': KEY, 'revision': 0, 'operation_id': str(uuid.uuid4())})
+    root = tmp_path / 'hosted-compute'
+    if not standard_layout:
+        root.rename(tmp_path / 'state')
+        root = tmp_path / 'state'
     http = http or FakeHTTP()
-    service = H.HostedComputeService(tmp_path / 'state', transport=http, **({'clock': clock} if clock else {}))
-    body = {'enabled': True, 'api_key': KEY, 'recipes': [recipe(provider, image=image)]}
+    service = H.HostedComputeService(root, transport=http, **({'clock': clock} if clock else {}))
+    service.test_console = console
+    body = {'enabled': True, 'recipes': [recipe(provider, image=image)]}
     if endpoint:
         body['endpoint'] = endpoint
     service.configure(OWNER, provider, body)
@@ -103,10 +127,14 @@ def test_config_is_owner_scoped_write_only_private_and_offline(tmp_path):
     assert http.calls == []
     for path in (tmp_path / 'state').rglob('*'):
         assert path.stat().st_mode & 0o077 == 0
-    service.configure(OWNER, 'comfy_cloud', {'api_key': ''})
+    with pytest.raises(H.HostedComputeError) as write_error:
+        service.configure(OWNER, 'comfy_cloud', {'api_key': ''})
+    assert (write_error.value.code, write_error.value.status) == ('legacy_write_disabled', 409)
     assert service.public_config(OWNER)['providers'][0]['credential_configured']
-    service.configure(OWNER, 'comfy_cloud', {'clear_api_key': True})
-    assert not service.public_config(OWNER)['providers'][0]['credential_configured']
+    with pytest.raises(H.HostedComputeError) as clear_error:
+        service.configure(OWNER, 'comfy_cloud', {'clear_api_key': True})
+    assert (clear_error.value.code, clear_error.value.status) == ('legacy_write_disabled', 409)
+    assert service.public_config(OWNER)['providers'][0]['credential_configured']
 
 
 @pytest.mark.parametrize('url', ['http://cloud.comfy.org', 'https://127.0.0.1', 'https://cloud.comfy.org.evil.test',
@@ -163,7 +191,7 @@ def test_finite_budget_and_deadline_required(tmp_path, limits, reason):
 
 def test_cloud_create_poll_download_restart_and_tamper(tmp_path):
     http = FakeHTTP([accepted(urls={'self': '/api/v2/jobs/custom-path'}), completed(), response(png())])
-    service, _ = configured(tmp_path, http=http)
+    service, _ = configured(tmp_path, http=http, standard_layout=True)
     first = service.submit(OWNER, 'comfy_cloud', RID, REQUEST, LIMITS)
     assert first['state'] == 'queued' and first['downstream_id'] == RID
     create = json.loads(http.calls[0][2]['body'])
@@ -171,7 +199,7 @@ def test_cloud_create_poll_download_restart_and_tamper(tmp_path):
     assert 'metadata' not in create
     assert http.calls[0][2]['headers']['Idempotency-Key'] == RID
     assert not service.inspect(OWNER, 'comfy_cloud', REQUEST, LIMITS)['auto_eligible']
-    restarted = H.HostedComputeService(tmp_path / 'state', http)
+    restarted = H.HostedComputeService(service.root, http)
     done = restarted.status(OWNER, 'comfy_cloud', RID)
     assert done['state'] == 'completed'
     assert http.calls[1][1].endswith('/api/v2/jobs/custom-path')
@@ -186,7 +214,10 @@ def test_cloud_create_poll_download_restart_and_tamper(tmp_path):
     file.write_bytes(b'tampered')
     with pytest.raises(H.HostedComputeError):
         restarted.artifact(OWNER, 'comfy_cloud', RID, item['name'])
-    restarted.configure(OWNER, 'comfy_cloud', {'api_key': 'rotated-test-key'})
+    console = service.test_console
+    card = next(c for c in console.snapshot()['connections'] if c['provider'] == 'comfy_cloud')
+    console.write_credential('comfy_cloud', {'credential': 'synthetic-test-key-rotation',
+        'revision': card['revision'], 'operation_id': str(uuid.uuid4())})
     assert not restarted.inspect(OWNER, 'comfy_cloud', REQUEST, LIMITS)['auto_eligible']
 
 
@@ -430,13 +461,15 @@ def test_config_and_recipe_changes_invalidate_verified_auto(tmp_path):
 
 
 def test_credential_removal_does_not_lose_existing_binding(tmp_path):
-    service, http = configured(tmp_path, http=FakeHTTP([accepted(), response({'id': REMOTE, 'status': 'running'})]))
+    service, http = configured(tmp_path, http=FakeHTTP([accepted(), response({'id': REMOTE, 'status': 'running'})]), standard_layout=True)
     service.submit(OWNER, 'comfy_cloud', RID, REQUEST, LIMITS)
-    service.configure(OWNER, 'comfy_cloud', {'clear_api_key': True})
-    blocked = service.status(OWNER, 'comfy_cloud', RID)
-    assert blocked['state'] == 'queued' and blocked['error_code'] == 'credential_required_for_recovery'
+    console = service.test_console
+    card = next(c for c in console.snapshot()['connections'] if c['provider'] == 'comfy_cloud')
+    result = console.delete_credential('comfy_cloud', {'revision': card['revision']})
+    retained = next(c for c in result['connections'] if c['provider'] == 'comfy_cloud')
+    assert '仍需此連線' in result['notice']
+    assert retained['credential_present'] and not retained['use_enabled']
     assert len(http.calls) == 1
-    service.configure(OWNER, 'comfy_cloud', {'api_key': KEY})
     assert service.recover(OWNER, 'comfy_cloud', RID)['state'] == 'running'
     assert len(http.calls) == 2
 
@@ -453,3 +486,29 @@ def test_documented_sdxl_recipe_imports_and_maps_real_form_defaults():
     assert mapping[('5', 'width')] == 1088 and mapping[('5', 'height')] == 1920
     assert mapping[('3', 'cfg')] == 1.0 and mapping[('7', 'text')] == 'synthetic negative'
     assert mapping[('3', 'seed')] == 123
+
+
+def test_recipe_import_cannot_forge_verification_or_omit_real_estimate(tmp_path):
+    service, http = configured(tmp_path)
+    before = service.public_config(OWNER)
+    item = recipe()
+    invalid = [{k: v for k, v in item.items() if k != 'estimated_cost'},
+               {**item, 'estimated_cost': 0}, {**item, 'verified': True}]
+    for value in invalid:
+        with pytest.raises(H.HostedComputeError):
+            service.configure(OWNER, 'comfy_cloud', {'recipes': [value]})
+        assert service.public_config(OWNER) == before
+        assert http.calls == []
+
+
+def test_partial_provider_save_preserves_key_and_other_recipes(tmp_path):
+    service, http = configured(tmp_path)
+    items = [recipe(), {**recipe(image=True), 'recipe_id': 'synthetic-second'}]
+    service.configure(OWNER, 'comfy_cloud', {'recipes': items})
+    before = service.public_config(OWNER)['providers'][0]
+    service.configure(OWNER, 'comfy_cloud', {'enabled': False})
+    after = service.public_config(OWNER)['providers'][0]
+    assert after['recipes'] == before['recipes']
+    assert after['credential_configured'] is True
+    assert KEY not in json.dumps(after)
+    assert http.calls == []

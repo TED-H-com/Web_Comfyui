@@ -1,0 +1,22 @@
+{
+  "source": "synthetic",
+  "observed_at": 1794400000.0,
+  "pricing": {
+    "data": {
+      "voice_clone": {
+        "credits": 50,
+        "off_peak_credits": {
+          "credits": 25
+        },
+        "unit": null,
+        "billing": null
+      }
+    },
+    "off_peak": {
+      "active_now": true
+    }
+  },
+  "historical_quote": 25,
+  "actual_charge": 50,
+  "operation": "voice_clone"
+}

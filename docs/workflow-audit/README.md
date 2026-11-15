@@ -1,3 +1,6 @@
+> 歷史快照（2026-11-10，對應 95e2079）；目前各運算平台狀態見 `docs/compute-platforms.md`。
+> Historical snapshot (2026-11-10, commit 95e2079). Current compute-platform status is in `docs/compute-platforms.md`.
+
 # 上游工作流完整稽核
 
 這份稽核逐一研究兩個上游來源的工作流、模型與節點、輸入／輸出、授權、公開版本對應位置，以及尚未完成的整合。**目錄收錄、JSON 靜態檢查、原生編輯器載入、表單／執行器串接及實際 GPU 驗證，是不同階段。這兩批上游圖檔的實際 GPU 驗證數為 0。**

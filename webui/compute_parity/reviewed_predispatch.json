@@ -1,0 +1,10 @@
+{
+  "owner": null,
+  "request_id": null,
+  "request_hash": null,
+  "created": null,
+  "source_release": null,
+  "evidence": null,
+  "reason": null,
+  "note": "No reviewed pre-dispatch record ships with the public build."
+}

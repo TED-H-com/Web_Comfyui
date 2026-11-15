@@ -1,0 +1,216 @@
+{
+  "VHS_LoadVideo": {
+    "input": {
+      "required": {
+        "video": [
+          "STRING",
+          {
+            "default": "None",
+            "vhs_path_extensions": [
+              "webm",
+              "mp4",
+              "mkv",
+              "gif",
+              "mov"
+            ]
+          }
+        ],
+        "force_rate": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 60,
+            "step": 1
+          }
+        ],
+        "force_size": [
+          [
+            "Disabled",
+            "Custom Height",
+            "Custom Width",
+            "Custom",
+            "256x?",
+            "?x256",
+            "256x256",
+            "512x?",
+            "?x512",
+            "512x512"
+          ]
+        ],
+        "custom_width": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 8192,
+            "step": 8
+          }
+        ],
+        "custom_height": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 8192,
+            "step": 8
+          }
+        ],
+        "frame_load_cap": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 9007199254740991,
+            "step": 1
+          }
+        ],
+        "skip_first_frames": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 9007199254740991,
+            "step": 1
+          }
+        ],
+        "select_every_nth": [
+          "INT",
+          {
+            "default": 1,
+            "min": 1,
+            "max": 9007199254740991,
+            "step": 1
+          }
+        ]
+      },
+      "optional": {
+        "meta_batch": [
+          "VHS_BatchManager"
+        ],
+        "vae": [
+          "VAE"
+        ],
+        "format": [
+          [
+            "None",
+            "AnimateDiff",
+            "Mochi",
+            "LTXV",
+            "Hunyuan",
+            "Cosmos",
+            "Wan"
+          ],
+          {
+            "default": "AnimateDiff",
+            "formats": {
+              "None": {},
+              "AnimateDiff": {
+                "target_rate": 8,
+                "dim": [
+                  8,
+                  0,
+                  512,
+                  512
+                ]
+              },
+              "Mochi": {
+                "target_rate": 24,
+                "dim": [
+                  16,
+                  0,
+                  848,
+                  480
+                ],
+                "frames": [
+                  6,
+                  1
+                ]
+              },
+              "LTXV": {
+                "target_rate": 24,
+                "dim": [
+                  32,
+                  0,
+                  768,
+                  512
+                ],
+                "frames": [
+                  8,
+                  1
+                ]
+              },
+              "Hunyuan": {
+                "target_rate": 24,
+                "dim": [
+                  16,
+                  0,
+                  848,
+                  480
+                ],
+                "frames": [
+                  4,
+                  1
+                ]
+              },
+              "Cosmos": {
+                "target_rate": 24,
+                "dim": [
+                  16,
+                  0,
+                  1280,
+                  704
+                ],
+                "frames": [
+                  8,
+                  1
+                ]
+              },
+              "Wan": {
+                "target_rate": 16,
+                "dim": [
+                  8,
+                  0,
+                  832,
+                  480
+                ],
+                "frames": [
+                  4,
+                  1
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "hidden": {
+        "force_size": "STRING",
+        "unique_id": "UNIQUE_ID"
+      }
+    }
+  },
+  "BatchImagesNode": {
+    "input": {
+      "required": {
+        "images": [
+          "COMFY_AUTOGROW_V3",
+          {
+            "template": {
+              "input": {
+                "required": {
+                  "image": [
+                    "IMAGE",
+                    {}
+                  ]
+                }
+              },
+              "prefix": "image",
+              "min": 1,
+              "max": 50
+            }
+          }
+        ]
+      }
+    }
+  }
+}

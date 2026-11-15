@@ -1332,6 +1332,10 @@ class ProviderFabricService:
         return receipt
 
     def _provider_gate(self, actor: ActorContext, provider_id: str) -> tuple[bool, str]:
+        console_gate = getattr(self, "console_gate", None)
+        if console_gate:
+            reason = console_gate(actor, provider_id)
+            if reason: return False, reason
         if provider_id == "clipmode":
             return False, "needs_supported_contract"
         account_id, account = self._account(actor, provider_id)

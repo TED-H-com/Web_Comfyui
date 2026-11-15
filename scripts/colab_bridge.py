@@ -68,14 +68,16 @@ USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 
 
 class BridgeError(Exception):
-    def __init__(self, code: str, message: str, *, retryable=False, ambiguous=False):
+    def __init__(self, code: str, message: str, *, retryable=False, ambiguous=False, diagnostics=None, private_diagnostics=None):
         super().__init__(message)
         self.code, self.message = code, message
         self.retryable, self.ambiguous = retryable, ambiguous
+        self.diagnostics = diagnostics or {}
+        self.private_diagnostics=private_diagnostics or {}
 
     def public(self):
         return {"code": self.code, "message": self.message,
-                "retryable": self.retryable, "ambiguous": self.ambiguous}
+                "retryable": self.retryable, "ambiguous": self.ambiguous, "diagnostics": self.diagnostics, "private_diagnostics":self.private_diagnostics}
 
 
 def invalid():
@@ -540,8 +542,20 @@ class Bridge:
                                "state": "allocating", "created_at": self.clock()})
             try:
                 assignment = client.assign(uuid.UUID(runtime_id), **kwargs)
-            except Exception:
-                raise BridgeError("allocation_uncertain", "Allocation was not confirmed; reconcile this runtime.", ambiguous=True) from None
+            except Exception as error:
+                try:
+                    from scripts.colab_allocation_diagnostics import classify
+                except ImportError:
+                    from colab_allocation_diagnostics import classify
+                code, diagnostics = classify(error)
+                atomic_json(path, {"runtime_id":runtime_id,"accelerator":gpu,"state":code,
+                    "created_at":self.clock(),"diagnostics":diagnostics})
+                raise BridgeError(code, "Allocation response recorded; no private details returned.",
+                    ambiguous=code=='allocation_uncertain',diagnostics=diagnostics) from None
+            # SDK 0.7.4 returns Assignment OR PostAssignmentResponse on success.
+            # An empty/malformed POST response does not establish no assignment.
+            if not hasattr(assignment, 'endpoint') or not hasattr(assignment, 'runtime_proxy_info'):
+                raise BridgeError("allocation_uncertain", "Allocation response incomplete; reconcile original ID.", ambiguous=True)
         self.save_assignment(runtime_id, gpu, assignment, previous)
         return {"found": True, "runtime_id": runtime_id, "accelerator": gpu, "state": "allocated"}
 
@@ -577,35 +591,73 @@ class Bridge:
         if not isinstance(code, str) or not code.strip() or len(code.encode()) > 1024 * 1024:
             raise invalid()
         timeout = bounded_int(request.get("timeout_seconds", 60), 1, 300)
-        data = self.runtime(runtime_id)
+        try:
+            data = self.runtime(runtime_id)
+        except BridgeError:
+            raise
+        except Exception as error:
+            try:from scripts.colab_transport_diagnostics import capture
+            except ImportError:from colab_transport_diagnostics import capture
+            try:from scripts.colab_private_diagnostics import capture as private_capture
+            except ImportError:from colab_private_diagnostics import capture as private_capture
+            raise BridgeError('transport_not_ready', 'The runtime lookup failed before anything was sent.',
+                ambiguous=False, diagnostics=capture(error, 'connect'),
+                private_diagnostics=private_capture(error, 'remote_exec')) from None
 
         def remember(field, value):
             data[field] = value
             atomic_json(self.record_path(runtime_id), data)
 
-        runtime = self.sdk.Runtime(data["url"], data["token"], kernel_id=data.get("kernel_id"),
-            session_id=data.get("session_id"), on_kernel_started=lambda v: remember("kernel_id", v),
-            on_session_started=lambda v: remember("session_id", v))
-        with self.sdk.execution_transport():
+        try:from scripts.colab_rpc_transport import Budget,NotReady,scoped
+        except ImportError:from colab_rpc_transport import Budget,NotReady,scoped
+        budget=Budget(timeout)
+        private={}
+        for attempt in range(2):
+            budget.attempt=attempt+1
+            runtime=self.sdk.Runtime(data["url"],data["token"],kernel_id=data.get("kernel_id"),
+                session_id=data.get("session_id"),on_kernel_started=lambda v:remember("kernel_id",v),
+                on_session_started=lambda v:remember("session_id",v))
             try:
-                outputs = runtime.execute_code(code, allow_stdin=False, timeout=timeout)
-            except Exception:
-                raise BridgeError("execution_uncertain", "Remote execution was not confirmed; inspect the job state.", ambiguous=True) from None
+                if not isinstance(self.sdk,GoogleSDK):budget.sent=True
+                with self.sdk.execution_transport(), (scoped(budget) if isinstance(self.sdk,GoogleSDK) else contextlib.nullcontext()):
+                    budget.remaining()
+                    # Non-SDK test adapters cannot prove an unsent failure.
+                    if not isinstance(self.sdk,GoogleSDK):budget.sent=True
+                    outputs=runtime.execute_code(code,allow_stdin=False,timeout=max(1,int(budget.remaining())))
+                    budget.remaining();budget.mark('ack')
+                private=budget.evidence();break
+            except Exception as error:
+                try:from scripts.colab_transport_diagnostics import capture
+                except ImportError:from colab_transport_diagnostics import capture
+                private=budget.evidence(error)
+                retry=False
+                if isinstance(error,NotReady) and not budget.sent and attempt==0:
+                    try:retry=budget.remaining()>0
+                    except TimeoutError:pass
+                if not retry:
+                    raise BridgeError('execution_uncertain' if budget.sent else 'transport_not_ready',
+                        'Remote execution was not confirmed; inspect the job state.',ambiguous=budget.sent,
+                        diagnostics=capture(error),private_diagnostics={'rpc':private}) from None
             finally:
+                client=getattr(runtime,'_kernel_client',None)
+                if client is not None and client.id:
+                    if client.id!=data.get('kernel_id'):remember('kernel_id',client.id)
+                    session_id=client._manager.client.session.session
+                    if session_id and session_id!=data.get('session_id'):remember('session_id',session_id)
                 try:
-                    # v0.7.4 only fires its callbacks when the supplied IDs were
-                    # empty. If Jupyter reports a saved kernel as gone, it starts
-                    # a replacement but omits those callbacks; without capturing
-                    # the actual IDs every subsequent poll starts another kernel.
-                    client = getattr(runtime, "_kernel_client", None)
-                    if client is not None and client.id:
-                        if client.id != data.get("kernel_id"):
-                            remember("kernel_id", client.id)
-                        session_id = client._manager.client.session.session
-                        if session_id and session_id != data.get("session_id"):
-                            remember("session_id", session_id)
-                finally:
                     runtime.stop(shutdown_kernel=False)
+                    private=budget.evidence()
+                except Exception as error:
+                    try:from scripts.colab_transport_diagnostics import capture
+                    except ImportError:from colab_transport_diagnostics import capture
+                    raise BridgeError('execution_uncertain','Socket shutdown was not confirmed.',ambiguous=True,diagnostics=capture(error),private_diagnostics={'rpc':budget.evidence(error)}) from None
+        try:budget.remaining()
+        except TimeoutError as error:
+            try:from scripts.colab_transport_diagnostics import capture
+            except ImportError:from colab_transport_diagnostics import capture
+            raise BridgeError('execution_uncertain' if budget.sent else 'transport_not_ready',
+                'Remote execution exceeded its deadline.',ambiguous=budget.sent,
+                diagnostics=capture(error),private_diagnostics={'rpc':budget.evidence(error)}) from None
         clean, stdout, size = [], [], 0
         for output in outputs:
             kind = output.get("output_type")
@@ -625,9 +677,10 @@ class Bridge:
                 clean.append({"output_type": "stream", "name": output.get("name", "stdout"), "text": value})
                 if output.get("name", "stdout") == "stdout":
                     stdout.append(value)
-        return {"stdout": "".join(stdout), "outputs": clean}
+        return {"stdout": "".join(stdout), "outputs": clean,"private_rpc":private}
 
     def transfer(self, request, *, download):
+        self.upload_substage = 'local_validation'
         runtime_id = identifier(request.get("runtime_id"))
         local = absolute_path(request.get("local_path"))
         remote = remote_path(request.get("remote_path"))
@@ -639,6 +692,7 @@ class Bridge:
                 raise invalid()
         elif not local.is_file() or local.stat().st_size > maximum:
             raise BridgeError("input_too_large", "The input is missing or exceeds the transfer limit.")
+        self.upload_substage = 'runtime_lookup'
         data = self.runtime(runtime_id)
         self.secrets.append(data["token"])
         url = data["url"] + "/api/contents/" + quote(remote.strip("/"), safe="/")
@@ -656,6 +710,7 @@ class Bridge:
                     if str(parent) in {"/", "/content"}:
                         continue
                     directory_url = data["url"] + "/api/contents/" + quote(str(parent).strip("/"), safe="/")
+                    self.upload_substage = 'directory_put'
                     response = transport.request("PUT", directory_url, params=params,
                                                  json={"type": "directory"})
                     try:
@@ -666,9 +721,12 @@ class Bridge:
                         response.close()
                 payload = {"name": PurePosixPath(remote).name, "path": remote, "type": "file", "format": "base64",
                            "content": base64.b64encode(content).decode("ascii"), "chunk": 1}
+                self.upload_substage = 'file_put'
                 response = transport.request("PUT", url, params=params, json=payload)
-                response.raise_for_status()
-                response.close()
+                try:
+                    response.raise_for_status()
+                finally:
+                    response.close()
             else:
                 # Explicit base64 also covers valid UTF-8 binary data (e.g. a
                 # short silent WAV), which Jupyter otherwise returns as text.
@@ -714,7 +772,18 @@ class Bridge:
         return {"bytes": len(content), "sha256": hashlib.sha256(content).hexdigest()}
 
     def upload(self, request):
-        return self.transfer(request, download=False)
+        self.upload_substage = 'local_validation'
+        try:
+            return self.transfer(request, download=False)
+        except Exception as error:
+            try:
+                from scripts.colab_upload_diagnostics import classify
+            except ImportError:
+                from colab_upload_diagnostics import classify
+            diagnostic = classify(error, self.upload_substage)
+            raise BridgeError(diagnostic['bridge_error_code'],
+                'Input upload failed; only safe diagnostics returned.',
+                diagnostics=diagnostic) from None
 
     def download(self, request):
         return self.transfer(request, download=True)
@@ -733,11 +802,17 @@ def handle(request: object, *, sdk_factory=GoogleSDK):
     try:
         return {"ok": True, "result": dispatch(request, sdk_factory=sdk_factory)}
     except BridgeError as error:
+        try:from scripts.colab_private_diagnostics import capture
+        except ImportError:from colab_private_diagnostics import capture
+        if not error.private_diagnostics:error.private_diagnostics=capture(error,request.get("op") if isinstance(request,dict) else None)
         return {"ok": False, "error": error.public()}
-    except Exception:
+    except Exception as cause:
         op = request.get("op") if isinstance(request, dict) else None
         error = BridgeError("transport_failed", "The Colab operation failed; no private details were returned.",
                             retryable=op not in MUTATING_REMOTE, ambiguous=op in MUTATING_REMOTE)
+        try:from scripts.colab_private_diagnostics import capture
+        except ImportError:from colab_private_diagnostics import capture
+        error.private_diagnostics=capture(cause,op)
         return {"ok": False, "error": error.public()}
 
 

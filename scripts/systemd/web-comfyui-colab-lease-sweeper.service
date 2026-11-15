@@ -1,0 +1,12 @@
+# Edit these paths if the checkout lives elsewhere.
+[Unit]
+Description=Web_Comfyui Colab lease sweeper
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Web_Comfyui
+Environment=WEB_COMFYUI_COLAB_PYTHON=%h/.local/share/web-comfyui/colab-controller/bin/python
+ExecStart=%h/Web_Comfyui/.venv/bin/python -B %h/Web_Comfyui/scripts/colab_lease_sweeper.py
+TimeoutStartSec=240
+NoNewPrivileges=true
+UMask=0077

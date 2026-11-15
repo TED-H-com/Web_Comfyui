@@ -101,6 +101,11 @@ def main() -> int:
         )
         return 130
     except Exception as error:
+        from quality_rejection import QualityRejected
+        if isinstance(error,QualityRejected):
+            write_json(sentinel,{'status':'failed','completed_at':time.time(),'error':str(error),
+                                 'diagnostics':error.diagnostics,'outputs':[]})
+            return 1
         write_json(
             sentinel,
             {

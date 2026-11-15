@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'webui'))
 
 import server
+from test_compute_web import AdmitAllConsole
 
 def test_request_json_success():
     with patch("urllib.request.urlopen") as mock_urlopen:
@@ -106,7 +107,7 @@ def test_websocket_progress():
 
         assert messages == ["1234567890"]
 
-def test_api_generate_submit_workflow():
+def test_api_generate_submit_workflow(tmp_path):
     # Exercise the real _generate_result delegate added to the HTTP handler.
     # Only the network and attribution sinks below are synthetic.
     class DummyHandler(server.Handler):
@@ -125,6 +126,8 @@ def test_api_generate_submit_workflow():
             }
         def current_user(self):
             return self._current_user
+        def _provider_console(self):
+            return AdmitAllConsole(self._current_user['email'], tmp_path / 'compute-preferences.sqlite3')
         def is_orchestrator_service_authenticated(self):
             return False
         def require_orchestrator_auth(self):

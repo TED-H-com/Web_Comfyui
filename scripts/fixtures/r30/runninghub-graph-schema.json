@@ -1,0 +1,1806 @@
+{
+  "UNETLoader": {
+    "input": {
+      "required": {
+        "unet_name": [
+          [
+            "wan2.1_14B_SCAIL_2_fp8_scaled.safetensors"
+          ]
+        ],
+        "weight_dtype": [
+          [
+            "default",
+            "fp8_e4m3fn",
+            "fp8_e4m3fn_fast",
+            "fp8_e5m2"
+          ],
+          {
+            "advanced": true
+          }
+        ]
+      }
+    }
+  },
+  "LoraLoader": {
+    "input": {
+      "required": {
+        "model": [
+          "MODEL",
+          {
+            "tooltip": "The diffusion model the LoRA will be applied to."
+          }
+        ],
+        "clip": [
+          "CLIP",
+          {
+            "tooltip": "The CLIP model the LoRA will be applied to."
+          }
+        ],
+        "lora_name": [
+          [
+            "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64_official.safetensors"
+          ],
+          {
+            "tooltip": "The name of the LoRA."
+          }
+        ],
+        "strength_model": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": -100.0,
+            "max": 100.0,
+            "step": 0.01,
+            "tooltip": "How strongly to modify the diffusion model. This value can be negative."
+          }
+        ],
+        "strength_clip": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": -100.0,
+            "max": 100.0,
+            "step": 0.01,
+            "tooltip": "How strongly to modify the CLIP model. This value can be negative."
+          }
+        ]
+      }
+    }
+  },
+  "ModelSamplingSD3": {
+    "input": {
+      "required": {
+        "model": [
+          "MODEL"
+        ],
+        "shift": [
+          "FLOAT",
+          {
+            "default": 3.0,
+            "min": 0.0,
+            "max": 100.0,
+            "step": 0.01
+          }
+        ]
+      }
+    }
+  },
+  "WanContextWindowsManual": {
+    "input": {
+      "required": {
+        "model": [
+          "MODEL",
+          {
+            "tooltip": "The model to apply context windows to during sampling."
+          }
+        ],
+        "context_length": [
+          "INT",
+          {
+            "tooltip": "The length of the context window in real frames. Must be 4*n + 1.",
+            "default": 81,
+            "min": 1,
+            "max": 16384,
+            "step": 4
+          }
+        ],
+        "context_overlap": [
+          "INT",
+          {
+            "tooltip": "The overlap of the context window in real frames.",
+            "default": 30,
+            "min": 0
+          }
+        ],
+        "context_schedule": [
+          "COMBO",
+          {
+            "tooltip": "Step-dependent scheduling algorithm for context windows.",
+            "default": "standard_uniform",
+            "multiselect": false,
+            "options": [
+              "standard_static",
+              "standard_uniform",
+              "looped_uniform",
+              "batched"
+            ]
+          }
+        ],
+        "context_stride": [
+          "INT",
+          {
+            "tooltip": "The stride of the context window; only applicable to uniform schedules.",
+            "advanced": true,
+            "default": 1,
+            "min": 1
+          }
+        ],
+        "closed_loop": [
+          "BOOLEAN",
+          {
+            "tooltip": "Whether to close the context window loop; only applicable to looped schedules.",
+            "advanced": true,
+            "default": false
+          }
+        ],
+        "fuse_method": [
+          "COMBO",
+          {
+            "tooltip": "The method to use to fuse the context windows.",
+            "default": "pyramid",
+            "multiselect": false,
+            "options": [
+              "pyramid",
+              "relative",
+              "flat",
+              "overlap-linear"
+            ]
+          }
+        ],
+        "freenoise": [
+          "BOOLEAN",
+          {
+            "tooltip": "Whether to apply FreeNoise noise shuffling, improves window blending.",
+            "advanced": true,
+            "default": true
+          }
+        ],
+        "retain_first_frame": [
+          "BOOLEAN",
+          {
+            "tooltip": "Retain the first I2V frame in every context window (may help retain initial reference).",
+            "default": false
+          }
+        ],
+        "split_conds_to_windows": [
+          "BOOLEAN",
+          {
+            "tooltip": "Whether to split multiple conditionings (created by ConditionCombine) to each window based on region index.",
+            "advanced": true,
+            "default": false
+          }
+        ]
+      }
+    }
+  },
+  "CLIPLoader": {
+    "input": {
+      "required": {
+        "clip_name": [
+          [
+            "umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+          ]
+        ],
+        "type": [
+          [
+            "stable_diffusion",
+            "stable_cascade",
+            "sd3",
+            "stable_audio",
+            "mochi",
+            "ltxv",
+            "pixart",
+            "cosmos",
+            "lumina2",
+            "wan",
+            "hidream",
+            "chroma",
+            "ace",
+            "omnigen2",
+            "qwen_image",
+            "hunyuan_image",
+            "flux2",
+            "ovis",
+            "longcat_image",
+            "cogvideox",
+            "lens",
+            "pixeldit",
+            "ideogram4",
+            "boogu",
+            "krea2",
+            "joyimage",
+            "mage",
+            "minimax",
+            "yue2",
+            "flux3",
+            "moss_image",
+            "fibo2"
+          ]
+        ]
+      },
+      "optional": {
+        "device": [
+          [
+            "default",
+            "cpu"
+          ],
+          {
+            "advanced": true
+          }
+        ]
+      }
+    }
+  },
+  "CLIPTextEncode": {
+    "input": {
+      "required": {
+        "text": [
+          "STRING",
+          {
+            "multiline": true,
+            "dynamicPrompts": true,
+            "tooltip": "The text to be encoded."
+          }
+        ],
+        "clip": [
+          "CLIP",
+          {
+            "tooltip": "The CLIP model used for encoding the text."
+          }
+        ]
+      }
+    }
+  },
+  "VAELoader": {
+    "input": {
+      "required": {
+        "vae_name": [
+          [
+            "wan_2.1_vae.safetensors"
+          ]
+        ]
+      }
+    }
+  },
+  "CLIPVisionLoader": {
+    "input": {
+      "required": {
+        "clip_name": [
+          [
+            "clip_vision_h.safetensors"
+          ]
+        ]
+      }
+    }
+  },
+  "LoadImage": {
+    "input": {
+      "required": {
+        "image": [
+          [],
+          {
+            "image_upload": true
+          }
+        ]
+      }
+    }
+  },
+  "ResizeImageMaskNode": {
+    "input": {
+      "required": {
+        "input": [
+          "COMFY_MATCHTYPE_V3",
+          {
+            "template": {
+              "template_id": "input_type",
+              "allowed_types": "IMAGE,MASK"
+            }
+          }
+        ],
+        "resize_type": [
+          "COMFY_DYNAMICCOMBO_V3",
+          {
+            "tooltip": "Select how to resize: by exact dimensions, scale factor, matching another image, etc.",
+            "options": [
+              {
+                "key": "scale dimensions",
+                "inputs": {
+                  "required": {
+                    "width": [
+                      "INT",
+                      {
+                        "tooltip": "Target width in pixels. Set to 0 to auto-calculate from height while preserving aspect ratio.",
+                        "default": 512,
+                        "min": 0,
+                        "max": 16384,
+                        "step": 1
+                      }
+                    ],
+                    "height": [
+                      "INT",
+                      {
+                        "tooltip": "Target height in pixels. Set to 0 to auto-calculate from width while preserving aspect ratio.",
+                        "default": 512,
+                        "min": 0,
+                        "max": 16384,
+                        "step": 1
+                      }
+                    ],
+                    "crop": [
+                      "COMBO",
+                      {
+                        "tooltip": "How to handle aspect ratio mismatch: 'disabled' stretches to fit, 'center' crops to maintain aspect ratio.",
+                        "default": "center",
+                        "multiselect": false,
+                        "options": [
+                          "disabled",
+                          "center"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "scale by multiplier",
+                "inputs": {
+                  "required": {
+                    "multiplier": [
+                      "FLOAT",
+                      {
+                        "tooltip": "Scale factor (e.g., 2.0 doubles size, 0.5 halves size).",
+                        "default": 1.0,
+                        "min": 0.01,
+                        "max": 8.0,
+                        "step": 0.01
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "scale longer dimension",
+                "inputs": {
+                  "required": {
+                    "longer_size": [
+                      "INT",
+                      {
+                        "tooltip": "The longer edge will be resized to this value. Aspect ratio is preserved.",
+                        "default": 512,
+                        "min": 0,
+                        "max": 16384,
+                        "step": 1
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "scale shorter dimension",
+                "inputs": {
+                  "required": {
+                    "shorter_size": [
+                      "INT",
+                      {
+                        "tooltip": "The shorter edge will be resized to this value. Aspect ratio is preserved.",
+                        "default": 512,
+                        "min": 0,
+                        "max": 16384,
+                        "step": 1
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "scale width",
+                "inputs": {
+                  "required": {
+                    "width": [
+                      "INT",
+                      {
+                        "tooltip": "Target width in pixels. Height auto-adjusts to preserve aspect ratio.",
+                        "default": 512,
+                        "min": 0,
+                        "max": 16384,
+                        "step": 1
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "scale height",
+                "inputs": {
+                  "required": {
+                    "height": [
+                      "INT",
+                      {
+                        "tooltip": "Target height in pixels. Width auto-adjusts to preserve aspect ratio.",
+                        "default": 512,
+                        "min": 0,
+                        "max": 16384,
+                        "step": 1
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "scale total pixels",
+                "inputs": {
+                  "required": {
+                    "megapixels": [
+                      "FLOAT",
+                      {
+                        "tooltip": "Target total megapixels (e.g., 1.0 \u2248 1024\u00d71024). Aspect ratio is preserved.",
+                        "default": 1.0,
+                        "min": 0.01,
+                        "max": 16.0,
+                        "step": 0.01
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "match size",
+                "inputs": {
+                  "required": {
+                    "match": [
+                      "IMAGE,MASK",
+                      {
+                        "tooltip": "Resize input to match the dimensions of this reference image or mask."
+                      }
+                    ],
+                    "crop": [
+                      "COMBO",
+                      {
+                        "tooltip": "How to handle aspect ratio mismatch: 'disabled' stretches to fit, 'center' crops to maintain aspect ratio.",
+                        "default": "center",
+                        "multiselect": false,
+                        "options": [
+                          "disabled",
+                          "center"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "scale to multiple",
+                "inputs": {
+                  "required": {
+                    "multiple": [
+                      "INT",
+                      {
+                        "tooltip": "Resize so width and height are divisible by this number. Useful for latent alignment (e.g., 8 or 64).",
+                        "default": 8,
+                        "min": 1,
+                        "max": 16384,
+                        "step": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "scale_method": [
+          "COMBO",
+          {
+            "tooltip": "Interpolation algorithm. 'area' is best for downscaling, 'lanczos' for upscaling, 'nearest-exact' for pixel art.",
+            "default": "area",
+            "multiselect": false,
+            "options": [
+              "nearest-exact",
+              "bilinear",
+              "area",
+              "bicubic",
+              "lanczos"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "CLIPVisionEncode": {
+    "input": {
+      "required": {
+        "clip_vision": [
+          "CLIP_VISION"
+        ],
+        "image": [
+          "IMAGE"
+        ],
+        "crop": [
+          [
+            "center",
+            "none"
+          ]
+        ]
+      }
+    }
+  },
+  "GetImageSize": {
+    "input": {
+      "required": {
+        "image": [
+          "IMAGE",
+          {}
+        ]
+      },
+      "hidden": {
+        "unique_id": [
+          "UNIQUE_ID"
+        ]
+      }
+    }
+  },
+  "VHS_LoadVideo": {
+    "input": {
+      "required": {
+        "video": [
+          "STRING",
+          {
+            "default": "None",
+            "vhs_path_extensions": [
+              "webm",
+              "mp4",
+              "mkv",
+              "gif",
+              "mov"
+            ]
+          }
+        ],
+        "force_rate": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 60,
+            "step": 1
+          }
+        ],
+        "force_size": [
+          [
+            "Disabled",
+            "Custom Height",
+            "Custom Width",
+            "Custom",
+            "256x?",
+            "?x256",
+            "256x256",
+            "512x?",
+            "?x512",
+            "512x512"
+          ]
+        ],
+        "custom_width": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 8192,
+            "step": 8
+          }
+        ],
+        "custom_height": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 8192,
+            "step": 8
+          }
+        ],
+        "frame_load_cap": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 9007199254740991,
+            "step": 1
+          }
+        ],
+        "skip_first_frames": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 9007199254740991,
+            "step": 1
+          }
+        ],
+        "select_every_nth": [
+          "INT",
+          {
+            "default": 1,
+            "min": 1,
+            "max": 9007199254740991,
+            "step": 1
+          }
+        ]
+      },
+      "optional": {
+        "meta_batch": [
+          "VHS_BatchManager"
+        ],
+        "vae": [
+          "VAE"
+        ],
+        "format": [
+          [
+            "None",
+            "AnimateDiff",
+            "Mochi",
+            "LTXV",
+            "Hunyuan",
+            "Cosmos",
+            "Wan"
+          ],
+          {
+            "default": "AnimateDiff",
+            "formats": {
+              "None": {},
+              "AnimateDiff": {
+                "target_rate": 8,
+                "dim": [
+                  8,
+                  0,
+                  512,
+                  512
+                ]
+              },
+              "Mochi": {
+                "target_rate": 24,
+                "dim": [
+                  16,
+                  0,
+                  848,
+                  480
+                ],
+                "frames": [
+                  6,
+                  1
+                ]
+              },
+              "LTXV": {
+                "target_rate": 24,
+                "dim": [
+                  32,
+                  0,
+                  768,
+                  512
+                ],
+                "frames": [
+                  8,
+                  1
+                ]
+              },
+              "Hunyuan": {
+                "target_rate": 24,
+                "dim": [
+                  16,
+                  0,
+                  848,
+                  480
+                ],
+                "frames": [
+                  4,
+                  1
+                ]
+              },
+              "Cosmos": {
+                "target_rate": 24,
+                "dim": [
+                  16,
+                  0,
+                  1280,
+                  704
+                ],
+                "frames": [
+                  8,
+                  1
+                ]
+              },
+              "Wan": {
+                "target_rate": 16,
+                "dim": [
+                  8,
+                  0,
+                  832,
+                  480
+                ],
+                "frames": [
+                  4,
+                  1
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "hidden": {
+        "force_size": "STRING",
+        "unique_id": "UNIQUE_ID"
+      }
+    }
+  },
+  "CheckpointLoaderSimple": {
+    "input": {
+      "required": {
+        "ckpt_name": [
+          [
+            "sam3.1_multiplex_fp16.safetensors"
+          ],
+          {
+            "tooltip": "The name of the checkpoint (model) to load."
+          }
+        ]
+      }
+    }
+  },
+  "SAM3_VideoTrack": {
+    "input": {
+      "required": {
+        "images": [
+          "IMAGE",
+          {
+            "display_name": "images",
+            "tooltip": "Video frames as batched images"
+          }
+        ],
+        "model": [
+          "MODEL",
+          {
+            "display_name": "model"
+          }
+        ],
+        "detection_threshold": [
+          "FLOAT",
+          {
+            "display_name": "detection_threshold",
+            "tooltip": "Score threshold for text-prompted detection.",
+            "default": 0.5,
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.01
+          }
+        ],
+        "max_objects": [
+          "INT",
+          {
+            "display_name": "max_objects",
+            "tooltip": "Max tracked objects. Initial masks count toward this limit. 0 uses the internal cap of 64.",
+            "default": 4,
+            "min": 0,
+            "max": 64
+          }
+        ],
+        "detect_interval": [
+          "INT",
+          {
+            "display_name": "detect_interval",
+            "tooltip": "Run detection every N frames (1=every frame). Higher values save compute.",
+            "default": 1,
+            "min": 1
+          }
+        ]
+      },
+      "optional": {
+        "initial_mask": [
+          "MASK",
+          {
+            "display_name": "initial_mask",
+            "tooltip": "Mask(s) for the first frame to track (one per object)"
+          }
+        ],
+        "conditioning": [
+          "CONDITIONING",
+          {
+            "display_name": "conditioning",
+            "tooltip": "Text conditioning for detecting new objects during tracking"
+          }
+        ]
+      }
+    }
+  },
+  "SCAIL2ColoredMask": {
+    "input": {
+      "required": {
+        "driving_track_data": [
+          "SAM3_TRACK_DATA",
+          {
+            "tooltip": "SAM3 track of the driving pose video. Will be rendered into the pose_video_mask output."
+          }
+        ],
+        "object_indices": [
+          "STRING",
+          {
+            "tooltip": "Comma-separated list of person indices to include (e.g. '0,2,3'). Applied to both reference and pose video masks. Empty = all.",
+            "default": "",
+            "multiline": false
+          }
+        ],
+        "sort_by": [
+          "COMBO",
+          {
+            "tooltip": "Order in which palette colors are assigned to the tracked objects (applied to both reference and pose video so each identity keeps the same color). Objects that appear in earlier frames always come first; within a frame, left_to_right = leftmost object (by centroid at first appearance) gets the first color, area = biggest object (by mask area at first appearance) gets the first color; none = keep SAM3's order.",
+            "default": "left_to_right",
+            "multiselect": false,
+            "options": [
+              "none",
+              "left_to_right",
+              "area"
+            ]
+          }
+        ],
+        "replacement_mode": [
+          "BOOLEAN",
+          {
+            "tooltip": "False = Animation Mode (pose_video_mask has black background, reference_image_mask has white background). True = Replacement Mode (pose_video_mask has white background, reference_image_mask has black background).",
+            "default": false
+          }
+        ]
+      },
+      "optional": {
+        "ref_track_data": [
+          "SAM3_TRACK_DATA,MASK",
+          {
+            "display_name": "reference_masks",
+            "tooltip": "SAM3 track of the reference image(s) (one identity per object, colored in batch order), or a plain MASK of the reference subject (rendered as a single identity)."
+          }
+        ]
+      }
+    }
+  },
+  "WanSCAILToVideo": {
+    "input": {
+      "required": {
+        "positive": [
+          "CONDITIONING",
+          {}
+        ],
+        "negative": [
+          "CONDITIONING",
+          {}
+        ],
+        "vae": [
+          "VAE",
+          {}
+        ],
+        "width": [
+          "INT",
+          {
+            "default": 512,
+            "min": 32,
+            "max": 16384,
+            "step": 32
+          }
+        ],
+        "height": [
+          "INT",
+          {
+            "default": 896,
+            "min": 32,
+            "max": 16384,
+            "step": 32
+          }
+        ],
+        "length": [
+          "INT",
+          {
+            "default": 81,
+            "min": 1,
+            "max": 16384,
+            "step": 4
+          }
+        ],
+        "batch_size": [
+          "INT",
+          {
+            "default": 1,
+            "min": 1,
+            "max": 4096
+          }
+        ],
+        "pose_strength": [
+          "FLOAT",
+          {
+            "tooltip": "Strength of the pose latent.",
+            "default": 1.0,
+            "min": 0.0,
+            "max": 10.0,
+            "step": 0.01
+          }
+        ],
+        "pose_start": [
+          "FLOAT",
+          {
+            "tooltip": "Start step of the pose conditioning.",
+            "default": 0.0,
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.01
+          }
+        ],
+        "pose_end": [
+          "FLOAT",
+          {
+            "tooltip": "End step of the pose conditioning.",
+            "default": 1.0,
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.01
+          }
+        ],
+        "video_frame_offset": [
+          "INT",
+          {
+            "tooltip": "Cumulative output frame this chunk begins at. Wire from the previous chunk's video_frame_offset output.",
+            "default": 0,
+            "min": 0,
+            "max": 16384,
+            "step": 1
+          }
+        ],
+        "previous_frame_count": [
+          "INT",
+          {
+            "tooltip": "Tail frames of previous_frames to anchor. SCAIL-2 trained at 5 (81-frame chunks, 76-frame step).",
+            "default": 5,
+            "min": 1,
+            "max": 16384,
+            "step": 4
+          }
+        ]
+      },
+      "optional": {
+        "pose_video": [
+          "IMAGE",
+          {
+            "tooltip": "Video used for pose conditioning. Will be downscaled to half the resolution of the main video."
+          }
+        ],
+        "pose_video_mask": [
+          "IMAGE",
+          {
+            "tooltip": "SCAIL-2 only. Colored per-identity SAM3 mask video at the same resolution as pose_video."
+          }
+        ],
+        "replacement_mode": [
+          "BOOLEAN",
+          {
+            "tooltip": "SCAIL-2 only. False = Animation Mode (pose_video_mask should have black background). True = Replacement Mode (pose_video_mask should have white background).",
+            "default": false
+          }
+        ],
+        "reference_image": [
+          "IMAGE",
+          {
+            "tooltip": "Reference image. The first image is the primary reference (composite all identities onto it). SCAIL-2: extra batch images are used as additional views (back view, close-up, occluded background), each needing a matching reference_image_mask in that identity's color."
+          }
+        ],
+        "reference_image_mask": [
+          "IMAGE",
+          {
+            "tooltip": "SCAIL-2 only. Colored reference mask, batch matching reference_image (first = primary reference mask, rest = identity masks for the additional reference_image)."
+          }
+        ],
+        "clip_vision_output": [
+          "CLIP_VISION_OUTPUT",
+          {
+            "tooltip": "CLIP vision features for conditioning. Model is trained with stretch resize to aspect ratio."
+          }
+        ],
+        "previous_frames": [
+          "IMAGE",
+          {
+            "tooltip": "SCAIL-2 only. Full decoded output of the previous chunk. Only the last previous_frame_count are used as the extension anchor."
+          }
+        ]
+      }
+    }
+  },
+  "KSampler": {
+    "input": {
+      "required": {
+        "model": [
+          "MODEL",
+          {
+            "tooltip": "The model used for denoising the input latent."
+          }
+        ],
+        "seed": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 18446744073709551615,
+            "control_after_generate": true,
+            "tooltip": "The random seed used for creating the noise."
+          }
+        ],
+        "steps": [
+          "INT",
+          {
+            "default": 20,
+            "min": 1,
+            "max": 10000,
+            "tooltip": "The number of steps used in the denoising process."
+          }
+        ],
+        "cfg": [
+          "FLOAT",
+          {
+            "default": 8.0,
+            "min": 0.0,
+            "max": 100.0,
+            "step": 0.1,
+            "round": 0.01,
+            "tooltip": "The Classifier-Free Guidance scale balances creativity and adherence to the prompt. Higher values result in images more closely matching the prompt however too high values will negatively impact quality."
+          }
+        ],
+        "sampler_name": [
+          [
+            "euler",
+            "euler_cfg_pp",
+            "euler_ancestral",
+            "euler_ancestral_cfg_pp",
+            "heun",
+            "heunpp2",
+            "exp_heun_2_x0",
+            "exp_heun_2_x0_sde",
+            "dpm_2",
+            "dpm_2_ancestral",
+            "lms",
+            "dpm_fast",
+            "dpm_adaptive",
+            "dpmpp_2s_ancestral",
+            "dpmpp_2s_ancestral_cfg_pp",
+            "dpmpp_sde",
+            "dpmpp_sde_gpu",
+            "dpmpp_2m",
+            "dpmpp_2m_alt",
+            "dpmpp_2m_cfg_pp",
+            "dpmpp_2m_sde",
+            "dpmpp_2m_sde_gpu",
+            "dpmpp_2m_sde_heun",
+            "dpmpp_2m_sde_heun_gpu",
+            "dpmpp_3m_sde",
+            "dpmpp_3m_sde_gpu",
+            "ddpm",
+            "lcm",
+            "ipndm",
+            "ipndm_v",
+            "deis",
+            "cfgpp_ud10_ab",
+            "res_multistep",
+            "res_multistep_cfg_pp",
+            "res_multistep_ancestral",
+            "res_multistep_ancestral_cfg_pp",
+            "gradient_estimation",
+            "gradient_estimation_cfg_pp",
+            "er_sde",
+            "seeds_2",
+            "seeds_3",
+            "sa_solver",
+            "sa_solver_ode_stable",
+            "sa_solver_pece",
+            "ddim",
+            "uni_pc",
+            "uni_pc_bh2",
+            "legacy_rk",
+            "rk",
+            "rk_beta",
+            "deis_3m_ode",
+            "deis_2m_ode",
+            "deis_3m",
+            "deis_2m",
+            "res_6s_ode",
+            "res_5s_ode",
+            "res_3s_ode",
+            "res_2s_ode",
+            "res_3m_ode",
+            "res_2m_ode",
+            "res_6s",
+            "res_5s",
+            "res_3s",
+            "res_2s",
+            "res_3m",
+            "res_2m",
+            "supreme",
+            "dpmpp_3m_sde_dynamic_eta",
+            "euler_ancestral_dancing",
+            "lcm_custom_noise",
+            "ttm",
+            "clyb_4m_sde_momentumized",
+            "dpmpp_dualsde_momentumized",
+            "res_momentumized",
+            "stork2",
+            "stork4",
+            "bleh_preset_0",
+            "hfe_s1",
+            "hfe_s2",
+            "hfe_s3",
+            "hfe_s4",
+            "hfe_s5",
+            "hfe_s6",
+            "hfe_s7",
+            "hfe_s8",
+            "hfe3_s1",
+            "hfe3_s2",
+            "hfe3_s3",
+            "hfe3_s4",
+            "hfe3_s5",
+            "hfe3_s6",
+            "hfe3_s7",
+            "hfe3_s8",
+            "hfe4_s1",
+            "hfe4_s2",
+            "hfe4_s3",
+            "hfe4_s4",
+            "hfe4_s5",
+            "hfe4_s6",
+            "hfe4_s7",
+            "hfe4_s8",
+            "hfe5_s1",
+            "hfe5_s2",
+            "hfe5_s3",
+            "hfe5_s4",
+            "hfe5_s5",
+            "hfe5_s6",
+            "hfe5_s7",
+            "hfe5_s8",
+            "hfe_auto",
+            "hfe3_auto",
+            "hfe4_auto",
+            "hfe5_auto",
+            "hfx_sharp",
+            "hfx_boost",
+            "hfx_detail",
+            "hfx_stochastic",
+            "hfx_momentum",
+            "hfx_spectral",
+            "hfx_orthogonal",
+            "hfx_refine",
+            "hfx_focus",
+            "hfx_coherence",
+            "hfx_sharp_s1",
+            "hfx_sharp_s2",
+            "hfx_sharp_s3",
+            "hfx_sharp_s4",
+            "hfx_boost_s1",
+            "hfx_boost_s2",
+            "hfx_boost_s3",
+            "hfx_boost_s4",
+            "hfx_detail_s1",
+            "hfx_detail_s2",
+            "hfx_detail_s3",
+            "hfx_detail_s4",
+            "hfx_stochastic_s1",
+            "hfx_stochastic_s2",
+            "hfx_stochastic_s3",
+            "hfx_stochastic_s4",
+            "hfx_momentum_s1",
+            "hfx_momentum_s2",
+            "hfx_momentum_s3",
+            "hfx_momentum_s4",
+            "hfx_spectral_s1",
+            "hfx_spectral_s2",
+            "hfx_spectral_s3",
+            "hfx_spectral_s4",
+            "hfx_orthogonal_s1",
+            "hfx_orthogonal_s2",
+            "hfx_orthogonal_s3",
+            "hfx_orthogonal_s4",
+            "hfx_refine_s1",
+            "hfx_refine_s2",
+            "hfx_refine_s3",
+            "hfx_refine_s4",
+            "hfx_focus_s1",
+            "hfx_focus_s2",
+            "hfx_focus_s3",
+            "hfx_focus_s4",
+            "hfx_coherence_s1",
+            "hfx_coherence_s2",
+            "hfx_coherence_s3",
+            "hfx_coherence_s4"
+          ],
+          {
+            "tooltip": "The algorithm used when sampling, this can affect the quality, speed, and style of the generated output."
+          }
+        ],
+        "scheduler": [
+          [
+            "simple",
+            "sgm_uniform",
+            "karras",
+            "exponential",
+            "ddim_uniform",
+            "beta",
+            "normal",
+            "linear_quadratic",
+            "kl_optimal",
+            "capitanZiT",
+            "FlowMatchEulerDiscreteScheduler",
+            "bong_tangent",
+            "beta57",
+            "ays",
+            "ays+",
+            "ays_30",
+            "ays_30+",
+            "gits",
+            "beta_1_1",
+            "power_shift",
+            "atan_gentle",
+            "atan_focused",
+            "atan_steep",
+            "karras_tan",
+            "logistic"
+          ],
+          {
+            "tooltip": "The scheduler controls how noise is gradually removed to form the image."
+          }
+        ],
+        "positive": [
+          "CONDITIONING",
+          {
+            "tooltip": "The conditioning describing the attributes you want to include in the image."
+          }
+        ],
+        "negative": [
+          "CONDITIONING",
+          {
+            "tooltip": "The conditioning describing the attributes you want to exclude from the image."
+          }
+        ],
+        "latent_image": [
+          "LATENT",
+          {
+            "tooltip": "The latent image to denoise."
+          }
+        ],
+        "denoise": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.01,
+            "tooltip": "The amount of denoising applied, lower values will maintain the structure of the initial image allowing for image to image sampling."
+          }
+        ]
+      }
+    }
+  },
+  "VAEDecode": {
+    "input": {
+      "required": {
+        "samples": [
+          "LATENT",
+          {
+            "tooltip": "The latent to be decoded."
+          }
+        ],
+        "vae": [
+          "VAE",
+          {
+            "tooltip": "The VAE model used for decoding the latent."
+          }
+        ]
+      }
+    }
+  },
+  "VHS_VideoCombine": {
+    "input": {
+      "required": {
+        "images": [
+          "IMAGE"
+        ],
+        "frame_rate": [
+          "FLOAT",
+          {
+            "default": 8,
+            "min": 1,
+            "step": 1
+          }
+        ],
+        "loop_count": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 100,
+            "step": 1
+          }
+        ],
+        "filename_prefix": [
+          "STRING",
+          {
+            "default": "AnimateDiff"
+          }
+        ],
+        "format": [
+          [
+            "video/h264-mp4",
+            "image/gif",
+            "image/webp",
+            "video/16bit-png",
+            "video/8bit-png",
+            "video/ProRes",
+            "video/av1-webm",
+            "video/ffmpeg-gif",
+            "video/ffv1-mkv",
+            "video/h264-mp4",
+            "video/h265-mp4",
+            "video/mov",
+            "video/nvenc_av1-mp4",
+            "video/webm"
+          ],
+          {
+            "formats": {
+              "video/ProRes": [
+                [
+                  "profile",
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4"
+                  ],
+                  {
+                    "default": "3"
+                  }
+                ]
+              ],
+              "video/av1-webm": [
+                [
+                  "pix_fmt",
+                  [
+                    "yuv420p10le",
+                    "yuv420p"
+                  ]
+                ],
+                [
+                  "crf",
+                  "INT",
+                  {
+                    "default": 23,
+                    "min": 0,
+                    "max": 100,
+                    "step": 1
+                  }
+                ],
+                [
+                  "input_color_depth",
+                  [
+                    "8bit",
+                    "16bit"
+                  ]
+                ],
+                [
+                  "save_metadata",
+                  "BOOLEAN",
+                  {
+                    "default": true
+                  }
+                ]
+              ],
+              "video/ffmpeg-gif": [
+                [
+                  "dither",
+                  [
+                    "bayer",
+                    "heckbert",
+                    "floyd_steinberg",
+                    "sierra2",
+                    "sierra2_4a",
+                    "sierra3",
+                    "burkes",
+                    "atkinson",
+                    "none"
+                  ],
+                  {
+                    "default": "sierra2_4a"
+                  },
+                  "[0:v] split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse=dither=$val"
+                ]
+              ],
+              "video/ffv1-mkv": [
+                [
+                  "level",
+                  [
+                    "0",
+                    "1",
+                    "3"
+                  ],
+                  {
+                    "default": "3"
+                  }
+                ],
+                [
+                  "coder",
+                  [
+                    "0",
+                    "1",
+                    "2"
+                  ],
+                  {
+                    "default": "1"
+                  }
+                ],
+                [
+                  "context",
+                  [
+                    "0",
+                    "1"
+                  ],
+                  {
+                    "default": "1"
+                  }
+                ],
+                [
+                  "gop_size",
+                  "INT",
+                  {
+                    "default": 1,
+                    "min": 1,
+                    "max": 300,
+                    "step": 1
+                  }
+                ],
+                [
+                  "slices",
+                  [
+                    "4",
+                    "6",
+                    "9",
+                    "12",
+                    "16",
+                    "20",
+                    "24",
+                    "30"
+                  ],
+                  {
+                    "default": "16"
+                  }
+                ],
+                [
+                  "slicecrc",
+                  [
+                    "0",
+                    "1"
+                  ],
+                  {
+                    "default": "1"
+                  }
+                ],
+                [
+                  "pix_fmt",
+                  [
+                    "rgba64le",
+                    "bgra",
+                    "yuv420p",
+                    "yuv422p",
+                    "yuv444p",
+                    "yuva420p",
+                    "yuva422p",
+                    "yuva444p",
+                    "yuv420p10le",
+                    "yuv422p10le",
+                    "yuv444p10le",
+                    "yuv420p12le",
+                    "yuv422p12le",
+                    "yuv444p12le",
+                    "yuv420p14le",
+                    "yuv422p14le",
+                    "yuv444p14le",
+                    "yuv420p16le",
+                    "yuv422p16le",
+                    "yuv444p16le",
+                    "gray",
+                    "gray10le",
+                    "gray12le",
+                    "gray16le"
+                  ],
+                  {
+                    "default": "rgba64le"
+                  }
+                ],
+                [
+                  "save_metadata",
+                  "BOOLEAN",
+                  {
+                    "default": true
+                  }
+                ],
+                [
+                  "trim_to_audio",
+                  "BOOLEAN",
+                  {
+                    "default": false
+                  }
+                ]
+              ],
+              "video/h264-mp4": [
+                [
+                  "pix_fmt",
+                  [
+                    "yuv420p",
+                    "yuv420p10le"
+                  ]
+                ],
+                [
+                  "crf",
+                  "INT",
+                  {
+                    "default": 19,
+                    "min": 0,
+                    "max": 100,
+                    "step": 1
+                  }
+                ],
+                [
+                  "save_metadata",
+                  "BOOLEAN",
+                  {
+                    "default": true
+                  }
+                ],
+                [
+                  "trim_to_audio",
+                  "BOOLEAN",
+                  {
+                    "default": false
+                  }
+                ]
+              ],
+              "video/h265-mp4": [
+                [
+                  "pix_fmt",
+                  [
+                    "yuv420p10le",
+                    "yuv420p"
+                  ]
+                ],
+                [
+                  "crf",
+                  "INT",
+                  {
+                    "default": 22,
+                    "min": 0,
+                    "max": 100,
+                    "step": 1
+                  }
+                ],
+                [
+                  "save_metadata",
+                  "BOOLEAN",
+                  {
+                    "default": true
+                  }
+                ]
+              ],
+              "video/mov": [
+                [
+                  "crf",
+                  "INT",
+                  {
+                    "default": 23,
+                    "min": 0,
+                    "max": 100,
+                    "step": 1
+                  }
+                ],
+                [
+                  "save_metadata",
+                  "BOOLEAN",
+                  {
+                    "default": true
+                  }
+                ]
+              ],
+              "video/nvenc_av1-mp4": [
+                [
+                  "pix_fmt",
+                  [
+                    "yuv420p",
+                    "p010le"
+                  ]
+                ],
+                [
+                  "bitrate",
+                  "INT",
+                  {
+                    "default": 10,
+                    "min": 1,
+                    "max": 999,
+                    "step": 1
+                  }
+                ],
+                [
+                  "megabit",
+                  "BOOLEAN",
+                  {
+                    "default": true
+                  }
+                ],
+                [
+                  "save_metadata",
+                  "BOOLEAN",
+                  {
+                    "default": true
+                  }
+                ]
+              ],
+              "video/webm": [
+                [
+                  "pix_fmt",
+                  [
+                    "yuv420p",
+                    "yuva420p"
+                  ]
+                ],
+                [
+                  "crf",
+                  "INT",
+                  {
+                    "default": 20,
+                    "min": 0,
+                    "max": 100,
+                    "step": 1
+                  }
+                ],
+                [
+                  "save_metadata",
+                  "BOOLEAN",
+                  {
+                    "default": true
+                  }
+                ],
+                [
+                  "trim_to_audio",
+                  "BOOLEAN",
+                  {
+                    "default": false
+                  }
+                ]
+              ],
+              "image/webp": [
+                [
+                  "lossless",
+                  "BOOLEAN",
+                  {
+                    "default": true
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "pingpong": [
+          "BOOLEAN",
+          {
+            "default": false
+          }
+        ],
+        "save_output": [
+          "BOOLEAN",
+          {
+            "default": true
+          }
+        ]
+      },
+      "optional": {
+        "audio": [
+          "AUDIO"
+        ],
+        "meta_batch": [
+          "VHS_BatchManager"
+        ],
+        "vae": [
+          "VAE"
+        ],
+        "no_preview": [
+          "BOOLEAN",
+          {
+            "default": false
+          }
+        ]
+      },
+      "hidden": {
+        "prompt": "PROMPT",
+        "extra_pnginfo": "EXTRA_PNGINFO",
+        "unique_id": "UNIQUE_ID"
+      }
+    }
+  },
+  "GetImageRangeFromBatch": {
+    "input": {
+      "required": {
+        "start_index": [
+          "INT",
+          {
+            "default": 0,
+            "min": -1,
+            "max": 4096,
+            "step": 1
+          }
+        ],
+        "num_frames": [
+          "INT",
+          {
+            "default": 1,
+            "min": 1,
+            "max": 4096,
+            "step": 1
+          }
+        ]
+      },
+      "optional": {
+        "images": [
+          "IMAGE"
+        ],
+        "masks": [
+          "MASK"
+        ]
+      }
+    }
+  },
+  "RepeatImageBatch": {
+    "input": {
+      "required": {
+        "image": [
+          "IMAGE",
+          {}
+        ],
+        "amount": [
+          "INT",
+          {
+            "default": 1,
+            "min": 1,
+            "max": 4096
+          }
+        ]
+      }
+    }
+  },
+  "BatchImagesNode": {
+    "input": {
+      "required": {
+        "images": [
+          "COMFY_AUTOGROW_V3",
+          {
+            "template": {
+              "input": {
+                "required": {
+                  "image": [
+                    "IMAGE",
+                    {}
+                  ]
+                }
+              },
+              "prefix": "image",
+              "min": 1,
+              "max": 50
+            }
+          }
+        ]
+      }
+    }
+  }
+}

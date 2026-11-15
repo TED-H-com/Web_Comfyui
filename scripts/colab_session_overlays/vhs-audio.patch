@@ -1,0 +1,16 @@
+diff --git a/videohelpersuite/utils.py b/videohelpersuite/utils.py
+index 5b35ad4..561abf2 100644
+--- a/videohelpersuite/utils.py
++++ b/videohelpersuite/utils.py
+@@ -234,6 +234,11 @@ def get_audio(file, start_time=0, duration=0):
+         audio = torch.frombuffer(bytearray(res.stdout), dtype=torch.float32)
+         match = re.search(', (\\d+) Hz, (\\w+), ',res.stderr.decode(*ENCODE_ARGS))
+     except subprocess.CalledProcessError as e:
++        # ComfyUI now traverses lazy node outputs while caching them. A valid
++        # video without audio must remain usable even before VideoCombine's
++        # optional-audio guard runs. Preserve errors for unreadable media.
++        if b"Output file does not contain any stream" in e.stderr:
++            return {}
+         raise Exception(f"VHS failed to extract audio from {file}:\n" \
+                 + e.stderr.decode(*ENCODE_ARGS))
+     if match:

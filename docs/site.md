@@ -10,7 +10,7 @@
 
 23 項工具與建立角色都保留預填表單與說明，每個工具都有可體驗的結果。已實跑的工具顯示對應紀錄；其餘顯示「預製介面範例 · 非此工作流實測」，清楚標記素材真正的來源引擎。預製範例不證明所選工作流已執行，也不代表其品質。修改提示詞或選項只用來熟悉介面，不會重新生成。
 
-按下生成前只在上傳區顯示參考素材，結果區保持隱藏；重設或更換參考檔案會清除舊結果。指令改圖在生成後並排顯示青綠白原隊服與紅色上衣、深藍短褲的實測成品，清楚標示修改前後。
+按下生成前只在上傳區顯示參考素材，結果區保持隱藏；重設或更換參考檔案會清除舊結果。指令改圖在生成後並排顯示青綠白原隊服與紅色上衣、深藍短褲的實測成品，清楚標示修改前後。工具選單的「AI 指令改圖」開啟 Qwen 2.1 表單，其預製範例沿用這組 Flux Kontext 實跑的前後圖片並註明來源；Flux Kontext 表單不在選單中，實跑紀錄可從直接路徑 `#/studio/img2img` 開啟。示範頁的「AI 跳舞影片」表單保留動作影片上傳欄，用來顯示實測使用的動作影片；安裝後的 WebUI 在同一位置改用舞蹈模板選擇器，其中「使用自己的影片」可上傳檔案。
 
 文生圖與其他已實跑的範例按下生成後，會先顯示約 2.4 秒的百分比進度，再開啟成果；進度明確標為模擬，不代表即時 GPU 狀態。系統設定減少動態效果時會快速完成。參考圖融合改用 SAM3 分割原人物，再合成夜間球場背景，保留人物原貌；[實際模型、節點與像素比對](subject-blend.md) 有獨立 GPU 紀錄。此合成不會自動補光或新增陰影。
 
@@ -30,7 +30,7 @@
 
 硬體選單提供無 NVIDIA GPU、8／12／16／24／32 GB，以及雙 24 GB 等規劃級距。顯存需求是依預設 builder 整理的估計，不是偵測結果、最低需求實測或效能基準；解析度、精度、影格數、參考素材、卸載方式及系統記憶體都會影響實際需求。這些 builder 沒有自動跨卡切分模型，雙 24 GB 以單卡 24 GB 計，不加總成 48 GB。
 
-選擇只影響靜態示範中的操作提示與範例可用性，不修改安裝後 WebUI 的設定、不啟用原本停用的 API，也不因選擇無 GPU 而停用使用者的本機服務。**AutoIP** 選項開放全部 23 項示範表單供探索；不代表供應商已支援每個本機工作流、節點或訓練器。實際雲端能力與目前七項已實作 API 整合分開核對。首頁的選用註冊連結與 QR code 使用聯盟推薦碼 `TEDH2FND`，詳見 [服務界線與推薦揭露](autoip-cloud-demo.md)。
+選擇只影響靜態示範中的操作提示與範例可用性，不修改安裝後 WebUI 的設定、不啟用原本停用的 API，也不因選擇無 GPU 而停用使用者的本機服務。**AutoIP** 選項開放全部 23 項示範表單供探索；不代表供應商已支援每個本機工作流、節點或訓練器。實際雲端能力與目前七項已實作 API 整合分開核對。首頁的選用註冊連結與 QR code 使用聯盟推薦碼 `TEDH2FND`，詳見 [服務界線與推薦揭露](autoip-cloud-demo.md)。RunningHub 卡片使用推薦碼 `qqgzxufp` 與連結 `https://www.runninghub.ai?inviteCode=qqgzxufp`，見 [RunningHub 推薦連結](runninghub-referral.md)。
 
 ## 本機預覽
 
@@ -94,3 +94,20 @@ python3 scripts/replay_recorded_demo.py <run-id> --run --input-dir ~/comfyui/inp
 ```
 
 預設連線為 `http://127.0.0.1:8188`；`--comfy-url` 只接受數字形式的 HTTP loopback 位址，不接受帳密、外部位址或重新導向。核准素材會複製至指定目錄中的 `web-demo-replay/`，遇到同名但不同內容的檔案會停止。腳本只回報提交取得的 `prompt_id`，完成與否請在 ComfyUI 查看；它不宣稱佇列提交就是生成成功。重跑前會確認輸入雜湊與原始執行一致；成果可能轉成公開用格式，與 ComfyUI 原始輸出分別記錄雜湊。即使使用同一份輸入，重跑結果也不保證逐像素相同。模型與節點版本、執行硬體也可能影響結果。
+
+## Demo compute screens / 示範運算畫面
+
+`/demo/` also displays the per-form execution chooser, all five compute lanes and their available-feature conditions, multi-step production, Google Colab accounts, and the resource provider console. These are read-only screens with canned empty-state responses: nothing connects, credential inputs are disabled, and settings are never saved. Action buttons explain that the operation requires your own installed WebUI. This is interface coverage, not a verified compute or GPU run.
+
+`/demo/` 也展示表單的執行位置、五個運算平台與可用條件、多步製作、Google Colab 帳號及資源平台管理畫面。畫面使用固定的空白狀態資料，不連線、不接受金鑰，也不保存設定；操作按鈕會提示改用自行安裝的 WebUI。這是介面展示，不代表已驗證運算或 GPU 生成。
+
+Regenerate with the WebUI Python dependencies installed / 安裝 WebUI Python 相依套件後重新產生：
+
+```bash
+python3 scripts/record_demo_compute.py
+python3 scripts/build_docs.py
+```
+
+The recorder starts the public server on `127.0.0.1` in a fresh temporary state under a temporary home directory, ignores `.env` and inherited provider configuration, completes local password setup and login, and blocks outgoing server connections. It replaces only the server's built-in local identity with `demo@example.invalid` (display name `Demo`), normalizes volatile timestamps/IDs, and rejects other e-mails, filesystem paths and credential-shaped values before writing `webui/docs/demo-compute.json`. Review that file before committing it. The build embeds it in `app-guide.json`; opening compute screens adds no native API requests.
+
+錄製器只啟動全新暫存狀態與暫存家目錄的本機服務，不讀取 `.env` 或繼承平台設定，完成本機密碼設定與登入後擷取回應，並阻止服務對外連線。僅將內建本機身份替換為 `demo@example.invalid`（名稱 `Demo`），固定時間與產生的識別碼；其他信箱、檔案絕對路徑或憑證樣式內容都會使錄製失敗。提交前請審查 `webui/docs/demo-compute.json`。建置時資料嵌入 `app-guide.json`，開啟運算畫面不會增加原生 API 請求。

@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
+import os
+import re
+import secrets
+import stat
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping, Protocol
@@ -116,6 +121,69 @@ def _verified_source(loader: AssetLoader, owner: str, asset: MediaAsset) -> Path
     return path
 
 
+H3_UPLOAD_KEY_NAME = "h3-upload-name.key"
+_UPLOAD_NAME_KEY_ERROR = "H3 upload-name key is not a private 32-byte file"
+
+
+def _read_upload_name_key(path: Path) -> bytes:
+    info = os.lstat(path)
+    if (
+        stat.S_ISLNK(info.st_mode)
+        or not stat.S_ISREG(info.st_mode)
+        or info.st_size != 32
+        or (info.st_mode & 0o077) != 0
+        or info.st_uid != os.getuid()
+    ):
+        raise RuntimeError(_UPLOAD_NAME_KEY_ERROR)
+    data = path.read_bytes()
+    if len(data) != 32:
+        raise RuntimeError(_UPLOAD_NAME_KEY_ERROR)
+    return data
+
+
+def load_or_create_upload_name_key(path: Path) -> bytes:
+    path = Path(path)
+    try:
+        os.lstat(path)
+    except FileNotFoundError:
+        temporary = path.parent / f".{path.name}.{secrets.token_hex(8)}.tmp"
+        fd = os.open(
+            temporary,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o600,
+        )
+        try:
+            payload = secrets.token_bytes(32)
+            offset = 0
+            while offset < len(payload):
+                written = os.write(fd, payload[offset:])
+                if written <= 0:
+                    raise OSError("H3 upload-name key write failed")
+                offset += written
+            os.fsync(fd)
+            try:
+                os.link(temporary, path)
+            except FileExistsError:
+                pass
+        finally:
+            os.close(fd)
+            os.unlink(temporary)
+    return _read_upload_name_key(path)
+
+
+def h3_upload_basename(key: bytes, asset_sha256: str, suffix: str) -> str:
+    if not isinstance(key, bytes) or len(key) != 32:
+        raise ValueError("H3 upload-name key must be 32 bytes")
+    if re.fullmatch(r"[0-9a-f]{64}", asset_sha256) is None:
+        raise DefiniteLocalFailure("H3 asset digest is invalid")
+    digest = hmac.new(
+        key,
+        b"castle-h3-upload\x00" + asset_sha256.encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    return "castle_h3_" + digest[:32] + suffix
+
+
 class H3SubmissionProcessor:
     """Rebuild an H3 graph; the injected executor owns shared-GPU dispatch."""
 
@@ -125,12 +193,18 @@ class H3SubmissionProcessor:
         executor: H3QueueExecutor,
         *,
         profile_resolver: ProfileResolver,
+        upload_name_key: bytes | None = None,
     ) -> None:
         if not all(callable(item) for item in (asset_loader, executor, profile_resolver)):
             raise TypeError("asset_loader, executor, and profile_resolver are required")
+        if upload_name_key is None:
+            upload_name_key = secrets.token_bytes(32)
+        if not isinstance(upload_name_key, bytes) or len(upload_name_key) != 32:
+            raise ValueError("upload_name_key must be 32 bytes")
         self._asset_loader = asset_loader
         self._executor = executor
         self._profile_resolver = profile_resolver
+        self._upload_name_key = upload_name_key
 
     def __call__(self, bundle: Mapping[str, object]) -> TaskReceipt:
         try:
@@ -186,7 +260,7 @@ class H3SubmissionProcessor:
             suffix = source.suffix.lower()
             if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
                 raise DefiniteLocalFailure("H3 input filename has an unsupported extension")
-            upload_basename = f"castle_h3_{asset.sha256[:32]}{suffix}"
+            upload_basename = h3_upload_basename(self._upload_name_key, str(asset.sha256), suffix)
             graph = compile_product_prompt(
                 feature_id=feature_id,
                 visual_class=intent.visual_class.value,

@@ -4,8 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import base64
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 import file_lock as fcntl
 import hashlib
 import heapq
@@ -35,6 +36,7 @@ import tempfile
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from types import SimpleNamespace
 from xml.etree import ElementTree
 import zipfile
 import types
@@ -46,6 +48,7 @@ if __name__ == '__main__':
     apply_environment_aliases()
 
 import library_service
+import egress_guard
 import workflow_library
 import material_collector
 import reference_sources
@@ -1221,6 +1224,8 @@ FEATURES = [
         "subtitle": "Flux Kontext 重新生成式編輯",
         "kind": "generate",
         "builder": "flux_kontext",
+        "uiHidden": True,
+        "apiEnabled": True,
         "toolGroup": "img2img",
         "versionLabel": "Flux Kontext",
         "uploads": [{"id": "image", "label": "參考圖片", "accept": "image/*", "required": True}],
@@ -1276,24 +1281,22 @@ FEATURES = [
         "id": "character-angles",
         "studio": "image",
         "title": "真人臉參考肖像",
-        "subtitle": "InstantID · 依同一張真人正臉生成候選肖像",
+        "subtitle": "Qwen 2.1 · 保留原圖身份與色彩的多角度肖像",
         "kind": "generate",
-        "builder": "instantid",
+        "builder": "qwen21_angles",
         "uploads": [{"id": "face", "label": "角色臉部參考", "accept": "image/*", "required": True}],
         "fields": [
-            {"id": "positive", "type": "textarea", "label": "場景／角度描述", "default": "portrait, three-quarter view, studio lighting, looking to the side", "rows": 3},
-            {"id": "negative", "type": "textarea", "label": "負向提示詞", "default": "lowres, bad anatomy, deformed, watermark, text", "rows": 2},
-            {"id": "aspect", "type": "aspect", "label": "畫面比例", "options": SDXL_ASPECTS, "default": "896x1152"},
-            {"id": "weight", "type": "slider", "label": "臉部一致性", "default": 0.8, "min": 0, "max": 1.5, "step": 0.05},
-            {"id": "steps", "type": "slider", "label": "步數", "default": 30, "min": 1, "max": 60, "step": 1},
-            {"id": "cfg", "type": "slider", "label": "CFG", "default": 5.0, "min": 0, "max": 15, "step": 0.1},
+            {"id": "positive", "type": "textarea", "label": "場景／角度描述", "default": "自然棚拍半身肖像，輕微轉頭，保留原本的髮型、眼鏡與服裝。", "rows": 3},
+            {"id": "negative", "type": "textarea", "label": "負向提示詞", "default": "black and white, monochrome, grayscale, different person, deformed face, watermark, text", "rows": 2, "advanced": True},
+            {"id": "steps", "type": "slider", "label": "步數", "default": 25, "min": 1, "max": 50, "step": 1},
+            {"id": "cfg", "type": "slider", "label": "CFG", "default": 1.0, "min": 1, "max": 5, "step": 0.1},
             {"id": "batchSize", "type": "number", "label": "候選張數", "default": 2, "min": 1, "max": 6, "step": 1},
             _seed_field(),
         ],
-        "requiredModels": ["sd_xl_base_1.0.safetensors", "ip-adapter.bin", "instantid/diffusion_pytorch_model.safetensors"],
-        "requiredNodes": ["InstantIDModelLoader", "ApplyInstantID", "InstantIDFaceAnalysis", "ControlNetLoader"],
-        "requiredPaths": ["insightface/models/antelopev2"],
-        "note": "只接受單一、清楚、近正面的真人臉照片；動漫角色、插畫、多人照與遮擋臉孔不適用。",
+        # Keep these values literal for the public documentation's static reader.
+        "requiredModels": ["qwen_image_2.1_int8_convrot.safetensors", "qwen3vl_8b_int8_convrot.safetensors", "qwen_image_2.1_vae_bf16.safetensors"],
+        "requiredNodes": ["UNETLoader", "CLIPLoader", "VAELoader", "TextEncodeQwenImage21", "KSampler", "VAEDecode", "SaveImage", "LoadImage", "QwenImage21Cache"],
+        "note": "只接受單一、清楚、近正面的真人臉照片；動漫角色、插畫、多人照與遮擋臉孔不適用。保留原圖色彩，逐張生成不同朝向的候選肖像。",
     },
     {
         "id": CLIPMODE_CHARACTER_PHOTOSHOOT_FEATURE_ID,
@@ -1305,7 +1308,7 @@ FEATURES = [
         "characterOnly": True,
         "beta": True,
         "releaseStage": "beta",
-        "uploads": [],
+        "uploads": [{"id": "image", "label": "角色原圖", "accept": "image/*", "required": False}],
         "fields": [
             {
                 "id": "prompt",
@@ -1431,7 +1434,7 @@ FEATURES = [
             _seed_field(),
         ],
         "requiredModels": ["wan2.1_14B_SCAIL_2_fp8_scaled.safetensors", "sam3.1_multiplex_fp16.safetensors", "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan_2.1_vae.safetensors", "clip_vision_h.safetensors", "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors"],
-        "requiredNodes": ["WanSCAILToVideo", "SAM3_VideoTrack", "SCAIL2ColoredMask", "WanContextWindowsManual", "ResizeImageMaskNode", "VHS_LoadVideoPath", "VHS_VideoCombine", "ImageResizeKJv2", "ColorTransfer", "GetImageRangeFromBatch", "BatchImagesNode", "SamplerCustom", "BasicScheduler", "KSamplerSelect"],
+        "requiredNodes": ["WanSCAILToVideo", "SAM3_VideoTrack", "SCAIL2ColoredMask", "WanContextWindowsManual", "ResizeImageMaskNode", "VHS_LoadVideoPath", "VHS_VideoCombine", "ImageResizeKJv2", "GetImageRangeFromBatch", "BatchImagesNode", "SamplerCustom", "BasicScheduler", "KSamplerSelect"],
         "note": "上傳一張角色參考圖與一段動作影片，系統會依動作重新生成角色舞蹈 MP4。背景會重新生成，不保留原影片場景；輸出會沿用動作影片的原音訊。",
     },
     {
@@ -1899,7 +1902,10 @@ def decode_data_url(value: str, max_bytes: int = MAX_UPLOAD_DECODED) -> tuple[by
 
 def upload_image_to_comfy(raw: bytes, name: str, content_type: str) -> str:
     boundary = f"----CastleComfy{secrets.token_hex(16)}"
-    safe_name = safe_filename(name, mimetypes.guess_extension(content_type) or ".png")
+    if name.startswith("castle_web_") and len(name.encode("utf-8")) <= 200 and re.fullmatch(r"[A-Za-z0-9._-]+", name):
+        safe_name = name
+    else:
+        safe_name = safe_filename(name, mimetypes.guess_extension(content_type) or ".png")
     parts = [
         (
             f"--{boundary}\r\n"
@@ -1931,16 +1937,33 @@ def upload_image_to_comfy(raw: bytes, name: str, content_type: str) -> str:
     return f"{subfolder}/{filename}" if subfolder else filename
 
 
+def staged_input_name(kind: str, slot: str, original_name: str, content_type: str = "") -> str:
+    if kind not in {"web", "user_photo", "voice", "drive", "crawl", "dance_library", "chain"}:
+        raise ValueError("Invalid staged input kind")
+    safe_slot = re.sub(r"[^a-z0-9_-]+", "", str(slot or "").lower())[:32] or "file"
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(str(original_name or "upload")).name).strip("._") or "upload"
+    suffix = Path(safe_name).suffix
+    if re.fullmatch(r"\.[A-Za-z0-9]{1,15}", suffix):
+        stem, extension = safe_name[:-len(suffix)], suffix
+    else:
+        stem = safe_name
+        content_type = str(content_type or "").split(";", 1)[0].strip().lower()
+        guessed = mimetypes.guess_extension(content_type)
+        if guessed and re.fullmatch(r"\.[A-Za-z0-9]{1,15}", guessed):
+            extension = guessed
+        else:
+            extension = ".png" if content_type.startswith("image/") else ""
+    prefix = f"castle_{kind}_{int(time.time())}_{secrets.token_hex(16)}_{safe_slot}_"
+    return prefix + stem[:200 - len(prefix) - len(extension)] + extension
+
+
 def save_uploaded_bytes(raw: bytes, name: str, content_type: str, slot: str) -> str:
     if len(raw) > MAX_UPLOAD_DECODED:
         raise RequestTooLarge("Upload exceeds size limit")
     content_type = str(content_type or "application/octet-stream").split(";", 1)[0].strip().lower()
-    safe_slot = re.sub(r"[^a-z0-9_-]+", "", str(slot or "").lower())[:32] or "file"
+    target_name = staged_input_name("web", slot, name, content_type)
     if content_type.startswith("image/"):
-        return upload_image_to_comfy(raw, name, content_type)
-    guessed = mimetypes.guess_extension(content_type) or Path(str(name or "")).suffix
-    safe_name = safe_filename(name, guessed)
-    target_name = f"castle_web_{int(time.time())}_{secrets.token_hex(4)}_{safe_slot}_{safe_name}"
+        return upload_image_to_comfy(raw, target_name, content_type)
     COMFY_INPUT.mkdir(parents=True, exist_ok=True)
     target = (COMFY_INPUT / target_name).resolve()
     if not target.is_relative_to(COMFY_INPUT.resolve()):
@@ -1989,9 +2012,7 @@ def import_user_photo_to_input(entry: dict, filename: str, slot: str) -> dict:
     if size > MAX_UPLOAD_BODY:
         raise ValueError("素材檔太大，請先裁切後再使用")
     COMFY_INPUT.mkdir(parents=True, exist_ok=True)
-    safe_name = safe_filename(source.name, source.suffix)
-    slot_name = re.sub(r"[^a-z0-9_-]+", "", str(slot or "").lower())[:32] or "photo"
-    target_name = f"castle_user_photo_{int(time.time())}_{secrets.token_hex(4)}_{slot_name}_{safe_name}"
+    target_name = staged_input_name("user_photo", slot, source.name)
     target = (COMFY_INPUT / target_name).resolve()
     if not target.is_relative_to(COMFY_INPUT.resolve()):
         raise ValueError("無效的角色照片檔名")
@@ -2009,16 +2030,15 @@ def resolve_voice_reference(
     with _VOICE_LOCK:
         voices = load_voice_index()
         entry = next((e for e in voices if e["id"] == voice_id), None)
-    if entry is None:
-        available = ", ".join(str(e.get("id") or "") for e in voices[:8] if e.get("id"))
+    if entry is None or not user_can_access_voice_entry(user, entry, service_token):
+        visible = [e for e in voices if user_can_access_voice_entry(user, e, service_token)]
+        available = ", ".join(str(e.get("id") or "") for e in visible[:8] if e.get("id"))
         suffix = f"；目前可用：{available}" if available else "；目前聲音庫是空的"
         raise ValueError(f"找不到聲音庫項目「{voice_id}」{suffix}")
-    if not user_can_access_voice_entry(user, entry, service_token):
-        raise PermissionError("沒有權限使用這個聲音")
     source = VOICE_LIBRARY / entry["filename"]
     if not source.is_file():
         raise ValueError("聲音庫檔案遺失")
-    target_name = f"castle_voice_{int(time.time())}_{secrets.token_hex(4)}_{entry['filename']}"
+    target_name = staged_input_name("voice", "voice", entry["filename"])
     COMFY_INPUT.mkdir(parents=True, exist_ok=True)
     (COMFY_INPUT / target_name).write_bytes(source.read_bytes())
     return target_name
@@ -2038,15 +2058,17 @@ def _crawl_cookie_file(url: str) -> Path | None:
     cookie file for the URL's host, or None. Cookie *contents* are never read or
     logged here — only the path is handed to yt-dlp."""
     host = (urllib.parse.urlparse(url).hostname or "").lower()
-    if "facebook.com" in host or "fb.watch" in host:
+    def matches(*domains: str) -> bool:
+        return any(host == domain or host.endswith("." + domain) for domain in domains)
+    if matches("facebook.com", "fb.watch"):
         name = "facebook.txt"
-    elif "instagram.com" in host:
+    elif matches("instagram.com"):
         name = "instagram.txt"
-    elif "threads.com" in host or "threads.net" in host:
+    elif matches("threads.com", "threads.net"):
         name = "threads.txt"
-    elif "youtube.com" in host or "youtu.be" in host:
+    elif matches("youtube.com", "youtu.be"):
         name = "youtube.txt"
-    elif "drive.google.com" in host or "googleusercontent.com" in host:
+    elif matches("drive.google.com", "googleusercontent.com"):
         name = "google.txt"
     else:
         name = "cookies.txt"
@@ -2059,7 +2081,14 @@ def _google_drive_url(url: str) -> bool:
     return host == "drive.google.com" or host.endswith(".drive.google.com")
 
 
-def fetch_video_url(url: str, slot: str) -> dict:
+GUEST_DOWNLOAD_PROTOCOL_RE = r"^(https?|m3u8(_native)?|http_dash_segments(_generator)?)$"
+GUEST_VIDEO_FORMAT = (
+    f"best[ext=mp4][protocol~='{GUEST_DOWNLOAD_PROTOCOL_RE}']"
+    f"/best[protocol~='{GUEST_DOWNLOAD_PROTOCOL_RE}']"
+)
+
+
+def fetch_video_url(url: str, slot: str, *, shared_cookies: bool) -> dict:
     """Download a single video from a public URL into COMFY_INPUT via yt-dlp,
     returning {filename, name, size}. yt-dlp runs as an argv list (never a shell),
     only http/https URLs are accepted, and the download is size- and time-capped.
@@ -2069,38 +2098,75 @@ def fetch_video_url(url: str, slot: str) -> dict:
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise ValueError("請貼上有效的 http / https 影片網址")
+    if not shared_cookies:
+        try:
+            addresses = socket.getaddrinfo(parsed.hostname, parsed.port, type=socket.SOCK_STREAM)
+        except OSError:
+            addresses = []
+        if any(not egress_guard.address_allowed(address[4][0]) for address in addresses):
+            raise ValueError("這個網址不是公開網址，無法下載")
     binary = _resolve_yt_dlp()
     COMFY_INPUT.mkdir(parents=True, exist_ok=True)
-    token = f"{int(time.time())}_{secrets.token_hex(4)}_{slot}"
-    out_tmpl = str(COMFY_INPUT / f"castle_url_{token}_%(title).60s.%(ext)s")
-    argv = [
-        binary,
+    safe_slot = re.sub(r"[^a-z0-9_-]+", "", str(slot or "").lower())[:32] or "file"
+    token = f"{int(time.time())}_{secrets.token_hex(16)}_{safe_slot}"
+    out_tmpl = str(COMFY_INPUT / f"castle_url_{token}_%(title).40s.%(ext).16s")
+    format_selector = "mp4/best[ext=mp4]/best"
+    argv = [binary]
+    if not shared_cookies:
+        argv.append("--ignore-config")
+        format_selector = GUEST_VIDEO_FORMAT
+    argv += [
         "--no-playlist",
         "--restrict-filenames",
         "--no-progress",
         "--max-filesize", str(MAX_FETCH_BYTES),
-        "-f", "mp4/best[ext=mp4]/best",
+        "-f", format_selector,
         "-o", out_tmpl,
     ]
     cookie = _crawl_cookie_file(url)
-    if cookie is not None:
+    hint = "；這個連結可能需要登入才能下載，請改為上傳影片檔" if not shared_cookies and cookie is not None else ""
+    if shared_cookies and cookie is not None:
         argv += ["--cookies", str(cookie)]
-    argv += ["--", url]
-    try:
-        proc = subprocess.run(
-            argv, capture_output=True, text=True,
-            timeout=FETCH_TIMEOUT_SECONDS, cwd=str(CRAWL_DIR),
-        )
-    except subprocess.TimeoutExpired:
-        raise ValueError("下載逾時，請改用較短的影片或直接上傳檔案")
-    if proc.returncode != 0:
-        # Surface a short, non-sensitive reason; never echo cookies or the argv.
-        lines = [ln for ln in (proc.stderr or proc.stdout or "").splitlines() if ln.strip()]
-        reason = lines[-1].strip() if lines else f"yt-dlp 失敗（{proc.returncode}）"
-        raise ValueError(f"下載失敗：{reason[:200]}")
-    matches = [p for p in COMFY_INPUT.glob(f"castle_url_{token}_*") if p.is_file()]
-    if not matches:
-        raise ValueError("下載完成但找不到影片檔，請改用上傳檔案")
+    with (nullcontext(None) if shared_cookies else egress_guard.GlobalOnlyProxy()) as proxy:
+        run_kwargs = {}
+        if proxy is not None:
+            argv += ["--proxy", proxy.url]
+            env = os.environ.copy()
+            for key in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"):
+                env[key] = proxy.url
+            env.pop("NO_PROXY", None)
+            env.pop("no_proxy", None)
+            run_kwargs["env"] = env
+        argv += ["--", url]
+
+        def rejected_redirect():
+            return proxy is not None and any(reason in {"non_global", "port"} for reason in proxy.refusals)
+
+        redirect_error = "這個連結會轉到非公開或不支援的位址，無法下載；請改為上傳影片檔"
+        try:
+            proc = subprocess.run(
+                argv, capture_output=True, text=True,
+                timeout=FETCH_TIMEOUT_SECONDS, cwd=str(CRAWL_DIR), **run_kwargs,
+            )
+        except subprocess.TimeoutExpired:
+            if rejected_redirect():
+                raise ValueError(redirect_error)
+            raise ValueError("下載逾時，請改用較短的影片或直接上傳檔案" + hint)
+        if proc.returncode != 0:
+            if rejected_redirect():
+                raise ValueError(redirect_error)
+            combined_output = f"{proc.stdout or ''}\n{proc.stderr or ''}"
+            if not shared_cookies and "Requested format is not available" in combined_output:
+                raise ValueError("這個網址的影片只提供無法安全下載的串流格式，請改為上傳影片檔")
+            # Surface a short, non-sensitive reason; never echo cookies or the argv.
+            lines = [ln for ln in (proc.stderr or proc.stdout or "").splitlines() if ln.strip()]
+            reason = lines[-1].strip() if lines else f"yt-dlp 失敗（{proc.returncode}）"
+            raise ValueError(f"下載失敗：{reason[:200]}{hint}")
+        matches = [p for p in COMFY_INPUT.glob(f"castle_url_{token}_*") if p.is_file()]
+        if not matches:
+            if rejected_redirect():
+                raise ValueError(redirect_error)
+            raise ValueError("下載完成但找不到影片檔，請改用上傳檔案" + hint)
     target = max(matches, key=lambda p: p.stat().st_mtime)
     size = target.stat().st_size
     if size > MAX_FETCH_BYTES:
@@ -2133,11 +2199,11 @@ def fetch_video_url(url: str, slot: str) -> dict:
     return {"filename": target.name, "name": display, "size": size}
 
 
-def fetch_google_drive_video(url: str, slot: str) -> dict:
+def fetch_google_drive_video(url: str, slot: str, *, shared_cookies: bool) -> dict:
     url = (url or "").strip()
     if not _google_drive_url(url):
         raise ValueError("請貼上 Google Drive 檔案分享連結")
-    return fetch_video_url(url, slot)
+    return fetch_video_url(url, slot, shared_cookies=shared_cookies)
 
 
 def google_drive_configured() -> bool:
@@ -2275,8 +2341,7 @@ def import_google_drive_file(file_id: str, slot: str) -> dict:
     size = int(meta.get("size") or 0)
     if size and size > MAX_FETCH_BYTES:
         raise ValueError("Google Drive 影片超過大小上限，請先裁切後再使用")
-    safe_name = safe_filename(name, suffix or ".mp4")
-    target_name = f"castle_drive_{int(time.time())}_{secrets.token_hex(4)}_{slot}_{safe_name}"
+    target_name = staged_input_name("drive", slot, name, mime_type)
     target = COMFY_INPUT / target_name
     COMFY_INPUT.mkdir(parents=True, exist_ok=True)
     url = f"{GOOGLE_DRIVE_API}/files/{urllib.parse.quote(file_id)}?" + urllib.parse.urlencode({
@@ -2517,8 +2582,7 @@ def import_crawl_video(video_id: str, slot: str) -> dict:
     COMFY_INPUT.mkdir(parents=True, exist_ok=True)
     codec = _video_codec(source)
     suffix = source.suffix if codec in CV2_VIDEO_CODECS else ".mp4"
-    safe_name = safe_filename(source.with_suffix(suffix).name, suffix)
-    target_name = f"castle_crawl_{int(time.time())}_{secrets.token_hex(4)}_{slot}_{safe_name}"
+    target_name = staged_input_name("crawl", slot, source.with_suffix(suffix).name)
     target = COMFY_INPUT / target_name
     ensure_cv2_compatible_video(source, target)
     return {"filename": target.name, "name": source.name, "size": target.stat().st_size, "source": video_id}
@@ -3634,11 +3698,7 @@ def import_dance_library_template(
     size = runtime.stat().st_size
     if size > MAX_FETCH_BYTES:
         raise ValueError("舞步模板超過大小上限，請先裁切")
-    safe_slot = re.sub(r"[^a-z0-9_-]+", "", str(slot or "").lower())[:32] or "video"
-    target_name = (
-        f"castle_dance_library_{int(time.time())}_{secrets.token_hex(4)}_"
-        f"{safe_slot}_{record['id']}.mp4"
-    )
+    target_name = staged_input_name("dance_library", slot, f"{record['id']}.mp4")
     COMFY_INPUT.mkdir(parents=True, exist_ok=True)
     target = (COMFY_INPUT / target_name).resolve()
     if not target.is_relative_to(COMFY_INPUT.resolve()):
@@ -3829,8 +3889,7 @@ def import_view_item_to_input(
     if size > MAX_UPLOAD_BODY:
         raise ValueError("素材檔太大，請先裁切後再使用")
     COMFY_INPUT.mkdir(parents=True, exist_ok=True)
-    safe_name = safe_filename(source.name, source.suffix)
-    target_name = f"castle_chain_{int(time.time())}_{secrets.token_hex(4)}_{slot}_{safe_name}"
+    target_name = staged_input_name("chain", slot, source.name)
     target = (COMFY_INPUT / target_name).resolve()
     if not target.is_relative_to(COMFY_INPUT.resolve()):
         raise ValueError("無效的素材檔名")
@@ -6701,25 +6760,39 @@ def scail_dance_prompt(settings: dict, uploads: dict[str, str] | None = None) ->
             "23": {"class_type": "SamplerCustom", "inputs": {"model": ["3", 0], "add_noise": True, "noise_seed": seed, "cfg": cfg, "positive": ["22", 0], "negative": ["22", 1], "sampler": ["4", 0], "sigmas": ["5", 0], "latent_image": ["22", 2]}},
             "24": {"class_type": "VAEDecode", "inputs": {"samples": ["23", 0], "vae": ["9", 0]}},
         }
-        if length <= 81:
-            graph["25"] = {"class_type": "VHS_VideoCombine", "inputs": {"images": ["24", 0], "audio": ["15", 2], "frame_rate": float(fps), "loop_count": 0, "filename_prefix": prefix, "format": "video/h264-mp4", "pingpong": False, "save_output": True}}
-            return graph
-
-        chunk2_length = max(9, ((length - 81 + 5 - 1) // 4) * 4 + 1)
-        graph.update({
-            "26": {"class_type": "WanSCAILToVideo", "inputs": {"positive": ["7", 0], "negative": ["8", 0], "vae": ["9", 0], "width": ["16", 1], "height": ["16", 2], "length": chunk2_length, "batch_size": 1, "pose_strength": pose_strength, "pose_start": 0.0, "pose_end": 1.0, "video_frame_offset": ["22", 3], "previous_frame_count": 5, "pose_video": ["16", 0], "pose_video_mask": ["21", 0], "reference_image": ["13", 0], "reference_image_mask": ["21", 1], "clip_vision_output": ["14", 0], "previous_frames": ["24", 0], "replacement_mode": False}},
-            "27": {"class_type": "SamplerCustom", "inputs": {"model": ["3", 0], "add_noise": True, "noise_seed": chunk2_seed, "cfg": cfg, "positive": ["26", 0], "negative": ["26", 1], "sampler": ["4", 0], "sigmas": ["5", 0], "latent_image": ["26", 2]}},
-            "28": {"class_type": "VAEDecode", "inputs": {"samples": ["27", 0], "vae": ["9", 0]}},
-            "29": {"class_type": "GetImageRangeFromBatch", "inputs": {"images": ["28", 0], "start_index": 5, "num_frames": 4096}},
-            "30": {"class_type": "GetImageRangeFromBatch", "inputs": {"images": ["24", 0], "start_index": -1, "num_frames": 1}},
-            "31": {"class_type": "ColorTransfer", "inputs": {"image_target": ["29", 0], "image_ref": ["30", 0], "method": "reinhard_lab", "source_stats": "per_frame", "strength": 1.0}},
-            "32": {"class_type": "BatchImagesNode", "inputs": {"images.image0": ["24", 0], "images.image1": ["31", 0]}},
-            "33": {"class_type": "VHS_VideoCombine", "inputs": {"images": ["32", 0], "audio": ["15", 2], "frame_rate": float(fps), "loop_count": 0, "filename_prefix": prefix, "format": "video/h264-mp4", "pingpong": False, "save_output": True}},
-        })
+        # SCAIL-2 was trained on 81-frame chunks with five anchor frames.
+        # Continue for the whole driver rather than silently stopping at chunk 2.
+        previous_wan, previous_decode, combined = "22", "24", "24"
+        produced = min(length, 81)
+        chunk = 1
+        while produced < length:
+            new_frames = min(76, length - produced)
+            wan_id, sampler_id, decode_id, tail_id, batch_id = (
+                str(26 + (chunk - 1) * 5 + i) for i in range(5)
+            )
+            graph[wan_id] = {"class_type": "WanSCAILToVideo", "inputs": {
+                **graph["22"]["inputs"], "length": new_frames + 5,
+                "video_frame_offset": [previous_wan, 3],
+                "previous_frames": [previous_decode, 0],
+            }}
+            graph[sampler_id] = {"class_type": "SamplerCustom", "inputs": {
+                **graph["23"]["inputs"], "noise_seed": (seed + chunk) % (2**64),
+                "positive": [wan_id, 0], "negative": [wan_id, 1],
+                "latent_image": [wan_id, 2],
+            }}
+            graph[decode_id] = {"class_type": "VAEDecode", "inputs": {"samples": [sampler_id, 0], "vae": ["9", 0]}}
+            graph[tail_id] = {"class_type": "GetImageRangeFromBatch", "inputs": {"images": [decode_id, 0], "start_index": 5, "num_frames": new_frames}}
+            # Whole-frame color transfer altered the source background and lighting
+            # on every continuation. Keep the decoded colors and motion anchor.
+            graph[batch_id] = {"class_type": "BatchImagesNode", "inputs": {"images.image0": [combined, 0], "images.image1": [tail_id, 0]}}
+            previous_wan, previous_decode, combined = wan_id, decode_id, batch_id
+            produced += new_frames
+            chunk += 1
+        graph["25"] = {"class_type": "VHS_VideoCombine", "inputs": {"images": [combined, 0], "audio": ["15", 2], "frame_rate": float(fps), "loop_count": 0, "filename_prefix": prefix, "format": "video/h264-mp4", "pingpong": False, "save_output": True}}
         return graph
     # ResizeImageMaskNode is a V3 dynamic-combo node: the chosen resize_type's
     # parameter is serialized as a prefixed sibling key (e.g. resize_type.megapixels).
-    return {
+    graph = {
         "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "wan2.1_14B_SCAIL_2_fp8_scaled.safetensors", "weight_dtype": "default"}},
         "2": {"class_type": "LoraLoaderModelOnly", "inputs": {"model": ["1", 0], "lora_name": "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors", "strength_model": lora_strength}},
         "3": {"class_type": "ModelSamplingSD3", "inputs": {"model": ["2", 0], "shift": shift}},
@@ -6746,6 +6819,8 @@ def scail_dance_prompt(settings: dict, uploads: dict[str, str] | None = None) ->
         "24": {"class_type": "VAEDecode", "inputs": {"samples": ["23", 0], "vae": ["8", 0]}},
         "25": {"class_type": "VHS_VideoCombine", "inputs": {"images": ["24", 0], "audio": ["15", 2], "frame_rate": float(fps), "loop_count": 0, "filename_prefix": prefix, "format": "video/h264-mp4", "pingpong": False, "save_output": True}},
     }
+
+    return graph
 
 
 def zimage_prompt(settings: dict, uploads: dict[str, str] | None = None) -> dict:
@@ -6817,21 +6892,44 @@ def zimage_prompt(settings: dict, uploads: dict[str, str] | None = None) -> dict
     return prompt
 
 
+def attach_sdxl_original(graph: dict, image: str) -> dict:
+    """Condition the existing SDXL+LoRA model, retaining its trigger and weights."""
+    if not image:
+        raise ValueError("角色生成需要角色原圖")
+    graph = copy.deepcopy(graph)
+    graph["original_image"] = {"class_type": "LoadImage", "inputs": {"image": image}}
+    graph["original_adapter"] = {"class_type": "IPAdapterModelLoader", "inputs": {"ipadapter_file": "ip-adapter-plus_sdxl_vit-h.safetensors"}}
+    graph["original_vision"] = {"class_type": "CLIPVisionLoader", "inputs": {"clip_name": "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"}}
+    for key, node in list(graph.items()):
+        if node.get("class_type") != "KSampler":
+            continue
+        adapter = f"original_condition_{key}"
+        graph[adapter] = {"class_type": "IPAdapterAdvanced", "inputs": {
+            "model": node["inputs"]["model"], "ipadapter": ["original_adapter", 0],
+            "clip_vision": ["original_vision", 0], "image": ["original_image", 0],
+            "weight": 0.6, "weight_type": "linear", "combine_embeds": "concat",
+            "start_at": 0.0, "end_at": 1.0, "embeds_scaling": "V only"}}
+        node["inputs"]["model"] = [adapter, 0]
+    return graph
+
+
 def clipmode_character_photoshoot_prompt(
     settings: dict,
     uploads: dict[str, str] | None = None,
 ) -> dict:
     """Build the fixed SDXL identity graph from server-bound settings.
 
-    Realistic characters use the exact canonical profile for generation-time
+    Realistic characters default to the canonical profile for generation-time
     InstantID guidance and a final ReActor pass.  Anime characters keep the
-    existing LoRA graph. ``api_generate`` strips all browser-authored private
+    existing LoRA graph plus IPAdapter. A validated image override is replaceable; model ownership and canonical binding are always verified. ``api_generate`` strips all browser-authored private
     keys before resolving either contract from the owner store.
     """
 
-    if uploads:
-        raise ValueError("角色身份寫真不接受瀏覽器上傳角色圖")
+    uploads = uploads or {}
+    if set(uploads) - {"image"}:
+        raise ValueError("角色身份寫真僅接受原圖替換")
     verified = verify_clipmode_character_photoshoot_files(settings)
+    reference_image = clipmode_reference_override(settings) or uploads.get("image") or verified["profile_input_name"]
     aspect_ratio = str(settings.get("aspect_ratio") or "768x1024").strip()
     dimensions = CLIPMODE_CHARACTER_PHOTOSHOOT_ASPECTS.get(aspect_ratio)
     if dimensions is None:
@@ -6902,7 +7000,7 @@ def clipmode_character_photoshoot_prompt(
             },
             "2": {
                 "class_type": "LoadImage",
-                "inputs": {"image": verified["profile_input_name"]},
+                "inputs": {"image": reference_image},
             },
             "3": {
                 "class_type": "InstantIDModelLoader",
@@ -6996,7 +7094,7 @@ def clipmode_character_photoshoot_prompt(
 
     trigger = verified["trigger_token"]
     positive = f"{trigger}, adult, {user_prompt}"
-    return {
+    graph = {
         "1": {
             "class_type": "CheckpointLoaderSimple",
             "inputs": {"ckpt_name": CLIPMODE_SDXL_BASE_MODEL_NAME},
@@ -7024,6 +7122,8 @@ def clipmode_character_photoshoot_prompt(
         "7": {"class_type": "VAEDecode", "inputs": {"samples": ["6", 0], "vae": ["1", 2]}},
         "8": {"class_type": "SaveImage", "inputs": {"images": ["7", 0], "filename_prefix": prefix}},
     }
+
+    return attach_sdxl_original(graph, reference_image)
 
 
 def subject_blend_prompt(settings: dict, uploads: dict[str, str] | None = None) -> dict:
@@ -7261,6 +7361,20 @@ def lipsync_prompt(settings: dict, uploads: dict[str, str] | None = None) -> dic
     }
 
 
+def character_lipsync_prompt(settings: dict, uploads: dict[str, str] | None = None) -> dict:
+    """Character-only identity conditioning using the product's existing ReActor."""
+    uploads = uploads or {}
+    if not uploads.get("face"):
+        raise ValueError("請先提供角色原圖")
+    graph = lipsync_prompt(settings, uploads)
+    swap = face_swap_prompt(settings, uploads)
+    graph["original"] = swap["2"]
+    graph["identity"] = swap["3"]
+    graph["identity"]["inputs"].update(input_image=["1", 0], source_image=["original", 0])
+    graph["3"]["inputs"]["images"] = ["identity", 0]
+    return graph
+
+
 def video_loop_prompt(settings: dict, uploads: dict[str, str] | None = None) -> dict:
     """Loop / boomerang a short clip into a longer one — no model, pure VHS.
 
@@ -7384,6 +7498,14 @@ CHARACTER_ACTION_CATALOG = [
     {"id": "lipsync", "label": "對嘴", "group": "video", "intent": "把角色影片對到角色聲音或聲音庫音訊。", "needs": ["人物影片", "角色聲音"]},
     {"id": "post", "label": "角色貼文", "group": "text", "intent": "用角色 personality/profile 產生社群文案。", "needs": ["角色 personality", "平台", "主題"]},
 ]
+CHARACTER_ACTION_CATALOG.extend([
+    {"id": fid, "label": label, "group": group, "intent": engine, "needs": ["角色原圖", "創作描述"]}
+    for fid, label, group, engine in (
+        ("text2img", "角色文字創作", "image", "Qwen 2.1 edit · 角色原圖 <image1>"),
+        ("qwen21-text2img", "Qwen 角色文字創作", "image", "Qwen 2.1 edit · 角色原圖 <image1>"),
+        ("h3-text-video", "H3 角色文字影片", "video", "H3 FL2VA · 角色原圖首格"),
+    )
+])
 CHARACTER_ACTION_BY_ID = {item["id"]: item for item in CHARACTER_ACTION_CATALOG}
 
 # Explicit result-detail entry points. A feature merely being installed never creates
@@ -7627,7 +7749,7 @@ def _character_capability(
 
 def _append_ready_minimax_h3_capabilities(character: dict, result: list[dict]) -> None:
     visual_class = normalized_visual_class(character.get("visualClass"))
-    if visual_class not in {"anime", "realistic"} or character_asset_path(character, "avatar") is None:
+    if visual_class not in {"anime", "realistic"} or (character.get("kind") != "provider_character" and character_asset_path(character, "avatar") is None):
         return
     stored_actions = {
         str(value or "").strip()
@@ -7645,7 +7767,9 @@ def _append_ready_minimax_h3_capabilities(character: dict, result: list[dict]) -
         # Their already-approved image-video action grants the equivalent H3
         # entry. Live feature inventory controls whether the visible tile is
         # enabled; a slow integrity audit must never erase the entry itself.
-        capability["enabled"] = action_id in stored_actions or "image-video" in stored_actions
+        capability["enabled"] = character.get("kind") == "provider_character" or action_id in stored_actions or "image-video" in stored_actions
+        capability["serverBoundUploads"] = []
+        capability["defaultReferenceSlot"] = "image" if action_id == "h3-image-video" else "reference"
         capability["hideAdvanced"] = True
         capability["releaseReady"] = True
         capability["releaseReason"] = ""
@@ -7930,6 +8054,19 @@ def legacy_character_capabilities(character: dict, runtime: dict | None = None) 
         result.append(lipsync)
         _append_ready_minimax_h3_capabilities(character, result)
     return finalize_character_capabilities(character, result, runtime)
+
+
+def provider_character_studio_entry(character: dict) -> dict:
+    """Convert a store-owned row, never client-provided character metadata."""
+    cid = str(character.get("character_id") or "")
+    return {
+        "id": cid,
+        # The public build has no private identity aliases; the store-owned name is used.
+        "name": str(character.get("display_name") or cid),
+        "kind": "provider_character",
+        "visualClass": normalized_visual_class(character.get("visual_class")),
+        "actions": [],
+    }
 
 
 def character_capabilities(character: dict, runtime: dict | None = None) -> list[dict]:
@@ -8276,6 +8413,20 @@ def user_can_use_uploaded_input(user: dict | None, filename: str) -> bool:
         return False
 
 
+SERVER_STAGED_INPUT_PREFIXES = ("castle_", "library_", "reference_opc_")
+
+
+def user_can_read_input_file(user, filename, subfolder=""):
+    """Allow admins, a root input's owner, or server-staged input names."""
+    if user and user.get("role") == "admin":
+        return True
+    if not normalize_email(str((user or {}).get("email") or "")):
+        return False
+    if subfolder == "" and user_can_use_uploaded_input(user, filename):
+        return True
+    return filename.startswith(SERVER_STAGED_INPUT_PREFIXES)
+
+
 def stage_colab_uploaded_file(file_info: dict, slot: str) -> str:
     """Stage an explicit browser upload without needing a local Comfy server."""
     raw, content_type = decode_data_url(str(file_info.get("dataUrl") or ""), 32 * 1024 * 1024)
@@ -8351,6 +8502,7 @@ def plan_colab_generation_request(raw_body, submitted_by: dict | None, service_t
     character = character_entry_for_generation(character_id, submitted_by, service_token)
     context = character_generation_context(character)
     if character:
+        feature = character_feature_definition(feature, character)
         capability = resolve_character_capability(character, action_id, feature_id, variant_id)
         capability = require_character_capability_runtime(character, capability, None)
         settings = apply_character_capability_settings(character, capability, settings)
@@ -8402,7 +8554,7 @@ def plan_colab_generation_request(raw_body, submitted_by: dict | None, service_t
     settings = strip_client_character_settings(settings)
     if context:
         settings["_characterVisualClass"] = normalized_visual_class(context.get("visualClass"))
-    return {"feature_id": feature_id, "settings": settings,
+    return {"feature_id": feature.get("referenceFeatureId", feature_id), "settings": settings,
             "file_slots": [slot for slot, item in files.items() if item]}
 
 
@@ -8839,6 +8991,10 @@ def stage_owned_clipmode_profile_reference(
         )
     except ProfileRenditionError as error:
         raise ValueError("角色身份原圖無法建立高解析基準") from error
+    return _stage_clipmode_profile_rendition(rendition)
+
+
+def _stage_clipmode_profile_rendition(rendition) -> dict:
     raw = rendition.content
     digest = rendition.sha256
     byte_size = rendition.byte_size
@@ -8894,6 +9050,34 @@ def stage_owned_clipmode_profile_reference(
         "byte_size": byte_size,
         "signature_family": signature_family,
     }
+
+
+
+def bind_clipmode_reference_override(settings: dict, image: str) -> str:
+    """Seal an already authorized upload into the existing private image cache."""
+    source = (COMFY_INPUT / image).resolve(strict=True)
+    if not source.is_relative_to(COMFY_INPUT.resolve(strict=True)) or not source.is_file():
+        raise ValueError("角色替換原圖不在輸入目錄")
+    if source.stat().st_size > CLIPMODE_PROFILE_SOURCE_MAX_BYTES:
+        raise ValueError("角色替換原圖過大")
+    raw = source.read_bytes()
+    mime = mimetypes.guess_type(source.name)[0] or "image/png"
+    rendition = render_profile_rendition(raw, mime, limits=ProfileRenditionLimits(
+        max_input_bytes=CLIPMODE_PROFILE_SOURCE_MAX_BYTES, max_edge_pixels=2048,
+        max_output_bytes=CLIPMODE_PROFILE_MAX_BYTES))
+    reference = _stage_clipmode_profile_rendition(rendition)
+    settings["_characterReferenceOverride"] = reference
+    return reference["input_name"]
+
+
+def clipmode_reference_override(settings: dict) -> str:
+    reference = settings.get("_characterReferenceOverride")
+    if not reference:
+        return ""
+    if not isinstance(reference, dict):
+        raise ValueError("角色替換原圖綁定無效")
+    return _verify_staged_clipmode_profile_reference(reference.get("input_name"),
+        reference.get("sha256"), reference.get("byte_size"), reference.get("signature_family"))
 
 
 def verify_clipmode_character_photoshoot_files(settings: dict) -> dict:
@@ -8963,6 +9147,9 @@ def verify_clipmode_character_photoshoot_files(settings: dict) -> dict:
         "model_name": model_name,
         "model_sha256": model_sha256,
         "trigger_token": trigger_token,
+        "profile_input_name": _verify_staged_clipmode_profile_reference(
+            settings.get("_characterProfileInputName"), settings.get("_characterProfileSha256"),
+            settings.get("_characterProfileByteSize"), settings.get("_characterProfileSignatureFamily")),
     }
 
 
@@ -9108,6 +9295,16 @@ def resolve_owned_provider_character_photoshoot(
             "trainingReceiptSha256": receipt_sha256,
         }
 
+    if visual_class == "anime":
+        staged = stage_owned_clipmode_profile_reference(runtime, owner_user_id, character)
+        private_settings.update({
+            "_characterProfileInputName": staged["input_name"],
+            "_characterProfileSha256": staged["sha256"],
+            "_characterProfileByteSize": staged["byte_size"],
+            "_characterProfileSignatureFamily": staged["signature_family"],
+        })
+        receipt["originalSha256"] = staged["sha256"]
+        receipt["imageConditioning"] = "SDXL IPAdapter + existing character LoRA"
     # Hash the exact server-owned files before any graph is built.
     verify_clipmode_character_photoshoot_files(private_settings)
     return context, private_settings, receipt
@@ -9349,6 +9546,82 @@ def verify_output_provenance_receipt(path: Path, receipt) -> dict | None:
     return normalized
 
 
+# Character-only input contracts. Public Studio definitions remain untouched.
+CHARACTER_REFERENCE_SLOTS = {
+    "text2img": "image", "qwen21-text2img": "image", "h3-text-video": "image",
+    "character-photoshoot": "image", "qwen21-edit": "image", "img2img": "image",
+    "ipadapter-reference": "image1", "image-blend": "image1", "character-angles": "face",
+    "img2video": "image", "dance": "reference", "video-replace": "reference",
+    "h3-image-video": "image", "h3-reference-video": "reference", "lipsync": "face",
+}
+CHARACTER_REFERENCE_ENGINES = {
+    "text2img": "Qwen 2.1 edit · <image1>",
+    "qwen21-text2img": "Qwen 2.1 edit · <image1>",
+    "h3-text-video": "H3 FL2VA · 角色原圖首格",
+    "lipsync": "ReActor 原圖身份 → Wav2Lip 對嘴",
+}
+
+
+def character_feature_definition(feature: dict, character: dict | None) -> dict:
+    """Project the actual engine and inputs before validation, only for a role."""
+    if not character:
+        return feature
+    feature_id = feature["id"]
+    if feature_id == "character-angles":
+        from character_angles import MODEL, CLIP, VAE, LORA
+        resolved = copy.deepcopy(feature)
+        resolved.update(builder="character_angles", title="角色多角度肖像",
+                        subtitle="Qwen Edit 2511 + Multiple Angles LoRA · 原圖參考",
+                        note="動漫與真人皆使用原圖。實驗性功能：部分角色的角度變化可能不明顯，側臉相似度請逐張確認。",
+                        requiredModels=[MODEL, CLIP, VAE, LORA],
+                        requiredNodes=["UNETLoader", "CLIPLoader", "VAELoader", "TextEncodeQwenImageEditPlus", "LoraLoaderModelOnly", "ModelSamplingAuraFlow", "CFGNorm", "ImageScaleToTotalPixels", "VAEEncode", "KSampler", "VAEDecode", "SaveImage"])
+        resolved["fields"] = [f for f in resolved["fields"] if f["id"] != "positive"]
+        for field in resolved["fields"]:
+            if field["id"] == "cfg": field["default"] = 4.0
+            if field["id"] == "batchSize": field["default"] = 3
+        return resolved
+    if feature_id == "lipsync":
+        resolved = copy.deepcopy(feature)
+        resolved.update(builder="character_lipsync", subtitle=CHARACTER_REFERENCE_ENGINES[feature_id],
+                        note="先以角色原圖保留臉部身份，再同步影片口型；原圖可更換。僅支援真人。")
+        resolved["uploads"].insert(0, {"id": "face", "label": "角色原圖", "accept": "image/*", "required": True})
+        resolved["requiredNodes"] += ["ReActorFaceSwap", "LoadImage"]
+        resolved["requiredModels"] += ["inswapper_128.onnx", "GFPGANv1.4.pth"]
+        return resolved
+    target = {"text2img": "character-photoshoot", "qwen21-text2img": "character-photoshoot",
+              "h3-text-video": "h3-image-video"}.get(feature_id)
+    if not target:
+        return feature
+    resolved = copy.deepcopy(FEATURE_BY_ID[target])
+    resolved.update(id=feature_id, title=feature["title"],
+                    subtitle=CHARACTER_REFERENCE_ENGINES[feature_id], referenceFeatureId=target)
+    return resolved
+
+
+def bind_character_original(character: dict, feature_id: str, files: dict,
+                            profile_reference: dict | None = None) -> tuple[dict, dict | None]:
+    slot = CHARACTER_REFERENCE_SLOTS.get(feature_id)
+    if not slot:
+        return dict(files), None
+    if files.get(slot):
+        return dict(files), {"kind": "character-reference-override", "slot": slot,
+                             "engine": CHARACTER_REFERENCE_ENGINES.get(feature_id, feature_id)}
+    if character.get("kind") == "provider_character":
+        if not profile_reference:
+            raise ValueError("請先為角色選定角色卡原圖")
+        source = COMFY_INPUT / profile_reference["input_name"]
+        digest = profile_reference["sha256"]
+    else:
+        source = character_asset_path(character, "avatar")
+        if source is None:
+            raise ValueError("此角色尚未設定原圖，請先設定角色大頭貼")
+        digest = sha256_file(source)
+    bound = {**files, slot: {"_characterAssetPath": str(source), "_characterAssetHash": digest,
+                            "_characterAssetTheme": "canonical-original"}}
+    return bound, {"kind": "character-canonical-original", "slot": slot, "sha256": digest,
+                   "engine": CHARACTER_REFERENCE_ENGINES.get(feature_id, feature_id)}
+
+
 def bind_character_capability_files(
     character: dict,
     capability: dict,
@@ -9397,6 +9670,16 @@ def bind_character_capability_files(
             "kind": "character-profile-avatar",
             "sha256": digest,
         }
+
+    if variant_id not in {"photoshoot.anime.scene-card.v1", "image-video.anime.wan21-i2v.v1", "dance.anime.animate.v1"}:
+        is_group = capability.get("actionId") == "group-photo" and capability.get("featureId") == "qwen21-edit"
+        if is_group and not client_files.get("image2"):
+            raise ValueError("合照需要兩位角色的參考圖")
+        resolved, receipt = bind_character_original(character, capability.get("featureId", ""), client_files)
+        if is_group:
+            if not str(settings.get("instruction") or "").strip():
+                settings["instruction"] = "讓 <image1> 與 <image2> 中的兩位角色並肩站在一起合照，各自保持原本的長相與服裝，呈現兩個獨立人物。"
+        return resolved, receipt
 
     if variant_id == "photoshoot.anime.scene-card.v1":
         if client_files.get("image") or client_files.get("scene"):
@@ -12096,6 +12379,10 @@ def _clipmode_photoshoot_graph_route(graph: dict) -> str:
         "6": "KSampler",
         "7": "VAEDecode",
         "8": "SaveImage",
+        "original_image": "LoadImage",
+        "original_adapter": "IPAdapterModelLoader",
+        "original_vision": "CLIPVisionLoader",
+        "original_condition_6": "IPAdapterAdvanced",
     }
     if node_types == realistic and len(graph) == len(realistic):
         return CLIPMODE_REALISTIC_IDENTITY_ROUTE
@@ -12126,7 +12413,7 @@ def _verify_clipmode_photoshoot_object_info(object_info: dict, graph: dict) -> N
             "ControlNetLoader", "ApplyInstantIDAdvanced", "ReActorFaceSwap",
         }
         if identity_route == CLIPMODE_REALISTIC_IDENTITY_ROUTE
-        else {"LoraLoaderModelOnly"}
+        else {"LoraLoaderModelOnly", "LoadImage", "IPAdapterModelLoader", "CLIPVisionLoader", "IPAdapterAdvanced"}
     )
     actual_classes = {
         str(node.get("class_type") or "")
@@ -12160,9 +12447,12 @@ def _verify_clipmode_photoshoot_object_info(object_info: dict, graph: dict) -> N
             ),
         ])
     else:
-        bindings.append(
+        bindings.extend([
             ("LoraLoaderModelOnly", "lora_name", graph["2"]["inputs"]["lora_name"]),
-        )
+            ("LoadImage", "image", graph["original_image"]["inputs"]["image"]),
+            ("IPAdapterModelLoader", "ipadapter_file", "ip-adapter-plus_sdxl_vit-h.safetensors"),
+            ("CLIPVisionLoader", "clip_name", "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"),
+        ])
     for class_name, field_name, expected in bindings:
         try:
             options = object_info[class_name]["input"]["required"][field_name][0]
@@ -12351,7 +12641,7 @@ def _evaluate_clipmode_photoshoot_quality(
     settings: dict,
 ) -> dict:
     candidate = _clipmode_photoshoot_staging_path(output)
-    input_name = str(settings.get("_characterProfileInputName") or "")
+    input_name = clipmode_reference_override(settings) or str(settings.get("_characterProfileInputName") or "")
     if re.fullmatch(
         re.escape(CLIPMODE_PROFILE_INPUT_PREFIX) + r"[0-9a-f]{64}\.(?:png|jpg|jpeg|webp)",
         input_name,
@@ -13100,7 +13390,7 @@ def start_clipmode_character_photoshoot_job(
             "_effectiveNegativePrompt", "aspect_ratio",
             "_characterBindingCapabilityId", "_characterBaseModelName",
             "_characterBaseModelSha256", "_characterVisualClass",
-            "_characterIdentityRoute", "_characterProfileInputName",
+            "_characterIdentityRoute", "_characterProfileInputName", "_characterReferenceOverride",
             "_characterProfileSha256", "_characterProfileByteSize",
             "_characterProfileSignatureFamily", "_characterLoraModelName",
             "_characterLoraModelSha256", "_characterTriggerToken",
@@ -13258,7 +13548,38 @@ def character_photoshoot_prompt(settings: dict, uploads: dict | None = None) -> 
         seed=normalize_seed(settings.get("seed")), prefix=output_prefix(settings, "character-photoshoot"))
 
 
+def qwen21_angles_prompt(settings: dict, uploads: dict | None = None) -> dict:
+    face = (uploads or {}).get("face")
+    if not face:
+        raise ValueError("請先提供角色臉部參考")
+    count = clamp_int(settings.get("batchSize"), 2, 1, 6)
+    seed = normalize_seed(settings.get("seed"))
+    views = ("把鏡頭移到人物右前方，頭部及肩膀向畫面左側轉約 45 度，鼻尖明確朝向畫面左邊，呈現左朝向的三分之二側臉", "把鏡頭移到人物左前方，頭部及肩膀向畫面右側轉約 45 度，鼻尖明確朝向畫面右邊，呈現右朝向的三分之二側臉", "正面直視鏡頭，鼻尖居中，雙側臉頰對稱", "頭部轉向畫面左方，呈現清楚的左朝向側面輪廓", "頭部轉向畫面右方，呈現清楚的右朝向側面輪廓", "正面稍微抬頭，鏡頭略低於視線")
+    graph = {}
+    for i in range(count):
+        instruction = ("重新拍攝 <image1> 中同一位成年人的一張不同視角彩色半身肖像。場景要求：" + str(settings.get("positive") or "")
+                       + "。保留同一人的五官、臉型、年齡、膚色、髮型與服裝，自然彩色攝影。"
+                       "必須改變相機視角與頭部朝向，不要只是複製原圖，不要水平鏡像原圖。本張照片的確切角度要求：" + views[i] + "。")
+        part = compile_qwen21_prompt({**settings, "instruction": instruction, "resolution": "1024"}, {"image": face},
+                                    edit=True, seed=(seed+i) % (2**53), prefix=output_prefix(settings, "character-angles"))
+        # Prefix each independent edit so every view uses the original face, never the previous generated face.
+        ids = {key: f"angle{i}_{key}" for key in part}
+        for key, node in part.items():
+            node["inputs"] = {name: [ids[value[0]], value[1]] if isinstance(value, list) and len(value) == 2 and value[0] in ids else value
+                              for name, value in node["inputs"].items()}
+            graph[ids[key]] = node
+    return graph
+
+
+def character_angles_prompt(settings: dict, uploads: dict | None = None) -> dict:
+    from character_angles import compile_angles
+    return compile_angles(settings, uploads or {}, seed=normalize_seed(settings.get("seed")),
+                          prefix=output_prefix(settings, "character-angles"))
+
+
 BUILDERS = {
+    "qwen21_angles": qwen21_angles_prompt,
+    "character_angles": character_angles_prompt,
     "qwen21_character": character_photoshoot_prompt,
     "qwen21_t2i": qwen21_t2i_prompt,
     "qwen21_edit": qwen21_edit_prompt,
@@ -13275,6 +13596,7 @@ BUILDERS = {
     "face_swap": face_swap_prompt,
     "voice_clone": voice_clone_prompt,
     "lipsync": lipsync_prompt,
+    "character_lipsync": character_lipsync_prompt,
     "video_loop": video_loop_prompt,
     "voice_speak": voice_speak_prompt,
     "voxcpm_direct": voxcpm_direct_prompt,
@@ -15672,7 +15994,7 @@ def user_can_access_voice_entry(
         return is_operator_user(user)
     owner = normalize_email(str(entry.get("ownerEmail") or ""))
     if not owner:
-        return True
+        return is_operator_user(user)
     email = normalize_email(str((user or {}).get("email") or ""))
     return bool(email and (email == owner or is_operator_user(user)))
 
@@ -15895,6 +16217,7 @@ _COLAB_SERVICE = None
 _COLAB_LOCK = threading.Lock()
 _HOSTED_COMPUTE_SERVICE = None
 _PIPELINE_EXECUTION = None
+_RECEIPT_COLLECTOR = None
 _COMPUTE_SERVICES_LOCK = threading.Lock()
 
 
@@ -16095,12 +16418,14 @@ class Handler(BaseHTTPRequestHandler):
             return forwarded.split(",")[0].strip()
         return self.client_address[0] if self.client_address else "unknown"
 
-    def send_json(self, data: dict, status: int = 200, cache_control: str | None = None) -> None:
+    def send_json(self, data: dict, status: int = 200, cache_control: str | None = None, *, nosniff: bool = False) -> None:
         raw = json.dumps(data, ensure_ascii=False).encode("utf-8")
         try:
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(raw)))
+            if nosniff:
+                self.send_header("X-Content-Type-Options", "nosniff")
             if cache_control:
                 self.send_header("Cache-Control", cache_control)
             self.end_headers()
@@ -16251,7 +16576,20 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 pass
         print(f"ERROR {self.path}: {message}", flush=True)
-        self.send_json({"ok": False, "error": message, **public_details}, status)
+        payload = {"ok": False, "error": message, **public_details}
+        user = self.current_user() if hasattr(self, "headers") else None
+        if not (user and user.get("role") == "admin"):
+            pattern = re.compile(r'''(?<![\w:/.])/(?:home|tmp|run|var|mnt|media|opt|srv|usr|etc|root)/[^\s'"<>，；。）)]*''')
+            def mask(value):
+                if isinstance(value, str):
+                    return pattern.sub("<path>", value)
+                if isinstance(value, dict):
+                    return {key: mask(item) for key, item in value.items()}
+                if isinstance(value, list):
+                    return [mask(item) for item in value]
+                return value
+            payload = mask(payload)
+        self.send_json(payload, status)
 
     def send_local_file(
         self,
@@ -16260,25 +16598,37 @@ class Handler(BaseHTTPRequestHandler):
         inline_filename: str | None = None,
         download: bool = False,
         cache_control: str | None = None,
+        *,
+        trusted: bool = False,
     ) -> None:
         try:
             size = path.stat().st_size
         except OSError:
-            self.send_json({"ok": False, "error": "Not found"}, 404)
+            self.send_json({"ok": False, "error": "Not found"}, 404, nosniff=True)
             return
         content_type = content_type or mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        active_types = {
+            "text/html", "application/xhtml+xml", "image/svg+xml", "text/xml", "application/xml",
+            "text/javascript", "application/javascript", "application/x-javascript", "text/css",
+        }
+        if not trusted and content_type.split(";", 1)[0].strip().lower() in active_types:
+            content_type = "application/octet-stream"
+            download = True
+            inline_filename = inline_filename or path.name
         try:
             byte_range = parse_range_header(self.headers.get("Range"), size)
         except ValueError:
             self.send_response(416)
             self.send_header("Content-Range", f"bytes */{size}")
             self.send_header("Accept-Ranges", "bytes")
+            self.send_header("X-Content-Type-Options", "nosniff")
             self.end_headers()
             return
         start, end = byte_range if byte_range else (0, size - 1)
         length = max(0, end - start + 1)
         self.send_response(206 if byte_range else 200)
         self.send_header("Content-Type", content_type)
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Accept-Ranges", "bytes")
         self.send_header("Content-Length", str(length))
         if cache_control:
@@ -16567,6 +16917,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(501, "Unsupported method ('HEAD')")
 
     def do_GET(self) -> None:
+        if self._handle_provider_console("GET"):
+            return
         if self.handle_legacy_entrypoint():
             return
         parsed = urllib.parse.urlparse(self.path)
@@ -16715,15 +17067,15 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/google/callback":
             self.api_google_callback(parsed.query)
         elif parsed.path == "/api/google/status":
-            if not self.require_auth():
+            if not self.require_auth() or not self.require_operator():
                 return
             self.api_google_status()
         elif parsed.path == "/api/google/login":
-            if not self.require_auth():
+            if not self.require_auth() or not self.require_operator():
                 return
             self.api_google_login()
         elif parsed.path == "/api/google/drive/files":
-            if not self.require_auth():
+            if not self.require_auth() or not self.require_operator():
                 return
             self.api_google_drive_files(parsed.query)
         elif parsed.path == "/api/status":
@@ -16970,11 +17322,11 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self.api_personas()
         elif parsed.path == "/api/crawl-videos":
-            if not self.require_auth():
+            if not self.require_auth() or not self.require_admin():
                 return
             self.api_crawl_videos(parsed.query)
         elif parsed.path == "/api/crawl-videos/preview":
-            if not self.require_auth():
+            if not self.require_auth() or not self.require_admin():
                 return
             self.api_crawl_video_preview(parsed.query)
         elif parsed.path == "/api/dance-library":
@@ -17001,6 +17353,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": "Not found"}, 404)
 
     def do_POST(self) -> None:
+        if self._handle_provider_console("POST"):
+            return
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/api/webhooks/autoip" and not parsed.query:
             self.api_provider_autoip_webhook()
@@ -17183,11 +17537,11 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/auth/logout":
             self.api_auth_logout()
         elif path == "/api/google/logout":
-            if not self.require_auth():
+            if not self.require_auth() or not self.require_operator():
                 return
             self.api_google_logout()
         elif path == "/api/google/drive/import":
-            if not self.require_auth():
+            if not self.require_auth() or not self.require_operator():
                 return
             self.api_google_drive_import()
         elif path.startswith("/api/compute/"):
@@ -17313,7 +17667,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self.api_library_mutate(path)
         elif path == "/api/crawl-videos/import":
-            if not self.require_auth():
+            if not self.require_auth() or not self.require_admin():
                 return
             self.api_crawl_video_import()
         elif path == "/api/dance-library/rescan":
@@ -17488,6 +17842,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": "Not found"}, 404)
 
     def do_PUT(self) -> None:
+        if self._handle_provider_console("PUT"):
+            return
         if not self.origin_allowed():
             self.send_json({"ok": False, "error": "Forbidden origin"}, 403)
             return
@@ -17530,12 +17886,16 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"ok": False, "error": "Not found"}, 404)
 
     def do_PATCH(self) -> None:
+        if self._handle_provider_console("PATCH"):
+            return
         if not self.origin_allowed():
             self.send_json({"ok": False, "error": "Forbidden origin"}, 403)
             return
         self.send_json({"ok": False, "error": "Not found"}, 404)
 
     def do_DELETE(self) -> None:
+        if self._handle_provider_console("DELETE"):
+            return
         if not self.origin_allowed():
             self.send_json({"ok": False, "error": "Forbidden origin"}, 403)
             return
@@ -17555,7 +17915,7 @@ class Handler(BaseHTTPRequestHandler):
         if not path.is_relative_to(STATIC_ROOT) or not path.is_file():
             self.send_json({"ok": False, "error": "Not found"}, 404)
             return
-        self.send_local_file(path, cache_control="no-cache")
+        self.send_local_file(path, cache_control="no-cache", trusted=True)
 
     def proxy_json(self, path: str) -> None:
         try:
@@ -17564,13 +17924,25 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error_json(error, 502)
 
     def _provider_runtime(self):
-        return get_provider_runtime(
+        runtime = get_provider_runtime(
             PROVIDER_RUNTIME_CONFIG,
             capability_materializer=provider_fabric_capability_materializer,
             canonical_resource_resolver=provider_fabric_canonical_resource_resolver,
             h3_audit_source=provider_fabric_h3_audit_source,
             h3_variant_contracts=PROVIDER_FABRIC_H3_VARIANT_CONTRACTS,
         )
+        def console_gate(actor, provider):
+            from provider_console import ProviderConsole
+            lane = {'local_comfy':'local','autoip':'autoip'}.get(provider)
+            if lane is None: return None
+            for email, record in load_users().items():
+                if runtime.actor_context(email, record.get('role','member')).user_id == actor.user_id:
+                    if record.get('disabled'): return 'account_disabled'
+                    return ProviderConsole(get_colab_service().root.parent, runtime,
+                        {**record,'email':email}, get_colab_service()).gate(lane)
+            return 'owner_not_registered'
+        runtime.service.console_gate = console_gate
+        return runtime
 
     def _provider_runtime_actor(self):
         user = self.current_user()
@@ -20343,7 +20715,75 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as error:
             self.send_error_json(error, 502)
 
+    def _provider_console(self):
+        from provider_console import ProviderConsole
+        runtime, _actor = self._provider_runtime_actor()
+        return ProviderConsole(get_colab_service().root.parent, runtime, self.current_user() or {}, get_colab_service(),
+            local_check=lambda: isinstance(request_json('/system_stats'), dict))
+
+    def _handle_provider_console(self, method):
+        from provider_console import strict
+        from compute_routing import ComputeRoutingError
+        parsed = urllib.parse.urlsplit(self.path)
+        path = parsed.path
+        if not (path.startswith('/api/compute/connections') or path == '/api/compute/preferences'
+                or path.startswith('/api/compute/platform-admin')):
+            return False
+        try:
+            if not self.require_auth(): return True
+            if method != 'GET' and not self.origin_allowed():
+                raise PermissionError('origin rejected')
+            if parsed.query:
+                raise ComputeRoutingError('不接受查詢參數')
+            console = self._provider_console()
+            body = self.read_provider_json(24 * 1024) if method != 'GET' else {}
+            parts = path.split('/')[3:]
+            if parts == ['connections'] and method == 'GET':
+                result = console.snapshot()
+            elif parts == ['preferences'] and method in ('GET','POST'):
+                features = {f['id'] for f in FEATURE_BY_ID.values() if not f.get('operatorOnly') or is_operator_user(console.user)}
+                result = console.snapshot()['preferences'] if method == 'GET' else console.save_preferences(body, features)
+            elif len(parts) == 2 and parts[0] == 'connections' and method == 'PATCH':
+                result = console.toggle(parts[1], body)
+            elif len(parts) == 3 and parts[0] == 'connections' and parts[2] == 'credential' and method in ('PUT','DELETE'):
+                result = (console.write_credential if method == 'PUT' else console.delete_credential)(parts[1], body)
+            elif len(parts) == 3 and parts[0] == 'connections' and parts[2] == 'test' and method == 'POST':
+                result = console.test(parts[1], body)
+            elif parts == ['platform-admin'] and method == 'GET':
+                result = console.admin_snapshot(load_users())
+            elif parts == ['platform-admin','local-grant'] and method == 'PATCH':
+                strict(body, ('email','allowed'))
+                if console.user.get('role') != 'admin': raise PermissionError('admin required')
+                if body['email'] not in load_users(): raise ComputeRoutingError('找不到帳號', status=404)
+                console.grant(body['email'], body['allowed'])
+                result = console.admin_snapshot(load_users())
+            else:
+                raise ComputeRoutingError('找不到這項操作', status=404)
+            self.send_json({'ok':True, **result}, cache_control='private, no-store')
+        except ComputeRoutingError as error:
+            self.send_json({'ok':False,'error':{'code':error.code,'message':str(error)}}, error.status, cache_control='private, no-store')
+        except PermissionError:
+            self.send_json({'ok':False,'error':{'code':'forbidden','message':'目前帳號沒有這項操作權限'}}, 403, cache_control='private, no-store')
+        except (ValueError, TypeError, RequestBodyError):
+            self.send_json({'ok':False,'error':{'code':'invalid_request','message':'設定格式不正確，請重新輸入'}}, 400, cache_control='private, no-store')
+        except Exception:
+            self.send_json({'ok':False,'error':{'code':'console_unavailable','message':'設定暫時無法完成，請重新整理'}}, 503, cache_control='private, no-store')
+        return True
+
     def api_compute(self, path: str, mutate: bool) -> None:
+        if path == '/api/compute/collector-health' and not mutate:
+            # Deployment smoke only: no adapter construction, polling or start.
+            user = self.current_user()
+            if not user or user.get('role') != 'admin':
+                self.send_json({'ok': False}, 403)
+                return
+            from compute_collector import enabled
+            collector = _RECEIPT_COLLECTOR
+            thread = collector._thread if collector is not None else None
+            self.send_json({'ok': True, 'enabled': enabled(),
+                            'thread_alive': bool(thread and thread.is_alive())},
+                           cache_control='no-store')
+            return
         from compute_web import ComputeWeb
         from compute_routing import ComputeRoutingError
         from hosted_compute import HostedComputeError
@@ -20352,6 +20792,8 @@ class Handler(BaseHTTPRequestHandler):
             web = ComputeWeb(self, sys.modules[__name__])
             body = self.read_provider_json(MAX_UPLOAD_BODY) if mutate else {}
             parts = path.split("/")[3:]
+            from compute_parity.http import handle as parity_http
+            if parity_http(web,self,parts,mutate,body): return
             visible_features = [feature for feature in FEATURE_BY_ID.values()
                 if not feature.get('operatorOnly') or is_operator_user(web.user)]
             if parts == ['preferences']:
@@ -20372,9 +20814,7 @@ class Handler(BaseHTTPRequestHandler):
             elif not mutate and parts == ['providers']:
                 result = web.hosted.public_config(web.owner)
             elif mutate and len(parts) == 2 and parts[0] == 'providers':
-                if not is_operator_user(web.user):
-                    raise ComputeRoutingError('需要管理員權限', code='forbidden', status=403)
-                result = {'provider': web.hosted.configure(web.owner, parts[1], body)}
+                raise ComputeRoutingError('請使用「我的運算平台」管理自己的連線', code='legacy_write_disabled', status=409)
             elif not mutate and len(parts) == 5 and parts[0] == 'hosted' and parts[3] == 'files':
                 media, metadata = web.hosted.artifact(web.owner, parts[1], parts[2], urllib.parse.unquote(parts[4]))
                 self.send_local_file(media, content_type=mimetypes.guess_type(media.name)[0],
@@ -20438,6 +20878,11 @@ class Handler(BaseHTTPRequestHandler):
                     raise ComputeRoutingError('找不到這項製作操作', code='pipeline_not_found', status=404)
                 if mutate:
                     execution.start()
+            elif mutate and len(parts)==3 and parts[0]=='jobs' and parts[2]=='close-unknown':
+                result=web.close_local_unknown(parts[1],body)
+            elif mutate and len(parts)==3 and parts[0]=='jobs' and parts[2]=='reconcile-closed':
+                from compute_parity.local_closure import reconcile
+                result=reconcile(web,parts[1],body)
             elif mutate and path == "/api/compute/preview":
                 result = web.preview(body)
             elif mutate and path == "/api/compute/jobs":
@@ -20449,8 +20894,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise ComputeRoutingError("任務分頁參數不正確", code="invalid_cursor")
                 page = web.router.list_jobs(web.owner, limit=51, before=cursors[0])
                 jobs = page[:50]
-                result = {"jobs": [web.router.status(web.owner, job["request_id"], refresh=index < 10)
-                                   for index, job in enumerate(jobs)],
+                result = {"jobs": jobs,
                           "next_cursor": jobs[-1]["request_id"] if len(page) > 50 else None}
             elif not mutate and len(parts) == 2 and parts[0] == "jobs":
                 result = web.router.status(web.owner, parts[1], refresh=True)
@@ -20497,13 +20941,28 @@ class Handler(BaseHTTPRequestHandler):
             service = get_colab_service()
             parts = [urllib.parse.unquote(part) for part in path.split("/") if part][2:]
             body = self.read_provider_json(48 * 1024 * 1024) if mutate else {}
+            if not isinstance(body, dict) or set(body) & {"owner", "owner_id", "user_id", "email"}:
+                raise colab_service.ColabError("只能管理自己的 Colab 連線")
             if not mutate and not parts:
                 result = service.snapshot(owner)
+            elif not mutate and parts == ["session"]:
+                result = service.sessions.snapshot(owner)
+            elif mutate and parts == ["session", "open"]:
+                service.sessions.open(owner)
+                result = service.sessions.snapshot(owner)
+            elif mutate and parts == ["session", "close"]:
+                result = service.sessions.close(owner)
+            elif mutate and parts == ["session", "settings"]:
+                service.sessions.settings(owner, body)
+                result = service.sessions.snapshot(owner)
             elif mutate and parts == ["accounts"]:
                 result = service.create_account(owner, body.get("label", ""))
             elif mutate and len(parts) == 3 and parts[0] == "accounts":
                 result = service.account_action(owner, parts[1], parts[2], body)
             elif mutate and parts == ["jobs"]:
+                from provider_console import REASONS
+                reason = self._provider_console().gate("colab")
+                if reason: raise colab_service.ColabError(REASONS.get(reason, "平台暫時不可用"))
                 result = service.submit(owner, body)
             elif mutate and len(parts) == 3 and parts[0] == "jobs" and parts[2] == "cancel":
                 result = service.cancel(owner, parts[1])
@@ -20514,7 +20973,7 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self.send_json({"ok": False, "error": "找不到這個 Colab 操作"}, 404)
                 return
-            self.send_json({"ok": True, **result})
+            self.send_json({"ok": True, **result}, cache_control="private, no-store")
         except colab_service.ColabError as error:
             self.send_json({"ok": False, "error": str(error)}, 400)
         except RequestBodyError:
@@ -21074,8 +21533,18 @@ class Handler(BaseHTTPRequestHandler):
 
     def api_reference_sources(self, query: str) -> None:
         try:
-            params = {key: values[0] for key, values in urllib.parse.parse_qs(query).items()}
-            self.send_json(reference_sources.listing(params))
+            if query is None:
+                result = reference_sources.import_image(
+                    SimpleNamespace(COMFY_INPUT=COMFY_INPUT, save_uploaded_bytes=save_uploaded_bytes),
+                    self.current_user(), self.read_json(MAX_TEXT_BODY),
+                )
+                record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
+            else:
+                params = {key: values[0] for key, values in urllib.parse.parse_qs(query).items()}
+                result = reference_sources.listing(params)
+            self.send_json(result)
+        except PermissionError as error:
+            self.send_json({"ok": False, "error": str(error)}, 403)
         except ValueError as error:
             self.send_json({"ok": False, "error": str(error)}, 400)
         except Exception:
@@ -21115,7 +21584,9 @@ class Handler(BaseHTTPRequestHandler):
             context = library_server_context()
             store = library_service.catalog(context)
             if path == "/api/library/import":
-                self.send_json(library_service.import_input(context, user, str(body.get("id") or ""), str(body.get("slot") or "image")))
+                result = library_service.import_input(context, user, str(body.get("id") or ""), str(body.get("slot") or "image"))
+                record_input_upload_owner(str(result.get("serverFile") or result.get("filename") or ""), user)
+                self.send_json(result)
                 return
             patch = body.get("classification")
             if not isinstance(patch, dict):
@@ -21418,6 +21889,14 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError as error:
             self.send_json({"ok": False, "error": str(error)}, 400)
             return
+        if view_type == "input" and new_filename.casefold().startswith(
+            tuple(prefix.casefold() for prefix in SERVER_STAGED_INPUT_PREFIXES)
+        ):
+            self.send_json({
+                "ok": False,
+                "error": "輸入素材的新檔名不可以用 castle_、library_ 或 reference_opc_ 開頭（系統保留名稱）",
+            }, 400)
+            return
         prompt_id = str(body.get("promptId") or body.get("prompt_id") or "").strip()
         user = self.current_user()
         if not user_can_access_view_item(user, filename, subfolder, view_type, prompt_id):
@@ -21524,12 +22003,16 @@ class Handler(BaseHTTPRequestHandler):
             return
         user = self.current_user()
         if not (user and user.get("role") == "admin"):
-            if view_type != "input":
+            if view_type == "input":
+                # Input reads require an owner receipt or a server-staged name.
+                if filename.lower().endswith(".source.json") or not user_can_read_input_file(user, filename, subfolder):
+                    self.send_json({"ok": False, "error": "Not found"}, 404)
+                    return
+            else:
                 prompt_id = str((params.get("promptId") or params.get("prompt_id") or [""])[0])
                 if not user_can_access_view_item(user, filename, subfolder, view_type, prompt_id):
                     self.send_json({"ok": False, "error": "沒有權限"}, 403)
                     return
-            # SPEC P2 keeps shared input refs visible; private uploads get dedicated routes.
         download = (params.get("dl") or [""])[0] in ("1", "true", "yes")
         self.send_local_file(target, inline_filename=filename, download=download)
 
@@ -21771,7 +22254,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_redirect("/?google_drive=state_error")
             return
         current_session = parse_cookies(self.headers.get("Cookie")).get(SESSION_COOKIE) or ""
-        if current_session and record.get("session") and current_session != record.get("session"):
+        recorded_session = record.get("session") or ""
+        if not (current_session and recorded_session and hmac.compare_digest(current_session, recorded_session)
+                and is_operator_user(self.current_user())):
             self.send_redirect("/?google_drive=session_error")
             return
         if error or not code:
@@ -21843,6 +22328,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error_json(error, 400)
 
     def _generate_result(self, raw_body, *, compute_lane="local", compute_limits=None, request_id=None):
+        from provider_console import REASONS
+        reason = self._provider_console().gate(compute_lane)
+        if reason:
+            raise PermissionError(REASONS.get(reason, "平台暫時不可用"))
         if not isinstance(raw_body, dict):
             raise ValueError("request body must be an object")
         requested_character_id = str(raw_body.get("characterId") or "").strip()
@@ -21908,7 +22397,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.is_orchestrator_service_authenticated(),
             )
             character_context = character_generation_context(character_entry)
+        if "parityVoiceSelection" in body:
+            raise ValueError("此版本不支援借用聲音")
         if character_entry:
+            feature = character_feature_definition(feature, character_entry)
+            builder = BUILDERS[feature["builder"]]
             capability = resolve_character_capability(
                 character_entry,
                 action_id,
@@ -21992,9 +22485,9 @@ class Handler(BaseHTTPRequestHandler):
 
         if compute_lane == "colab":
             from compute_adapters import AdapterError, normalise_intent, colab_compatibility
-            normalized, _warnings = normalise_intent(feature_id, settings)
+            normalized, _warnings = normalise_intent(feature.get("referenceFeatureId", feature_id), settings)
             compatibility = colab_compatibility(
-                feature_id, normalized, [slot for slot, item in submitted_files.items() if item],
+                feature.get("referenceFeatureId", feature_id), normalized, [slot for slot, item in submitted_files.items() if item],
             )
             if not compatibility["supported"]:
                 raise AdapterError(compatibility["code"], compatibility["reason"])
@@ -22009,7 +22502,7 @@ class Handler(BaseHTTPRequestHandler):
                 if settings.get('visualStyle') not in (None, '', visual):
                     raise ValueError('畫面風格設定不一致')
                 settings['visualStyle'] = visual
-            effective = {'featureId': feature_id, 'settings': settings,
+            effective = {'featureId': feature.get('referenceFeatureId', feature_id), 'settings': settings,
                          'files': {slot: {} for slot, item in submitted_files.items() if item}}
             if resolved_voice_reference:
                 effective['files']['voice'] = {}
@@ -22021,7 +22514,7 @@ class Handler(BaseHTTPRequestHandler):
         # All capability and option checks happen before files are copied
         # into ComfyUI input, so rejected requests leave no upload debris.
         if compute_lane == "local":
-            status = next((item for item in feature_status() if item["id"] == feature_id), None)
+            status = next((item for item in feature_status() if item["id"] == feature.get("referenceFeatureId", feature_id)), None)
             status_ready = bool(status and status.get("ready"))
             status_missing_nodes = list((status or {}).get("missingNodes") or [])
             status_runtime_reason = str((status or {}).get("runtimeReason") or "")
@@ -22062,13 +22555,25 @@ class Handler(BaseHTTPRequestHandler):
                 uploads[slot] = resolve_server_file(file_info["serverFile"])
             elif compute_lane in {"colab", "comfy_cloud", "runninghub"}:
                 uploads[slot] = stage_colab_uploaded_file(file_info, slot)
+                if (submitted_by or {}).get("email"):
+                    try:
+                        record_input_upload_owner(uploads[slot], submitted_by)
+                    except Exception as error:
+                        print(f"input_receipt_failed exception={type(error).__name__}", flush=True)
             else:
                 uploads[slot] = save_uploaded_file(file_info, slot)
+                if (submitted_by or {}).get("email"):
+                    try:
+                        record_input_upload_owner(uploads[slot], submitted_by)
+                    except Exception as error:
+                        print(f"input_receipt_failed exception={type(error).__name__}", flush=True)
 
+        if feature_id == CLIPMODE_CHARACTER_PHOTOSHOOT_FEATURE_ID and uploads.get("image"):
+            uploads["image"] = bind_clipmode_reference_override(settings, uploads["image"])
         if resolved_voice_reference:
             uploads["voice"] = resolved_voice_reference
         if compute_lane in {'comfy_cloud', 'runninghub'}:
-            effective = {'featureId': feature_id, 'settings': settings, 'files': {slot: {} for slot in uploads}}
+            effective = {'featureId': feature.get('referenceFeatureId', feature_id), 'settings': settings, 'files': {slot: {} for slot in uploads}}
             resolved = {slot: (COMFY_INPUT / filename).resolve() for slot, filename in uploads.items()}
             self._compute_dispatch_started = True
             service = get_hosted_compute_service()
@@ -22079,10 +22584,10 @@ class Handler(BaseHTTPRequestHandler):
         if compute_lane == "colab":
             from compute_adapters import normalise_intent, build_colab_request
             from compute_routing import ComputeRejected
-            normalized, _warnings = normalise_intent(feature_id, settings)
+            normalized, _warnings = normalise_intent(feature.get("referenceFeatureId", feature_id), settings)
             resolved = {slot: (COMFY_INPUT / filename).resolve() for slot, filename in uploads.items()}
             limits = compute_limits or {}
-            colab_body = build_colab_request(feature_id, normalized, resolved,
+            colab_body = build_colab_request(feature.get("referenceFeatureId", feature_id), normalized, resolved,
                 request_id=request_id, account_id=limits.get("account_id"),
                 gpu=limits.get("gpu", "L4"), max_units=limits.get("max_units", 20),
                 max_minutes=limits.get("max_minutes", 60))
@@ -22184,7 +22689,7 @@ class Handler(BaseHTTPRequestHandler):
             self._compute_dispatch_started = True
             result = start_minimax_h3_web_job(
                 prompt,
-                feature_id,
+                feature.get("referenceFeatureId", feature_id),
                 settings,
                 submitted_by,
                 character_id,
@@ -22306,7 +22811,7 @@ class Handler(BaseHTTPRequestHandler):
             body = self.read_json(MAX_TEXT_BODY)
             url = str(body.get("url") or "").strip()
             slot = re.sub(r"[^a-z0-9_-]+", "", str(body.get("slot") or "").lower())[:32] or "video"
-            result = fetch_video_url(url, slot)
+            result = fetch_video_url(url, slot, shared_cookies=is_operator_user(self.current_user()))
             record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result})
         except Exception as error:
@@ -22317,7 +22822,7 @@ class Handler(BaseHTTPRequestHandler):
             body = self.read_json(MAX_TEXT_BODY)
             url = str(body.get("url") or "").strip()
             slot = re.sub(r"[^a-z0-9_-]+", "", str(body.get("slot") or "").lower())[:32] or "video"
-            result = fetch_google_drive_video(url, slot)
+            result = fetch_google_drive_video(url, slot, shared_cookies=is_operator_user(self.current_user()))
             record_input_upload_owner(str(result.get("filename") or ""), self.current_user())
             self.send_json({"ok": True, **result})
         except Exception as error:
@@ -22819,6 +23324,12 @@ class Handler(BaseHTTPRequestHandler):
             kind = str(body.get("kind") or "default").strip()
             text = str(body.get("text") or "").strip()
             references = body.get("references")
+            for reference in references or []:
+                if isinstance(reference, dict) and reference.get("serverFile"):
+                    bare = resolve_server_file(reference["serverFile"])
+                    if not user_can_read_input_file(self.current_user(), bare):
+                        self.send_json({"ok": False, "error": "無權使用這個伺服器素材；請重新上傳自己的檔案"}, 403)
+                        return
             result = generate_assist(mode, kind, text, references)
             self.send_json({"ok": True, **result})
         except Exception as error:
@@ -22930,6 +23441,12 @@ class Handler(BaseHTTPRequestHandler):
         try:
             user = self.current_user()
             (filename, subfolder, view_type), body = self._view_parts_from_body()
+            prompt_id = str(body.get("promptId") or "").strip()
+            if not (user and user.get("role") == "admin"):
+                allowed = (not subfolder and user_can_use_uploaded_input(user, filename)) if view_type == "input" else user_can_access_view_item(user, filename, subfolder, view_type, prompt_id)
+                if not allowed:
+                    self.send_json({"ok": False, "error": "沒有權限"}, 403)
+                    return
             target = resolve_view_path(filename, subfolder, view_type)
             if target is None or not target.is_file():
                 raise ValueError("找不到這個輸出檔")
@@ -22945,10 +23462,11 @@ class Handler(BaseHTTPRequestHandler):
             display = (str(body.get("name") or "") or target.stem or "voice").strip()[:80]
             transcript_raw = str(body.get("transcript") or "").strip()
             transcript = prepare_voice_reference_text(transcript_raw) if transcript_raw else ""
-            prompt_id = str(body.get("promptId") or "").strip()
             workflow = str(body.get("workflow") or "").strip()
             feature = str(body.get("feature") or "").strip()
             detail = None
+            if prompt_id and not user_can_access_job(user, prompt_id):
+                prompt_id = ""
             if prompt_id.startswith("local-"):
                 detail = direct_history_detail(prompt_id)
             elif prompt_id and prompt_id != "disk" and re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", prompt_id):
@@ -23053,6 +23571,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    global _RECEIPT_COLLECTOR
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default=os.environ.get("CASTLE_COMFY_WEB_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("CASTLE_COMFY_WEB_PORT", "8190")))
@@ -23075,6 +23594,9 @@ def main() -> None:
         get_pipeline_execution().start()
     if (colab_root.parent / 'hosted-compute').exists():
         get_hosted_compute_service().start()
+    from compute_collector import ReceiptCollector
+    _RECEIPT_COLLECTOR = ReceiptCollector(sys.modules[__name__], colab_root.parent / 'compute-routing.sqlite3')
+    _RECEIPT_COLLECTOR.start()
     library_service.start_indexer(library_server_context())
     try:
         castle_orchestrator.initialize()

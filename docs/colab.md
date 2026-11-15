@@ -4,7 +4,15 @@ Web ComfyUI 的一般生成表單與角色單步生成表單提供 **執行位�
 管理員可直接從 **管理 → Google Colab 帳號**，或 **管理中心 → Google Colab 帳號**，新增帳號、完成授權、重新連接及更新餘額。這裡管理的是目前登入使用者自己的 Google 連線，不是全站共用帳號。
 它使用 Google 官方 `google-colab-cli` 0.7.4 的傳輸實作，讓已選擇的 Google 帳號申請 GPU、執行 H3、下載成果並釋放 GPU。它不會改變本機 ComfyUI 的位址，也不需要公開 ComfyUI 或建立通道。
 
-**驗證程度：已完成來源研究、CPU 契約測試與模擬帳號的瀏覽器測試；尚未以真實 Google 帳號完成 Colab GPU 生成。** 首次連線後仍需用小型任務驗證實際配額、GPU、驅動、依賴安裝及模型相容性。公開示範站不提供這個付費執行入口。
+**驗證程度：來源研究、CPU 契約測試與模擬帳號的瀏覽器測試已完成。** 工作階段路線在 2026-11-13 以真實帳號於 A100 完成舞蹈與影片替換。語音在 Colab 還不能用：語音環境建置仍然失敗，此儲存庫不附帶釘選的 VoxCPM wheel，語音環境以 `voice_env_mismatch` 失敗關閉。首次連線後仍需用小型任務確認你自己的配額、GPU、驅動與依賴。公開示範站不提供這個付費執行入口。
+
+每個已連接的 Google 帳號，Web 只開一個工作階段：所選等級的 GPU 執行環境（仍受 Colab 當下是否有機器影響）、依 `scripts/colab_session_overlays/` 釘選的獨立 CPython、覆疊與版本來啟動、上傳輸入、執行工作、送心跳，並在閒置、故障上限或狀態遺失時自己關閉。Web 沒在跑時，獨立租約清掃 `scripts/colab_lease_sweeper.py` 仍會釋放租約。使用者單元是 `scripts/systemd/web-comfyui-colab-lease-sweeper.service` 與 `.timer`，每 5 分鐘清掃一次。單元假設簽出位於 `~/Web_Comfyui`、Web 使用該目錄的 `.venv`，Colab 控制器虛擬環境位於 `~/.local/share/web-comfyui/colab-controller`；路徑不同時請編輯單元。狀態目錄採用 Web 的預設值，可用 `CASTLE_COLAB_ROOT` 覆寫。
+
+```sh
+cp scripts/systemd/web-comfyui-colab-lease-sweeper.* ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now web-comfyui-colab-lease-sweeper.timer
+```
 
 ## 同一平台選算力
 

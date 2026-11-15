@@ -1,3 +1,6 @@
+> 歷史快照（2026-11-10，對應 95e2079）；目前各運算平台狀態見 `docs/compute-platforms.md`。
+> Historical snapshot (2026-11-10, commit 95e2079). Current compute-platform status is in `docs/compute-platforms.md`.
+
 # H3 Colab 完整來源研究與整合設計
 
 研究日期：**2026-11-10**。範圍包括 `dseditor/h3-colab-skill` 的全部追蹤檔案、三份相關 Colab 筆記本、Google 官方 CLI、必要節點、模型中繼資料與授權，以及 Web ComfyUI 的傳輸、恢復、取消與費用控制設計。**尚未存取真實 Google 帳號、驗證訂閱餘額、申請 GPU 或完成 Colab 生成。** 後文的來源檢查、離線契約測試及 SDK 匯入檢查，不構成實際 GPU 執行證據。

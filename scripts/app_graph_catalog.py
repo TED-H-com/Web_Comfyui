@@ -172,7 +172,7 @@ def ip_blend(source):
     return diagram(raw,'webui/server.py#'+symbol,['代表分支：兩張參考圖，依實際迴圈建立兩個 IPAdapterAdvanced；第三張會再串接一組。'])
 
 
-def qwen(source,edit):
+def qwen(source,edit,path='webui/qwen_image21.py#compile_prompt',notes=None):
     raw,fn,scope=primary_graph(source,'compile_prompt')
     scope.update(edit=edit,node_id='11',i=1)
     branch=next(n for n in fn.body if isinstance(n,ast.If) and isinstance(n.test,ast.Name) and n.test.id=='edit')
@@ -197,9 +197,20 @@ def qwen(source,edit):
                     id=source.value(target.value.slice,scope)
                     if id in raw:
                         for keyword in stmt.value.keywords:raw[id]['inputs'][keyword.arg]=source.value(keyword.value,scope)
-    return diagram(raw,'webui/qwen_image21.py#compile_prompt',[
+    return diagram(raw,path,notes if notes is not None else [
         '代表分支：一張輸入圖片；實際改圖支援依序加入最多四張。' if edit else '文生圖分支：ResolutionSelector 決定空白 latent 尺寸。',
         '這是應用程式 builder 的連線，並非官方參考 JSON 的逐字複本。'])
+
+
+def angles_delegation(source):
+    """Check, without running it, that each angle candidate is one Qwen edit of the face upload."""
+    fn=source.function('qwen21_angles_prompt')
+    calls=[n for n in ast.walk(fn) if isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='compile_qwen21_prompt']
+    def edit_call(call):
+        keywords={k.arg:k.value for k in call.keywords}
+        return (len(call.args)==2 and isinstance(keywords.get('edit'),ast.Constant) and keywords['edit'].value is True
+                and ast.unparse(call.args[1])=="{'image': face}")
+    if len(calls)!=1 or not edit_call(calls[0]):raise ValueError('character-angles Qwen edit delegation changed')
 
 
 def h3_first_frame(source,fn,raw,conditioning):
@@ -347,6 +358,12 @@ def graphs(root,app_catalog):
         id=feature['id']
         if id in result:continue
         if id.startswith('h3-'):result[id]=h3(native,id);continue
+        if id=='character-angles':
+            angles_delegation(server)
+            result[id]=qwen(qwen_source,True,'webui/server.py#qwen21_angles_prompt',[
+                '代表一張候選：每張候選各自以原始照片執行一次 Qwen 2.1 改圖，並加上自己的固定視角指令；不會串接前一張生成圖。',
+                '這是應用程式 builder 的連線，並非官方參考 JSON 的逐字複本。'])
+            continue
         if id in {'qwen21-edit','qwen21-text2img'}:result[id]=qwen(qwen_source,id=='qwen21-edit');continue
         symbol=guides[id].get('builder_symbol')
         raw,_,_=primary_graph(server,symbol,largest=id=='clipmode-character-photoshoot',scope={'model_ref':['1',0]} if id=='text2img' else None)
@@ -366,6 +383,7 @@ ENGLISH_NOTES = {
  '顯示預設羽化關閉的九節點流程；開啟羽化會加入五個節點，混合邊緣並以內縮遮罩還原主體內部像素。': 'Shows the default nine-node graph with feathering off. Enabling feathering adds five nodes, blends edge pixels and restores the subject interior using an eroded mask.',
  '代表分支：兩張參考圖，依實際迴圈建立兩個 IPAdapterAdvanced；第三張會再串接一組。': 'Representative branch: two references create two chained IPAdapterAdvanced nodes using the actual loop. A third reference adds another pair.',
  '代表分支：一張輸入圖片；實際改圖支援依序加入最多四張。': 'Representative branch: one input image. Editing supports up to four images in sequence.',
+ '代表一張候選：每張候選各自以原始照片執行一次 Qwen 2.1 改圖，並加上自己的固定視角指令；不會串接前一張生成圖。': 'Shows one candidate: each candidate runs one Qwen 2.1 edit on the original photo with its own fixed view instruction. A generated image is never chained into the next.',
  '文生圖分支：ResolutionSelector 決定空白 latent 尺寸。': 'Text-to-image branch: ResolutionSelector determines the empty latent dimensions.',
  '這是應用程式 builder 的連線，並非官方參考 JSON 的逐字複本。': 'These are application builder connections, not a verbatim copy of the official reference JSON.',
  'Stock 代表分支；Sage／EasyCache／TeaCache 的可選包裝不在此圖。': 'Representative Stock branch. Optional Sage, EasyCache and TeaCache wrappers are not shown.',

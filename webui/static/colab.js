@@ -11,6 +11,11 @@
     node.append(...children);
     return node;
   };
+  const actualGpuLabel = (job) => {
+    if (job.assigned_gpu && job.gpu_name) return `實際 GPU：${job.assigned_gpu}（${job.gpu_name}）`;
+    if (!job.assigned_gpu && !job.runtime_id && ["failed", "cancelled"].includes(job.phase)) return "實際 GPU：未分配";
+    return `實際 GPU：確認中${job.assigned_gpu ? `（配置 ${job.assigned_gpu}）` : ""}`;
+  };
   const button = (label, action, primary = false) => el("button", {type: "button", class: `${primary ? "primary" : "ghost"} small`, text: label, onclick: action});
   const field = (title, control) => {
     control.setAttribute("aria-label", title);
@@ -130,7 +135,9 @@
         for (const file of job.artifacts || []) actions.append(el("a", {href: file.url, target: "_blank", rel: "noopener", text: `查看成果 ${file.name}`}));
         if (!["completed", "failed", "cancelled"].includes(job.phase)) actions.append(button(job.cancel_requested ? "再次確認釋放" : "停止並釋放 GPU", () => run(async () => { await post(`jobs/${job.id}/cancel`); await refresh(); })));
         jobs.append(el("article", {class: "colab-job"}, [
-          el("div", {class: "colab-row"}, [el("strong", {text: job.status_label}), el("span", {class: "muted", text: `${job.gpu} · ${new Date(job.created_at * 1000).toLocaleString("zh-TW")}`})]),
+          el("div", {class: "colab-row"}, [el("strong", {text: job.status_label}), el("span", {class: "muted", text: new Date(job.created_at * 1000).toLocaleString("zh-TW")})]),
+          el("p", {class: "muted", text: `指定 GPU：${job.requested_gpu || "確認中"}`}),
+          el("p", {class: "muted", text: actualGpuLabel(job)}),
           el("p", {class: "muted", text: job.message || (job.remote_phase ? `執行階段：${({validating:"檢查設定", installing:"安裝環境與模型", starting:"啟動模型服務", submitting:"提交生成", running:"生成中", completed:"生成完成"})[job.remote_phase] || "處理中"}` : "")}), actions,
         ]));
       }

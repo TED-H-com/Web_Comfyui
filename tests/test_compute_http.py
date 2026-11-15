@@ -4,6 +4,7 @@ import uuid
 import urllib.request
 import urllib.error
 import pytest
+from test_compute_web import enable_colab_for_fixture
 
 
 @pytest.mark.parametrize('test_server', ['colab_transport'], indirect=True)
@@ -14,7 +15,11 @@ def test_shared_form_can_run_colab_without_local_models_and_replays_once(test_se
         if authenticated: headers['Cookie'] = cookie
         req = urllib.request.Request(base+path, headers=headers,
                                      data=json.dumps(body).encode() if body is not None else None)
-        with opener.open(req, timeout=15) as response: return json.load(response)
+        with opener.open(req, timeout=15) as response:
+            result = json.load(response)
+        if path.endswith('/refresh'):
+            enable_colab_for_fixture(base, opener, cookie)
+        return result
     with pytest.raises(urllib.error.HTTPError) as error:
         call('/api/compute/jobs', authenticated=False)
     assert error.value.code == 401

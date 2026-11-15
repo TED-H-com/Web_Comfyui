@@ -1,0 +1,125 @@
+{
+  "14a369237cc8abba525a1687ea0384708e5f19c8c170728268ad77bb63044491": {
+    "reason": "GetImageRangeFromBatch is used by the frozen dance graphs but KJNodes is absent from their pack inventory. Exact existing video-replace pin; no graph or model changes.",
+    "source_bundle_sha256": "c82a481d68685b88a74221f494209af319ff01a9f1994a4a744d9d7e59cd3afb",
+    "packs": {
+      "ComfyUI-KJNodes": {
+        "commit": "6ab7e8130e449ed2c0037589bcf84146ceb7fc9c",
+        "files": {
+          "__init__.py": {
+            "sha256": "2d1032dc82a46f4539f301721e854dbc19b707f29db6734f54c0551b56bbfcf1",
+            "bytes": 31000
+          },
+          "nodes/audioscheduler_nodes.py": {
+            "sha256": "8fb0693437380cc438c1530ecfa1f1422d1cc99e56d007152a1fb93cee3413cc",
+            "bytes": 10708
+          },
+          "nodes/batchcrop_nodes.py": {
+            "sha256": "a7fca222bbb223e84820131fc3549cf7a87ed44b1e9875f7a0914d37aafabaf7",
+            "bytes": 32420
+          },
+          "nodes/context_windows_visualizer.py": {
+            "sha256": "79a7eec8cf1b7fd698ad0c1d6ff28c5ce57d01e916be44b4ff3922172e3bdf99",
+            "bytes": 8939
+          },
+          "nodes/curve_nodes.py": {
+            "sha256": "27024564bd835c648f54d9d927c8544833380ee49ce04cd2e16ff8fffe1d6da0",
+            "bytes": 70471
+          },
+          "nodes/hdr_preview_node.py": {
+            "sha256": "853d0dd37a750b3c48bc01fe5267aad9edfb868385962ff4de15f2eda0dd07ab",
+            "bytes": 6779
+          },
+          "nodes/ideogram4_nodes.py": {
+            "sha256": "bad2a7f8b29782431431afc8bd591b388454d3698a1b3dfd06d4865729db7020",
+            "bytes": 22008
+          },
+          "nodes/image_nodes.py": {
+            "sha256": "3a83fb99219f65da19ad16aee7e1473ee7ee7e401f43662a5dcbba73f1b54eec",
+            "bytes": 221788
+          },
+          "nodes/image_transform_node.py": {
+            "sha256": "2315f60597e5c5a3603078f534efefd17f970175c9df0307fb37044f631bfcde",
+            "bytes": 30990
+          },
+          "nodes/lora_nodes.py": {
+            "sha256": "5246ad1782131aaf8bf4d94a921e90d03e44d33680cd52d542c6f0dba7d3ce6c",
+            "bytes": 29846
+          },
+          "nodes/ltxv_nodes.py": {
+            "sha256": "11286583c56e653dbd57f5e8eda6902c84b759f16b359b3bf0c895b43e6b5364",
+            "bytes": 122787
+          },
+          "nodes/mask_nodes.py": {
+            "sha256": "aae14dc68daff37ba8bab51355567377c80d4bf4d9d3765f2983b2213047e89d",
+            "bytes": 68902
+          },
+          "nodes/minimax_nodes.py": {
+            "sha256": "51c071fce9969318fe4521cda3ef307758ef56161208a0165cba1d1ad9dc699c",
+            "bytes": 14061
+          },
+          "nodes/model_optimization_nodes.py": {
+            "sha256": "f77bb07d3b086c18e55143a125e4f91debac6fcc9fe6e0d5856f65381ad728dd",
+            "bytes": 116713
+          },
+          "nodes/nodes.py": {
+            "sha256": "87e94ad41bf42fc28786b1866d01306332e0c9fc8dd9af2d57200b9473df1418",
+            "bytes": 138106
+          },
+          "nodes/preview_override_node.py": {
+            "sha256": "6060c2382e61c041104a61c1fe06f2a163fcddc6e715d20fbf7a03f0af46715c",
+            "bytes": 37233
+          },
+          "nodes/sharpen_nodes.py": {
+            "sha256": "40f07e9bd71dcea8ef8bdb21a04d9585bfb2412974025a6ee216e3dc58b47758",
+            "bytes": 11205
+          },
+          "nodes/tiny_vae.py": {
+            "sha256": "f09d1e3ab1cb0f2ee4949f4192b7ea1bb47390c47b80f8517532301283a3472d",
+            "bytes": 8999
+          },
+          "nodes/triton_vae.py": {
+            "sha256": "1181c51c7ed44d40f4fde5e970b1b32dc60a3d26e43d0a4c814d49ec0132e3f0",
+            "bytes": 38963
+          },
+          "utility/fluid.py": {
+            "sha256": "a78f8575f4f201e0c15d0470f9e1248ff6e2c6e511ea1ddd8090bef7d4c423a4",
+            "bytes": 2917
+          },
+          "utility/magictex.py": {
+            "sha256": "14c8a344fa1c49701d258991456770fbbbb4ed732e4edbd77862a273a3c808a8",
+            "bytes": 3117
+          },
+          "utility/numerical.py": {
+            "sha256": "ce28bbef99a0f15cd4f47c5bf649814ae3f9243517235cd5e4aedd25d09b5802",
+            "bytes": 906
+          },
+          "utility/utility.py": {
+            "sha256": "00f7132ca060a3d2c064455b9c29a1fee7c73c3fe276150a13fd919ea2e6ee8f",
+            "bytes": 5572
+          }
+        },
+        "requirements": {
+          "bytes": 67,
+          "sha256": "e8cc1fb089c6e74bb5f326e949fd89ea7653de0d193d7a385c38af44e66656bd"
+        },
+        "install_pins": [
+          "color-matcher==0.6.0",
+          "contourpy==1.3.3",
+          "cycler==0.12.1",
+          "ddt==1.7.2",
+          "docutils==0.23",
+          "fonttools==4.63.0",
+          "imageio==2.37.3",
+          "kiwisolver==1.5.0",
+          "matplotlib==3.11.0",
+          "mss==10.2.0",
+          "opencv-python-headless==4.11.0.86",
+          "pyparsing==3.3.2",
+          "python-dateutil==2.9.0.post0",
+          "six==1.17.0"
+        ]
+      }
+    }
+  }
+}

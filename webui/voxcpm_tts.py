@@ -1024,10 +1024,12 @@ def main() -> int:
     if accepted_path is None:
         cleanup_attempts(attempt_paths)
         best_label = f"{best_similarity:.3f}" if best_similarity >= 0 else "n/a"
-        raise ValueError(
-            f"speaker gate failed after {max_attempts} attempts; best similarity {best_label}, "
-            f"threshold {args.speaker_threshold:.3f}"
-        )
+        from quality_rejection import QualityRejected
+        rejection=QualityRejected({'stage':'speaker_gate','best_similarity':best_similarity,
+                                   'threshold':args.speaker_threshold,'attempts':len(gate_attempts)})
+        diagnostic_path=Path(str(args.sidecar)+'.quality.json')
+        diagnostic_path.write_text(str(rejection));diagnostic_path.chmod(0o600)
+        raise rejection
 
     os.replace(accepted_path, args.output)
     cleanup_attempts(attempt_paths, keep=accepted_path)

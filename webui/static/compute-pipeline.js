@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const lanes={local:'本機',colab:'Google Colab',autoip:'AutoIP',comfy_cloud:'Comfy Cloud',runninghub:'RunningHub',auto:'自動安排'};
-  const states={pending:'等待前一步',preparing:'準備素材',reserved:'已保留任務',dispatching:'正在提交',queued:'等待執行',running:'製作中',collecting:'整理成果中',completed:'已完成',blocked:'等待處理',failed:'執行失敗',rejected:'未通過檢查',submission_uncertain:'提交待確認',cancelling:'正在停止',cancelled:'已停止'};
+  const states={pending:'等待前一步',preparing:'準備素材',reserved:'已保留任務',dispatching:'正在提交',queued:'等待執行',running:'製作中',collecting:'整理成果中',completed:'已完成',blocked:'等待處理',failed:'執行失敗',rejected:'未通過檢查',closed_no_execution_evidence:'無執行證據，已結案',submission_uncertain:'提交待確認',cancelling:'正在停止',cancelled:'已停止'};
   const finished=new Set(['completed','cancelled']);
   const instances=new Set();
   const el=(tag,attrs={},children=[])=>{
@@ -236,7 +236,7 @@
           const label=String(step.label||({image:'圖片製作',video:'影片製作',voice:'語音製作',lipsync:'對嘴影片'}[step.id])||`步驟 ${index+1}`),outputs=step.artifacts?.length?step.artifacts:step.job?.artifacts;
           const tools=el('div',{class:'compute-job-actions'},outputLinks(outputs));
           const key=item.pipeline_id+':'+step.id;
-          if(['failed','rejected'].includes(step.state)&&!item.cancel_requested&&step.retry_allowed!==false){
+          if(['failed','rejected','closed_no_execution_evidence'].includes(step.state)&&!item.cancel_requested&&step.retry_allowed!==false){
             const retryLane=el('select',{'aria-label':`${label}重試平台`},Object.entries(lanes).map(([value,text])=>el('option',{value,text})));
             retryLane.value=retryPlacements.get(key)||(Object.hasOwn(lanes,step.placement)?step.placement:'auto');
             retryLane.disabled=retryUnknown.has(key);retryLane.addEventListener('change',()=>retryPlacements.set(key,retryLane.value));

@@ -1386,7 +1386,8 @@ class OrchestratorWorker:
                 if status == "failed":
                     attempt = int(task.get("attempt") or 0)
                     max_attempts = max(1, int(task.get("max_attempts") or 1))
-                    if attempt + 1 < max_attempts and not billing_block_reel:
+                    from quality_rejection import from_error
+                    if attempt + 1 < max_attempts and not billing_block_reel and not from_error(error):
                         conn.execute(
                             """
                             update tasks set status='pending', attempt=?, completed_at=null,

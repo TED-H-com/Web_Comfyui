@@ -127,3 +127,10 @@ def test_git_scan_checks_staged_media_not_a_clean_worktree_replacement(tmp_path)
                    cwd=root, check=True, capture_output=True)
     path.write_bytes((EXAMPLES / path.name).read_bytes())
     assert scan(root).returncode == 1
+
+
+def test_runninghub_referral_svg_is_native_vector():
+    svg = (ROOT / 'webui/docs/runninghub-referral.svg').read_text(encoding='utf-8')
+    assert '<desc>' in svg and 'qqgzxufp' in svg
+    for forbidden in ('<script', '<image', 'foreignObject', 'href'):
+        assert forbidden not in svg

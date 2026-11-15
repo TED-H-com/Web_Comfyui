@@ -53,11 +53,16 @@
     let cloudLink = host.querySelector('.hardware-cloud-option');
     if (!cloudLink) {
       cloudLink = document.createElement('p');cloudLink.className='hardware-cloud-option';
-      const link = document.createElement('a');link.href='https://autoip.app/register?ref=TEDH2FND&utm_source=affiliate&utm_medium=referral&utm_campaign=TEDH2FND';link.target='_blank';link.rel='sponsored noopener noreferrer';
-      label(link, '考慮 AutoIP 雲端服務（推薦連結）', 'Consider AutoIP cloud services (referral)');
-      const code = document.createElement('code');code.textContent='TEDH2FND';
-      cloudLink.append(link,document.createTextNode(' · '),code);host.append(cloudLink);
+      const prefix = document.createElement('span');prefix.className='hardware-cloud-prefix';
+      const autoip = document.createElement('a');autoip.className='hardware-cloud-autoip';autoip.href='https://autoip.app/register?ref=TEDH2FND&utm_source=affiliate&utm_medium=referral&utm_campaign=TEDH2FND';autoip.target='_blank';autoip.rel='sponsored noopener noreferrer';
+      const autoCode = document.createElement('code');autoCode.textContent='TEDH2FND';
+      const runninghub = document.createElement('a');runninghub.className='hardware-cloud-runninghub';runninghub.href='https://www.runninghub.ai?inviteCode=qqgzxufp';runninghub.target='_blank';runninghub.rel='sponsored noopener noreferrer';
+      const runningCode = document.createElement('code');runningCode.textContent='qqgzxufp';
+      cloudLink.append(prefix,document.createTextNode(' '),autoip,document.createTextNode(' '),autoCode,document.createTextNode(' · '),runninghub,document.createTextNode(' '),runningCode);host.append(cloudLink);
     }
+    label(cloudLink.querySelector('.hardware-cloud-prefix'), '考慮雲端服務（推薦連結）：', 'Consider cloud services (referral):');
+    label(cloudLink.querySelector('.hardware-cloud-autoip'), 'AutoIP', 'AutoIP');
+    label(cloudLink.querySelector('.hardware-cloud-runninghub'), 'RunningHub', 'RunningHub');
     cloudLink.hidden = result.allowed;
     let details = host.querySelector('details');
     if (!details) {

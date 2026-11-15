@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from contextlib import contextmanager
 import hashlib
+import re
 import json
 import math
 import os
@@ -19,10 +20,10 @@ from typing import Callable, Mapping
 import uuid
 
 LANES = ('local', 'colab', 'autoip', 'comfy_cloud', 'runninghub')
-TERMINAL = frozenset({'completed', 'failed', 'cancelled', 'rejected'})
+TERMINAL = frozenset({'completed', 'failed', 'cancelled', 'rejected', 'closed_no_execution_evidence','closed_execution_outcome_unknown','quality_rejected'})
 STATES = TERMINAL | {'reserved', 'dispatching', 'queued', 'running', 'collecting', 'cancelling', 'submission_uncertain'}
 LIMIT_KEYS = frozenset({'max_credits', 'max_units', 'max_comfy_credits', 'max_runninghub_coins',
-                        'max_minutes', 'max_concurrent', 'account_id', 'gpu'})
+                        'max_minutes', 'max_concurrent', 'account_id', 'gpu', 'max_runninghub_points'})
 CURRENCIES = {'local': 'local', 'colab': 'compute_units', 'autoip': 'credits',
               'comfy_cloud': 'comfy_credits', 'runninghub': 'runninghub_coins'}
 BUDGET_KEYS = {'colab': 'max_units', 'autoip': 'max_credits',
@@ -120,6 +121,14 @@ def _public_receipt(value):
     if not isinstance(value, Mapping) or value.get('state') not in STATES - {'reserved', 'dispatching'}:
         raise ComputeUncertain('invalid adapter receipt')
     result = {'state': value['state']}
+    if value.get('gpu') in {'A100','H100','G4','L4'}:result['gpu']=value['gpu']
+    for key in ('requested_gpu','assigned_gpu'):
+        if isinstance(value.get(key),str) and value[key] in {'A100','H100','G4','L4','T4'}:result[key]=value[key]
+    name=value.get('gpu_name')
+    if isinstance(name,str) and re.fullmatch(r'[A-Za-z0-9 ._()/-]{1,128}',name):result['gpu_name']=name
+    sid=value.get('session_id')
+    if isinstance(sid,str) and re.fullmatch(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',sid):result['session_id']=sid
+    if isinstance(value.get('session_runtime_retained'),bool):result['session_runtime_retained']=value['session_runtime_retained']
     downstream = value.get('downstream_id')
     if downstream is not None:
         if not isinstance(downstream, str) or not downstream or len(downstream) > 256:
@@ -163,15 +172,64 @@ def _public_receipt(value):
                 artifact['size'] = item['size']
             artifacts.append(artifact)
         result['artifacts'] = artifacts
+    if 'model_aliases' in value:
+        from compute_parity.model_aliases import VERSION, reviewed_map
+        trusted = [entry for lane in reviewed_map().values() for entry in lane.values()]
+        aliases = value['model_aliases']
+        if not isinstance(aliases, list) or len(aliases) > 10:
+            raise ComputeUncertain('invalid model aliases')
+        result['model_aliases'] = []
+        for alias in aliases:
+            entry = next((e for e in trusted if isinstance(alias, Mapping)
+                and alias.get('map_version') == VERSION
+                and all(alias.get(k) == e[k] for k in ('source_name','target_name','source_sha256','bytes'))), None)
+            if entry is None: raise ComputeUncertain('unreviewed model alias')
+            # Reconstruct from reviewed release data; never echo provider fields.
+            result['model_aliases'].append({'map_version': VERSION, **entry})
+    for key in ('estimated_cost', 'actual_cost'):
+        if key not in value:continue
+        amount = value.get(key)
+        if amount is None:
+            result[key] = None
+        elif isinstance(amount, Mapping) and amount.get('unit') in {'POINT','credits','CU','local'} and _number(amount.get('amount')):
+            result[key] = {'unit': amount['unit'], 'amount': amount['amount']}
+            if key == 'estimated_cost':
+                result[key].update(is_estimate=True,label='估計，非官方報價')
+                if amount.get('upper_bound') is True:
+                    result[key].update(upper_bound=True,label='報價上限（原價）；離峰折扣可能適用，非保證')
+                    for field in ('base_amount','off_peak_amount','observed_at'):
+                        if _number(amount.get(field)):result[key][field]=amount[field]
+        else: raise ComputeUncertain('invalid hosted cost')
+    if result.get('actual_cost') is not None:
+        result['settlement_status'] = 'settled'
+        if result.get('estimated_cost'):result['actual_minus_quote']=result['actual_cost']['amount']-result['estimated_cost']['amount']
+    elif value.get('settlement_status') == 'pending': result['settlement_status'] = 'pending'
+    observation = value.get('balance_observation')
+    if isinstance(observation, Mapping):
+        result['balance_observation'] = {k: observation[k] for k in ('at','balance_usd_cents','workspace_spend_usd_micros')
+            if _number(observation.get(k))}
+        if observation.get('unit') in {'POINT','credits','CU'}:
+            result['balance_observation']={k:observation[k] for k in ('at','value') if _number(observation.get(k))}
+            result['balance_observation']['unit']=observation['unit']
+            if observation.get('status') in {'observed','unavailable'}:result['balance_observation']['status']=observation['status']
+        else:result['balance_observation'].update(scope='workspace',reporting_may_lag=True)
+    from compute_parity.diagnostics import sanitize
+    if 'diagnostics' in value:
+        from scripts.colab_session_diagnostics import sanitize_diagnostics
+        from quality_rejection import sanitize as quality_diagnostics
+        result['diagnostics']={**sanitize(value['diagnostics']),**sanitize_diagnostics(value['diagnostics']),**quality_diagnostics(value['diagnostics'])}
     return result
 
 
 class ComputeRouter:
-    def __init__(self, db_path, adapters: Mapping[str, ComputeAdapter], *, clock=time.time):
+    def __init__(self, db_path, adapters: Mapping[str, ComputeAdapter], *, clock=time.time, policy=None, admission=None):
         if not isinstance(adapters, Mapping) or set(adapters) - set(LANES):
             raise ValueError('adapters must use a supported compute lane ID')
         if any(not isinstance(a, ComputeAdapter) or not callable(a.inspect) or not callable(a.submit) for a in adapters.values()):
             raise TypeError('each lane requires a ComputeAdapter')
+        self.policy, self.admission = policy, admission
+        # Internal observation only; preserve durable fallback on adapter errors.
+        self.refresh_errors = 0
         self.path, self.adapters, self.clock = Path(db_path), dict(adapters), clock
         self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         if self.path.is_symlink():
@@ -211,6 +269,7 @@ class ComputeRouter:
             'placement': row['placement'], 'lane': row['lane'],
             **receipt, 'state': state,
             'created_at': row['created'], 'updated_at': row['updated'],
+            'case_id':json.loads(row['request_json']).get('parity_case_id'),
             'retry_submission_allowed': False,
         }
 
@@ -270,6 +329,8 @@ class ComputeRouter:
             currency, amount = snapshot.get('currency'), snapshot.get('estimated_cost')
             budget_key = BUDGET_KEYS.get(lane)
             expected_currency = CURRENCIES[lane]
+            if lane == 'runninghub' and snapshot.get('currency') == 'runninghub_points':
+                expected_currency, budget_key = 'runninghub_points', 'max_runninghub_points'
             if amount is not None and (not _number(amount) or currency != expected_currency):
                 amount = None
                 reasons.append('quote_invalid')
@@ -299,7 +360,13 @@ class ComputeRouter:
                     and (placement != 'auto' or row['auto_eligible'])]
         # Compare queue pressure, then a stable platform preference. Monetary
         # values in unrelated provider currencies are never compared.
-        eligible.sort(key=lambda row: (row['queue_depth'] + row['active_requests'], LANES.index(row['lane'])))
+        policy = self.policy(owner) if self.policy else {}
+        if policy.get('auto_policy') == 'user_order':
+            order = policy.get('auto_order', [])
+            eligible = [row for row in eligible if placement != 'auto' or row['lane'] in order]
+            eligible.sort(key=lambda row: order.index(row['lane']) if row['lane'] in order else len(order))
+        else:
+            eligible.sort(key=lambda row: (row['queue_depth'] + row['active_requests'], LANES.index(row['lane'])))
         return {'placement': placement, 'selected_lane': eligible[0]['lane'] if eligible else None,
                 'candidates': rows, 'execution_started': False}
 
@@ -317,6 +384,8 @@ class ComputeRouter:
         planned = self.preview(owner, request, placement, limits)
         lane = planned['selected_lane']
         if lane is None:
+            selected=next((c for c in planned.get('candidates',[]) if c['lane']==placement),{})
+            if 'lane_stopped' in selected.get('reasons',[]):raise ComputeRejected('此平台已停止；尚未派送',code='lane_stopped')
             raise ComputeRejected('沒有符合設定、容量與預算的運算平台', code='no_eligible_lane', status=409)
         now = self.clock()
         # BEGIN IMMEDIATE makes duplicate admission and global concurrency
@@ -336,6 +405,8 @@ class ComputeRouter:
                        (owner, request_id, request_hash, placement, lane, 'dispatching',
                         _json(request), _json(limits), '{}', now, now))
         try:
+            if self.admission:
+                self.admission(owner, lane)
             receipt = _public_receipt(self.adapters[lane].submit(owner, request_id, request, dict(limits)))
         except ComputeRejected as error:
             receipt = {'state': 'rejected', 'error': {'code': error.code, 'message': str(error)}}
@@ -357,9 +428,14 @@ class ComputeRouter:
                 raise ComputeRoutingError('找不到這個執行請求', code='not_found', status=404)
             # A stale status response must not erase a concurrently completed
             # or cancelled result, or replace an already bound task identity.
-            if row['state'] in TERMINAL or (expected_state is not None and row['state'] != expected_state):
-                return
+            if expected_state is not None and row['state'] != expected_state:return
             old = json.loads(row['receipt_json'])
+            if old.get('closure_evidence') and row['lane']=='local':receipt={**receipt,'closure_evidence':old['closure_evidence']}
+            if row['state'] in TERMINAL:
+                if row['state']!='completed' or old.get('actual_cost') is not None:return
+                if receipt.get('state')!='completed' or receipt.get('downstream_id')!=old.get('downstream_id'):return
+                receipt={**old,**{k:receipt[k] for k in ('actual_cost','settlement_status','balance_observation','actual_minus_quote') if k in receipt}}
+
             if old.get('downstream_id') and receipt.get('downstream_id') != old['downstream_id']:
                 raise ComputeUncertain('downstream identity changed')
             if row['state'] in {'running', 'collecting', 'cancelling'} and receipt['state'] == 'queued':
@@ -371,8 +447,22 @@ class ComputeRouter:
                        (receipt['state'], _json(merged), self.clock(), owner, request_id))
 
     def status(self, owner, request_id, refresh=False):
+        from compute_refresh import request_lock
+        owner, request_id = _owner(owner), _request_id(request_id)
+        if not refresh:
+            return self._view(self._get(owner, request_id))
+        lock = request_lock(self.path, owner, request_id)
+        if not lock.acquire(timeout=0.2):
+            return self._view(self._get(owner, request_id))
+        try:
+            return self._refresh_status(owner, request_id)
+        finally:
+            lock.release()
+
+    def _refresh_status(self, owner, request_id):
         row = self._get(_owner(owner), _request_id(request_id))
-        if refresh and row['state'] not in TERMINAL:
+        unsettled=row['state']=='completed' and row['lane'] in {'autoip','colab','comfy_cloud','runninghub'} and json.loads(row['receipt_json']).get('actual_cost') is None
+        if row['state'] not in TERMINAL or unsettled:
             receipt = json.loads(row['receipt_json'])
             adapter = self.adapters.get(row['lane'])
             if adapter and adapter.status and receipt.get('downstream_id'):
@@ -380,14 +470,14 @@ class ComputeRouter:
                     updated = _public_receipt(adapter.status(owner, receipt['downstream_id']))
                     self._save(owner, request_id, updated, expected_state=row['state'])
                 except Exception:
-                    pass  # Retain the last durable result; never re-submit.
+                    self.refresh_errors += 1  # Retain the durable result; never re-submit.
             elif adapter and adapter.recover and not receipt.get('downstream_id'):
                 try:
                     recovered = adapter.recover(owner, request_id)
                     if recovered is not None:
                         self._save(owner, request_id, _public_receipt(recovered), expected_state=row['state'])
                 except Exception:
-                    pass
+                    self.refresh_errors += 1
         return self._view(self._get(owner, request_id))
 
     def list_jobs(self, owner, limit=50, before=None):

@@ -28,7 +28,7 @@ QR code 與上方連結編碼相同的完整網址。SVG 使用原生向量圖�
 
 官方首頁列出 MCP 的七類媒體工具，並說明 API 金鑰及訂閱條件。[官方首頁的 MCP 說明](https://autoip.app/)、[官方串接教學](https://autoip.app/blog/claude-code)、[API 金鑰管理](https://autoip.app/dashboard/api-keys)
 
-本專案已實作七個媒體生成操作：文生圖、圖生圖、文生影片、圖生影片、多參考影片、對嘴與舞蹈影片。這是程式契約及合成測試覆蓋的範圍，並非本次使用真實帳戶執行成功的宣告。詳細端點、選項及限制見 [AutoIP integration](autoip-api.md)。
+本專案已實作七個媒體生成操作：文生圖、圖生圖、文生影片、圖生影片、多參考影片、對嘴與舞蹈影片。CI 覆蓋的是契約與合成測試。真實帳號的結果見 [運算平台](compute-platforms.md)。詳細端點、選項及限制見 [AutoIP integration](autoip-api.md)。
 
 使用者提供的 2026-10-22 **AutoIP Public API Skill** 另描述圖片反推提示詞、圖片融合、多角度、貼文、關鍵幀影片、角色跳舞、影片修復、語音克隆、提示詞擴寫，以及角色／提示詞／聲音庫管理。這些上游能力並未因此自動出現在本 WebUI 的已實作操作中；逐項整合狀態見上述文件。
 

@@ -1,0 +1,10 @@
+{
+  "workflow": {
+    "25": {
+      "class_type": "VHS_VideoCombine",
+      "inputs": {
+        "filename_prefix": "parity/00000000-0000-4000-8000-00000000d001"
+      }
+    }
+  }
+}

@@ -1,0 +1,2 @@
+
+VoxCPM public-source wheel: OpenBMB/VoxCPM, commit 30118a33522ef2d8698fca9bebac7224af242395, Apache-2.0. The wheel is built from that public commit. The wheel retains the upstream license; metadata is a regular wheel rather than an editable pointer. No private voice/model/reference data is included. The wheel itself is not distributed in this repository.

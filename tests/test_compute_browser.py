@@ -188,7 +188,7 @@ def test_unified_placement_limits_jobs_and_small_layout(compute_page,width):
     page.get_by_text('生成中',exact=True).wait_for()
     assert len(submissions)==1
     submitted=submissions[0]
-    assert submitted['placement']=='auto' and submitted['limits']=={'max_minutes':45,'max_units':15,'max_credits':60,'max_comfy_credits':100,'max_runninghub_coins':100,'account_id':account_id,'gpu':'A100'}
+    assert submitted['placement']=='auto' and submitted['limits']=={'max_minutes':45,'max_units':15,'max_credits':60,'max_comfy_credits':100,'max_runninghub_coins':100,'max_runninghub_points':1,'account_id':account_id,'gpu':'A100'}
     assert submitted['request']['files']['image']['data']=='synthetic-private-pixels'
     assert str(uuid.UUID(submitted['request_id']))==submitted['request_id']
     actual=page.evaluate('window.receipts[0]');assert actual['lane']=='colab' and actual['downstream_id']==jobs[actual['request_id']]['downstream_id']
@@ -374,7 +374,7 @@ def test_hosted_provider_choice_uses_real_router_receipt_and_separate_budget(com
     previews,submissions,_,_,_,_=fake_router(page,hosted_ready=True)
     page.evaluate('window.mountCompute()');page.get_by_text('工作流：Qwen Image',exact=True).wait_for()
     selector=page.get_by_label('執行位置',exact=True)
-    assert selector.locator('option').count()==6
+    assert selector.locator('option').count()==7
     selector.select_option(lane)
     page.wait_for_function('window.ComputePlacement.getState(document.querySelector("form")).eligible')
     page.evaluate('window.submitCompute()');page.get_by_text('生成中',exact=True).wait_for()

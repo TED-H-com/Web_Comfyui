@@ -225,16 +225,9 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
                                               'doll, plastic, airbrushed skin, overexposed, oversized eyes, '
                                               'huge eyes, giant eyes, juvenile face, child, bad anatomy, '
                                               'distorted fingers, text, logo, watermark, cropped head',
-                                  'width': 896,
-                                  'height': 1152,
                                   'steps': 36,
-                                  'cfg': 5.5,
-                                  'weight': 0.6,
                                   'batchSize': 2,
-                                  'seed': 2026102325,
-                                  'sampler': 'dpmpp_2m',
-                                  'scheduler': 'karras',
-                                  'aspect': '896x1152'},
+                                  'seed': 2026102325},
                       'prefill_en': {'positive': 'RAW candid close-up photograph of a 26-year-old adult '
                                                  'Taiwanese woman, natural expression, realistic brown eyes, '
                                                  'realistic human facial proportions, realistic adult face, '
@@ -248,16 +241,9 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
                                                  'eyes, huge eyes, giant eyes, juvenile face, child, bad '
                                                  'anatomy, distorted fingers, text, logo, watermark, cropped '
                                                  'head',
-                                     'width': 896,
-                                     'height': 1152,
                                      'steps': 36,
-                                     'cfg': 5.5,
-                                     'weight': 0.6,
                                      'batchSize': 2,
-                                     'seed': 2026102325,
-                                     'sampler': 'dpmpp_2m',
-                                     'scheduler': 'karras',
-                                     'aspect': '896x1152'},
+                                     'seed': 2026102325},
                       'inputs': [{'src': './assets/examples/cheer-face-reference.webp',
                                   'alt': '裁切後的臉部參考圖',
                                   'alt_en': 'Cropped face reference',
@@ -304,11 +290,11 @@ RECORDED_DEMOS = {'text2img': {'title': '生成原創成人應援角色',
                                              'alt_en': 'Portrait candidate 2 from the same recorded run'}],
                                  'run_id': 'cheer-instantid-v3'},
                       'note': '這是已在本機 RTX 5090 完成的實測記錄；此網站只重播成果，不會依你輸入即時生成。角色為原創虛構成年人。 '
-                              '保留模型原始候選，臉部細節與寫實度仍須自行挑選；沒有後製修臉。',
+                              '保留模型原始候選，臉部細節與寫實度仍須自行挑選；沒有後製修臉。 此示範由先前的 SDXL + InstantID 版本實測產生；目前的功能改用 Qwen 2.1，結果會不同。',
                       'note_en': 'Recorded on a local RTX 5090, not generated from your input on this '
                                  'website. The performer is an original fictional adult. These are '
                                  'unretouched model candidates; facial detail and realism still require '
-                                 'selection.'},
+                                 'selection. This example was recorded with the earlier SDXL + InstantID version; the feature now uses Qwen 2.1, so results will differ.'},
  'img2video': {'title': '走近鏡頭，揮手打招呼',
                'title_en': 'Walk toward the camera and wave hello',
                'prompt': 'The adult woman takes two small natural steps towards the camera, smiles brightly, '

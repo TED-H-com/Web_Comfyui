@@ -1,5 +1,6 @@
 """Topology, representative variants and privacy of static app diagrams."""
 import ast
+from collections import Counter
 import json
 from pathlib import Path
 import shutil
@@ -11,7 +12,7 @@ import pytest
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from scripts.app_graph_catalog import SOURCE_FILES, Source, graphs
+from scripts.app_graph_catalog import SOURCE_FILES, Source, angles_delegation, graphs
 from scripts.app_guide_catalog import catalog
 
 
@@ -205,3 +206,51 @@ def test_arbitrary_expression_calls_are_not_evaluated(tmp_path):
     source=Source(p)
     from scripts.app_graph_catalog import UNKNOWN
     assert source.value(ast.parse('X',mode='eval').body) is UNKNOWN
+
+
+def test_angles_diagram_matches_qwen_edit_and_has_bilingual_notes(registry):
+    output=graphs(ROOT,registry)
+    angles=output['character-angles']
+    edit=output['qwen21-edit']
+    assert angles['source']=='webui/server.py#qwen21_angles_prompt'
+    assert Counter(n['type'] for n in angles['nodes'])==Counter(n['type'] for n in edit['nodes'])
+    assert angles['notes']==[
+        '代表一張候選：每張候選各自以原始照片執行一次 Qwen 2.1 改圖，並加上自己的固定視角指令；不會串接前一張生成圖。',
+        '這是應用程式 builder 的連線，並非官方參考 JSON 的逐字複本。',
+    ]
+    assert angles['notes_en']==[
+        'Shows one candidate: each candidate runs one Qwen 2.1 edit on the original photo with its own fixed view instruction. A generated image is never chained into the next.',
+        'These are application builder connections, not a verbatim copy of the official reference JSON.',
+    ]
+
+
+def test_qwen_diagram_source_and_notes_remain_unchanged(registry):
+    output=graphs(ROOT,registry)
+    common='這是應用程式 builder 的連線，並非官方參考 JSON 的逐字複本。'
+    common_en='These are application builder connections, not a verbatim copy of the official reference JSON.'
+    expected={
+        'qwen21-edit':('代表分支：一張輸入圖片；實際改圖支援依序加入最多四張。',
+                       'Representative branch: one input image. Editing supports up to four images in sequence.'),
+        'qwen21-text2img':('文生圖分支：ResolutionSelector 決定空白 latent 尺寸。',
+                           'Text-to-image branch: ResolutionSelector determines the empty latent dimensions.'),
+    }
+    for name,(note,note_en) in expected.items():
+        graph=output[name]
+        assert graph['source']=='webui/qwen_image21.py#compile_prompt'
+        assert graph['notes']==[note,common]
+        assert graph['notes_en']==[note_en,common_en]
+
+
+def test_angles_delegation_accepts_real_server_without_execution():
+    angles_delegation(Source(ROOT/'webui/server.py'))
+
+
+@pytest.mark.parametrize('calls',[
+    "compile_qwen21_prompt(settings, {'image': face}, edit=False)",
+    "compile_qwen21_prompt(settings, {'image': face}, edit=True)\n    compile_qwen21_prompt(settings, {'image': face}, edit=True)",
+])
+def test_angles_delegation_rejects_changed_calls(tmp_path,calls):
+    path=tmp_path/'source.py'
+    path.write_text('def qwen21_angles_prompt(settings, face):\n    '+calls+'\n')
+    with pytest.raises(ValueError,match='character-angles Qwen edit delegation changed'):
+        angles_delegation(Source(path))

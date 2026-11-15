@@ -69,8 +69,9 @@ class ComputeWeb:
         from hosted_compute import HostedComputeService
         self.hosted = (server.get_hosted_compute_service() if hasattr(server, 'get_hosted_compute_service')
                        else HostedComputeService(self.colab.root.parent / 'hosted-compute'))
+        self.console = handler._provider_console()
         self.router = ComputeRouter(self.colab.root.parent / 'compute-routing.sqlite3', {
-            'local': ComputeAdapter(self.inspect_local, self.submit_local, self.status_local, self.cancel_local),
+            'local': ComputeAdapter(self.inspect_local, self.submit_local, self.status_local, self.cancel_local, recover=self.recover_local),
             'colab': ComputeAdapter(self.inspect_colab, self.submit_colab, self.status_colab, self.cancel_colab,
                                     recover=self.recover_colab),
             'autoip': ComputeAdapter(self.inspect_autoip, self.submit_autoip, self.status_autoip, recover=self.recover_autoip),
@@ -81,9 +82,29 @@ class ComputeWeb:
                 lambda owner, rid, p=provider: self.hosted.cancel(owner, p, rid),
                 recover=lambda owner, rid, p=provider: self.hosted.recover(owner, p, rid),
             ) for provider in ('comfy_cloud', 'runninghub')},
-        })
+        }, policy=lambda owner: self._routing_policy(owner), admission=self._admit)
+
+        from compute_parity.registration import register
+        register(self)
+
+    def _routing_policy(self, owner):
+        if owner != self.owner:
+            raise PermissionError('owner mismatch')
+        return self.console.snapshot()['preferences']
+
+    def _admit(self, owner, lane):
+        from provider_console import REASONS
+        reason = self.console.gate(lane, owner)
+        if reason:
+            raise ComputeRejected(REASONS.get(reason, '平台暫時不可用'), code=reason, status=409)
+
+    def _gate(self, owner, lane):
+        reason = self.console.gate(lane, owner)
+        return {'eligible':False, 'auto_eligible':False, 'reasons':[reason]} if reason else None
 
     def inspect_hosted(self, provider, owner, request, limits):
+        blocked = self._gate(owner, provider)
+        if blocked: return blocked
         try:
             self._feature(request)
         except ComputeRejected as error:
@@ -116,6 +137,8 @@ class ComputeWeb:
         return feature
 
     def inspect_local(self, owner, request, limits):
+        blocked = self._gate(owner, 'local')
+        if blocked: return blocked
         try:
             feature = self._feature(request)
         except ComputeRejected as error:
@@ -152,6 +175,8 @@ class ComputeWeb:
         return snapshot, sorted(accounts, key=lambda a: (-float(a.get('balance_compute_units') or 0), a['id']))
 
     def inspect_colab(self, owner, request, limits):
+        blocked = self._gate(owner, 'colab')
+        if blocked: return blocked
         try:
             self._feature(request)
         except ComputeRejected as error:
@@ -186,8 +211,30 @@ class ComputeWeb:
     def submit_local(self, owner, request_id, request, limits):
         result = self._run(request, 'local', request_id, limits)
         task_id = result.get('prompt_id') or result.get('promptId') or result.get('run_id')
-        return {'state': 'queued', 'downstream_id': task_id, 'recipe_id': 'local:' + request['featureId'],
+        receipt = {'state': 'queued', 'downstream_id': task_id, 'recipe_id': 'local:' + request['featureId'],
                 'recipe_label': '本機既有工作流程', 'provider_id': 'local', 'cancel_supported': True}
+        # Persist the original request -> product queue ID before returning to
+        # parity/routing. A lost caller response can recover without resubmission.
+        from compute_routing import _request_id
+        _request_id(request_id)
+        folder=self.colab.root.parent/'compute-local-dispatch'/hashlib.sha256(owner.encode()).hexdigest()
+        folder.mkdir(parents=True,exist_ok=True,mode=0o700)
+        fd,name=tempfile.mkstemp(dir=folder)
+        try:
+            with os.fdopen(fd,'w') as stream:
+                json.dump({'owner':owner,'request_id':request_id,'receipt':receipt},stream);stream.flush();os.fsync(stream.fileno())
+            os.replace(name,folder/(request_id+'.json'))
+        finally:Path(name).unlink(missing_ok=True)
+        return receipt
+
+    def recover_local(self, owner, request_id):
+        from compute_routing import _request_id
+        _request_id(request_id)
+        path=self.colab.root.parent/'compute-local-dispatch'/hashlib.sha256(owner.encode()).hexdigest()/(request_id+'.json')
+        try:record=json.loads(path.read_text())
+        except (OSError,ValueError):return None
+        if record.get('owner')!=owner or record.get('request_id')!=request_id:return None
+        return record['receipt']
 
     def _local_artifacts(self, files, task_id):
         artifacts = []
@@ -464,7 +511,14 @@ class ComputeWeb:
             direct = self._direct_local_result(task_id, owned_voice_run=run)
             if direct:
                 return direct
+        from quality_rejection import from_error
+        diagnostics=next((d for task in run.get('tasks',[]) if (d:=from_error(task.get('error')))),{})
+        if state=='failed' and diagnostics:return {'state':'quality_rejected','downstream_id':task_id,'diagnostics':diagnostics}
         return {'state': state, 'downstream_id': task_id}
+
+    def close_local_unknown(self,rid,body):
+        from compute_parity.local_closure import close
+        return close(self,rid,body)
 
     def status_local(self, owner, task_id):
         # These voice jobs run in the durable local orchestrator, never in
@@ -626,6 +680,8 @@ class ComputeWeb:
                                   code='input_validation_failed') from None
 
     def inspect_autoip(self, owner, request, limits):
+        blocked = self._gate(owner, 'autoip')
+        if blocked: return blocked
         try:
             if request.get('characterId'):
                 from provider_fabric.service import ProviderServiceError
@@ -752,9 +808,12 @@ class ComputeWeb:
     def _placement(self, body):
         if 'placement' in body:
             return body['placement']
-        return self.preferences.placement(self.owner, (body.get('request') or {}).get('featureId'))
+        prefs = self.console.snapshot()['preferences']
+        return prefs['feature_placements'].get((body.get('request') or {}).get('featureId'), prefs['default_placement'])
 
     def submit(self, body):
+        if not isinstance(body, dict) or set(body) - {'request_id','request','placement','limits'}:
+            raise ComputeRoutingError('請求只能指定自己的生成設定')
         # A replay without explicit placement keeps the original decision,
         # even if defaults changed since the first submission.
         placement = self._placement(body)
@@ -768,6 +827,8 @@ class ComputeWeb:
         return self.router.submit(self.owner, body.get('request_id'), body.get('request'), placement, body.get('limits'))
 
     def preview(self, body):
+        if not isinstance(body, dict) or set(body) - {'request_id','request','placement','limits'}:
+            raise ComputeRoutingError('請求只能指定自己的生成設定')
         request = body.get('request') or {}
         limits = body.get('limits') or {}
         result = self.router.preview(self.owner, request, self._placement(body), limits)
@@ -784,4 +845,5 @@ class ComputeWeb:
             _, warnings = normalise_autoip_intent(request['featureId'], settings)
             result['autoip_warnings'] = conversion_warnings + warnings
         except (ValueError, KeyError): pass
-        return result
+        from compute_parity.registration import annotate_preview
+        return annotate_preview(result, request)

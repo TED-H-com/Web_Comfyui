@@ -1,0 +1,10 @@
+{
+  "at": 1794400000.0,
+  "method": "synthetic fixture: provider GET response shapes; identifiers, hashes, sizes and times are made up",
+  "sources": [
+    "RunningHub /object_info /history /queue",
+    "Comfy Cloud /api/jobs and /workflow"
+  ],
+  "original_request": "00000000-0000-4000-8000-00000000d001",
+  "no_submissions": true
+}

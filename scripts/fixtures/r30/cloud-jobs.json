@@ -1,0 +1,14 @@
+{
+  "pagination": {
+    "has_more": false,
+    "limit": 100,
+    "offset": 0,
+    "total": 1
+  },
+  "jobs": [
+    {
+      "id": "00000000-0000-4000-8000-00000000c001",
+      "status": "completed"
+    }
+  ]
+}
