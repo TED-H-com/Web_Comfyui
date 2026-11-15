@@ -40,6 +40,8 @@ DOMAIN_EXEMPT_SLOTS = {
     'lipsync': {'voice'},
 }
 VOICE_FEATURES = {'voice-speak', 'voxcpm-tts', 'voice-batch', 'voice-clone'}
+PSEUDO_FEATURES = frozenset({'character-create', 'character-voice'})
+URL_ALIAS_PREFIX = 'https://video.example.com/'
 
 
 def _is_int(value: Any) -> bool:
@@ -158,6 +160,8 @@ def _validate_structure(data: dict, errors: list[str]) -> tuple[dict[str, dict],
         for field in ('thumb', 'poster', 'subject', 'url_alias', 'produced_by', 'transcript'):
             if not _is_opt_nonempty_str(mat[field]):
                 errors.append(f'material {mid}.{field} must be string or null')
+        if isinstance(mat['url_alias'], str) and not mat['url_alias'].startswith(URL_ALIAS_PREFIX):
+            errors.append(f'material {mid}.url_alias must start with {URL_ALIAS_PREFIX}')
         if mat['kind'] not in MEDIA_KINDS:
             errors.append(f'material {mid}.kind invalid: {mat["kind"]!r}')
         if mat['folder'] is not None and mat['folder'] not in FOLDERS:
@@ -246,15 +250,30 @@ def _validate_structure(data: dict, errors: list[str]) -> tuple[dict[str, dict],
         comp = case['comparison']
         if comp is not None and (not isinstance(comp, dict) or not _is_nonempty_str(comp.get('before'))):
             errors.append(f'case {cid}.comparison must be null or object with non-empty "before"')
+        elif comp is not None and isinstance(case['inputs'], dict) and comp['before'] not in case['inputs']:
+            errors.append(f'case {cid}.comparison.before {comp["before"]!r} is not an input slot of the case')
         for field in ('run_id', 'stand_in_for', 'note_zh', 'note_en', 'disclosure_zh', 'disclosure_en'):
             if not _is_opt_nonempty_str(case[field]):
                 errors.append(f'case {cid}.{field} must be non-empty string or null')
+        if case['kind'] != 'recorded' and case['run_id'] is not None:
+            errors.append(f'case {cid}.run_id must be null unless kind is recorded')
         if not _is_str_list(case['audio']):
             errors.append(f'case {cid}.audio must be list of strings')
         post = case['post']
         if post is not None:
             if not isinstance(post, dict) or not _is_nonempty_str(post.get('text_zh')) or not _is_nonempty_str(post.get('text_en')):
                 errors.append(f'case {cid}.post must be null or object with text_zh and text_en')
+
+    order_owner: dict[tuple[str, int], str] = {}
+    for cid, case in cases_by_id.items():
+        if case['display'] is True and _is_int(case['order']) and isinstance(case['feature_id'], str):
+            key = (case['feature_id'], case['order'])
+            if key in order_owner:
+                errors.append(
+                    f'case {cid}.order {case["order"]} duplicates case {order_owner[key]} in feature {case["feature_id"]!r}'
+                )
+            else:
+                order_owner[key] = cid
 
     return subjects_by_id, materials_by_id, cases_by_id
 
@@ -271,6 +290,9 @@ def _validate_assets(
 
     def check_file(owner: str, field: str, fname: str | None) -> None:
         if fname is None:
+            return
+        if isinstance(fname, str) and (fname in ('.', '..') or '/' in fname or '\\' in fname):
+            errors.append(f'{owner}.{field} "{fname}" must be a bare file name')
             return
         if fname not in assets:
             errors.append(f'{owner}.{field} "{fname}" is not in PUBLIC_DEMO_ASSETS')
@@ -351,6 +373,8 @@ def validate_demo_set(
                 errors.append(f'case {cid}.subjects references unknown subject {sid!r}')
         inputs = case.get('inputs', {})
         feature = features_by_id.get(case.get('feature_id'))
+        if features_by_id and feature is None and case.get('feature_id') not in PSEUDO_FEATURES:
+            errors.append(f'case {cid}.feature_id {case.get("feature_id")!r} is not a pseudo-feature or an app_guide feature')
         uploads_by_id = (
             {u['id']: u for u in feature.get('uploads', []) if isinstance(u, dict) and 'id' in u}
             if feature is not None
@@ -404,14 +428,23 @@ def validate_demo_set(
                     errors.append(
                         f'recorded case {cid} run {run_id} feature_id {run.get("feature_id")!r} != {case.get("feature_id")!r}'
                     )
-                run_files = {o.get('file') for o in run.get('outputs', []) if isinstance(o, dict) and o.get('file')}
+                run_outputs = {o['file']: o for o in run.get('outputs', []) if isinstance(o, dict) and o.get('file')}
                 if isinstance(outputs, list):
                     for idx, out in enumerate(outputs):
                         if not isinstance(out, dict):
                             continue
                         ofile = out.get('file')
-                        if ofile not in run_files:
+                        if ofile not in run_outputs:
                             errors.append(f'recorded case {cid}.outputs[{idx}] file {ofile!r} not produced by run {run_id}')
+                        else:
+                            run_sha = run_outputs[ofile].get('sha256')
+                            passet = provenance_assets.get(ofile)
+                            if passet is None:
+                                errors.append(f'recorded case {cid}.outputs[{idx}] file {ofile!r} is not a provenance asset')
+                            elif run_sha not in {passet.get('sha256'), passet.get('source_sha256')} - {None}:
+                                errors.append(
+                                    f'recorded case {cid}.outputs[{idx}] run {run_id} sha256 does not match provenance asset {ofile!r}'
+                                )
                         for aux_key in ('poster', 'thumb'):
                             aux = out.get(aux_key)
                             if aux is None:

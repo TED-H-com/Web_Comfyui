@@ -38,7 +38,7 @@ def _prepared_case(
     audio=None,
     outputs=None,
     post=None,
-    order=1,
+    order=900,
 ):
     audio_list = list(audio) if audio is not None else []
     return {
@@ -415,7 +415,7 @@ def _blend_case(data: dict) -> dict:
     return next(c for c in data['cases'] if c['id'] == 'bl-qingqing-old-street')
 
 
-def test_placeholder_demo_set_passes_structural_validation():
+def test_final_demo_set_passes_full_validation():
     ctx = _real_inputs()
     data = demo_set.load_demo_set(ROOT)
     assert data['status'] == 'final'
@@ -427,6 +427,84 @@ def test_placeholder_demo_set_passes_structural_validation():
         examples_dir=ctx['examples_dir'],
         app_guide=None,
     )
+
+
+def test_placeholder_demo_set_passes_structural_validation():
+    ctx = _real_inputs()
+    data = copy.deepcopy(demo_set.load_demo_set(ROOT))
+    hidden = 0
+    for case in data['cases']:
+        if case['feature_id'] == 'text2img':
+            case['display'] = False
+            case['order'] = None
+            hidden += 1
+    assert hidden > 0
+    assert demo_set.validate_demo_set(data, **ctx) == ["final status missing displayed case for demo 'text2img'"]
+    data['status'] = 'placeholder'
+    assert demo_set.validate_demo_set(data, **ctx) == []
+    assert demo_set.validate_demo_set(data, **dict(ctx, app_guide=None)) == []
+
+
+def test_old_set_removal_counts():
+    ctx = _real_inputs()
+    data = demo_set.load_demo_set(ROOT)
+    prov = ctx['provenance']
+    recorded_runs = {case['run_id'] for case in data['cases'] if case['kind'] == 'recorded'}
+    assert {row['id'] for row in prov['runs']} == recorded_runs | {'stadium-ground-v2', 'cheer-subject-blend-v4'}
+    assert len(prov['runs']) == 71
+    assert len(prov['assets']) == 203
+    published = set(public_demo_assets.PUBLIC_DEMO_ASSETS)
+    entries = {path.name for path in (ROOT / 'webui/docs/examples').iterdir()}
+    assert len(entries) == 204
+    assert entries == published | {'provenance.json'}
+    assert {row['file'] for row in prov['assets']} == published
+
+
+def test_case_feature_ids_must_be_known():
+    ctx = _real_inputs()
+    base = demo_set.load_demo_set(ROOT)
+    bad = copy.deepcopy(base)
+    prepared = next(case for case in bad['cases'] if case['kind'] == 'prepared' and case['display'])
+    prepared['feature_id'] = 'bogus-feature'
+    assert any(
+        "feature_id 'bogus-feature' is not a pseudo-feature or an app_guide feature" in err
+        for err in demo_set.validate_demo_set(bad, **ctx)
+    )
+    assert not any(
+        'is not a pseudo-feature' in err
+        for err in demo_set.validate_demo_set(bad, **dict(ctx, app_guide=None))
+    )
+
+
+def test_structural_order_alias_comparison_run_id_and_bare_names():
+    ctx = _real_inputs()
+    base = demo_set.load_demo_set(ROOT)
+    by_feature: dict[str, list[dict]] = {}
+    for case in base['cases']:
+        if case['display']:
+            by_feature.setdefault(case['feature_id'], []).append(case)
+    first, second = next(cases for cases in by_feature.values() if len(cases) > 1)[:2]
+
+    dup_order = copy.deepcopy(base)
+    next(case for case in dup_order['cases'] if case['id'] == second['id'])['order'] = first['order']
+    assert any(f'duplicates case {first["id"]}' in err for err in demo_set.validate_demo_set(dup_order, **ctx))
+
+    bad_alias = copy.deepcopy(base)
+    next(mat for mat in bad_alias['materials'] if mat['url_alias'])['url_alias'] = 'https://media.example.org/clip.mp4'
+    assert any('url_alias must start with' in err for err in demo_set.validate_demo_set(bad_alias, **ctx))
+
+    bad_comparison = copy.deepcopy(base)
+    next(case for case in bad_comparison['cases'] if case['comparison'])['comparison'] = {'before': 'no_such_slot'}
+    assert any("comparison.before 'no_such_slot'" in err for err in demo_set.validate_demo_set(bad_comparison, **ctx))
+
+    bad_run_id = copy.deepcopy(base)
+    next(case for case in bad_run_id['cases'] if case['kind'] == 'prepared')['run_id'] = _blend_case(base)['run_id']
+    assert any('run_id must be null unless kind is recorded' in err for err in demo_set.validate_demo_set(bad_run_id, **ctx))
+
+    for name in ('people/' + base['materials'][0]['file'], '..', 'a\\b.webp'):
+        bad_name = copy.deepcopy(base)
+        bad_name['materials'][0]['file'] = name
+        assert any('must be a bare file name' in err for err in demo_set.validate_demo_set(bad_name, **ctx)), name
 
 
 def test_rule1_schema_status_uniqueness_keys_text_and_order():
@@ -581,6 +659,21 @@ def test_rule4_recorded_case_provenance_checks():
             asset['derived_from'] = ['iv-qingqing-cafe.mp4']
     assert any('derived_from' in err for err in demo_set.validate_demo_set(
         base, assets=ctx['assets'], provenance=bad_poster, examples_dir=ctx['examples_dir'], app_guide=ctx['app_guide']
+    ))
+
+    bad_sha = copy.deepcopy(ctx['provenance'])
+    for row in bad_sha['runs']:
+        if row['id'] == _blend_case(base)['run_id']:
+            row['outputs'][0]['sha256'] = '0' * 64
+    assert any('sha256 does not match provenance asset' in err for err in demo_set.validate_demo_set(
+        base, assets=ctx['assets'], provenance=bad_sha, examples_dir=ctx['examples_dir'], app_guide=ctx['app_guide']
+    ))
+
+    no_asset = copy.deepcopy(ctx['provenance'])
+    blend_file = _blend_case(base)['outputs'][0]['file']
+    no_asset['assets'] = [row for row in no_asset['assets'] if row['file'] != blend_file]
+    assert any('is not a provenance asset' in err for err in demo_set.validate_demo_set(
+        base, assets=ctx['assets'], provenance=no_asset, examples_dir=ctx['examples_dir'], app_guide=ctx['app_guide']
     ))
 
 
