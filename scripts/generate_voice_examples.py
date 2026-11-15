@@ -64,6 +64,74 @@ CASES = [('warm-welcome',
   'starts here.',
   427)]
 CLONE_TEXT = "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！"
+DEMO2_CASES = [('qingqing-hello',
+  '晴晴自我介紹',
+  'A cheerful adult woman in her mid-twenties, bright warm Taiwan Mandarin, lively and friendly, clear '
+  'mid-high voice.',
+  '嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！',
+  311),
+ ('zhiyuan-hello',
+  '志遠自我介紹',
+  'A calm adult man in his early thirties, warm low-mid baritone, relaxed natural Taiwan Mandarin, steady '
+  'unhurried pacing.',
+  '我是志遠，平常在山上拍照。好的畫面，要耐心等光線剛剛好的那一刻。',
+  412),
+ ('xingyu-hello',
+  '星羽登場',
+  'An energetic adult woman in her early twenties, sparkling playful Taiwan Mandarin like an animation '
+  'voice actress, bright crisp high voice.',
+  '星羽登場！準備好了嗎？跟我一起飛到雲上的浮島去冒險吧！',
+  523),
+ ('chenyi-hello',
+  '辰翼登場',
+  'A confident adult man in his late twenties, deep resonant cool voice like an animation hero, clear '
+  'Taiwan Mandarin, slow dramatic delivery.',
+  '我是辰翼。這座城市的夜晚，由我來守護。',
+  634),
+ ('qingqing-english',
+  '晴晴英文',
+  'A cheerful adult woman in her mid-twenties, bright friendly American English with a light playful tone.',
+  "Hi, I'm Qingqing! The sun is out, so let's go shoot some new photos together!",
+  745),
+ ('zhiyuan-english',
+  '志遠英文',
+  'A calm adult man in his early thirties, warm baritone, relaxed natural American English, steady pacing.',
+  "Hi, I'm Zhiyuan. I photograph mountains, and the best shots come to those who wait for the light.",
+  856),
+ ('male-announcement',
+  '男聲廣播',
+  'A mature adult male announcer in his forties, rich low voice, composed clear Taiwan Mandarin, measured '
+  'pacing and precise diction.',
+  '各位旅客您好，本班列車即將抵達山城車站，請帶好隨身物品，準備下車。',
+  967),
+ ('mountain-slide-one',
+  '山景簡報第一頁',
+  'A mature adult male narrator in his forties, rich low voice, composed documentary-style Taiwan '
+  'Mandarin, measured pacing.',
+  '第一頁：清晨的山谷還在沉睡，雲海靜靜地鋪在稜線下方。',
+  981),
+ ('mountain-slide-two',
+  '山景簡報第二頁',
+  'A mature adult male narrator in his forties, rich low voice, composed documentary-style Taiwan '
+  'Mandarin, measured pacing.',
+  '第二頁：第一道陽光越過山頭，把整片雲海染成金色。',
+  981),
+ ('mountain-slide-three',
+  '山景簡報第三頁',
+  'A mature adult male narrator in his forties, rich low voice, composed documentary-style Taiwan '
+  'Mandarin, measured pacing.',
+  '第三頁：霧氣慢慢散開，山路上的旅人準備出發，新的一天開始了。',
+  981)]
+DEMO2_CLONES = [('qingqing-clone',
+  '晴晴聲音克隆',
+  'qingqing-hello',
+  '這段話是用晴晴的聲音樣本克隆出來的：換上全新的台詞，聽起來還是同一個人。',
+  979),
+ ('zhiyuan-clone',
+  '志遠聲音克隆',
+  'zhiyuan-hello',
+  '這句話是用志遠的聲音樣本克隆出來的：同一個聲音，說出全新的內容。',
+  978)]
 
 
 def sha256(path):
@@ -78,10 +146,12 @@ def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--model", type=Path, required=True, help="Explicit local base VoxCPM2 directory")
     p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--set", choices=("original", "demo2"), default="original")
     p.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     p.add_argument("--threads", type=int, default=8)
-    p.add_argument("--only", choices=[row[0] for row in CASES] + ["synthetic-clone"])
-    p.add_argument("--clone", action="store_true", help="Also clone the generated warm-welcome voice")
+    p.add_argument("--only", choices=[row[0] for row in CASES] + ["synthetic-clone"]
+                   + [row[0] for row in DEMO2_CASES] + [row[0] for row in DEMO2_CLONES])
+    p.add_argument("--clone", action="store_true", help="Also clone the generated reference voice")
     return p
 
 
@@ -92,13 +162,33 @@ def main(argv=None):
     for name in ("model.safetensors", "audiovae.pth", "config.json"):
         if not (args.model / name).is_file():
             raise ValueError("The explicit model directory is missing a required base-model file")
+    if args.set == "original":
+        cases = CASES
+        clones = [("synthetic-clone", "合成聲音延續", "warm-welcome", CLONE_TEXT, 622)]
+    else:
+        cases = DEMO2_CASES
+        clones = DEMO2_CLONES
+    valid_only = {row[0] for row in cases} | {row[0] for row in clones}
+    if args.only and args.only not in valid_only:
+        raise ValueError("--only is not part of the selected set")
+    design_rows = [row for row in cases if not args.only or args.only == row[0]]
+    if args.set == "original":
+        clone_rows = list(clones) if (args.clone or args.only == "synthetic-clone") else []
+    elif not args.only:
+        clone_rows = list(clones) if args.clone else []
+    elif args.only in {row[0] for row in clones}:
+        clone_rows = [row for row in clones if row[0] == args.only]
+    elif args.clone:
+        clone_rows = [row for row in clones if row[2] == args.only]
+    else:
+        clone_rows = []
+    targets = [row[0] for row in design_rows] + [row[0] for row in clone_rows]
     receipt_path = args.output / "receipt.json"
     previous = None
-    targets = ([args.only] if args.only else [row[0] for row in CASES])
-    if args.clone and "synthetic-clone" not in targets:
-        targets.append("synthetic-clone")
     if receipt_path.exists():
         previous = json.loads(receipt_path.read_text())
+        if previous.get("set", "original") != args.set:
+            raise ValueError("Existing output receipt belongs to another set")
         if previous.get("engine") != "VoxCPM2" or not args.only:
             raise ValueError("Existing output receipt: use an explicit --only rerun for an owned sample")
         for sample in previous.get("samples", []):
@@ -110,6 +200,23 @@ def main(argv=None):
     for slug in targets:
         if (args.output / (slug + ".wav")).exists() and slug not in owned:
             raise ValueError("Refusing to overwrite an unrelated audio file")
+    case_texts = {row[0]: row[3] for row in cases}
+
+    def resolve_reference(samples, reference_slug):
+        reference = args.output / f"{reference_slug}.wav"
+        original = next((s for s in samples if s.get("id") == reference_slug), None)
+        if (not original or original.get("file") != reference.name
+                or not reference.is_file() or sha256(reference) != original.get("sha256")):
+            raise ValueError(f"Clone requires this script's generated {reference_slug} and matching receipt")
+        if original.get("text") != case_texts[reference_slug]:
+            if args.set == "original":
+                raise ValueError("Reference transcript does not match the original demo")
+            raise ValueError(f"Clone requires this script's generated {reference_slug} and matching receipt")
+        return reference, original
+
+    for _, _, reference_slug, _, _ in clone_rows:
+        if reference_slug not in targets:
+            resolve_reference((previous or {}).get("samples", []), reference_slug)
     import numpy as np
     import soundfile as sf
     import torch
@@ -123,6 +230,7 @@ def main(argv=None):
                     denoise=False, retry_badcase=False, max_len=768)
     receipt = {
         "engine": "VoxCPM2", "mode": "text-only voice design",
+        **({"set": "demo2"} if args.set == "demo2" else {}),
         "model_id": MODEL_ID, "reviewed_model_revision": MODEL_REVISION,
         "reviewed_code_revision": CODE_REVISION,
         "model_sha256": {name: sha256(args.model / name) for name in
@@ -158,19 +266,12 @@ def main(argv=None):
         receipt_path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n")
         print(json.dumps(sample, ensure_ascii=False), flush=True)
 
-    for slug, label, description, text, seed in CASES:
-        if args.only and args.only != slug:
-            continue
+    for slug, label, description, text, seed in design_rows:
         save(slug, label, text, f"({description}){text}", seed,
              {"voice_description": description, "mode": "text-only voice design"})
-    if args.clone or args.only == "synthetic-clone":
-        reference = args.output / "warm-welcome.wav"
-        original = next((s for s in receipt["samples"] if s["id"] == "warm-welcome"), None)
-        if not original or not reference.is_file() or sha256(reference) != original["sha256"]:
-            raise ValueError("Clone requires this script's generated warm-welcome and matching receipt")
-        if original["text"] != CASES[0][3]:
-            raise ValueError("Reference transcript does not match the original demo")
-        save("synthetic-clone", "合成聲音延續", CLONE_TEXT, CLONE_TEXT, 622,
+    for slug, label, reference_slug, text, seed in clone_rows:
+        reference, original = resolve_reference(receipt["samples"], reference_slug)
+        save(slug, label, text, text, seed,
              {"mode": "synthetic-reference cloning", "reference_file": reference.name,
               "reference_sha256": original["sha256"], "reference_transcript": original["text"]},
              prompt_wav_path=str(reference), prompt_text=original["text"], reference_wav_path=str(reference))

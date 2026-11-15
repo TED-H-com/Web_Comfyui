@@ -1,5 +1,6 @@
-# Original synthetic female voice examples
+# Original synthetic voice examples
 
+In the original set (`--set original`, the default),
 `scripts/generate_voice_examples.py` replays eight short voice-design clips and
 an optional synthetic-reference continuation. All use **one engine: VoxCPM2**.
 They are not examples of BreezyVoice, F5, or another backend. The descriptions
@@ -13,6 +14,33 @@ consistent speaker. The optional clone instead uses the script's own generated
 `warm-welcome.wav` as both reference and continuation prompt, with its exact
 transcript and a verified receipt hash. No real person's recordings, private
 presets, custom LoRA, API keys, or cloud services are used.
+
+## Closed-loop demo voices (--set demo2)
+
+With `--set demo2`, `scripts/generate_voice_examples.py` replays ten
+voice-design clips and two synthetic-reference continuations using the same
+VoxCPM2 engine and settings. The voices are adult women and men for the
+fictional demo subjects 晴晴, 志遠, 星羽 and 辰翼; there are two English
+greetings (`qingqing-english` and `zhiyuan-english`) and a male station
+announcement (`male-announcement`). The three mountain slides
+(`mountain-slide-one`, `mountain-slide-two`, and `mountain-slide-three`) share
+one description and one seed (`981`). Each clone (`qingqing-clone` and
+`zhiyuan-clone`) uses the script's own generated hello clip (`qingqing-hello.wav`
+or `zhiyuan-hello.wav`) as reference, with its exact transcript and its receipt
+hash.
+
+```sh
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+python scripts/generate_voice_examples.py \
+  --model /explicit/path/to/base/VoxCPM2 --output /explicit/output/directory \
+  --set demo2 --device cpu --threads 8 --clone
+```
+
+The `--set demo2` tracks have the same validation limits as the original set:
+focused tests check CLI input boundaries and hashes without loading a model,
+recorded outputs receive signal checks and automated transcription review, and
+listening quality, naturalness, distinct voice identities, and Taiwanese accent
+are not established by automated ASR or by a successful render.
 
 ## Reproduction
 
@@ -57,8 +85,12 @@ or a Taiwanese accent. A successful render does not prove those qualities.
 
 ## 中文說明
 
-這組範例都是 VoxCPM2 原創成年女性合成聲音，不是多個不同引擎。
+原始組合（`--set original`）都是 VoxCPM2 原創成年女性合成聲音，不是多個不同引擎。
 中文提示要求自然台灣華語，包含迎賓、遊戲主持、故事、播報與三頁簡報；
 另有英文迎賓。三頁簡報使用相同描述與各自記錄的種子，但不保證聲音身分完全一致。
 可選的聲音延續只使用本程式剛生成的迎賓音訊，不使用私人或真人錄音。
-請實際試聽確認口音與音質；自動轉錄只能協助檢查內容。
+閉環示範語音組合（`--set demo2`）則包含十段聲音設計與兩段合成參考延續，
+涵蓋晴晴、志遠、星羽與辰翼四位虛構示範角色的成年男女聲、兩段英文問候、男聲車站廣播，
+以及共用同一描述與同一個種子的三頁山景簡報；兩段聲音克隆分別使用本程式生成的自我介紹音檔、
+原始逐字稿與收據雜湊作為參考。
+兩組範例的驗證限制相同：請實際試聽確認口音與音質；自動轉錄只能協助檢查內容。
