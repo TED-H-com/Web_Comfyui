@@ -71,30 +71,51 @@ def test_prepared_voice_forms_and_selection(tmp_path):
         executable = shutil.which('chromium') or shutil.which('google-chrome')
         with driver.chromium.launch(executable_path=executable, args=['--no-sandbox', '--disable-dev-shm-usage']) as browser:
             page = browser.new_page()
-            page.set_content('<div id="workspace"><section class="feature-panel"><button data-guide-feature="voice-library"></button><div class="voice-lib"><button>Upload</button></div></section></div><div id="sheetLayer"></div>')
+            html = '<div id="workspace"><section class="feature-panel"><button data-guide-feature="voice-library"></button><div class="voice-lib"><button>Upload</button></div></section></div><div id="sheetLayer"></div>'
+            page.route('http://127.0.0.1/**', lambda route: route.fulfill(status=200, content_type='text/html', body=html) if route.request.url == 'http://127.0.0.1/demo/' else route.fulfill(status=200, content_type='application/octet-stream', body=b''))
+            page.goto('http://127.0.0.1/demo/')
             page.evaluate('''() => {
               window.WebComfyI18n={language:'zh',translate(){}};
               window.WebComfyExplorers={demoContent(){const node=document.createElement('div');node.demo={reset(){},dispose(){},start(){return Promise.resolve(true);}};return node;}};
             }''')
+            page.add_script_tag(path=str(ROOT / 'webui/docs/demo-drive.js'))
+            page.add_script_tag(path=str(ROOT / 'webui/docs/demo-cases.js'))
             page.add_script_tag(path=str(ROOT / 'webui/docs/tour.js'))
             page.evaluate('''() => {
-              const tracks=[{src:'/soft.wav',title:'溫柔女聲',title_en:'Soft female voice',transcript:'第一段原始旁白',transcript_en:'First sample'}, {src:'/bright.wav',title:'明亮女聲',title_en:'Bright female voice',transcript:'第二段原始旁白',transcript_en:'Second sample'}];
-              const demo={prompt:'prepared example',evidence:{kind:'prepared-example'},output:{kind:'audio',audio_tracks:tracks}};
-              WebComfyTour.install({features:[{id:'voice-library'},{id:'voice-batch'},{id:'voice-clone',fields:[{id:'sampleText',type:'textarea'}]}],demos:{'voice-library':{...demo,prefill:{name:'Demo voice',source:'Prepared',transcript:'Sample transcript'}},'voice-batch':{...demo,prefill:{text:'Part one\\n\\nPart two\\n\\nPart three'}},'voice-clone':demo}});
+              const demoSet = {
+                subjects: [{id:'sub1', character_id:'sub1', name_zh:'小晴', name_en:'Qing', listed:true, reference_images:[], voice:'v1'}],
+                materials: [
+                  {id:'v1', kind:'audio', file:'examples/v1.wav', label_zh:'溫柔女聲', label_en:'Soft voice', gender:'female', subject:'sub1', library:true, folder:'voices', transcript:'第一段原始旁白', transcript_en:'First sample'},
+                  {id:'v2', kind:'audio', file:'examples/v2.wav', label_zh:'明亮男聲', label_en:'Bright voice', gender:'male', subject:null, library:true, folder:'voices', transcript:'第二段原始旁白', transcript_en:'Second sample'}
+                ],
+                cases: [
+                  {id:'vc1', feature_id:'voice-clone', order:1, display:true, kind:'prepared', label_zh:'溫柔', label_en:'Soft', inputs:{voice:'v1'}, settings:{speech:'第一段重說'}, result:{kind:'audio', files:['examples/out1.wav']}},
+                  {id:'vc2', feature_id:'voice-clone', order:2, display:true, kind:'prepared', label_zh:'明亮', label_en:'Bright', inputs:{voice:'v2'}, settings:{speech:'第二段重說'}, result:{kind:'audio', files:['examples/out2.wav']}},
+                  {id:'vs1', feature_id:'voice-speak', order:1, display:true, kind:'prepared', label_zh:'說話', label_en:'Speak', inputs:{}, settings:{voiceId:'v1', sampleText:'你好'}, result:{kind:'audio', files:['examples/out3.wav']}}
+                ]
+              };
+              const demo={prompt:'prepared example',evidence:{kind:'prepared-example'},output:{kind:'audio',audio_tracks:[]}};
+              const app={demo_set:demoSet, demo_runs:{}, features:[{id:'voice-library'},{id:'voice-batch'},{id:'voice-clone',fields:[{id:'speech',type:'textarea'}]},{id:'voice-speak'}], demos:{'voice-library':demo,'voice-batch':{...demo,prefill:{text:'Part one\\n\\nPart two\\n\\nPart three'}},'voice-clone':demo}};
+              WebComfyDemoDrive.install(app);
+              WebComfyDemoCases.install(app);
+              WebComfyTour.install(app);
             }''')
             assert page.locator('.voice-lib').count() == 0
-            assert page.locator('form').count() == 1
-            assert page.locator('[name=name]').input_value() == 'Demo voice'
-            page.evaluate("WebComfyTour.start(document.querySelector('form'))")
-            page.locator('[data-voice-actions] button').nth(3).click()
-            assert page.evaluate('location.hash') == '#/studio/voice-clone'
-            page.evaluate('''() => {document.getElementById('workspace').innerHTML='<section class="feature-panel"><button data-guide-feature="voice-clone"></button><form><label data-field-id="sampleText"><textarea data-field-id="sampleText"></textarea></label><button type="submit">Generate</button></form></section>';}''')
-            page.wait_for_selector('[data-demo-voice-selector]')
-            assert page.locator('[data-demo-voice-selector]').input_value() == '1'
-            assert page.locator('textarea[data-field-id=sampleText]').input_value() == '第二段原始旁白'
-            assert page.locator('audio').get_attribute('src') == '/bright.wav'
-            page.locator('[data-demo-voice-selector]').select_option('0')
-            assert page.locator('textarea[data-field-id=sampleText]').input_value() == '第一段原始旁白'
+            assert page.locator('form[data-docs-voice-form="voice-library"]').count() == 1
+            assert page.locator('form label[data-upload-slot="voice"]').count() == 1
+            assert page.locator('form .generate-btn').count() == 0
+            assert page.locator('[data-voice-actions]').count() == 0
+            assert page.locator('.demo-voice-library .demo-voice-card').count() == 2
+            assert '第二段原始旁白' in page.locator('.demo-voice-library').inner_text()
+            page.locator('.demo-voice-card').nth(1).locator('a[href^="#/studio/voice-clone"]').click()
+            assert page.evaluate('location.hash') == '#/studio/voice-clone?case=vc2'
+            page.evaluate('''() => {
+              document.getElementById('workspace').innerHTML='<section class="feature-panel"><button data-guide-feature="voice-clone"></button><form><label data-upload-slot="voice"><input type="file" name="voice"></label><label data-field-id="speech"><textarea data-field-id="speech"></textarea></label><button type="submit">Generate</button></form></section>';
+            }''')
+            page.wait_for_selector('.demo-case-strip button', timeout=5000)
+            assert page.locator('[data-demo-voice-selector]').count() == 0
+            assert page.locator('form').get_attribute('data-demo-case') == 'vc2'
+            assert page.locator('textarea[data-field-id=speech]').input_value() == '第二段重說'
             page.evaluate('''() => {document.getElementById('workspace').innerHTML='<section class="feature-panel"><button data-guide-feature="voice-batch"></button><div class="voice-batch-page">Native batch</div></section>';}''')
             page.wait_for_selector('[data-docs-voice-form=voice-batch]')
             assert page.locator('.voice-batch-page').count() == 0

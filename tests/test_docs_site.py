@@ -294,8 +294,9 @@ def test_static_shell_preserves_app_navigation_and_loads_adapter_first(source, t
     script_paths = [urlsplit(url).path for url in parsed.scripts]
     assert script_paths[0] == '../assets/docs.js'
     assert script_paths[1] == '../assets/demo-drive.js'
-    assert script_paths[2:6] == ['../assets/explorers.js', '../assets/hardware.js', '../assets/character-session.js', '../assets/tour.js']
-    assert script_paths[6:] == [urlsplit(url).path.replace('/static/', '../assets/') for url in original.scripts]
+    assert script_paths[2] == '../assets/demo-cases.js'
+    assert script_paths[3:7] == ['../assets/explorers.js', '../assets/hardware.js', '../assets/character-session.js', '../assets/tour.js']
+    assert script_paths[7:] == [urlsplit(url).path.replace('/static/', '../assets/') for url in original.scripts]
     for url in parsed.scripts:
         asset = output / 'demo' / urlsplit(url).path
         assert urlsplit(url).query == 'v=' + hashlib.sha256(asset.read_bytes()).hexdigest()[:16]
@@ -478,6 +479,32 @@ def test_demo_set_is_embedded_and_validated_during_build(source, tmp_path, capsy
     app = read_json(output / 'app-guide.json')
     assert app['demo_set'] == read_json(source / 'webui/docs/demo-set.json')
     assert app['demo_run_dates']['cheer-subject-blend-v4'] == '2026-10-22T21:00:02.032000+00:00'
+
+    recorded_ids = {
+        c['run_id']
+        for c in app['demo_set']['cases']
+        if c['kind'] == 'recorded' and c.get('run_id')
+    }
+    assert set(app['demo_runs']) == recorded_ids
+    prov = read_json(source / 'webui/docs/examples/provenance.json')
+    runs_by_id = {r['id']: r for r in prov['runs']}
+    for rid, entry in app['demo_runs'].items():
+        raw = runs_by_id[rid]
+        assert set(entry) == {
+            'duration_seconds',
+            'executed_at',
+            'comfyui_version',
+            'inputs',
+            'settings',
+            'adjustments',
+            'workflow_sha256',
+        }
+        assert 'prefix' not in entry['settings']
+        assert entry['duration_seconds'] == raw['duration_seconds']
+        assert entry['executed_at'] == raw['executed_at']
+        assert entry['comfyui_version'] == raw['comfyui_version']
+        assert entry['workflow_sha256'] == raw['workflow']['sha256']
+        assert entry['adjustments'] == list(raw.get('adjustments') or [])
 
     bad_path = source / 'webui/docs/demo-set.json'
     bad_data = read_json(bad_path)
