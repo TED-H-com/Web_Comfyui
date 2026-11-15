@@ -96,6 +96,8 @@
       case '/api/personas': return reply({personas: []});
       case '/api/voice-batches': return reply({batches: [], items: []});
       case '/api/workflow-library': return reply(workflows);
+      case '/api/crawl-videos': return reply({ok: true, videos: []});
+      case '/api/google/status': return reply({configured: true, connected: false});
     }
     if (url.href === new URL('catalog.json', base).href) return reply(workflows);
     if (url.href === new URL('app-guide.json', base).href) return reply(registry);
@@ -249,7 +251,7 @@
   }
   window.WebComfyDocs = {
     ready, openFeature, openGraph, openHelp, unknownRequests,
-    renderCharacterRoute: (route, hooks) => window.WebComfyCharacterSession?.render(route, hooks),
+    renderCharacterRoute: (route, hooks) => Boolean(window.WebComfyDemoDrive?.renderManage(route, hooks) || window.WebComfyCharacterSession?.render(route, hooks)),
     completeCharacter: character => window.completeDocumentationCharacter(character),
     createCharacterDemo() { location.hash = '#/characters'; openFeature('character-create'); },
     featureButton(id) {
@@ -268,19 +270,28 @@
   }, true);
   document.addEventListener('click', event => {
     const target = event.target.closest('button,input,a');
-    if (!target || target.closest('[data-docs-interactive="true"],.sheet-layer .workflow-details')) return;
+    if (!target) return;
+    if (target.matches('input[type=file]')) {
+      event.preventDefault();event.stopImmediatePropagation();
+      if (!window.WebComfyDemoDrive?.openFromFileInput(target)) window.WebComfyDemoDrive?.toast('refuse.drop');
+      return;
+    }
+    if (target.closest('[data-docs-interactive="true"],.sheet-layer .workflow-details')) return;
     if (target.closest(computeScreens) && !target.matches('input[type=password],input[type=file]')) return;
     if (target.matches('a[href="/admin"]') || (target.matches('button') && ['登出', 'Sign out', 'Log out'].includes(target.textContent.trim()))) {
       event.preventDefault();event.stopImmediatePropagation();openHelp(target);return;
     }
-    if (target.matches('input[type=file]') && target.closest('[data-demo-id]')) return;
-    if (target.matches('input[type=file],input[type=password],button[type=submit],.generate-btn,.assist-btn')) {
+    if (target.matches('input[type=password],button[type=submit],.generate-btn,.assist-btn')) {
       event.preventDefault();event.stopImmediatePropagation();
       const form = target.closest('[data-demo-id]');
       if (form && target.matches('button[type=submit],.generate-btn')) window.WebComfyTour.start(form); else explainAction(target);
     }
   }, true);
-  document.addEventListener('drop', event => {event.preventDefault();event.stopImmediatePropagation();if (!window.WebComfyTour?.handleDrop(event)) explainAction(event.target);}, true);
+  document.addEventListener('change', event => {
+    if (event.target?.matches?.('input[type=file]')) {event.target.value = '';event.stopImmediatePropagation();}
+  }, true);
+  document.addEventListener('dragover', event => {event.preventDefault();}, true);
+  document.addEventListener('drop', event => {event.preventDefault();event.stopImmediatePropagation();window.WebComfyDemoDrive?.toast('refuse.drop');}, true);
   document.addEventListener('beforeinput', event => {if(event.target.matches('input[type=password]')) {event.preventDefault();event.stopImmediatePropagation();}}, true);
   const disableSecrets = () => {
     const placeholder = window.WebComfyI18n?.t('說明站不接受金鑰', 'Keys are not accepted on the documentation site') || '說明站不接受金鑰';
@@ -322,6 +333,7 @@
     window.WebComfyI18n?.register({...registry.translations, '示範角色': 'Demo characters', '只保留在本頁記憶體，重新整理後清除。': 'Kept in page memory only; cleared on refresh.'});
     const requestedLanguage = new URLSearchParams(location.search).get('lang');
     if (['en', 'zh-Hant'].includes(requestedLanguage)) window.WebComfyI18n?.setLanguage(requestedLanguage);
+    window.WebComfyDemoDrive?.install(registry);
     window.WebComfyHardware?.install(registry);
     window.WebComfyCharacterSession?.install(registry);
     window.WebComfyTour?.install(registry);

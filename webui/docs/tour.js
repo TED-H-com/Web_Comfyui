@@ -98,10 +98,11 @@
       const inputs = state.demo.inputs || [];
       const key = input.dataset.fieldId || input.closest('[data-field-id]')?.dataset.fieldId || input.closest('[data-upload-id]')?.dataset.uploadId || input.name;
       const item = inputs.find(item => item.slot && item.slot === key) || inputs.filter(item => !item.slot)[state.uploads.filter(slot => !slot.item?.slot).length];
-      const slotState = {input, preview, title, item, url: null};
+      const slotState = {key, input, preview, title, item, assetUrl: null};
       slotState.reset = () => {
         state.result.demo.reset();
-        releaseSlot(state, slotState);
+        slotState.assetUrl = null;
+        window.WebComfyDemoDrive?.clearSlot(state.form, key);
         input.value = ''; preview.replaceChildren();
         title.dataset.i18nZh = item?.label || '參考輸入'; title.dataset.i18nEn = item?.label_en || 'Reference input';
         title.textContent = language() === 'en' ? title.dataset.i18nEn : title.dataset.i18nZh;
@@ -122,7 +123,13 @@
     // These native custom forms omit registry IDs on their hand-built textareas.
     const textKeys = id === 'voice-speak' ? ['sampleText','text'] : id === 'voice-clone' ? ['speech'] : [];
     [...form.querySelectorAll('textarea:not([data-field-id])')].forEach((input,index) => {if(textKeys[index]) input.dataset.fieldId = textKeys[index];});
-    const state = {id, form, feature, demo, uploads: [], urls: new Set(), filled: new WeakMap(), running: false}; mounted.set(form, state);
+    const state = {id, form, feature, demo, uploads: [], filled: new WeakMap(), running: false}; mounted.set(form, state);
+    form.addEventListener('demo:material-picked', event => {
+      const slotKey = event.detail?.slot;
+      const mat = event.detail?.materialId ? window.WebComfyDemoDrive?.materialById(event.detail.materialId) : null;
+      const matched = state.uploads.find(s => s.key === slotKey);
+      if (matched) matched.assetUrl = mat ? window.WebComfyDemoDrive?.assetUrl(mat.file) || null : null;
+    });
     form.dataset.demoId = id; form.noValidate = true;
     const bar = document.createElement('div'); bar.className = 'demo-prefill-bar'; bar.dataset.docsInteractive = 'true';
     bar.append(text('strong', id === 'character-create' ? '範例資料・尚未建立' : '示範案例', id === 'character-create' ? 'Example data · not created yet' : 'Demo example'), id === 'character-create'
@@ -216,7 +223,7 @@
   }
   function scan() {
     for (const [form, state] of mounted) {
-      if (!form.isConnected) {state.result.demo.dispose(); state.urls.forEach(url => URL.revokeObjectURL(url)); mounted.delete(form);}
+      if (!form.isConnected) {state.result.demo.dispose(); mounted.delete(form);}
       else state.syncVoiceSelection?.();
     }
     if (!app || !window.WebComfyExplorers) return;
@@ -243,7 +250,7 @@
     const buttons = [...form.querySelectorAll('[data-demo-submit]')]; buttons.forEach(button => {button.disabled = true;});
     const characterValues = state.id === 'character-create' ? {
       name: form.elements.namedItem('name')?.value.trim(), description: form.elements.namedItem('description')?.value.trim(),
-      photo: state.uploads.find(slot => slot.file)?.file,
+      photoUrl: state.uploads.find(slot => slot.assetUrl)?.assetUrl || null,
     } : {};
     try {
       const completed = state.result.demo.start(readPrompt(state), characterValues);
@@ -258,23 +265,6 @@
     finally {state.running = false; buttons.forEach(button => {button.disabled = false;}); window.WebComfyHardware?.decorate(state.id, form);}
     return true;
   }
-  function localFile(input, file) {
-    const state = mounted.get(input.closest('form'));
-    const slot = state?.uploads.find(slot => slot.input === input); if (!slot || !file) return;
-    state.result.demo.reset();
-    releaseSlot(state, slot);
-    if (!/^(image\/(png|jpeg|webp)|video\/(mp4|webm)|audio\/(mpeg|wav|x-wav|ogg|mp4|webm))$/.test(file.type) || (input.accept.startsWith('audio/') && !file.type.startsWith('audio/')) || (state.id === 'character-create' && !file.type.startsWith('image/')) || file.size > 25 * 1024 * 1024) {
-      slot.preview.replaceChildren(text('span', '請選擇 25 MB 以內的 PNG、JPG、WebP、影片或音訊。', 'Choose a PNG, JPG, WebP, video or audio file under 25 MB.')); input.value = ''; return;
-    }
-    const url = URL.createObjectURL(file); state.urls.add(url); slot.url = url; slot.file = file;
-    const media = document.createElement(file.type.startsWith('image/') ? 'img' : file.type.startsWith('video/') ? 'video' : 'audio');
-    media.src = url; if (media.tagName !== 'IMG') {media.controls = true; media.preload = 'metadata';} else media.alt = file.name;
-    slot.preview.replaceChildren(media); slot.title.removeAttribute('data-i18n-zh'); slot.title.removeAttribute('data-i18n-en'); slot.title.textContent = file.name;
-  }
-  function releaseSlot(state, slot) {
-    slot.file = null;
-    if (slot.url) {URL.revokeObjectURL(slot.url); state.urls.delete(slot.url); slot.url = null;}
-  }
   window.addEventListener('webcomfy:language', () => {for (const state of mounted.values()) fill(state);});
   window.addEventListener('webcomfy:hardware', () => {
     for (const state of mounted.values()) {
@@ -282,10 +272,6 @@
       window.WebComfyHardware.decorate(state.id, state.form);
     }
   });
-  document.addEventListener('change', event => {
-    if (event.target.matches('input[type=file][data-demo-upload]')) {event.stopImmediatePropagation(); localFile(event.target, event.target.files?.[0]);}
-  }, true);
-  document.addEventListener('dragover', event => {if(event.target.closest('[data-demo-id]')) event.preventDefault();}, true);
   window.WebComfyTour = {
     install(catalog) {
       app = catalog; scan(); let queued = false;
@@ -293,10 +279,5 @@
       for (const id of ['workspace', 'sheetLayer']) observer.observe(document.getElementById(id), {childList: true, subtree: true});
     },
     start, demoFor,
-    handleDrop(event) {
-      const form = event.target.closest('[data-demo-id]'); if (!form) return false;
-      const input = event.target.closest('.upload-slot,label')?.querySelector('input[type=file]') || form.querySelector('input[type=file]');
-      if (input) localFile(input, event.dataTransfer?.files?.[0]); return true;
-    },
   };
 })();

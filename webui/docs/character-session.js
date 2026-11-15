@@ -5,11 +5,18 @@
   const node = (tag, value = '', cls = '') => {const el = document.createElement(tag); el.textContent = value; el.className = cls; return el;};
   const label = (tag, zh, en, cls = '') => {const el = node(tag, window.WebComfyI18n?.language === 'en' ? en : zh, cls); el.dataset.i18nZh = zh; el.dataset.i18nEn = en; return el;};
   const action = (zh, en, fn) => {const el = label('button', zh, en, 'ghost small');el.type = 'button';el.onclick = fn;return el;};
-  function remove(id) {const character = characters.get(id);if(character?.ownedPhoto) URL.revokeObjectURL(character.assetUrls.avatar);characters.delete(id);}
+  function remove(id) {characters.delete(id);}
   function create(values) {
-    if (values.photo && (!(values.photo instanceof File) || !['image/png','image/jpeg','image/webp'].includes(values.photo.type) || values.photo.size > 25 * 1024 * 1024)) throw new Error('Choose a PNG, JPG or WebP under 25 MB.');
-    const photo = values.photo ? URL.createObjectURL(values.photo) : catalog.demos['character-create'].inputs[0].src;
-    const character = {id: 'docs-character-' + (++serial), name: values.name || (window.WebComfyI18n?.language === 'en' ? 'Qingqing' : '晴晴'), profile: values.description || '', type: 'experimental', visualClass: 'unknown', assetUrls: {avatar: photo}, ownedPhoto: Boolean(values.photo)};
+    const fallback = catalog.demos['character-create'].inputs[0].src;
+    const raw = typeof values.photoUrl === 'string' && values.photoUrl ? values.photoUrl : '';
+    let photo = fallback;
+    if (raw) {
+      try {
+        const parsed = new URL(raw, document.baseURI);
+        if (parsed.origin === location.origin && /^https?:$/.test(parsed.protocol)) photo = parsed.href;
+      } catch (_) {}
+    }
+    const character = {id: 'docs-character-' + (++serial), name: values.name || (window.WebComfyI18n?.language === 'en' ? 'Qingqing' : '晴晴'), profile: values.description || '', type: 'experimental', visualClass: 'unknown', assetUrls: {avatar: photo}};
     characters.set(character.id, character);return character;
   }
   function render(route, hooks) {
