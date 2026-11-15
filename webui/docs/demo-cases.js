@@ -241,7 +241,12 @@
     observedButtons.add(btn);
     let ticking = false;
     const mo = new MutationObserver(() => {
-      if (ticking || !form.isConnected) return;
+      if (!form.isConnected) {
+        mo.disconnect();
+        observedButtons.delete(btn);
+        return;
+      }
+      if (ticking) return;
       ticking = true;
       queueMicrotask(() => {
         ticking = false;
@@ -1162,45 +1167,45 @@
   }
 
   function deriveNextLinks(c) {
+    const features = app?.features || [];
+    const featureIndex = new Map(features.map((f, i) => [f.id, i]));
+    const outMats = new Set((c.outputs || []).map((o) => o.material).filter(Boolean));
     const links = [];
     const seen = new Set();
-    const pushLink = (href, zh, en) => {
-      if (!href || seen.has(href) || links.length >= 4) return;
-      seen.add(href);
-      links.push({ href, zh, en });
+    const push = (item) => {
+      if (!seen.has(item.href)) {
+        seen.add(item.href);
+        links.push(item);
+      }
     };
 
-    const outMats = new Set((c.outputs || []).map((o) => o.material).filter(Boolean));
-    for (const matId of outMats) {
-      for (const cand of app?.demo_set?.cases || []) {
-        if (cand.id === c.id || cand.feature_id === c.feature_id || !cand.display) continue;
-        const usesMat = Object.values(cand.inputs || {}).includes(matId) || cand.settings?.voiceId === matId;
-        if (usesMat) {
-          const feat = featureSpec(cand.feature_id);
-          const fTitle = feat?.title || cand.feature_id;
-          pushLink(
-            `#/studio/${encodeURIComponent(cand.feature_id)}?case=${encodeURIComponent(cand.id)}`,
-            `${fTitle} · ${cand.title_zh || cand.id}`,
-            `${fTitle}: ${cand.title_en || cand.title_zh || cand.id}`,
-          );
-        }
+    if (outMats.size) {
+      const candidates = (app?.demo_set?.cases || []).filter((cand) => cand.display && cand.id !== c.id
+        && cand.feature_id !== c.feature_id && featureIndex.has(cand.feature_id)
+        && (Object.values(cand.inputs || {}).some((m) => outMats.has(m)) || outMats.has(cand.settings?.voiceId)));
+      candidates.sort((x, y) => (featureIndex.get(x.feature_id) - featureIndex.get(y.feature_id)) || ((x.order ?? 0) - (y.order ?? 0)));
+      for (const cand of candidates.slice(0, 3)) {
+        push({
+          href: `#/studio/${encodeURIComponent(cand.feature_id)}?case=${encodeURIComponent(cand.id)}`,
+          tool: featureSpec(cand.feature_id)?.title || cand.feature_id,
+          zh: cand.title_zh || cand.id,
+          en: cand.title_en || cand.title_zh || cand.id,
+        });
       }
     }
 
     for (const subId of c.subjects || []) {
       const sub = resolveSubject(subId);
-      if (sub) {
-        const cid = sub.character_id || ('docs-character-' + sub.id);
-        pushLink(
-          `#/c/${encodeURIComponent(cid)}`,
-          `回到角色頁：${sub.name_zh || sub.id}`,
-          `Character page: ${sub.name_en || sub.name_zh || sub.id}`,
-        );
-      }
+      if (!sub || !sub.listed || !sub.character_id) continue;
+      push({
+        href: `#/c/${encodeURIComponent(sub.character_id)}`,
+        zh: `回到角色頁：${sub.name_zh || sub.id}`,
+        en: `Character page: ${sub.name_en || sub.name_zh || sub.id}`,
+      });
     }
 
     if ((c.outputs || []).some((o) => o.kind !== 'text')) {
-      pushLink('#/manage', '查看素材庫中的這份成果', 'View this output in Library');
+      push({ href: '#/manage', zh: '查看素材庫中的這份成果', en: 'View this output in Library' });
     }
 
     return links;
@@ -1323,6 +1328,7 @@
       setI18n(note, c.note_zh || c.note_en, c.note_en || c.note_zh);
       container.append(note);
     }
+    if (st.edited) container.append(setKeyI18n(el('p', 'demo-result-note demo-result-edited'), 'edited'));
 
     // Comparison (Before / After)
     let startOutputIndex = 0;
@@ -1424,7 +1430,12 @@
       for (const item of nextLinks) {
         const a = el('a', 'ghost small');
         a.href = item.href;
-        setI18n(a, item.zh, item.en);
+        if (item.tool) {
+          a.append(el('span', 'demo-next-tool', item.tool), document.createTextNode(' · '),
+            setI18n(el('span', 'demo-next-case'), item.zh, item.en));
+        } else {
+          setI18n(a, item.zh, item.en);
+        }
         linkRow.append(a);
       }
       nextSec.append(nextTitle, linkRow);

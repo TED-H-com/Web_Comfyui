@@ -936,3 +936,320 @@ def test_u1c2_voice_library_dropzone(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+_F1_WALL = [
+    {'id': 'docs-character-qingqing', 'visual_class': 'realistic', 'thumb': 'portrait-qingqing-thumb.webp'},
+    {'id': 'docs-character-zhiyuan', 'visual_class': 'realistic', 'thumb': 'portrait-zhiyuan-thumb.webp'},
+    {'id': 'docs-character-xingyu', 'visual_class': 'anime', 'thumb': 'subject-xingyu-thumb.webp'},
+    {'id': 'docs-character-chenyi', 'visual_class': 'anime', 'thumb': 'subject-chenyi-thumb.webp'},
+]
+
+_F1_EDITED = {
+    'zh': '示範結果使用這個案例實際跑過的設定；你修改的內容不會重新生成。',
+    'en': 'The demo result uses the settings this case actually ran with; your edits are not regenerated.',
+}
+
+_F1_NEXT_LINKS = [
+    {
+        'feature': 'text2img',
+        'case': 't2i-qingqing',
+        'zh': [
+            ['#/studio/img2img?case=kx-qingqing-ballroom', 'AI 指令改圖 · 晴晴：紅色晚禮服＋水晶燈舞廳'],
+            ['#/studio/image-blend?case=bl-qingqing-old-street', 'AI 參考圖融合 · 晴晴 → 歐洲石板老街'],
+            ['#/studio/image-blend?case=bl-qingqing-snow-ridge', 'AI 參考圖融合 · 晴晴 → 雪山稜線'],
+            ['#/c/docs-character-qingqing', '回到角色頁：晴晴'],
+            ['#/manage', '查看素材庫中的這份成果'],
+        ],
+        'en': [
+            ['#/studio/img2img?case=kx-qingqing-ballroom', 'Instruction-based image editing · Qingqing: red evening gown in a ballroom'],
+            ['#/studio/image-blend?case=bl-qingqing-old-street', 'Reference image blending · Qingqing → cobblestone old street'],
+            ['#/studio/image-blend?case=bl-qingqing-snow-ridge', 'Reference image blending · Qingqing → snowy mountain ridge'],
+            ['#/c/docs-character-qingqing', 'Character page: Qingqing'],
+            ['#/manage', 'View this output in Library'],
+        ],
+    },
+    {
+        'feature': 'image-blend',
+        'case': 'bl-qingqing-old-street',
+        'zh': [
+            ['#/studio/img2video?case=iv-qingqing-street', 'AI 圖生影片 · 晴晴在老街回頭揮手'],
+            ['#/c/docs-character-qingqing', '回到角色頁：晴晴'],
+            ['#/manage', '查看素材庫中的這份成果'],
+        ],
+        'en': [
+            ['#/studio/img2video?case=iv-qingqing-street', 'Image to video · Qingqing waves on the old street'],
+            ['#/c/docs-character-qingqing', 'Character page: Qingqing'],
+            ['#/manage', 'View this output in Library'],
+        ],
+    },
+    {
+        'feature': 'dance',
+        'case': 'dn-xingyu-energetic',
+        'zh': [
+            ['#/c/docs-character-xingyu', '回到角色頁：星羽'],
+            ['#/manage', '查看素材庫中的這份成果'],
+        ],
+        'en': [
+            ['#/c/docs-character-xingyu', 'Character page: Xingyu'],
+            ['#/manage', 'View this output in Library'],
+        ],
+    },
+]
+
+
+def _f1_generate(page, feature):
+    form = page.locator(f'form[data-demo-id="{feature}"]')
+    form.locator('[data-demo-submit]').first.click()
+    page.wait_for_function(
+        '(f) => document.querySelector(`form[data-demo-id="${f}"] .app-demo`)?.dataset.state === "complete"',
+        arg=feature,
+        timeout=12000,
+    )
+
+
+def _f1_links(page, feature):
+    return page.evaluate(
+        '(f) => [...document.querySelectorAll(`form[data-demo-id="${f}"] .demo-what-next-links a`)].map((a) => [a.getAttribute("href"), a.textContent])',
+        feature,
+    )
+
+
+def test_f1_listed_characters_by_style_without_works_badge(tmp_path):
+    playwright, browser_path, server, origin, _app_guide, _demo_set = _launch_site(tmp_path)
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser_path, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                for width, height in ((1440, 900), (390, 844)):
+                    page, errors, external, filechoosers = _new_monitored_page(
+                        instance, origin, viewport={'width': width, 'height': height},
+                    )
+                    page.emulate_media(reduced_motion='reduce')
+                    page.goto(f'{origin}/Web_Comfyui/demo/#/characters', wait_until='domcontentloaded', timeout=12000)
+                    page.locator('.wall-card[data-character-id="docs-character-qingqing"]').wait_for(timeout=12000)
+                    page.locator('.wall-card[data-character-id="docs-character-qingqing"] .demo-character-wall-badge').wait_for(timeout=12000)
+
+                    for entry in _F1_WALL:
+                        section = page.locator(f'section.wall-section[data-visual-class="{entry["visual_class"]}"]')
+                        card = section.locator(f'.wall-card[data-character-id="{entry["id"]}"]')
+                        assert card.count() == 1, (width, entry)
+                        assert card.locator('.works-badge').count() == 0, (width, entry['id'])
+                        assert card.locator('.demo-character-wall-badge').count() == 1, (width, entry['id'])
+                        src = card.locator('img.wall-card-profile-pic').get_attribute('src') or ''
+                        assert src.endswith('/' + entry['thumb']), (width, entry['id'], src)
+
+                    unknown_sec = page.locator('section.wall-section[data-visual-class="unknown"]')
+                    assert unknown_sec.locator('.new-character-card').count() == 1
+                    assert unknown_sec.locator('.wall-card[data-character-id^="docs-character-"]').count() == 0
+
+                    _assert_clean_page(page, errors, external, filechoosers)
+                    page.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_f1_edited_note_on_result(tmp_path):
+    playwright, browser_path, server, origin, _app_guide, _demo_set = _launch_site(tmp_path)
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser_path, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                page, errors, external, filechoosers = _new_monitored_page(
+                    instance, origin, viewport={'width': 1440, 'height': 900},
+                )
+                page.emulate_media(reduced_motion='reduce')
+                page.goto(f'{origin}/Web_Comfyui/demo/#/studio/text2img', wait_until='domcontentloaded', timeout=12000)
+                form = page.locator('form[data-demo-id="text2img"][data-demo-case]')
+                form.wait_for(timeout=12000)
+                assert form.get_attribute('data-demo-case') == 't2i-qingqing'
+                assert form.get_attribute('data-demo-edited') == 'false'
+
+                ta = form.locator('textarea[data-field-id="positive"]')
+                old_value = ta.input_value()
+                ta.fill(old_value + ' 加一點晚霞')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="text2img"]\')?.dataset.demoEdited === "true"',
+                    timeout=5000,
+                )
+                assert form.get_attribute('data-demo-gate') == 'ready'
+
+                _f1_generate(page, 'text2img')
+                edited_note = form.locator('.demo-result-edited')
+                assert edited_note.count() == 1
+                assert edited_note.inner_text() == _F1_EDITED['zh']
+
+                page.locator('#languageSelect').select_option('en')
+                page.wait_for_function(
+                    '(expected) => document.querySelector(\'form[data-demo-id="text2img"] .demo-result-edited\')?.textContent === expected',
+                    arg=_F1_EDITED['en'],
+                    timeout=5000,
+                )
+                page.locator('#languageSelect').select_option('zh-Hant')
+                page.wait_for_function(
+                    '(expected) => document.querySelector(\'form[data-demo-id="text2img"] .demo-result-edited\')?.textContent === expected',
+                    arg=_F1_EDITED['zh'],
+                    timeout=5000,
+                )
+
+                form.locator('.demo-case-btn[data-case-id="t2i-zhiyuan"]').click()
+                page.wait_for_function(
+                    '() => { const f = document.querySelector(\'form[data-demo-id="text2img"]\'); '
+                    'return f?.dataset.demoCase === "t2i-zhiyuan" && f.querySelector(".app-demo")?.dataset.state === "idle"; }',
+                    timeout=5000,
+                )
+                assert form.get_attribute('data-demo-edited') == 'false'
+                _f1_generate(page, 'text2img')
+                assert form.locator('.demo-result-edited').count() == 0
+
+                _assert_clean_page(page, errors, external, filechoosers)
+                page.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_f1_next_links(tmp_path):
+    playwright, browser_path, server, origin, _app_guide, _demo_set = _launch_site(tmp_path)
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser_path, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                page, errors, external, filechoosers = _new_monitored_page(
+                    instance, origin, viewport={'width': 1440, 'height': 900},
+                )
+                page.emulate_media(reduced_motion='reduce')
+                for entry in _F1_NEXT_LINKS:
+                    feature = entry['feature']
+                    case_id = entry['case']
+                    page.goto(
+                        f'{origin}/Web_Comfyui/demo/#/studio/{feature}?case={case_id}',
+                        wait_until='domcontentloaded',
+                        timeout=12000,
+                    )
+                    form = page.locator(f'form[data-demo-id="{feature}"][data-demo-case="{case_id}"]')
+                    form.wait_for(timeout=12000)
+                    assert form.get_attribute('data-demo-case') == case_id
+
+                    _f1_generate(page, feature)
+                    assert _f1_links(page, feature) == entry['zh']
+
+                    page.locator('#languageSelect').select_option('en')
+                    page.wait_for_function(
+                        '(arg) => document.querySelector(`form[data-demo-id="${arg.f}"] .demo-what-next-links a`)?.textContent === arg.text',
+                        arg={'f': feature, 'text': entry['en'][0][1]},
+                        timeout=5000,
+                    )
+                    assert _f1_links(page, feature) == entry['en']
+
+                    page.locator('#languageSelect').select_option('zh-Hant')
+                    page.wait_for_function(
+                        '(arg) => document.querySelector(`form[data-demo-id="${arg.f}"] .demo-what-next-links a`)?.textContent === arg.text',
+                        arg={'f': feature, 'text': entry['zh'][0][1]},
+                        timeout=5000,
+                    )
+                    assert _f1_links(page, feature) == entry['zh']
+
+                    counts = page.evaluate(
+                        '(f) => [...document.querySelectorAll(`form[data-demo-id="${f}"] .demo-what-next-links a`)].map((a) => ({'
+                        'href: a.getAttribute("href") || "",'
+                        'tool: a.querySelectorAll(".demo-next-tool").length,'
+                        'kase: a.querySelectorAll(".demo-next-case").length'
+                        '}))',
+                        feature,
+                    )
+                    for item in counts:
+                        if item['href'].startswith('#/studio/'):
+                            assert item['tool'] == 1 and item['kase'] == 1, (feature, item)
+                        else:
+                            assert item['tool'] == 0 and item['kase'] == 0, (feature, item)
+
+                    if case_id == 't2i-qingqing':
+                        rects = page.evaluate(
+                            '() => {'
+                            'const first = document.querySelector(\'form[data-demo-id="text2img"] .demo-what-next-links a\');'
+                            'const tool = first.querySelector(".demo-next-tool").getBoundingClientRect();'
+                            'const kase = first.querySelector(".demo-next-case").getBoundingClientRect();'
+                            'return {toolRight: tool.right, toolTop: tool.top, caseLeft: kase.left, caseTop: kase.top};'
+                            '}'
+                        )
+                        assert rects['caseLeft'] - rects['toolRight'] >= 8, rects
+                        assert abs(rects['caseTop'] - rects['toolTop']) <= 2, rects
+
+                _assert_clean_page(page, errors, external, filechoosers)
+                page.close()
+
+                t2i_entry = _F1_NEXT_LINKS[0]
+                page2, errors2, external2, filechoosers2 = _new_monitored_page(
+                    instance, origin, viewport={'width': 390, 'height': 844},
+                )
+                page2.emulate_media(reduced_motion='reduce')
+                page2.goto(
+                    f'{origin}/Web_Comfyui/demo/#/studio/text2img?case=t2i-qingqing',
+                    wait_until='domcontentloaded',
+                    timeout=12000,
+                )
+                page2.locator('form[data-demo-id="text2img"][data-demo-case="t2i-qingqing"]').wait_for(timeout=12000)
+                _f1_generate(page2, 'text2img')
+                page2.locator('#languageSelect').select_option('en')
+                page2.wait_for_function(
+                    '(text) => document.querySelector(\'form[data-demo-id="text2img"] .demo-what-next-links a\')?.textContent === text',
+                    arg=t2i_entry['en'][0][1],
+                    timeout=5000,
+                )
+                overflow = page2.evaluate(
+                    '() => ({'
+                    'scrollWidth: document.documentElement.scrollWidth,'
+                    'innerWidth: window.innerWidth,'
+                    'rights: [...document.querySelectorAll(".demo-what-next-links a")].map((a) => a.getBoundingClientRect().right)'
+                    '})'
+                )
+                assert overflow['scrollWidth'] <= overflow['innerWidth'], overflow
+                assert all(right <= overflow['innerWidth'] for right in overflow['rights']), overflow
+
+                _assert_clean_page(page2, errors2, external2, filechoosers2)
+                page2.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_f1_hardware_profile_blocks_case_generate(tmp_path):
+    playwright, browser_path, server, origin, _app_guide, _demo_set = _launch_site(tmp_path)
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser_path, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                page, errors, external, filechoosers = _new_monitored_page(
+                    instance, origin, viewport={'width': 1440, 'height': 900},
+                )
+                page.emulate_media(reduced_motion='reduce')
+                page.goto(f'{origin}/Web_Comfyui/demo/#/studio/image-blend', wait_until='domcontentloaded', timeout=12000)
+                form = page.locator('form[data-demo-id="image-blend"][data-demo-case]')
+                form.wait_for(timeout=12000)
+
+                initial = page.evaluate('() => window.WebComfyHardware.profile')
+                assert initial == 'vram-32'
+                assert form.get_attribute('data-demo-gate') == 'ready'
+                submit_btn = form.locator('[data-demo-submit]').first
+                assert not submit_btn.is_disabled()
+
+                page.evaluate("() => window.WebComfyHardware.setProfile('none')")
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoGate === "hardware-blocked"',
+                    timeout=5000,
+                )
+                assert submit_btn.is_disabled()
+                assert form.locator('.demo-gate-reason').evaluate('(el) => el.hidden === true')
+                assert page.evaluate("() => window.WebComfyHardware.canUse('image-blend') === false")
+
+                page.evaluate('(profile) => window.WebComfyHardware.setProfile(profile)', initial)
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoGate === "ready"',
+                    timeout=5000,
+                )
+                assert not submit_btn.is_disabled()
+                _f1_generate(page, 'image-blend')
+
+                _assert_clean_page(page, errors, external, filechoosers)
+                page.close()
+    finally:
+        server.shutdown()
+        server.server_close()

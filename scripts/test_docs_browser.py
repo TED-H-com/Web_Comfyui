@@ -148,7 +148,7 @@ ASSERT = r'''(async () => {
   await until(()=>document.querySelector('#workspace h1')?.textContent==='Character gallery');
   assert(document.querySelector('#workspace').textContent.includes('Choose a character to start creating.'),'English character list guidance');
   assert(document.querySelector('#workspace').textContent.includes('+ New character'),'English new character action');
-  assert(document.querySelector('.works-badge').textContent==='0 media items','English character media count');
+  assert(document.querySelector('[data-character-id="'+firstId+'"] .works-badge').textContent==='0 media items','English character media count');
   assert((await (await fetch('/api/characters')).json()).characters.filter(c=>!c.listedDemoSubject).length===1,'deleting one preserves other session character');
   document.querySelector('[data-character-id="'+firstId+'"]').click();await until(()=>document.querySelector('[data-session-character]'));
   [...document.querySelectorAll('.docs-character-workspace button')].find(button=>button.textContent==='Clear all session characters').click();

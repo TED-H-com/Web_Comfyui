@@ -67,9 +67,10 @@
     return sub.character_id || ('docs-character-' + sub.id);
   }
 
-  function subjectPhotoUrl(sub) {
+  function subjectPhotoUrl(sub, preferThumb = false) {
     const mat = materialById(sub.portrait || sub.base) || materialById(sub.base);
-    return mat?.file ? assetUrl(mat.file) : (catalog?.demos?.['character-create']?.inputs?.[0]?.src || '');
+    const file = preferThumb ? (mat?.thumb || mat?.file) : mat?.file;
+    return file ? assetUrl(file) : (catalog?.demos?.['character-create']?.inputs?.[0]?.src || '');
   }
 
   function listedSubjects() {
@@ -78,7 +79,7 @@
 
   function listedCharacters() {
     return listedSubjects().map((sub) => {
-      const avatar = subjectPhotoUrl(sub);
+      const avatar = subjectPhotoUrl(sub, true);
       const zhName = sub.name_zh || sub.id;
       const enName = sub.name_en || zhName;
       const zhRole = sub.role_zh || '';
@@ -94,8 +95,8 @@
         role_zh: zhRole,
         role_en: enRole,
         profile: isEn() ? enDesc : zhDesc,
-        type: 'experimental',
-        visualClass: sub.domain === 'anime' ? 'anime' : 'real',
+        type: sub.domain === 'anime' ? 'anime' : 'realistic',
+        visualClass: sub.domain === 'anime' ? 'anime' : 'realistic',
         listedDemoSubject: true,
         subjectId: sub.id,
         avatarUrl: avatar,
@@ -112,6 +113,7 @@
     for (const card of document.querySelectorAll('.wall-card[data-character-id]')) {
       const sub = byId.get(card.dataset.characterId);
       if (!sub) continue;
+      card.querySelector('.works-badge')?.remove();
       const body = card.querySelector('.wall-card-body');
       if (!body) continue;
 
