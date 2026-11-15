@@ -874,3 +874,59 @@ def test_u1c2_rule3_rule7_matching(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_u1c2_voice_library_dropzone(tmp_path):
+    playwright, browser_path, server, origin, _app_guide, demo_set = _launch_site(tmp_path)
+    disk_voice_mat = next(m for m in demo_set['materials'] if m.get('kind') == 'audio' and m.get('folder') == 'voices')
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser_path, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                page, errors, external, filechoosers = _new_monitored_page(instance, origin)
+                page.emulate_media(reduced_motion='reduce')
+                route = f'{origin}/Web_Comfyui/demo/#/studio/voice-library'
+                page.goto(route, wait_until='domcontentloaded', timeout=12000)
+                vl_form = page.locator('form[data-docs-voice-form="voice-library"]')
+                vl_form.wait_for(timeout=12000)
+
+                dropzone = vl_form.locator('label.dropzone.upload-slot[data-upload-id="voice"]')
+                assert dropzone.count() == 1
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-docs-voice-form="voice-library"] label.dropzone[data-upload-id="voice"]\')?.getAttribute("tabindex") === "0"',
+                    timeout=5000,
+                )
+                assert dropzone.get_attribute('tabindex') == '0'
+                file_input = dropzone.locator('input[type=file]')
+                assert file_input.count() == 1
+                assert not file_input.is_visible()
+                assert dropzone.locator('.drop-text').inner_text() == '點一下，從示範硬碟選聲音'
+
+                dropzone.focus()
+                page.keyboard.press('Enter')
+                page.locator('.demo-disk-modal').wait_for(timeout=5000)
+                page.locator(f'.demo-disk-modal .demo-tile[data-material-id="{disk_voice_mat["id"]}"]').click()
+                page.wait_for_function(
+                    '() => Boolean(document.querySelector(\'form[data-docs-voice-form="voice-library"] label.dropzone[data-upload-id="voice"] .demo-slot-preview audio\'))',
+                    timeout=5000,
+                )
+                assert dropzone.locator('.demo-slot-preview audio').count() == 1
+
+                # Fresh visit to verify English drop-text translation before preview replaces the hint
+                page.goto('about:blank', wait_until='domcontentloaded', timeout=12000)
+                page.goto(route, wait_until='domcontentloaded', timeout=12000)
+                vl_form = page.locator('form[data-docs-voice-form="voice-library"]')
+                vl_form.wait_for(timeout=12000)
+                page.locator('#languageSelect').select_option('en')
+                page.wait_for_function("() => document.documentElement.lang === 'en'", timeout=5000)
+                assert vl_form.locator('label.dropzone[data-upload-id="voice"] .drop-text').inner_text() == 'Click to pick a voice from the demo disk'
+
+                page.set_viewport_size({'width': 390, 'height': 844})
+                page.reload(wait_until='domcontentloaded', timeout=12000)
+                vl_form = page.locator('form[data-docs-voice-form="voice-library"]')
+                vl_form.wait_for(timeout=12000)
+                assert page.evaluate('() => document.documentElement.scrollWidth <= innerWidth + 1')
+
+                _assert_clean_page(page, errors, external, filechoosers)
+    finally:
+        server.shutdown()
+        server.server_close()

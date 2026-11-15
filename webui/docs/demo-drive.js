@@ -68,6 +68,7 @@
     'run.idle': ['按「開始生成（示範）」播放所選的示範案例。', 'Press Generate (demo) to play the selected demo case.'],
     'run.done': ['已顯示所選示範案例的成果。', "The selected demo case's result is shown."],
     'voice.slot': ['加入聲音（從示範硬碟選）', 'Add a voice (from the demo disk)'],
+    'voice.pick': ['點一下，從示範硬碟選聲音', 'Click to pick a voice from the demo disk'],
     'voice.note': ['示範聲音庫：試聽預製聲音，用「用於說話」或「用作參考音」打開對應工具；你加入的聲音只保留到重新整理。', 'Demo voice library: audition prepared voices and open them with Use for speech or Use as reference; voices you add stay until you reload.'],
     'voice.speak': ['用於說話', 'Use for speech'],
     'voice.reference': ['用作參考音', 'Use as reference'],

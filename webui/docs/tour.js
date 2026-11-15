@@ -211,11 +211,17 @@
       field('text', '旁白段落（空行分段）', 'Narration segments (separate with blank lines)', true);
       form.append(text('p', '此處預覽已準備的分段旁白；不解析 PPTX、不建立實際批次。', 'Preview prepared narration segments here. No PPTX parsing or real batch is performed.', 'panel-note'));
     } else {
-      const upload = document.createElement('label');upload.className = 'field upload-slot';upload.dataset.uploadId = 'voice';upload.dataset.uploadSlot = 'voice';
+      const upload = document.createElement('label');upload.className = 'field upload-slot dropzone';upload.dataset.uploadId = 'voice';upload.dataset.uploadSlot = 'voice';
       const input = document.createElement('input');input.type = 'file';input.accept = 'audio/*';input.name = 'voice';input.dataset.fieldId = 'voice';
       const spanPair = window.WebComfyDemoDrive?.i18nPair?.('voice.slot') || ['加入聲音（從示範硬碟選）', 'Add a voice (from the demo disk)'];
+      const pickPair = window.WebComfyDemoDrive?.i18nPair?.('voice.pick') || ['點一下，從示範硬碟選聲音', 'Click to pick a voice from the demo disk'];
       const notePair = window.WebComfyDemoDrive?.i18nPair?.('voice.note') || ['示範聲音庫：試聽預製聲音，用「用於說話」或「用作參考音」打開對應工具；你加入的聲音只保留到重新整理。', 'Demo voice library: audition prepared voices and open them with Use for speech or Use as reference; voices you add stay until you reload.'];
-      upload.append(text('span', spanPair[0], spanPair[1]), input);form.append(upload);
+      const preview = document.createElement('div');preview.className = 'drop-preview';
+      const hint = document.createElement('div');hint.className = 'drop-hint';
+      const ico = document.createElement('span');ico.className = 'drop-ico';ico.textContent = '⬆️';ico.setAttribute('aria-hidden', 'true');
+      hint.append(ico, text('span', pickPair[0], pickPair[1], 'drop-text'));
+      preview.append(hint);
+      upload.append(text('span', spanPair[0], spanPair[1], 'drop-label'), preview, input);form.append(upload);
       form.append(text('p', notePair[0], notePair[1], 'panel-note'));
     }
     panel.querySelector('.voice-batch-page,.voice-lib,.missing-box')?.remove();
