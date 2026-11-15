@@ -4577,6 +4577,13 @@
           "poster": "dn-xingyu-energetic-poster.webp",
           "thumb": "dn-xingyu-energetic-thumb.webp",
           "material": null
+        },
+        {
+          "file": "xingyu-hello.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "xingyu-hello"
         }
       ],
       "comparison": null,
@@ -4626,6 +4633,13 @@
           "poster": "dn-chenyi-taichi-poster.webp",
           "thumb": "dn-chenyi-taichi-thumb.webp",
           "material": null
+        },
+        {
+          "file": "chenyi-hello.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "chenyi-hello"
         }
       ],
       "comparison": null,
