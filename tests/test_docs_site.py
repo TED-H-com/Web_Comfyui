@@ -324,6 +324,9 @@ def test_project_homepage_is_separate_from_simulated_app(source, tmp_path):
     assert 'href="https://www.runninghub.ai?inviteCode=qqgzxufp"' in demo
     assert 'href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND"' in demo
     assert demo.count('target="_blank"') >= 2 and demo.count('rel="sponsored noopener noreferrer"') >= 2
+    start = demo.index('data-i18n-en="No GPU? Cloud referrals:"')
+    referrals = demo[start:demo.index('</nav>', start)]
+    assert 'AutoIP</a>' in referrals and 'RunningHub</a>' in referrals and '·' not in referrals
     assert 'href="../"' in demo
     hardware = read_json(output / 'app-guide.json')['hardware']
     assert hardware and 'none' in {profile['id'] for profile in hardware['profiles']}

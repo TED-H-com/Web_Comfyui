@@ -1037,6 +1037,8 @@ def test_f1_listed_characters_by_style_without_works_badge(tmp_path):
                         assert card.locator('.demo-character-wall-badge').count() == 1, (width, entry['id'])
                         src = card.locator('img.wall-card-profile-pic').get_attribute('src') or ''
                         assert src.endswith('/' + entry['thumb']), (width, entry['id'], src)
+                        position = card.locator('img.wall-card-profile-pic').evaluate('(img) => getComputedStyle(img).objectPosition')
+                        assert position == ('50% 0%' if entry['visual_class'] == 'anime' else '50% 50%'), (width, entry['id'], position)
 
                     unknown_sec = page.locator('section.wall-section[data-visual-class="unknown"]')
                     assert unknown_sec.locator('.new-character-card').count() == 1

@@ -153,6 +153,7 @@
 .demo-voice-card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .demo-character-wall-badge { align-self: flex-start; margin-block: 2px; }
+.wall-section[data-visual-class="anime"] .wall-card[data-character-id^="docs-character-"] .wall-card-media img { object-position: 50% 0%; }
 .docs-character-role { font-weight: 600; color: var(--muted); }
 .docs-character-voice { display: grid; gap: 10px; padding: 16px; min-width: 0; }
 .docs-character-voice h2 { margin: 0; font-size: var(--text-md); }
