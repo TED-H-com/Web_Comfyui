@@ -1,6 +1,8 @@
 # Comfy Cloud 與 RunningHub 託管算力
 
-研究與協定檢查日期：2026-11-10。這兩個選項使用同一個生產表單，但執行的是管理者明確設定的遠端工作流程。此版本已完成合成素材、注入 HTTP 回應，以及本機 TLS 伺服器的離線驗證；尚未登入真實供應商帳戶、確認付費權益、部署工作流程或執行付費 GPU 工作。既有本機、Colab、AutoIP 的說明見 [算力選擇](compute-platforms.md)。
+研究與協定檢查日期：2026-11-10；路線狀態更新至 2026-11-14。這兩個選項使用同一個生產表單。舊的配方路徑仍執行管理者明確設定的遠端工作流程，並已用合成素材、注入 HTTP 回應與本機 TLS 伺服器做過離線驗證。圖束路線則把與本機相同的圖送出。既有本機、Colab、AutoIP 的說明見 [算力選擇](compute-platforms.md)。
+
+真實帳號：Comfy Cloud 的舞蹈工作流已在 2026-11-11 與 2026-11-12 完成。該 API 把結算回報為待處理，所以介面顯示估計，不顯示實際費用，直到供應商回報一筆。RunningHub 在 2026-11-12 的校正產出 8 個成果、8 個都成功。和本機的身份相似度，寫實角色從接近到明顯較低都有，動漫角色會往寫實的臉偏移，因此身份還沒有和本機對齊。
 
 使用「平台設定」為自己的登入身分填入 API key、啟用平台並匯入配方。API key 是只寫欄位，回應只顯示是否已設定；留空保留，明確清除才刪除。各登入身分的配方、憑證、工作與成果分開存放。管理 API 的授權由 WebUI 處理；後端不搜尋其他專案或環境中的憑證。
 
@@ -10,7 +12,9 @@ RunningHub 使用 `https://www.runninghub.ai`。先在供應商工作台儲存�
 
 目前整合的是 RunningHub 的 **workflow-ID REST API**：以 `workflowId` 與 `nodeInfoList` 呼叫 `/task/openapi/create`。官方 Advanced API 雖另有完整圖 JSON 字串的 `workflow` override 欄位，其 schema 仍將 `workflowId` 列為必填；本程式也尚未支援該 inline 欄位。[Advanced API](https://www.runninghub.ai/runninghub-api-doc-en/api-425761093)、[請求 schema](https://www.runninghub.ai/runninghub-api-doc-en/schema-252340070)
 
-RunningHub 另有宣稱相容本機 ComfyUI 的 **Native proxy**，以及不需要 workflow ID、使用個別模型端點的 **Standard Model API**；兩者目前都未整合到本介面。Standard Model API 官方要求 Enterprise-Shared key。它們的模型、節點、輸入控制與計費需分別確認，不能視為本目錄原工作流程已可執行，也不能由帳號查詢成功推定功能可用。[Native proxy 指南](https://www.runninghub.ai/runninghub-api-doc-en/doc-8287466)、[API 類型與資格](https://www.runninghub.ai/runninghub-api-doc-en/doc-8287463)、[Standard Model 端點範例](https://www.runninghub.ai/runninghub-api-doc-en/api-448184514)
+RunningHub 的 **ComfyUI 相容 API** 已接入：同一張圖經 `https://www.runninghub.ai/proxy-plus/` 的 prompt、object info、上傳、history、queue 與 interrupt 送出，並另查帳戶狀態。這取代「Native proxy 尚未整合」的舊說明。不需要 workflow ID、改走個別模型端點的 **Standard Model API** 仍未整合；官方要求 Enterprise-Shared key。它的模型、節點、輸入與計費要分開確認，不能把帳戶查詢成功當成該 API 已可執行。[Native proxy 指南](https://www.runninghub.ai/runninghub-api-doc-en/doc-8287466)、[API 類型與資格](https://www.runninghub.ai/runninghub-api-doc-en/doc-8287463)、[Standard Model 端點範例](https://www.runninghub.ai/runninghub-api-doc-en/api-448184514)
+
+Comfy Cloud 的圖束走 `/api/v2` 的工作與素材 API，並以 object info 做就緒檢查。兩邊都要先有報價，路線才算就緒（`parity_probe_quote_required`）：報價來自這位使用者自己跑過的本機同款工作流，或由擁有者輸入 `comfy_cloud_credits`／`runninghub_points`，後者標成「擁有者估計，非官方報價」。Comfy Cloud 的估計對照官方點數說明與定價頁；RunningHub 用公開工作流作者所說的約 60 POINT／4 分鐘作包絡，這支 API 沒有成文費率。實際費用只在供應商回報後出現。細節與上游表見 [運算平台](compute-platforms.md)。
 
 ## 配方與映射
 

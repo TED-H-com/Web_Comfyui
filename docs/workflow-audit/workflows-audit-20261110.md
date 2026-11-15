@@ -1,3 +1,6 @@
+> 歷史快照（2026-11-10，對應 95e2079）；目前各運算平台狀態見 `docs/compute-platforms.md`。
+> Historical snapshot (2026-11-10, commit 95e2079). Current compute-platform status is in `docs/compute-platforms.md`.
+
 # dseditor ComfyuiWorkflows：完整來源與公開應用程式稽核
 
 > **歷史基準報告：** 本報告比較的是公開版本 `95e2079ed3ae47f76ff67948f80673f410abd407`，不是後續修正後的即時狀態。新修正、測試與尚未完成的執行驗證請見 [稽核索引](README.md)。上游工作流實際 GPU 驗證數仍為 **0**。

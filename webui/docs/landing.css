@@ -53,10 +53,10 @@
 .landing-step-heading { display: flex; gap: var(--space-3); justify-content: space-between; align-items: center; }
 .landing-copy { flex: 0 0 auto; }
 .project-landing pre { margin: 0; padding: var(--space-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--space-2); white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-sm); line-height: 1.7; }
-.landing-cloud { display: grid; grid-template-columns: 1.3fr 1fr; gap: var(--space-7); align-items: start; }
-.landing-cloud > div { display: grid; gap: var(--space-4); }
-.landing-referral { display: grid; gap: var(--space-4); padding: var(--space-5); background: var(--bg); border-radius: var(--catalogue-radius, 12px); }
-.landing-referral .landing-button { justify-self: start; }
+.landing-cloud { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); align-items: start; }
+.landing-cloud > div { grid-column: 1 / -1; display: grid; gap: var(--space-4); }
+.landing-referral { display: grid; gap: var(--space-4); min-width: 0; padding: var(--space-5); background: var(--bg); border-radius: var(--catalogue-radius, 12px); }
+.landing-referral .landing-button { justify-self: stretch; max-width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; text-align: center; }
 .landing-referral-code { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-3); }
 .landing-referral-code code { color: var(--blue-dark); font-weight: 700; }
 .landing-footer { border-top: 1px solid var(--line); padding-block: var(--space-6); }
@@ -71,6 +71,9 @@
   .landing-facts > div { flex-direction: column; gap: var(--space-2); }
   .landing-install-grid { grid-template-columns: 240px minmax(0, 1fr); gap: var(--space-5); }
   .landing-step-heading { align-items: start; flex-direction: column; }
+}
+@media (max-width: 899px) {
+  .landing-cloud { grid-template-columns: 1fr; }
 }
 @media (max-width: 767px) {
   .landing-shell { width: calc(100% - var(--space-4) * 2); }
@@ -95,6 +98,6 @@
 .landing-qr img { width: 144px; height: 144px; background: var(--panel); border: 1px solid var(--line); }
 
 .landing-referral { grid-template-columns: minmax(0, 1fr) 144px; }
-.landing-referral > h3, .landing-referral > .landing-referral-code, .landing-referral > .landing-button { grid-column: 1; }
+.landing-referral > h3, .landing-referral > .landing-referral-code, .landing-referral > .landing-button { grid-column: 1; min-width: 0; }
 .landing-referral > .landing-qr { grid-column: 2; grid-row: 1 / span 3; }
 .landing-referral > .landing-note, .landing-referral > .landing-text-link { grid-column: 1 / -1; }
