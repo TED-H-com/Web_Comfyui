@@ -529,11 +529,25 @@
     form.dataset.demoCase = chosen.id;
     form.dataset.demoEdited = 'false';
 
-    // Reset case buttons active state
+    // Reset case buttons active state and keep active chip visible inside strip (scrollLeft only)
+    let activeBtn = null;
     for (const btn of form.querySelectorAll('.demo-case-btn')) {
       const active = btn.dataset.caseId === chosen.id;
       btn.classList.toggle('is-active', active);
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      if (active) activeBtn = btn;
+    }
+    if (activeBtn) {
+      const centerChip = () => {
+        const stripRow = activeBtn.closest('.demo-case-strip-buttons');
+        if (!stripRow || stripRow.scrollWidth <= stripRow.clientWidth) return;
+        const rowRect = stripRow.getBoundingClientRect();
+        const btnRect = activeBtn.getBoundingClientRect();
+        const targetLeft = stripRow.scrollLeft + (btnRect.left - rowRect.left) - (stripRow.clientWidth - btnRect.width) / 2;
+        stripRow.scrollLeft = Math.max(0, Math.min(stripRow.scrollWidth - stripRow.clientWidth, targetLeft));
+      };
+      centerChip();
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(centerChip);
     }
 
     // Update switch note

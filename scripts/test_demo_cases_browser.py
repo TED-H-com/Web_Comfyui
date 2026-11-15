@@ -506,6 +506,26 @@ def test_characters_voice_library_and_mobile_overflow(tmp_path):
                     overflow = page.evaluate('() => document.documentElement.scrollWidth - innerWidth')
                     assert overflow <= 1, (route, overflow)
 
+                # Selecting the last case in an overflowing 390px strip scrolls strip scrollLeft without scrolling the page
+                vs_cases = [c for c in demo_set['cases'] if c['feature_id'] == 'voice-speak' and c.get('display')]
+                assert len(vs_cases) >= 2
+                page.evaluate('() => window.scrollTo(0, 0)')
+                page.evaluate('(cid) => { location.hash = "#/studio/voice-speak?case=" + encodeURIComponent(cid); }', vs_cases[-1]['id'])
+                page.locator('form[data-demo-id="voice-speak"] .demo-case-strip').wait_for(timeout=8000)
+                page.wait_for_timeout(120)
+                strip_metrics = page.evaluate("""() => {
+                  const row = document.querySelector('form[data-demo-id="voice-speak"] .demo-case-strip-buttons');
+                  return {
+                    scrollWidth: row?.scrollWidth || 0,
+                    clientWidth: row?.clientWidth || 0,
+                    scrollLeft: row?.scrollLeft || 0,
+                    pageY: window.scrollY || 0,
+                  };
+                }""")
+                assert strip_metrics['scrollWidth'] > strip_metrics['clientWidth']
+                assert strip_metrics['scrollLeft'] > 0, strip_metrics
+                assert strip_metrics['pageY'] == 0, strip_metrics
+
                 _assert_clean_page(page, errors, external, filechoosers)
     finally:
         server.shutdown()
