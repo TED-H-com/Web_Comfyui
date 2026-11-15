@@ -84,6 +84,10 @@
       if (!disabled) {disabled = document.createElement('p');disabled.className='hardware-native-disabled';host.append(disabled);}
       label(disabled, '原生生成入口目前停用；硬體選項與雲端示範不會解除實際功能限制。', 'The native generation endpoint is disabled. Hardware choices and cloud simulations do not enable it.');
     }
+    if (form.dataset.demoCases === 'true') {
+      window.WebComfyDemoCases?.applyGate?.(form);
+      return;
+    }
     for (const button of form.querySelectorAll('.generate-btn,button[type=submit]')) {
       if (!result.allowed) {
         if (!controls.has(button)) controls.set(button, {disabled: button.disabled && !button.dataset.demoSubmit});

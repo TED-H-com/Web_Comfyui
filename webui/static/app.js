@@ -6263,6 +6263,7 @@ function slotHasFile(slot, state) {
   const input = fileInputs[slot];
   return Boolean(
     (input && input.files && input.files[0])
+    || (input && input.dataset && input.dataset.demoMaterial)
     || serverFiles[slot]
     || (state.defaultFiles && state.defaultFiles[slot])
     || (slot === "video" && ((state.danceTemplateId && state.__danceTemplateValidated === true) || fieldGetters.danceTemplateId?.()))

@@ -186,18 +186,22 @@
 
   function demoContent(demo = {}, options = {}) {
     const root = el('section', '', `app-demo${options.inline ? ' app-demo-inline' : ''}`); root.dataset.docsInteractive = 'true'; root.dataset.demoId = text(demo.id);
-    const evidence = demo.evidence || {}, verified = evidence.kind === 'local-comfyui' && Boolean(evidence.run_id);
-    const prepared = evidence.kind === 'prepared-example';
-    const unavailable = demo.output?.kind === 'unavailable';
-    const character = demo.id === 'character-create' && demo.output?.kind === 'character' && evidence.kind === 'interface-simulation';
+    const customRender = typeof options.renderResult === 'function';
+    const evidence = demo.evidence || {}, verified = !customRender && evidence.kind === 'local-comfyui' && Boolean(evidence.run_id);
+    const prepared = !customRender && evidence.kind === 'prepared-example';
+    const unavailable = !customRender && demo.output?.kind === 'unavailable';
+    const character = !customRender && demo.id === 'character-create' && demo.output?.kind === 'character' && evidence.kind === 'interface-simulation';
     const disclosure = verified
       ? copy(el('p', '', 'demo-disclosure'), 'GPU 實測記錄 · 此頁播放已完成的成果，不會即時生成', 'Recorded GPU result · This page replays a completed run; it does not generate live')
       : prepared ? copy(el('p', '', 'demo-disclosure'), '預製介面範例 · 非此工作流實測', 'Prepared interface example · not a verified run of this workflow')
       : character ? copy(el('p', '', 'demo-disclosure'), '角色卡模擬 · 使用表單內容在此頁預覽，不會保存或訓練模型', 'Character card simulation · Preview your form on this page; nothing is saved or trained')
       : unavailable ? copy(el('p', '', 'demo-disclosure'), '尚無此工作流的 GPU 實測成果', 'No recorded GPU result for this workflow yet')
       : el('p', '模擬展示・預先準備範例，並非依輸入即時生成', 'demo-disclosure');
-    root.append(el('h3', text(demo.title) || '操作範例'), disclosure);
-    if (demo.note) root.append(copy(el('p', '', 'explorer-evidence'), text(demo.note), text(demo.note_en || demo.note)));
+    root.append(el('h3', text(demo.title) || '操作範例'));
+    if (!customRender) {
+      root.append(disclosure);
+      if (demo.note) root.append(copy(el('p', '', 'explorer-evidence'), text(demo.note), text(demo.note_en || demo.note)));
+    }
     if (!options.inline && Array.isArray(demo.inputs) && demo.inputs.length) {
       const references = el('section', '', 'demo-references');
       references.append(copy(el('h4'), '參考輸入 · 生成前', 'Reference inputs · before generation'));
@@ -305,7 +309,7 @@
       if (!images.length && !media.text && !audioList.childElementCount && !localAsset(media.video?.src || media.src)) output.append(el('p', '此範例尚未附上可展示的素材。'));
       output.append(prepared ? copy(el('p', '', 'explorer-evidence'), '修改輸入或選擇自己的檔案不會改變這份預製範例；播放不會執行模型。', 'Editing inputs or selecting your files does not change this prepared example; playback does not run a model.') : copy(el('p', '', 'explorer-evidence'), '修改文字或預覽自己的檔案不會改變這份記錄的成果。', 'Editing text or previewing your files does not change this recorded result.')); output.hidden = false;
     }
-    function reset() {cancel(); lastCharacter = {}; root.hidden = Boolean(options.inline); run.disabled = false; replay.hidden = true; output.hidden = true; output.replaceChildren(); echo.hidden = true; verified ? copy(state, '可開啟已完成的 GPU 實測記錄。', 'Ready to open the recorded GPU result.') : character ? copy(state, '填妥表單後即可建立示範角色卡。', 'Complete the form to create a demo character card.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '等待播放預製範例。'); setProgress(0); stageNodes.forEach(node => node.classList.remove('active')); root.dataset.state = 'idle';}
+    function reset() {cancel(); lastCharacter = {}; root.hidden = Boolean(options.inline); run.disabled = false; replay.hidden = true; output.hidden = true; output.replaceChildren(); echo.hidden = true; if (customRender) { const pair = window.WebComfyDemoDrive?.i18nPair?.('run.idle') || ['按「開始生成（示範）」播放所選的示範案例。', 'Press Generate (demo) to play the selected demo case.']; copy(state, pair[0], pair[1]); } else verified ? copy(state, '可開啟已完成的 GPU 實測記錄。', 'Ready to open the recorded GPU result.') : character ? copy(state, '填妥表單後即可建立示範角色卡。', 'Complete the form to create a demo character card.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '等待播放預製範例。'); setProgress(0); stageNodes.forEach(node => node.classList.remove('active')); root.dataset.state = 'idle';}
     function start(prompt = input.value, characterValues = {}) {
       if (disposed) return Promise.resolve(false);
       if (pendingRun) return pendingRun;
@@ -313,15 +317,17 @@
       copy(echo, `這次體驗輸入：${lastPrompt || '（未填寫）'}`, `Your demonstration input: ${lastPrompt || '(empty)'}`); echo.hidden = false; output.hidden = true; output.replaceChildren(); replay.hidden = true; run.disabled = true; replay.disabled = true; root.dataset.state = 'running';
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       root.classList.toggle('demo-reduced-motion', reduced);
+      const rawDuration = typeof options.durationMs === 'function' ? Number(options.durationMs()) : options.durationMs != null ? Number(options.durationMs) : NaN;
+      const stepDelay = (reduced || unavailable) ? 0 : (Number.isFinite(rawDuration) && rawDuration >= 0 ? rawDuration / 24 : 100);
       pendingRun = new Promise(resolve => {
         resolveRun = resolve;
         function advance(tick) {
           if (disposed || current !== sequence || !root.isConnected) {cancel(); return;}
           timer = null;
           setProgress(Math.round(tick / 24 * 100));
-          if (tick === 24) {if (!options.suppressOutput) renderOutput(); verified ? copy(state, '已開啟 GPU 實測記錄。', 'Recorded GPU result opened.') : character ? copy(state, '示範角色卡已完成，可繼續探索工作流。', 'Demo character card complete. You can now explore the workflows.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '展示完成 · 這是預先準備的範例。'); root.dataset.state = 'complete'; run.disabled = false; replay.disabled = false; replay.hidden = false; resolveRun = null; pendingRun = null; resolve(true); root.dispatchEvent(new CustomEvent('demo-complete', {bubbles: true, detail: {id: text(demo.id)}})); return;}
+          if (tick === 24) {if (!options.suppressOutput) { if (customRender) { output.replaceChildren(); options.renderResult(output); output.hidden = false; } else renderOutput(); } if (customRender) { const pair = window.WebComfyDemoDrive?.i18nPair?.('run.done') || ['已顯示所選示範案例的成果。', "The selected demo case's result is shown."]; copy(state, pair[0], pair[1]); } else verified ? copy(state, '已開啟 GPU 實測記錄。', 'Recorded GPU result opened.') : character ? copy(state, '示範角色卡已完成，可繼續探索工作流。', 'Demo character card complete. You can now explore the workflows.') : unavailable ? copy(state, '此工作流尚無實測成果。', 'No recorded result for this workflow yet.') : copy(state, '展示完成 · 這是預先準備的範例。'); root.dataset.state = 'complete'; run.disabled = false; replay.disabled = false; replay.hidden = false; resolveRun = null; pendingRun = null; resolve(true); root.dispatchEvent(new CustomEvent('demo-complete', {bubbles: true, detail: {id: text(demo.id)}})); return;}
           copy(state, '正在播放模擬流程，完成後顯示範例成果。', 'Playing the simulated flow. The example result appears when complete.');
-          timer = setTimeout(() => advance(reduced || unavailable ? 24 : tick + 1), reduced || unavailable ? 0 : 100);
+          timer = setTimeout(() => advance(reduced || unavailable ? 24 : tick + 1), stepDelay);
         }
         advance(0);
       });

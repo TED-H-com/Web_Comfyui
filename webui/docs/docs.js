@@ -88,16 +88,47 @@
     switch (url.pathname) {
       case '/api/auth/status': return reply({configured: true, authenticated: true, lane: 'local', user: {email: 'documentation@example.invalid', displayName: '說明模式', role: 'admin', operator: true}});
       case '/api/features': return reply({studios: registry.studios, features: registry.features.map(feature => ({...feature, ready: true, runnable: !['storage', 'gated'].includes(feature.kind), missingModels: [], missingNodes: [], documentationOnly: true}))});
-      case '/api/characters': return reply({characters: window.WebComfyCharacterSession?.list() || [], actions: []});
+      case '/api/characters': {
+        window.WebComfyCharacterSession?.install?.(registry);
+        const listed = window.WebComfyCharacterSession?.listedCharacters?.() || [];
+        const session = window.WebComfyCharacterSession?.list?.() || [];
+        return reply({characters: [...listed, ...session], actions: []});
+      }
       case '/api/queue': return reply({jobs: [], terminal: [], recent_errors: [], summary: {running: 0, pending: 0, total: 0, external: 0}});
       case '/api/posts': return reply({posts: [], items: []});
-      case '/api/voices': return reply({voices: (registry.demos?.['voice-library']?.output?.audio_tracks || []).map((track, index) => ({id: 'docs-voice-' + index, name: track.title, url: track.src, transcript: track.transcript, source: '預製示範音訊 / Prepared voice sample', canDelete: false})), items: []});
+      case '/api/voices': {
+        window.WebComfyDemoCases?.install?.(registry);
+        const mats = window.WebComfyDemoCases?.voiceLibraryMaterials?.() || [];
+        const en = window.WebComfyI18n?.language === 'en';
+        const voices = mats.map(mat => ({
+          id: mat.id,
+          name: en ? (mat.label_en || mat.label_zh || mat.id) : (mat.label_zh || mat.label_en || mat.id),
+          url: window.WebComfyDemoDrive?.assetUrl?.(mat.file) || new URL('assets/examples/' + mat.file, base).href,
+          transcript: mat.transcript || '',
+          gender: mat.gender || null,
+          subject: mat.subject || null,
+          source: '預製示範音訊 / Prepared voice sample',
+          canDelete: false,
+        }));
+        return reply({voices, items: []});
+      }
       case '/api/voiceover/batches': return reply({batches: []});
       case '/api/personas': return reply({personas: []});
       case '/api/voice-batches': return reply({batches: [], items: []});
       case '/api/workflow-library': return reply(workflows);
       case '/api/crawl-videos': return reply({ok: true, videos: []});
       case '/api/google/status': return reply({configured: true, connected: false});
+    }
+    const capMatch = url.pathname.match(/^\/api\/characters\/([^/]+)\/capabilities$/);
+    if (capMatch) {
+      window.WebComfyCharacterSession?.install?.(registry);
+      const cid = decodeURIComponent(capMatch[1]);
+      const all = [
+        ...(window.WebComfyCharacterSession?.listedCharacters?.() || []),
+        ...(window.WebComfyCharacterSession?.list?.() || []),
+      ];
+      const charObj = all.find(c => c.id === cid);
+      return reply({capabilities: Array.isArray(charObj?.capabilities) ? charObj.capabilities : []});
     }
     if (url.href === new URL('catalog.json', base).href) return reply(workflows);
     if (url.href === new URL('app-guide.json', base).href) return reply(registry);
@@ -281,6 +312,7 @@
     if (target.matches('a[href="/admin"]') || (target.matches('button') && ['登出', 'Sign out', 'Log out'].includes(target.textContent.trim()))) {
       event.preventDefault();event.stopImmediatePropagation();openHelp(target);return;
     }
+    if (target.closest?.('.assist-btn')?.closest('form[data-demo-cases="true"]')) return;
     if (target.matches('input[type=password],button[type=submit],.generate-btn,.assist-btn')) {
       event.preventDefault();event.stopImmediatePropagation();
       const form = target.closest('[data-demo-id]');
@@ -313,10 +345,12 @@
     // A rejected live preview must not disable playback of the existing canned tour.
     for (const form of document.querySelectorAll('form[data-demo-id]')) {
       if (form.querySelector('.app-demo')?.dataset.state === 'running') continue;
+      if (form.dataset.demoCases === 'true') {window.WebComfyDemoCases?.applyGate?.(form); continue;}
       const allowed = window.WebComfyHardware?.canUse(form.dataset.demoId);
       if (allowed === undefined) continue;
       for (const button of form.querySelectorAll('[data-demo-submit]')) button.disabled = !allowed;
     }
+    window.WebComfyCharacterSession?.decorateWall?.();
     updateDocsIdentity();
   };
   new MutationObserver(disableSecrets).observe(document.documentElement, {childList: true, subtree: true});
@@ -329,11 +363,18 @@
   });
   const showLoadError = () => {const message = document.getElementById('docsBanner'); if(message) message.textContent = '說明資料載入失敗，請重新整理頁面。';};
   const initialGuide = callback => Promise.all([ready, appLoaded]).then(() => callback()).catch(showLoadError);
+  const readQueryLang = () => {
+    try { return new URL(location.href).searchParams.get('lang'); }
+    catch (_) { return null; }
+  };
+  const requestedLanguageEarly = readQueryLang();
+  if (['en', 'zh-Hant'].includes(requestedLanguageEarly)) window.WebComfyI18n?.setLanguage(requestedLanguageEarly);
   initialGuide(() => {
     window.WebComfyI18n?.register({...registry.translations, '示範角色': 'Demo characters', '只保留在本頁記憶體，重新整理後清除。': 'Kept in page memory only; cleared on refresh.'});
-    const requestedLanguage = new URLSearchParams(location.search).get('lang');
+    const requestedLanguage = readQueryLang();
     if (['en', 'zh-Hant'].includes(requestedLanguage)) window.WebComfyI18n?.setLanguage(requestedLanguage);
     window.WebComfyDemoDrive?.install(registry);
+    window.WebComfyDemoCases?.install(registry);
     window.WebComfyHardware?.install(registry);
     window.WebComfyCharacterSession?.install(registry);
     window.WebComfyTour?.install(registry);
