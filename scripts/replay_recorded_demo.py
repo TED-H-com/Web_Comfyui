@@ -25,16 +25,16 @@ from scripts.public_demo_assets import PUBLIC_DEMO_ASSETS
 # Reviewed classes used by the committed GPU recordings. Additional graph types
 # require an explicit code review, even if someone updates a graph's checksum.
 ALLOWED_NODES = frozenset('''
-ApplyInstantID CLIPLoader CLIPTextEncode CLIPVisionEncode CLIPVisionLoader
-CheckpointLoaderSimple ConditioningZeroOut ControlNetLoader DualCLIPLoader
-EmptyLatentImage EmptySD3LatentImage FluxGuidance FluxKontextImageScale
-GetImageSize IPAdapterAdvanced IPAdapterModelLoader InstantIDFaceAnalysis
-InstantIDModelLoader KSampler LoadImage LoraLoaderModelOnly ModelSamplingSD3
-ReferenceLatent ResizeImageMaskNode SAM3_VideoTrack SAM3_Detect ThresholdMask
-ImageCompositeMasked MaskToImage SCAIL2ColoredMask SaveImage
-LoadAudio ReActorFaceSwap Wav2Lip VHS_VideoInfo WanFirstLastFrameToVideo
-UNETLoader VAEDecode VAEEncode VAELoader VHS_LoadVideo VHS_LoadVideoPath
-VHS_VideoCombine WanContextWindowsManual WanImageToVideo WanSCAILToVideo
+CLIPLoader CLIPTextEncode CLIPVisionEncode CLIPVisionLoader
+CheckpointLoaderSimple ConditioningZeroOut DualCLIPLoader EmptyLatentImage
+EmptySD3LatentImage FluxGuidance FluxKontextImageScale GetImageSize
+ImageCompositeMasked ImageFromBatch KSampler LoadAudio LoadImage
+LoraLoaderModelOnly MaskToImage ModelSamplingSD3 QwenImage21Cache
+ReActorFaceSwap ReferenceLatent ResizeImageMaskNode ResolutionSelector
+SAM3_Detect SAM3_VideoTrack SCAIL2ColoredMask SaveImage
+TextEncodeQwenImage21 ThresholdMask UNETLoader VAEDecode VAEEncode VAELoader
+VHS_LoadVideo VHS_VideoCombine VHS_VideoInfo WanContextWindowsManual
+WanFirstLastFrameToVideo WanImageToVideo WanSCAILToVideo Wav2Lip
 '''.split())
 
 

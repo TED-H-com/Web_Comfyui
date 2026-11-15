@@ -40,6 +40,11 @@ def test_every_real_feature_and_character_creation_has_bilingual_content(app):
 def test_recorded_outputs_need_evidence_and_prepared_examples_are_distinct(app):
     root = ROOT / 'webui/docs/examples'
     provenance = json.loads((root / 'provenance.json').read_text())
+    demo_set = json.loads((ROOT / 'webui/docs/demo-set.json').read_text())
+    displayed_by_feature = {}
+    for case in demo_set.get('cases', []):
+        if case.get('display'):
+            displayed_by_feature.setdefault(case['feature_id'], []).append(case)
     ledger = {row['file']: row for row in provenance['assets']}
     runs = {row['id']: row for row in provenance.get('runs', [])}
     assert len(ledger) == len(provenance['assets'])
@@ -47,7 +52,7 @@ def test_recorded_outputs_need_evidence_and_prepared_examples_are_distinct(app):
     verified = []
     for identifier, example in demos(app).items():
         output = example['output']
-        assert output['kind'] in {'image', 'video', 'audio', 'text', 'character', 'gallery', 'unavailable'}
+        assert output['kind'] in {'image', 'video', 'audio', 'text', 'character', 'gallery', 'demo-cases', 'unavailable'}
         if identifier == 'character-create':
             # Character creation is a form preview, not a claimed model result.
             assert output == {'kind': 'character', 'images': []}
@@ -71,6 +76,17 @@ def test_recorded_outputs_need_evidence_and_prepared_examples_are_distinct(app):
                 if item in output.get('audio_tracks', []):
                     assert ledger[name]['kind'] == 'audio'
                     assert item['transcript'] and item['title_en']
+            continue
+        if example.get('evidence', {}).get('kind') == 'demo-cases':
+            assert output == {'kind': 'demo-cases', 'images': []}
+            feature_cases = displayed_by_feature.get(identifier, [])
+            assert feature_cases, identifier
+            for case in feature_cases:
+                if case.get('kind') == 'recorded':
+                    assert case['run_id'] in runs
+                    run = runs[case['run_id']]
+                    assert run['feature_id'] == identifier
+                    assert run['status'] == 'success'
             continue
         # Every claimed result must refer to a successful run of THIS feature;
         # generic illustrations, transcripts and pan videos are not evidence.
@@ -228,3 +244,9 @@ def test_new_feature_cannot_ship_without_matching_demo_content(app):
     changed['features'].append({'id': 'unmapped-feature'})
     with pytest.raises(ValueError, match='every app feature'):
         demos(changed)
+
+
+def test_empty_case_features_rejects_remaining_unavailable_tools(app):
+    with pytest.raises(ValueError, match='Every public tool'):
+        demos(app, case_features=set())
+

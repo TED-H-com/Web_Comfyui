@@ -99,14 +99,24 @@ def test_every_committed_record_validates_without_submission(monkeypatch):
         assert replay.main([run['id']]) == 0
 
 
-def test_recorded_lipsync_can_prepare_both_video_and_synthetic_audio(tmp_path):
-    run, graph = replay.load_record('cheer-lipsync-v1')
+def test_recorded_ls_qingqing_zh_can_prepare_both_video_and_synthetic_audio(tmp_path):
+    run, graph = replay.load_record('ls-qingqing-zh')
     inputs = tmp_path / 'input'
     inputs.mkdir()
     prepared = replay.prepare_inputs(run, graph, inputs)
-    assert prepared['1']['inputs']['video'] == 'web-demo-replay/cheer-wave.mp4'
-    assert prepared['2']['inputs']['audio'] == 'web-demo-replay/warm-welcome.wav'
+    assert prepared['1']['inputs']['video'] == 'web-demo-replay/iv-qingqing-cafe.mp4'
+    assert prepared['2']['inputs']['audio'] == 'web-demo-replay/qingqing-hello.wav'
     assert len(list((inputs / 'web-demo-replay').iterdir())) == 2
+
+
+def test_allowed_nodes_matches_committed_provenance_graph_union():
+    ledger = json.loads((replay.ROOT / 'webui/docs/examples/provenance.json').read_text())
+    used = {
+        node['class_type']
+        for run in ledger['runs']
+        for node in run['workflow']['graph'].values()
+    }
+    assert replay.ALLOWED_NODES == used
 
 
 def test_rehashed_graph_with_unreviewed_node_is_rejected(tmp_path):

@@ -75,18 +75,18 @@ ASSERT = r'''(async () => {
   detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors')&&detail.textContent.includes('目前一般工具選單隱藏'),'hidden Flux Kontext form stays documented at its direct route');await close();
   const img2imgForm=document.querySelector('form[data-demo-id="img2img"]');
   const original=img2imgForm.querySelector('.demo-slot-preview[data-slot="image"] img');
-  assert(original&&original.src.includes('cheer-reference.webp'),'case slot preview visible before playback under Pages subpath');
+  assert(original&&original.src.includes('subject-qingqing.webp'),'case slot preview visible before playback under Pages subpath');
   await until(()=>original.naturalWidth>0);
   assert(document.querySelector('.app-demo').hidden && !document.querySelector('.demo-references'), 'only upload reference visible before editing');
   document.querySelector('.generate-btn').click();await until(()=>document.querySelector('.app-demo')?.dataset.state==='complete');
   const comparison=document.querySelector('.demo-comparison');
   assert(comparison?.querySelectorAll('img').length===2,'before and after shown only after Generate');
   assert(comparison.querySelector('[data-comparison-before] img').src===original.src,'comparison shows exact original');
-  assert(comparison.querySelector('figure:not([data-comparison-before]) img').src.includes('cheer-kontext.webp'),'comparison shows case output image');
+  assert(comparison.querySelector('figure:not([data-comparison-before]) img').src.includes('kx-qingqing-ballroom.webp'),'comparison shows case output image');
   assert(comparison.textContent.includes('修改前')&&comparison.textContent.includes('修改後'),'visible before/after comparison captions');
   document.querySelector('.demo-prefill-bar button').click();
   assert(document.querySelector('.app-demo').hidden && !document.querySelector('.demo-output img'),'reset hides and removes result');
-  assert(img2imgForm.dataset.demoCase==='ph-edit-case' && img2imgForm.querySelector('.demo-slot-preview[data-slot="image"] img')?.src.includes('cheer-reference.webp'),'reset restores active case');
+  assert(img2imgForm.dataset.demoCase==='kx-qingqing-ballroom' && img2imgForm.querySelector('.demo-slot-preview[data-slot="image"] img')?.src.includes('subject-qingqing.webp'),'reset restores active case');
   const upload=document.querySelector('input[type=file][data-demo-upload]');
   const transfer=new DataTransfer();transfer.items.add(new File(['synthetic local input'],'local-example.png',{type:'image/png'}));
   const drop=new Event('drop',{bubbles:true,cancelable:true});Object.defineProperty(drop,'dataTransfer',{value:transfer});
@@ -95,9 +95,9 @@ ASSERT = r'''(async () => {
   upload.files=transfer.files;upload.dispatchEvent(new Event('change',{bubbles:true}));
   assert(!upload.value && createObjectUrlCalls===0 && fileReaderCalls===0,'local file selection never reads local file or creates blob');
   upload.click();await until(()=>document.querySelector('.demo-disk-modal'));
-  document.querySelector('.demo-disk-modal [data-material-id="ph-cheer"]').click();
+  document.querySelector('.demo-disk-modal [data-material-id="subject-qingqing"]').click();
   await until(()=>!document.querySelector('.demo-disk-modal') && document.querySelector('.demo-slot-preview[data-slot="image"] img'));
-  assert(document.querySelector('.demo-slot-preview[data-slot="image"] img').src.includes('cheer-subject-reference.webp'),'picked demo disk material fills preview without blob');
+  assert(document.querySelector('.demo-slot-preview[data-slot="image"] img').src.includes('subject-qingqing.webp'),'picked demo disk material fills preview without blob');
   assert(createObjectUrlCalls===0,'no blob URLs created after disk pick');
   const resourceTab=visible('[data-view="resources"]');
   if(resourceTab) resourceTab.click();
@@ -106,7 +106,7 @@ ASSERT = r'''(async () => {
   assert([...document.querySelectorAll('input[type="password"]')].every(node=>node.disabled),'credentials disabled');
   visible('[data-view="characters"]').click();
   await until(()=>document.querySelector('.new-character-card'));
-  assert(document.querySelector('[data-character-id="docs-character-cheer"]') && document.querySelector('[data-character-id="docs-character-cheer-anime"]'),'listed demo characters appear in character wall');
+  assert(document.querySelector('[data-character-id="docs-character-qingqing"]') && document.querySelector('[data-character-id="docs-character-xingyu"]'),'listed demo characters appear in character wall');
   document.querySelector('.new-character-card').click();
   await until(()=>document.querySelector('[data-demo-id="character-create"]'));
   assert(document.querySelector('.experimental-create-form input[name=name]').value,'character name prefilled');
@@ -129,13 +129,13 @@ ASSERT = r'''(async () => {
   characterForm.elements.name.value=personalName;
   characterForm.elements.description.value='<img src=x onerror=alert(1)> 文生圖';
   characterForm.elements.photos.click();await until(()=>document.querySelector('.demo-disk-modal'));
-  document.querySelector('.demo-disk-modal [data-material-id="ph-cheer"]').click();
+  document.querySelector('.demo-disk-modal [data-material-id="subject-qingqing"]').click();
   await until(()=>!document.querySelector('.demo-disk-modal') && characterForm.querySelector('.demo-slot-preview[data-slot="photos"] img'));
   characterForm.querySelector('button[type=submit]').click();await until(()=>document.querySelector('[data-session-character]'));
   assert(document.querySelector('.docs-character-header h1').textContent===personalName&&!document.querySelector('.docs-character-header h1 img'),'name is safe literal text');
   assert(document.querySelector('.docs-character-description').textContent==='<img src=x onerror=alert(1)> 文生圖' && !document.querySelector('.docs-character-description img'),'custom description retained');
   const cardPhoto=document.querySelector('.docs-character-reference'),cardURL=cardPhoto.src;
-  assert(cardURL.includes('cheer-subject-reference.webp')&&!cardURL.startsWith('blob:'),'session owns picked published photo URL without blob');
+  assert(cardURL.includes('subject-qingqing.webp')&&!cardURL.startsWith('blob:'),'session owns picked published photo URL without blob');
   assert(document.querySelector('.demo-cc-bound') && document.querySelectorAll('.docs-character-case-card').length > 0,'bound character shows matched demo links');
   await until(()=>cardPhoto.naturalWidth>0);
   const charsTwo=(await (await fetch('/api/characters')).json()).characters;
@@ -161,13 +161,13 @@ ASSERT = r'''(async () => {
   const edited=englishForm.querySelector('textarea');edited.value='My unchanged prompt 文生圖';edited.dispatchEvent(new Event('input',{bubbles:true}));
   const keptFile=englishForm.querySelector('input[type=file]');
   keptFile.click();await until(()=>document.querySelector('.demo-disk-modal'));
-  document.querySelector('.demo-disk-modal [data-material-id="ph-cheer"]').click();
+  document.querySelector('.demo-disk-modal [data-material-id="portrait-qingqing"]').click();
   await until(()=>!document.querySelector('.demo-disk-modal') && englishForm.querySelector('.demo-slot-preview[data-slot="image"]'));
   lang.value='zh-Hant';lang.dispatchEvent(new Event('change'));await until(()=>document.documentElement.lang==='zh-Hant');
   await until(()=>/[\u4e00-\u9fff]/.test(englishForm.querySelector('.app-demo h3').textContent));
-  assert(edited.value==='My unchanged prompt 文生圖'&&englishForm.querySelector('.demo-slot-preview[data-slot="image"]').dataset.materialId==='ph-cheer','language preserves user prompt and picked material');
+  assert(edited.value==='My unchanged prompt 文生圖'&&englishForm.querySelector('.demo-slot-preview[data-slot="image"]').dataset.materialId==='portrait-qingqing','language preserves user prompt and picked material');
   englishForm.querySelector('.demo-prefill-bar button').click();
-  assert(englishForm.dataset.demoEdited==='false' && englishForm.querySelector('.demo-slot-preview[data-slot="image"]').dataset.materialId==='ph-ref','reset restores selected case slot');
+  assert(englishForm.dataset.demoEdited==='false' && englishForm.querySelector('.demo-slot-preview[data-slot="image"]').dataset.materialId==='subject-qingqing','reset restores selected case slot');
   englishForm.querySelector('.demo-slot-remove').click();
   assert(!keptFile.dataset.demoMaterial&&!englishForm.querySelector('.demo-slot-preview'),'remove clears picked slot preview');
   visible('[data-view="workflows"]').click();await until(()=>document.querySelectorAll('.workflow-card').length);
@@ -396,15 +396,15 @@ def test_u1a_closed_loop_browser(tmp_path):
                 page.keyboard.press('Enter')
                 page.locator('.demo-disk-modal').wait_for(timeout=5000)
                 assert [' '.join(t.inner_text().split()) for t in page.locator('.demo-folder-btn').all()] == [
-                    '人物照片 (4)', '場景 (2)', '影片 (1)', '聲音 (3)'
+                    '人物照片 (7)', '場景 (6)', '影片 (5)', '聲音 (6)'
                 ]
                 assert page.locator('.demo-folder-btn[data-folder="scenes"]').get_attribute('aria-selected') == 'true'
                 page.locator('.demo-folder-btn[data-folder="videos"]').click()
-                vid_tile = page.locator('.demo-disk-modal .demo-tile[data-material-id="ph-wave"]')
+                vid_tile = page.locator('.demo-disk-modal .demo-tile[data-material-id="iv-qingqing-cafe"]')
                 assert vid_tile.get_attribute('aria-disabled') == 'true'
                 assert '這個欄位只接受圖片' in vid_tile.inner_text()
                 vid_tile.focus()
-                assert page.evaluate("() => document.activeElement?.dataset?.materialId") == 'ph-wave'
+                assert page.evaluate("() => document.activeElement?.dataset?.materialId") == 'iv-qingqing-cafe'
                 vid_tile.click(force=True, timeout=5000)
                 assert page.locator('.demo-disk-modal').is_visible()
                 page.keyboard.press('Escape')
@@ -414,14 +414,14 @@ def test_u1a_closed_loop_browser(tmp_path):
                 # Case badge + default folder from dataset.demoCase + upload progress + event + live i18n
                 page.evaluate("""() => {
                   const form = document.querySelector('form[data-demo-id="image-blend"]');
-                  form.dataset.demoCase = 'ph-blend-case';
+                  form.dataset.demoCase = 'bl-qingqing-old-street';
                   window.__pickedEvents = [];
                   form.addEventListener('demo:material-picked', e => window.__pickedEvents.push(e.detail));
                 }""")
                 drop2.click()
                 page.locator('.demo-disk-modal').wait_for(timeout=5000)
                 assert page.locator('.demo-folder-btn[data-folder="scenes"]').get_attribute('aria-selected') == 'true'
-                stadium_tile = page.locator('.demo-disk-modal .demo-tile[data-material-id="ph-stadium"]')
+                stadium_tile = page.locator('.demo-disk-modal .demo-tile[data-material-id="scene-old-street"]')
                 assert '本案例使用的素材' in stadium_tile.inner_text()
                 assert '有預跑結果' in stadium_tile.inner_text()
                 page.evaluate("() => window.WebComfyI18n.setLanguage('en')")
@@ -435,7 +435,7 @@ def test_u1a_closed_loop_browser(tmp_path):
                 page.locator('.demo-disk-modal [role="progressbar"]').wait_for(timeout=3000)
                 page.locator('.demo-slot-preview[data-slot="image2"]').wait_for(timeout=5000)
                 assert '已上傳到素材庫' in page.locator('.demo-toast').inner_text()
-                assert page.evaluate("() => window.__pickedEvents.at(-1)") == {'slot': 'image2', 'materialId': 'ph-stadium', 'source': 'upload'}
+                assert page.evaluate("() => window.__pickedEvents.at(-1)") == {'slot': 'image2', 'materialId': 'scene-old-street', 'source': 'upload'}
 
                 # Reduced motion completes without waiting, external input & drop refused
                 page.emulate_media(reduced_motion='reduce')
@@ -444,7 +444,7 @@ def test_u1a_closed_loop_browser(tmp_path):
                 group_titles = [g.inner_text() for g in page.locator('.demo-library-group-title').all()]
                 assert group_titles[0] == '你剛剛加入的'
                 assert '人物照片' in group_titles and '預跑成果' in group_titles
-                page.locator('.demo-library-modal .demo-tile[data-material-id="ph-cheer"]').click()
+                page.locator('.demo-library-modal .demo-tile[data-material-id="subject-qingqing"]').click()
                 page.locator('.demo-slot-preview[data-slot="image1"]').wait_for(timeout=5000)
                 assert page.locator('.demo-disk-modal [role="progressbar"]').count() == 0
                 page.emulate_media(reduced_motion='no-preference')
@@ -464,12 +464,12 @@ def test_u1a_closed_loop_browser(tmp_path):
                 video_slot = page.locator('form[data-demo-id="lipsync"] .upload-slot:has([data-upload-id="video"])')
                 url_input = video_slot.locator('.url-fetch .url-input').first
                 list_id = url_input.get_attribute('list')
-                assert list_id and 'https://video.example.com/cheer-wave.mp4' in [
+                assert list_id and 'https://video.example.com/qingqing-cafe.mp4' in [
                     o.get_attribute('value') for o in page.locator(f'#{list_id} option').all()
                 ]
                 video_slot.locator('[data-url-fetch="video"]').click()
                 video_slot.locator('.demo-url-refuse').wait_for(timeout=5000)
-                video_slot.locator('.demo-url-alias-btn').first.click()
+                video_slot.locator('.demo-url-alias-btn', has_text='qingqing-cafe.mp4').click()
                 page.wait_for_function("() => document.querySelector('.demo-toast')?.textContent.includes('已從示範網址下載')", timeout=5000)
                 video_slot.locator('.demo-slot-preview[data-slot="video"]').wait_for(timeout=5000)
                 assert '已從示範網址下載' in page.locator('.demo-toast').inner_text()
@@ -484,27 +484,27 @@ def test_u1a_closed_loop_browser(tmp_path):
                 page.locator('.demo-manage-panel').wait_for(timeout=12000)
                 assert page.locator('.demo-filter-btn[data-filter-kind="all"]').get_attribute('aria-pressed') == 'true'
                 session_ids = [t.get_attribute('data-material-id') for t in page.locator('.demo-manage-section').nth(0).locator('.demo-tile').all()]
-                assert session_ids == ['ph-wave', 'ph-cheer', 'ph-stadium']
+                assert session_ids == ['iv-qingqing-cafe', 'subject-qingqing', 'scene-old-street']
                 result_hrefs = [t.get_attribute('href') for t in page.locator('.demo-manage-section').nth(1).locator('.demo-tile').all()]
-                assert len(result_hrefs) >= 2 and any('#/studio/image-blend?case=ph-blend-case' in h for h in result_hrefs)
+                assert len(result_hrefs) >= 2 and any('#/studio/image-blend?case=bl-qingqing-old-street' in h for h in result_hrefs)
                 page.locator('.demo-filter-btn[data-filter-kind="image"]').click()
                 assert page.locator('.demo-filter-btn[data-filter-kind="image"]').get_attribute('aria-pressed') == 'true'
-                assert [t.get_attribute('data-material-id') for t in page.locator('.demo-manage-section').nth(0).locator('.demo-tile').all()] == ['ph-cheer', 'ph-stadium']
+                assert [t.get_attribute('data-material-id') for t in page.locator('.demo-manage-section').nth(0).locator('.demo-tile').all()] == ['subject-qingqing', 'scene-old-street']
                 page.locator('.demo-filter-btn[data-filter-kind="all"]').click()
                 page.locator('#languageSelect').select_option('en')
                 page.wait_for_function("() => document.documentElement.lang === 'en' && document.querySelector('.demo-manage-title')?.textContent === 'Library'", timeout=5000)
                 page.locator('#languageSelect').select_option('zh-Hant')
                 page.wait_for_function("() => document.documentElement.lang === 'zh-Hant' && document.querySelector('.demo-manage-title')?.textContent === '素材庫'", timeout=5000)
 
-                page.locator('.demo-manage-section').nth(1).locator('a.demo-tile[href*="ph-blend-case"]').click()
+                page.locator('.demo-manage-section').nth(1).locator('a.demo-tile[href*="bl-qingqing-old-street"]').click()
                 page.locator('form[data-demo-id="image-blend"]').wait_for(timeout=12000)
                 assert not page.locator('.missing-box').count()
-                assert page.locator('form[data-demo-id="image-blend"]').get_attribute('data-demo-case') == 'ph-blend-case'
+                assert page.locator('form[data-demo-id="image-blend"]').get_attribute('data-demo-case') == 'bl-qingqing-old-street'
                 assert page.evaluate("() => window.WebComfyDemoDrive?.consumePendingRoute?.() ?? null") is None
 
-                page.evaluate("() => { location.hash = '#/manage/docs-character-cheer'; }")
+                page.evaluate("() => { location.hash = '#/manage/docs-character-qingqing'; }")
                 page.locator('.demo-manage-panel').wait_for(timeout=12000)
-                assert [t.get_attribute('data-material-id') for t in page.locator('.demo-manage-section').nth(0).locator('.demo-tile').all()] == ['ph-wave', 'ph-cheer']
+                assert [t.get_attribute('data-material-id') for t in page.locator('.demo-manage-section').nth(0).locator('.demo-tile').all()] == ['iv-qingqing-cafe', 'subject-qingqing']
                 page.evaluate("() => { location.hash = '#/manage/other'; }")
                 page.locator('.demo-manage-empty').wait_for(timeout=12000)
                 assert page.locator('.demo-manage-section').nth(1).locator('.demo-tile').count() == 0

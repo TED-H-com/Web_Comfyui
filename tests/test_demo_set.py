@@ -173,24 +173,45 @@ def _make_valid_final_set(base_app_guide: dict):
             },
             {
                 'id': 'mat-vid',
-                'file': 'cheer-wave.mp4',
-                'thumb': None,
-                'poster': 'cheer-wave-poster.webp',
+                'file': 'iv-qingqing-cafe.mp4',
+                'thumb': 'iv-qingqing-cafe-thumb.webp',
+                'poster': 'iv-qingqing-cafe-poster.webp',
                 'kind': 'video',
                 'folder': 'videos',
                 'library': True,
                 'subject': 'real-f',
                 'domain': 'real',
-                'label_zh': '揮手影片',
-                'label_en': 'Wave clip',
-                'url_alias': 'https://video.example.com/cheer-wave.mp4',
+                'label_zh': '晴晴影片',
+                'label_en': 'Qingqing clip',
+                'url_alias': 'https://video.example.com/qingqing-cafe.mp4',
                 'produced_by': None,
-                'bytes': 1310381,
+                'bytes': 527887,
                 'width': 480,
-                'height': 720,
-                'duration_seconds': 5.0625,
+                'height': 832,
+                'duration_seconds': 5.062,
                 'transcript': None,
                 'gender': None,
+            },
+            {
+                'id': 'mat-audio-ls',
+                'file': 'qingqing-hello.wav',
+                'thumb': None,
+                'poster': None,
+                'kind': 'audio',
+                'folder': None,
+                'library': False,
+                'subject': None,
+                'domain': None,
+                'label_zh': '晴晴自我介紹',
+                'label_en': 'Qingqing says hello',
+                'url_alias': None,
+                'produced_by': 'voxcpm2-qingqing-hello',
+                'bytes': 445484,
+                'width': None,
+                'height': None,
+                'duration_seconds': 4.64,
+                'transcript': '嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！',
+                'gender': 'female',
             },
             {
                 'id': 'mat-audio-f',
@@ -279,19 +300,19 @@ def _make_valid_final_set(base_app_guide: dict):
                 'title_en': 'Lipsync case',
                 'subjects': ['real-f', 'real-m'],
                 'domain': 'real',
-                'inputs': {'video': 'mat-vid', 'voice': 'mat-audio-f'},
+                'inputs': {'video': 'mat-vid', 'voice': 'mat-audio-ls'},
                 'settings': {},
                 'outputs': [
                     {
-                        'file': 'cheer-lipsync.mp4',
+                        'file': 'ls-qingqing-zh.mp4',
                         'kind': 'video',
-                        'poster': 'cheer-lipsync-poster.webp',
-                        'thumb': None,
+                        'poster': 'ls-qingqing-zh-poster.webp',
+                        'thumb': 'ls-qingqing-zh-thumb.webp',
                         'material': None,
                     }
                 ],
                 'comparison': None,
-                'run_id': 'cheer-lipsync-v1',
+                'run_id': 'ls-qingqing-zh',
                 'stand_in_for': None,
                 'audio': [],
                 'post': None,
@@ -390,18 +411,22 @@ def _make_valid_final_set(base_app_guide: dict):
     return data, prov
 
 
+def _blend_case(data: dict) -> dict:
+    return next(c for c in data['cases'] if c['id'] == 'bl-qingqing-old-street')
+
+
 def test_placeholder_demo_set_passes_structural_validation():
     ctx = _real_inputs()
     data = demo_set.load_demo_set(ROOT)
-    assert data['status'] == 'placeholder'
+    assert data['status'] == 'final'
     assert demo_set.validate_demo_set(data, **ctx) == []
-    assert demo_set.validate_demo_set(
+    assert 'app_guide required for final validation' in demo_set.validate_demo_set(
         data,
         assets=ctx['assets'],
         provenance=ctx['provenance'],
         examples_dir=ctx['examples_dir'],
         app_guide=None,
-    ) == []
+    )
 
 
 def test_rule1_schema_status_uniqueness_keys_text_and_order():
@@ -425,11 +450,11 @@ def test_rule1_schema_status_uniqueness_keys_text_and_order():
     assert any('missing keys' in err for err in demo_set.validate_demo_set(missing_key, **ctx))
 
     empty_text = copy.deepcopy(base)
-    empty_text['cases'][0]['title_zh'] = '   '
+    _blend_case(empty_text)['title_zh'] = '   '
     assert any('title_zh' in err for err in demo_set.validate_demo_set(empty_text, **ctx))
 
     bad_order = copy.deepcopy(base)
-    bad_order['cases'][0]['display'] = False
+    _blend_case(bad_order)['display'] = False
     assert any('order must be null' in err for err in demo_set.validate_demo_set(bad_order, **ctx))
 
 
@@ -447,7 +472,7 @@ def test_rule2_assets_membership_and_sha256(tmp_path):
     for fname in ctx['assets']:
         src = tampered / fname
         if src.is_file():
-            (temp_examples / fname).write_bytes(b'corrupted' if fname == 'cheer-subject-reference.webp' else src.read_bytes())
+            (temp_examples / fname).write_bytes(b'corrupted' if fname == 'subject-qingqing.webp' else src.read_bytes())
     errs = demo_set.validate_demo_set(
         base,
         assets=ctx['assets'],
@@ -467,20 +492,20 @@ def test_rule3_references_and_app_guide_upload_slots():
     assert any('unknown material' in err for err in demo_set.validate_demo_set(bad_mat_ref, **ctx))
 
     bad_subj_ref = copy.deepcopy(base)
-    bad_subj_ref['cases'][0]['subjects'] = ['missing-subj']
+    _blend_case(bad_subj_ref)['subjects'] = ['missing-subj']
     assert any('unknown subject' in err for err in demo_set.validate_demo_set(bad_subj_ref, **ctx))
 
     bad_slot = copy.deepcopy(base)
-    bad_slot['cases'][0]['inputs'] = {'nonexistent_slot': 'ph-cheer'}
+    _blend_case(bad_slot)['inputs'] = {'nonexistent_slot': 'subject-qingqing'}
     assert any('not an upload slot' in err for err in demo_set.validate_demo_set(bad_slot, **ctx))
 
     wrong_kind = copy.deepcopy(base)
-    wrong_kind['cases'][0]['inputs']['image1'] = 'ph-warm'
+    _blend_case(wrong_kind)['inputs']['image1'] = 'qingqing-hello'
     assert any('kind' in err for err in demo_set.validate_demo_set(wrong_kind, **ctx))
 
     cc_case = _prepared_case(
-        'cc-test', 'character-create', 'ph-blend-case',
-        subjects=['cheer'], inputs={'arbitrary': 'ph-cheer'}, outputs=base['cases'][0]['outputs'],
+        'cc-test', 'character-create', 'bl-qingqing-old-street',
+        subjects=['qingqing', 'zhiyuan'], inputs={'arbitrary': 'subject-qingqing'}, outputs=_blend_case(base)['outputs'],
     )
     with_cc = copy.deepcopy(base)
     with_cc['cases'].append(cc_case)
@@ -492,13 +517,13 @@ def test_rule4_recorded_case_provenance_checks():
     base = demo_set.load_demo_set(ROOT)
 
     bad_run = copy.deepcopy(base)
-    bad_run['cases'][0]['run_id'] = 'unknown-run'
+    _blend_case(bad_run)['run_id'] = 'unknown-run'
     assert any('not found in provenance' in err for err in demo_set.validate_demo_set(bad_run, **ctx))
 
     bad_feat = copy.deepcopy(base)
     prov_copy = copy.deepcopy(ctx['provenance'])
     for row in prov_copy['runs']:
-        if row['id'] == 'cheer-subject-blend-v4':
+        if row['id'] == 'bl-qingqing-old-street':
             row['feature_id'] = 'text2img'
     assert any('feature_id' in err for err in demo_set.validate_demo_set(
         bad_feat, assets=ctx['assets'], provenance=prov_copy, examples_dir=ctx['examples_dir'], app_guide=ctx['app_guide']
@@ -506,20 +531,20 @@ def test_rule4_recorded_case_provenance_checks():
 
     bad_status = copy.deepcopy(ctx['provenance'])
     for row in bad_status['runs']:
-        if row['id'] == 'cheer-subject-blend-v4':
+        if row['id'] == 'bl-qingqing-old-street':
             row['status'] = 'error'
     assert any('status must be success' in err for err in demo_set.validate_demo_set(
         base, assets=ctx['assets'], provenance=bad_status, examples_dir=ctx['examples_dir'], app_guide=ctx['app_guide']
     ))
 
     bad_output = copy.deepcopy(base)
-    bad_output['cases'][0]['outputs'][0]['file'] = 'mountain-teahouse.webp'
+    _blend_case(bad_output)['outputs'][0]['file'] = 'scene-old-street.webp'
     assert any('not produced by run' in err for err in demo_set.validate_demo_set(bad_output, **ctx))
 
     bad_poster = copy.deepcopy(ctx['provenance'])
     for asset in bad_poster['assets']:
-        if asset['file'] == 'cheer-lipsync-poster.webp':
-            asset['derived_from'] = ['cheer-wave.mp4']
+        if asset['file'] == 'ls-qingqing-zh-poster.webp':
+            asset['derived_from'] = ['iv-qingqing-cafe.mp4']
     assert any('derived_from' in err for err in demo_set.validate_demo_set(
         base, assets=ctx['assets'], provenance=bad_poster, examples_dir=ctx['examples_dir'], app_guide=ctx['app_guide']
     ))
@@ -532,7 +557,7 @@ def test_rule5_6_7_prepared_stand_in_audio_and_disclosure():
     # Valid prepared stand-in passes
     good = copy.deepcopy(base)
     good['cases'].append(_prepared_case(
-        'prep-ok', 'anime-scene-card', 'ph-blend-case', subjects=['cheer'], outputs=base['cases'][0]['outputs'],
+        'prep-ok', 'anime-scene-card', 'bl-qingqing-old-street', subjects=['qingqing'], outputs=_blend_case(base)['outputs'],
     ))
     assert demo_set.validate_demo_set(good, **ctx) == []
 
@@ -543,33 +568,33 @@ def test_rule5_6_7_prepared_stand_in_audio_and_disclosure():
 
     bad_extra_audio = copy.deepcopy(base)
     bad_extra_audio['cases'].append(_prepared_case(
-        'prep-bad-audio-map', 'h3-reference-video', 'ph-blend-case',
-        subjects=['cheer'], audio=['ph-warm'], outputs=base['cases'][0]['outputs'],
+        'prep-bad-audio-map', 'h3-reference-video', 'bl-qingqing-old-street',
+        subjects=['qingqing'], audio=['qingqing-hello'], outputs=_blend_case(base)['outputs'],
     ))
     assert any('plus audio outputs' in err for err in demo_set.validate_demo_set(bad_extra_audio, **ctx))
 
     bad_no_standin = copy.deepcopy(base)
     bad_no_standin['cases'].append(_prepared_case(
-        'prep-missing-aud-out', 'voice-clone', None, subjects=['cheer'], domain=None, audio=['ph-warm'], outputs=[],
+        'prep-missing-aud-out', 'voice-clone', None, subjects=['qingqing'], domain=None, audio=['qingqing-hello'], outputs=[],
     ))
     assert any('section 6.1 audio outputs mapping' in err for err in demo_set.validate_demo_set(bad_no_standin, **ctx))
 
     # Rule 5: target is not recorded
     bad_target = copy.deepcopy(good)
-    bad_target['cases'].append(_prepared_case('prep-chain', 'img2img', 'prep-ok', subjects=['cheer']))
+    bad_target['cases'].append(_prepared_case('prep-chain', 'img2img', 'prep-ok', subjects=['qingqing']))
     assert any('not recorded' in err for err in demo_set.validate_demo_set(bad_target, **ctx))
 
     # Rule 6: audio id material produced_by must be in audio_runs
     bad_audio = copy.deepcopy(base)
-    warm_mat = next(m for m in bad_audio['materials'] if m['id'] == 'ph-warm')
+    warm_mat = next(m for m in bad_audio['materials'] if m['id'] == 'qingqing-hello')
     bad_audio['materials'].append({
         **warm_mat,
-        'id': 'ph-bad-audio',
+        'id': 'bad-audio',
         'produced_by': 'not-an-audio-run',
     })
     bad_audio['cases'].append(_prepared_case(
-        'prep-aud', 'voice-clone', None, subjects=['cheer'], domain=None, audio=['ph-bad-audio'],
-        outputs=[{'file': warm_mat['file'], 'kind': 'audio', 'poster': None, 'thumb': None, 'material': 'ph-bad-audio'}],
+        'prep-aud', 'voice-clone', None, subjects=['qingqing'], domain=None, audio=['bad-audio'],
+        outputs=[{'file': warm_mat['file'], 'kind': 'audio', 'poster': None, 'thumb': None, 'material': 'bad-audio'}],
     ))
     assert any('audio_runs' in err for err in demo_set.validate_demo_set(bad_audio, **ctx))
 
@@ -596,7 +621,7 @@ def test_rules8_and_9_post_generator_and_voice_speak():
 
     bad_pg_out = copy.deepcopy(base)
     pg_case = next(c for c in bad_pg_out['cases'] if c['feature_id'] == 'post-generator')
-    pg_case['outputs'] = copy.deepcopy(bad_pg_out['cases'][0]['outputs'])
+    pg_case['outputs'] = copy.deepcopy(_blend_case(bad_pg_out)['outputs'])
     assert any('outputs must be []' in err for err in demo_set.validate_demo_set(bad_pg_out, **ctx))
 
     bad_pg_post = copy.deepcopy(base)
@@ -612,8 +637,8 @@ def test_rules8_and_9_post_generator_and_voice_speak():
 
     bad_vs_lib = copy.deepcopy(base)
     vs_case = next(c for c in bad_vs_lib['cases'] if c['feature_id'] == 'voice-speak')
-    vs_case['settings']['voiceId'] = 'ph-clone'  # audio material with library=False
-    vs_case['settings']['sampleText'] = next(m for m in bad_vs_lib['materials'] if m['id'] == 'ph-clone')['transcript']
+    vs_case['settings']['voiceId'] = 'qingqing-clone'  # audio material with library=False
+    vs_case['settings']['sampleText'] = next(m for m in bad_vs_lib['materials'] if m['id'] == 'qingqing-clone')['transcript']
     assert any('library=true' in err for err in demo_set.validate_demo_set(bad_vs_lib, **ctx))
 
     bad_vs_text = copy.deepcopy(base)

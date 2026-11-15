@@ -13,23 +13,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.build_docs import ROOT, build
 
-# ---------------------------------------------------------------------------
-# Isolated placeholder-only block:
-# When demo-set.json status == 'placeholder', 4 recorded placeholder cases carry
-# raw provenance keys (width/height/cfg/loraStrength/weight/sampler/scheduler)
-# that have no matching UI controls. When status == 'final', ALL cases must
-# produce demoUnfilled == ''.
-# ---------------------------------------------------------------------------
-PLACEHOLDER_RAW_SETTINGS_CASES = {
-    'ph-wave-case',
-    'ph-angles-case',
-    'ph-edit-case',
-    'ph-anime-case',
-}
-PLACEHOLDER_RAW_SETTINGS_KEYS = {
-    'width', 'height', 'cfg', 'loraStrength', 'weight', 'sampler', 'scheduler', 'steps',
-}
-
 
 def _launch_site(tmp_path):
     playwright = pytest.importorskip('playwright.sync_api')
@@ -82,7 +65,7 @@ def _assert_clean_page(page, errors, external, filechoosers):
 
 def test_case_strips_order_unfilled_and_url_routing(tmp_path):
     playwright, browser_path, server, origin, app_guide, demo_set = _launch_site(tmp_path)
-    is_placeholder = demo_set.get('status') == 'placeholder'
+    assert demo_set.get('status') == 'final'
 
     studio_ids = {f['id'] for f in app_guide['features']}
     by_feature = {}
@@ -126,10 +109,7 @@ def test_case_strips_order_unfilled_and_url_routing(tmp_path):
 
                         unfilled_raw = form.get_attribute('data-demo-unfilled') or ''
                         unfilled_keys = {k for k in unfilled_raw.split(',') if k}
-                        if not is_placeholder or case['id'] not in PLACEHOLDER_RAW_SETTINGS_CASES:
-                            assert unfilled_keys == set(), (feature_id, case['id'], unfilled_keys)
-                        else:
-                            assert unfilled_keys <= PLACEHOLDER_RAW_SETTINGS_KEYS, (feature_id, case['id'], unfilled_keys)
+                        assert unfilled_keys == set(), (feature_id, case['id'], unfilled_keys)
 
                         if feature_id == 'voice-speak':
                             options = [o.get_attribute('value') for o in form.locator('select option').all()]
@@ -263,7 +243,7 @@ def test_matching_rules_gate_assist_timing_and_results(tmp_path):
                 lip_form.wait_for(timeout=12000)
                 page.emulate_media(reduced_motion='reduce')
                 lip_form.locator('[data-url-fetch="video"]').click()
-                lip_form.locator('.demo-url-alias-btn').first.click()
+                lip_form.locator('.demo-url-alias-btn', has_text='qingqing-cafe.mp4').click()
                 page.wait_for_function(
                     '() => document.querySelector(\'form[data-demo-id="lipsync"]\')?.dataset.demoGate === "ready"',
                     timeout=5000,
@@ -273,7 +253,7 @@ def test_matching_rules_gate_assist_timing_and_results(tmp_path):
                 # Non-matching upload in domain-exempt slot (h3-reference-video.audio1 / lipsync.voice) gives nomatch.other, never nomatch.domain
                 lip_form.locator('[data-material-picker="voice"]').click()
                 page.locator('.demo-library-modal').wait_for(timeout=5000)
-                page.locator('.demo-library-modal .demo-tile[data-material-id="ph-game"]').click()
+                page.locator('.demo-library-modal .demo-tile[data-material-id="xingyu-hello"]').click()
                 page.wait_for_function(
                     '() => document.querySelector(\'form[data-demo-id="lipsync"]\')?.dataset.demoGate === "nomatch.other"',
                     timeout=5000,
@@ -412,7 +392,7 @@ def test_characters_voice_library_and_mobile_overflow(tmp_path):
                 page.locator('.demo-char-back').click()
                 page.locator('.docs-character-voice audio').wait_for(timeout=5000)
 
-                # Verify all cases referencing Cheer are in feature_order sequence within groups
+                # Verify all cases referencing the listed subject are in feature_order sequence within groups
                 assert feature_order[0] == 'text2img'
 
                 # character-create unbound vs bound
@@ -452,7 +432,7 @@ def test_characters_voice_library_and_mobile_overflow(tmp_path):
                 assert page.locator('.demo-case-strip').count() == 0
                 assert page.locator('[data-demo-voice-selector]').count() == 0
                 assert page.locator('[data-voice-actions]').count() == 0
-                assert page.locator('.demo-voice-library .demo-voice-group').count() == 2
+                assert page.locator('.demo-voice-library .demo-voice-group').count() == 1
                 initial_cards = page.locator('.demo-voice-library .demo-voice-card').count()
                 assert initial_cards >= 3
                 expected_ref_count = len({
@@ -526,6 +506,249 @@ def test_characters_voice_library_and_mobile_overflow(tmp_path):
                 assert strip_metrics['scrollLeft'] > 0, strip_metrics
                 assert strip_metrics['pageY'] == 0, strip_metrics
 
+                _assert_clean_page(page, errors, external, filechoosers)
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_u1c_final_data_e8(tmp_path):
+    playwright, browser_path, server, origin, app_guide, demo_set = _launch_site(tmp_path)
+    studio_ids = {f['id'] for f in app_guide['features']}
+    expected_chars = [
+        'docs-character-qingqing',
+        'docs-character-zhiyuan',
+        'docs-character-xingyu',
+        'docs-character-chenyi',
+    ]
+    expected_voices = [
+        'qingqing-hello',
+        'zhiyuan-hello',
+        'xingyu-hello',
+        'chenyi-hello',
+        'qingqing-english',
+        'zhiyuan-english',
+    ]
+    recorded_by_feature = {}
+    for case in sorted(
+        (c for c in demo_set.get('cases', []) if c.get('display') and c.get('kind') == 'recorded' and c.get('feature_id') in studio_ids),
+        key=lambda c: c.get('order', 0),
+    ):
+        recorded_by_feature.setdefault(case['feature_id'], []).append(case)
+
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser_path, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                page, errors, external, filechoosers = _new_monitored_page(instance, origin)
+                page.emulate_media(reduced_motion='reduce')
+
+                # Rule 3 with case.switched: image-blend bl-qingqing-old-street + scene-snow-ridge -> bl-qingqing-snow-ridge
+                page.goto(f'{origin}/Web_Comfyui/demo/#/studio/image-blend?case=bl-qingqing-old-street', wait_until='domcontentloaded', timeout=12000)
+                ib_form = page.locator('form[data-demo-id="image-blend"]')
+                ib_form.wait_for(timeout=12000)
+                assert ib_form.get_attribute('data-demo-case') == 'bl-qingqing-old-street'
+                ib_form.locator('label.dropzone[data-upload-id="image2"]').click()
+                page.locator('.demo-disk-modal').wait_for(timeout=5000)
+                page.locator('.demo-folder-btn[data-folder="scenes"]').click()
+                page.locator('.demo-disk-modal .demo-tile[data-material-id="scene-snow-ridge"]').click()
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoCase === "bl-qingqing-snow-ridge"',
+                    timeout=5000,
+                )
+                assert ib_form.locator('.demo-case-switch-note').is_visible()
+                assert '已切換到使用這個素材的示範案例' in ib_form.locator('.demo-case-switch-note').inner_text()
+
+                # Rule 4 nomatch.domain & nomatch.other from bl-qingqing-old-street; clicking a strip case clears both
+                ib_form.locator('.demo-case-btn[data-case-id="bl-qingqing-old-street"]').click()
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoCase === "bl-qingqing-old-street"',
+                    timeout=5000,
+                )
+                ib_form.locator('label.dropzone[data-upload-id="image1"]').click()
+                page.locator('.demo-disk-modal').wait_for(timeout=5000)
+                page.locator('.demo-folder-btn[data-folder="scenes"]').click()
+                page.locator('.demo-disk-modal .demo-tile[data-material-id="scene-sakura-shrine"]').click()
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoGate === "nomatch.domain"',
+                    timeout=5000,
+                )
+                assert ib_form.locator('.generate-btn').is_disabled()
+                assert ib_form.locator('.demo-gate-reason').is_visible()
+
+                ib_form.locator('.demo-case-btn[data-case-id="bl-qingqing-old-street"]').click()
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoGate === "ready"',
+                    timeout=5000,
+                )
+                assert not ib_form.locator('.demo-gate-reason').is_visible()
+
+                ib_form.locator('label.dropzone[data-upload-id="image1"]').click()
+                page.locator('.demo-disk-modal').wait_for(timeout=5000)
+                page.locator('.demo-folder-btn[data-folder="people"]').click()
+                page.locator('.demo-disk-modal .demo-tile[data-material-id="portrait-qingqing"]').click()
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoGate === "nomatch.other"',
+                    timeout=5000,
+                )
+                assert ib_form.locator('.generate-btn').is_disabled()
+                assert ib_form.locator('.demo-gate-reason').is_visible()
+                ib_form.locator('.demo-case-btn[data-case-id="bl-qingqing-old-street"]').click()
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoGate === "ready"',
+                    timeout=5000,
+                )
+                assert not ib_form.locator('.demo-gate-reason').is_visible()
+
+                # Rules 7 and 8: voice-speak zhiyuan-english -> vs-zhiyuan-english-clone; voice-clone library voice switch
+                page.evaluate('() => { location.hash = "#/studio/voice-speak"; }')
+                vs_form = page.locator('form[data-demo-id="voice-speak"]')
+                vs_form.wait_for(timeout=12000)
+                vs_form.locator('.post-mode-panel:not(.hidden) select').first.select_option('zhiyuan-english')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="voice-speak"]\')?.dataset.demoCase === "vs-zhiyuan-english-clone"',
+                    timeout=5000,
+                )
+
+                page.evaluate('() => { location.hash = "#/studio/voice-clone"; }')
+                vc_form = page.locator('form[data-demo-id="voice-clone"]')
+                vc_form.wait_for(timeout=12000)
+                vc_sel = vc_form.locator('.post-mode-panel:not(.hidden) select').first
+                vc_sel.select_option('zhiyuan-hello')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="voice-clone"]\')?.dataset.demoCase === "vc-zhiyuan"',
+                    timeout=5000,
+                )
+                vc_sel.select_option('qingqing-hello')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="voice-clone"]\')?.dataset.demoCase === "vc-qingqing"',
+                    timeout=5000,
+                )
+
+                # 2x2 grid: ca-qingqing outputs 4 images in .demo-angles-grid
+                page.evaluate('() => { location.hash = "#/studio/character-angles?case=ca-qingqing"; }')
+                ang_form = page.locator('form[data-demo-id="character-angles"]')
+                ang_form.wait_for(timeout=12000)
+                ang_form.locator('.generate-btn').click()
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="character-angles"] .app-demo\')?.dataset.state === "complete"',
+                    timeout=5000,
+                )
+                assert ang_form.locator('.demo-angles-grid img').count() == 4
+
+                # /api/characters returns exact 4 listed subjects and each character page + grid links roundtrip via .demo-char-back
+                page.evaluate('() => { location.hash = "#/characters"; }')
+                page.locator('.new-character-card').wait_for(timeout=12000)
+                api_chars = page.evaluate('() => fetch("/api/characters").then(r => r.json())')
+                api_char_ids = [c.get('id') for c in (api_chars.get('characters') if isinstance(api_chars, dict) else api_chars)]
+                assert api_char_ids == expected_chars, api_char_ids
+
+                for cid in expected_chars:
+                    sub_id = cid.removeprefix('docs-character-')
+                    page.evaluate('(c) => { location.hash = "#/c/" + c; }', cid)
+                    page.locator('.docs-character-voice audio').wait_for(timeout=8000)
+                    expected_case_ids = {
+                        c['id']
+                        for c in demo_set['cases']
+                        if c.get('display') and c.get('kind') in ('recorded', 'prepared') and c.get('feature_id') != 'character-voice' and sub_id in (c.get('subjects') or [])
+                    }
+                    card_ids = {el.get_attribute('data-case-id') for el in page.locator('.docs-character-case-card').all()}
+                    assert card_ids == expected_case_ids, (cid, card_ids, expected_case_ids)
+                    first_href = page.locator('.docs-character-case-card a[href^="#/studio/"]').first.get_attribute('href')
+                    page.locator('.docs-character-case-card a[href^="#/studio/"]').first.click()
+                    page.locator('.demo-char-back').wait_for(timeout=8000)
+                    assert page.locator('.demo-char-back').get_attribute('href') == f'#/c/{cid}', (cid, first_href)
+                    page.locator('.demo-char-back').click()
+                    page.locator('.docs-character-voice audio').wait_for(timeout=8000)
+
+                # character-create: 6 listed people photos pickable; face-meiling disabled with cc.only-demo
+                page.evaluate('() => { location.hash = "#/characters"; }')
+                page.locator('.new-character-card').wait_for(timeout=8000)
+                page.locator('.new-character-card').click()
+                cc_form = page.locator('form[data-demo-id="character-create"]')
+                cc_form.wait_for(timeout=8000)
+                cc_form.locator('input[name="photos"]').click()
+                page.locator('.demo-disk-modal').wait_for(timeout=5000)
+                for mid in ('subject-qingqing', 'portrait-qingqing', 'subject-zhiyuan', 'portrait-zhiyuan', 'subject-xingyu', 'subject-chenyi'):
+                    tile = page.locator(f'.demo-disk-modal .demo-tile[data-material-id="{mid}"]')
+                    assert tile.count() == 1, mid
+                    assert tile.get_attribute('aria-disabled') != 'true', mid
+                meiling_tile = page.locator('.demo-disk-modal .demo-tile[data-material-id="face-meiling"]')
+                assert meiling_tile.count() == 1
+                assert meiling_tile.get_attribute('aria-disabled') == 'true'
+                assert '示範站只能用示範人物照片建立角色' in meiling_tile.inner_text()
+                page.locator('.sheet-close').click()
+                page.wait_for_function("() => !document.querySelector('.demo-disk-modal')", timeout=5000)
+
+                # /api/voices returns exact 6 library voices; no voice.group.other before joining; links & buttons exact
+                api_voices = page.evaluate('() => fetch("/api/voices").then(r => r.json())')
+                api_voice_ids = [v.get('id') for v in (api_voices.get('voices') if isinstance(api_voices, dict) else api_voices)]
+                assert api_voice_ids == expected_voices, api_voice_ids
+
+                page.evaluate('() => { location.hash = "#/studio/voice-library"; }')
+                page.locator('form[data-docs-voice-form="voice-library"]').wait_for(timeout=12000)
+                assert '其他示範聲音' not in page.locator('.demo-voice-library').inner_text()
+                assert page.locator('.demo-voice-library .demo-voice-group').count() == 1
+                assert page.locator('.demo-voice-library .demo-voice-card').count() == len(expected_voices)
+                ref_hrefs = [a.get_attribute('href') for a in page.locator('.demo-voice-library a[href^="#/studio/voice-clone?case="]').all()]
+                assert ref_hrefs == ['#/studio/voice-clone?case=vc-qingqing', '#/studio/voice-clone?case=vc-zhiyuan'], ref_hrefs
+                speak_hrefs = [a.get_attribute('href') for a in page.locator('.demo-voice-library a[href^="#/studio/voice-speak?case="]').all()]
+                assert len(speak_hrefs) == len(expected_voices), speak_hrefs
+                for href in speak_hrefs:
+                    target_case = href.split('case=')[-1]
+                    page.evaluate('(h) => { location.hash = h; }', href)
+                    page.wait_for_function(
+                        '(cid) => document.querySelector(\'form[data-demo-id="voice-speak"]\')?.dataset.demoCase === cid',
+                        arg=target_case,
+                        timeout=5000,
+                    )
+
+                # Every recorded displayed case of every Studio case form: select, Generate, outputs + run record shown
+                for feature_id, cases in recorded_by_feature.items():
+                    for case in cases:
+                        page.evaluate('(arg) => { location.hash = `#/studio/${arg.f}?case=${encodeURIComponent(arg.c)}`; }', {'f': feature_id, 'c': case['id']})
+                        form = page.locator(f'form[data-demo-id="{feature_id}"]')
+                        form.wait_for(timeout=12000)
+                        page.wait_for_function(
+                            '(arg) => document.querySelector(`form[data-demo-id="${arg.f}"]`)?.dataset.demoCase === arg.c && document.querySelector(`form[data-demo-id="${arg.f}"]`)?.dataset.demoGate === "ready"',
+                            arg={'f': feature_id, 'c': case['id']},
+                            timeout=5000,
+                        )
+                        form.locator('.generate-btn').click()
+                        page.wait_for_function(
+                            '(f) => document.querySelector(`form[data-demo-id="${f}"] .app-demo`)?.dataset.state === "complete"',
+                            arg=feature_id,
+                            timeout=5000,
+                        )
+                        rendered_outputs = form.locator('.demo-result [data-comparison-after] img, .demo-result .demo-gallery:not(.demo-comparison) img, .demo-result .demo-video-result video, .demo-result .demo-audio-track audio').count()
+                        assert rendered_outputs == len(case['outputs']), (feature_id, case['id'], rendered_outputs, len(case['outputs']))
+                        assert form.locator('.demo-result .demo-run-record').count() == 1, (feature_id, case['id'])
+                        form.locator('.demo-result .demo-run-record summary').click()
+                        rec_text = form.locator('.demo-result .demo-run-record pre').inner_text()
+                        assert case['id'] in rec_text or case['run_id'] in rec_text, (feature_id, case['id'])
+
+                _assert_clean_page(page, errors, external, filechoosers)
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_u1c_dance_url_alias_rule3(tmp_path):
+    playwright, browser_path, server, origin, _app_guide, _demo_set = _launch_site(tmp_path)
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser_path, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                page, errors, external, filechoosers = _new_monitored_page(instance, origin)
+                page.emulate_media(reduced_motion='reduce')
+                page.goto(f'{origin}/Web_Comfyui/demo/#/studio/dance?case=dn-xingyu-energetic', wait_until='domcontentloaded', timeout=12000)
+                form = page.locator('form[data-demo-id="dance"]')
+                form.wait_for(timeout=12000)
+                assert form.get_attribute('data-demo-case') == 'dn-xingyu-energetic'
+                form.locator('[data-url-fetch="video"]').click()
+                form.locator('.demo-url-alias-btn', has_text='tai-chi.mp4').click()
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="dance"]\')?.dataset.demoCase === "dn-chenyi-taichi"',
+                    timeout=5000,
+                )
                 _assert_clean_page(page, errors, external, filechoosers)
     finally:
         server.shutdown()

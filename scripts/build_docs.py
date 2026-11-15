@@ -184,12 +184,13 @@ def build(root: Path = ROOT, output: Path | None = None) -> dict:
     for relative in GRAPH_SOURCES:
         source_bytes(root, relative)
     app_guide['graphs'] = graphs(root, app_guide)
-    app_guide['demos'] = demos(app_guide)
     from scripts.demo_set import load_demo_set, validate_demo_set
     from scripts.public_demo_assets import PUBLIC_DEMO_ASSETS
     provenance = source_json(root, 'webui/docs/examples/provenance.json')
     source_bytes(root, 'webui/docs/demo-set.json')
     demo_set_data = load_demo_set(root)
+    case_features = {c['feature_id'] for c in demo_set_data.get('cases', []) if c.get('display')}
+    app_guide['demos'] = demos(app_guide, case_features=case_features)
     demo_set_errors = validate_demo_set(
         demo_set_data,
         assets=PUBLIC_DEMO_ASSETS,

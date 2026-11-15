@@ -475,7 +475,7 @@ def test_demo_set_is_embedded_and_validated_during_build(source, tmp_path, capsy
     output = tmp_path / 'site'
     build_docs.build(source, output)
     captured = capsys.readouterr()
-    assert 'demo set: placeholder' in captured.out
+    assert 'demo set: placeholder' not in captured.out
     app = read_json(output / 'app-guide.json')
     assert app['demo_set'] == read_json(source / 'webui/docs/demo-set.json')
     assert app['demo_run_dates']['cheer-subject-blend-v4'] == '2026-10-22T21:00:02.032000+00:00'
