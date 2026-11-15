@@ -107,8 +107,11 @@ def test_prepared_voice_forms_and_selection(tmp_path):
             assert page.locator('[data-voice-actions]').count() == 0
             assert page.locator('.demo-voice-library .demo-voice-card').count() == 2
             assert '第二段原始旁白' in page.locator('.demo-voice-library').inner_text()
-            page.locator('.demo-voice-card').nth(1).locator('a[href^="#/studio/voice-clone"]').click()
-            assert page.evaluate('location.hash') == '#/studio/voice-clone?case=vc2'
+            link = page.locator('.demo-voice-card').nth(1).locator('a[href^="#/studio/voice-clone"]')
+            assert link.get_attribute('href') == '#/studio/voice-clone?case=vc2'
+            link.click()
+            # demo-drive.js moves ?case= out of the hash on hashchange; the form below must still open case vc2.
+            page.wait_for_function("() => location.hash === '#/studio/voice-clone'", timeout=5000)
             page.evaluate('''() => {
               document.getElementById('workspace').innerHTML='<section class="feature-panel"><button data-guide-feature="voice-clone"></button><form><label data-upload-slot="voice"><input type="file" name="voice"></label><label data-field-id="speech"><textarea data-field-id="speech"></textarea></label><button type="submit">Generate</button></form></section>';
             }''')
