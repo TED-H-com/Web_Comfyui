@@ -34,22 +34,26 @@ def _prepared_case(
     subjects=None,
     domain='real',
     inputs=None,
+    settings=None,
     audio=None,
     outputs=None,
+    post=None,
+    order=1,
 ):
+    audio_list = list(audio) if audio is not None else []
     return {
         'id': case_id,
         'feature_id': feature_id,
         'kind': 'prepared',
-        'engine': 'voxcpm2' if audio else 'none',
+        'engine': 'voxcpm2' if audio_list else 'none',
         'display': True,
-        'order': 1,
+        'order': order,
         'title_zh': f'{case_id} zh',
         'title_en': f'{case_id} en',
         'subjects': subjects if subjects is not None else ['real-f', 'real-m'],
         'domain': domain,
         'inputs': inputs if inputs is not None else {},
-        'settings': {},
+        'settings': copy.deepcopy(settings) if settings is not None else {},
         'outputs': copy.deepcopy(outputs) if outputs is not None else (
             [
                 {
@@ -64,8 +68,8 @@ def _prepared_case(
         'comparison': None,
         'run_id': None,
         'stand_in_for': stand_in_for,
-        'audio': audio if audio is not None else [],
-        'post': None,
+        'audio': audio_list,
+        'post': copy.deepcopy(post) if post is not None else None,
         'note_zh': None,
         'note_en': None,
         'disclosure_zh': '預製示範案例說明。',
@@ -298,11 +302,38 @@ def _make_valid_final_set(base_app_guide: dict):
             },
         ],
     }
+    mats_by_id = {m['id']: m for m in data['materials']}
+
+    def _audio_outs(*mids):
+        return [
+            {'file': mats_by_id[mid]['file'], 'kind': 'audio', 'poster': None, 'thumb': None, 'material': mid}
+            for mid in mids
+        ]
+
     covered = {'image-blend', 'lipsync'}
     for key in base_app_guide['demos']:
         if key in covered:
             continue
-        if key in demo_set.VOICE_FEATURES:
+        if key == 'voice-speak':
+            for idx, (sid, aid) in enumerate((('real-f', 'mat-audio-f'), ('real-m', 'mat-audio-m')), 1):
+                data['cases'].append(
+                    _prepared_case(
+                        f'prep-voice-speak-{idx}',
+                        'voice-speak',
+                        None,
+                        subjects=[sid],
+                        domain=None,
+                        settings={
+                            'voiceSource': 'library',
+                            'voiceId': aid,
+                            'sampleText': mats_by_id[aid]['transcript'],
+                        },
+                        audio=[aid],
+                        outputs=_audio_outs(aid),
+                        order=idx,
+                    )
+                )
+        elif key in demo_set.VOICE_FEATURES:
             data['cases'].append(
                 _prepared_case(
                     f'prep-{key}',
@@ -311,12 +342,51 @@ def _make_valid_final_set(base_app_guide: dict):
                     subjects=['real-f', 'real-m'],
                     domain=None,
                     audio=['mat-audio-f', 'mat-audio-m'],
+                    outputs=_audio_outs('mat-audio-f', 'mat-audio-m'),
+                )
+            )
+        elif key == 'post-generator':
+            data['cases'].append(
+                _prepared_case(
+                    'prep-post-generator',
+                    'post-generator',
+                    None,
+                    subjects=['real-f', 'real-m'],
+                    domain='real',
+                    settings={'mode': 'quick', 'quick': '球場午後隨拍'},
+                    outputs=[],
+                    post={'text_zh': '中文貼文內容', 'text_en': 'English post text'},
                 )
             )
         elif key == 'qwen21-text2img':
             data['cases'].append(_prepared_case(f'prep-{key}', key, 'rec-blend', subjects=[], domain='real'))
         else:
             data['cases'].append(_prepared_case(f'prep-{key}', key, 'rec-blend', subjects=['real-f', 'real-m'], domain='real'))
+
+    data['cases'].append(
+        _prepared_case(
+            'prep-cv-f',
+            'character-voice',
+            None,
+            subjects=['real-f'],
+            domain='real',
+            audio=['mat-audio-f'],
+            outputs=_audio_outs('mat-audio-f'),
+            order=1,
+        )
+    )
+    data['cases'].append(
+        _prepared_case(
+            'prep-cv-m',
+            'character-voice',
+            None,
+            subjects=['real-m'],
+            domain='real',
+            audio=['mat-audio-m'],
+            outputs=_audio_outs('mat-audio-m'),
+            order=2,
+        )
+    )
     return data, prov
 
 
@@ -466,10 +536,23 @@ def test_rule5_6_7_prepared_stand_in_audio_and_disclosure():
     ))
     assert demo_set.validate_demo_set(good, **ctx) == []
 
-    # Rule 5: wrong outputs relative to target
+    # Rule 5: wrong outputs relative to target + audio outputs
     bad_outputs = copy.deepcopy(good)
     bad_outputs['cases'][-1]['outputs'][0]['material'] = None
     assert any('must equal target case' in err for err in demo_set.validate_demo_set(bad_outputs, **ctx))
+
+    bad_extra_audio = copy.deepcopy(base)
+    bad_extra_audio['cases'].append(_prepared_case(
+        'prep-bad-audio-map', 'h3-reference-video', 'ph-blend-case',
+        subjects=['cheer'], audio=['ph-warm'], outputs=base['cases'][0]['outputs'],
+    ))
+    assert any('plus audio outputs' in err for err in demo_set.validate_demo_set(bad_extra_audio, **ctx))
+
+    bad_no_standin = copy.deepcopy(base)
+    bad_no_standin['cases'].append(_prepared_case(
+        'prep-missing-aud-out', 'voice-clone', None, subjects=['cheer'], domain=None, audio=['ph-warm'], outputs=[],
+    ))
+    assert any('section 6.1 audio outputs mapping' in err for err in demo_set.validate_demo_set(bad_no_standin, **ctx))
 
     # Rule 5: target is not recorded
     bad_target = copy.deepcopy(good)
@@ -478,12 +561,16 @@ def test_rule5_6_7_prepared_stand_in_audio_and_disclosure():
 
     # Rule 6: audio id material produced_by must be in audio_runs
     bad_audio = copy.deepcopy(base)
+    warm_mat = next(m for m in bad_audio['materials'] if m['id'] == 'ph-warm')
     bad_audio['materials'].append({
-        **bad_audio['materials'][4],
+        **warm_mat,
         'id': 'ph-bad-audio',
         'produced_by': 'not-an-audio-run',
     })
-    bad_audio['cases'].append(_prepared_case('prep-aud', 'voice-speak', None, subjects=['cheer'], domain=None, audio=['ph-bad-audio']))
+    bad_audio['cases'].append(_prepared_case(
+        'prep-aud', 'voice-clone', None, subjects=['cheer'], domain=None, audio=['ph-bad-audio'],
+        outputs=[{'file': warm_mat['file'], 'kind': 'audio', 'poster': None, 'thumb': None, 'material': 'ph-bad-audio'}],
+    ))
     assert any('audio_runs' in err for err in demo_set.validate_demo_set(bad_audio, **ctx))
 
     # Rule 7: missing disclosure on prepared
@@ -492,7 +579,50 @@ def test_rule5_6_7_prepared_stand_in_audio_and_disclosure():
     assert any('disclosure_en' in err for err in demo_set.validate_demo_set(no_disc, **ctx))
 
 
-def test_rules8_9_10_final_validation():
+def test_rules8_and_9_post_generator_and_voice_speak():
+    ctx = _real_inputs()
+    base = demo_set.load_demo_set(ROOT)
+
+    # Rule 8: post-generator checks
+    bad_pg_mode = copy.deepcopy(base)
+    pg_case = next(c for c in bad_pg_mode['cases'] if c['feature_id'] == 'post-generator')
+    pg_case['settings']['mode'] = 'advanced'
+    assert any('settings.mode must equal "quick"' in err for err in demo_set.validate_demo_set(bad_pg_mode, **ctx))
+
+    bad_pg_quick = copy.deepcopy(base)
+    pg_case = next(c for c in bad_pg_quick['cases'] if c['feature_id'] == 'post-generator')
+    pg_case['settings']['quick'] = '  '
+    assert any('settings.quick must be non-empty' in err for err in demo_set.validate_demo_set(bad_pg_quick, **ctx))
+
+    bad_pg_out = copy.deepcopy(base)
+    pg_case = next(c for c in bad_pg_out['cases'] if c['feature_id'] == 'post-generator')
+    pg_case['outputs'] = copy.deepcopy(bad_pg_out['cases'][0]['outputs'])
+    assert any('outputs must be []' in err for err in demo_set.validate_demo_set(bad_pg_out, **ctx))
+
+    bad_pg_post = copy.deepcopy(base)
+    pg_case = next(c for c in bad_pg_post['cases'] if c['feature_id'] == 'post-generator')
+    pg_case['post']['text_en'] = ''
+    assert any('non-empty text_zh and text_en' in err for err in demo_set.validate_demo_set(bad_pg_post, **ctx))
+
+    # Rule 9: voice-speak checks
+    bad_vs_src = copy.deepcopy(base)
+    vs_case = next(c for c in bad_vs_src['cases'] if c['feature_id'] == 'voice-speak')
+    vs_case['settings']['voiceSource'] = 'persona'
+    assert any('settings.voiceSource must equal "library"' in err for err in demo_set.validate_demo_set(bad_vs_src, **ctx))
+
+    bad_vs_lib = copy.deepcopy(base)
+    vs_case = next(c for c in bad_vs_lib['cases'] if c['feature_id'] == 'voice-speak')
+    vs_case['settings']['voiceId'] = 'ph-clone'  # audio material with library=False
+    vs_case['settings']['sampleText'] = next(m for m in bad_vs_lib['materials'] if m['id'] == 'ph-clone')['transcript']
+    assert any('library=true' in err for err in demo_set.validate_demo_set(bad_vs_lib, **ctx))
+
+    bad_vs_text = copy.deepcopy(base)
+    vs_case = next(c for c in bad_vs_text['cases'] if c['feature_id'] == 'voice-speak')
+    vs_case['settings']['sampleText'] = 'wrong transcript'
+    assert any('sampleText must equal voiceId material transcript' in err for err in demo_set.validate_demo_set(bad_vs_text, **ctx))
+
+
+def test_rules10_11_12_13_final_validation():
     ctx = _real_inputs()
     final_data, final_prov = _make_valid_final_set(ctx['app_guide'])
 
@@ -532,7 +662,8 @@ def test_rules8_9_10_final_validation():
     anime_subj = copy.deepcopy(mixed_domain['subjects'][0])
     anime_subj['id'] = 'anime-f'
     anime_subj['domain'] = 'anime'
-    anime_subj['character_id'] = 'docs-character-anime-f'
+    anime_subj['listed'] = False
+    anime_subj['character_id'] = None
     anime_mat = copy.deepcopy(mixed_domain['materials'][0])
     anime_mat['id'] = 'mat-anime-img'
     anime_mat['subject'] = 'anime-f'
@@ -568,13 +699,21 @@ def test_rules8_9_10_final_validation():
         app_guide=ctx['app_guide'],
     ) == []
 
-    # Rule 9: gender rule (subjects + voice audio)
+    # Rule 11: gender rule (subjects + voice audio)
     one_gender = copy.deepcopy(final_data)
+    mats_by_id = {m['id']: m for m in one_gender['materials']}
     for c in one_gender['cases']:
         if c['feature_id'] == 'img2img':
             c['subjects'] = ['real-f']
         if c['feature_id'] == 'voice-speak':
             c['audio'] = ['mat-audio-f']
+            c['outputs'] = [{
+                'file': mats_by_id['mat-audio-f']['file'],
+                'kind': 'audio',
+                'poster': None,
+                'thumb': None,
+                'material': 'mat-audio-f',
+            }]
     errs = demo_set.validate_demo_set(
         one_gender,
         assets=ctx['assets'],
@@ -585,7 +724,7 @@ def test_rules8_9_10_final_validation():
     assert any('gender rule violated for feature img2img' in err for err in errs)
     assert any('gender rule violated for voice feature voice-speak' in err for err in errs)
 
-    # Rule 10: unused material in final set
+    # Rule 12: unused material in final set
     unused_mat = copy.deepcopy(final_data)
     unused_mat['materials'].append({**unused_mat['materials'][0], 'id': 'mat-unused'})
     errs = demo_set.validate_demo_set(
@@ -596,3 +735,41 @@ def test_rules8_9_10_final_validation():
         app_guide=ctx['app_guide'],
     )
     assert any('unused materials' in err for err in errs)
+
+    # Rule 13: every library audio must have exactly 1 displayed voice-speak case
+    missing_vs_for_lib = copy.deepcopy(final_data)
+    missing_vs_for_lib['cases'] = [c for c in missing_vs_for_lib['cases'] if c['id'] != 'prep-voice-speak-2']
+    errs = demo_set.validate_demo_set(
+        missing_vs_for_lib,
+        assets=ctx['assets'],
+        provenance=final_prov,
+        examples_dir=ctx['examples_dir'],
+        app_guide=ctx['app_guide'],
+    )
+    assert any("library audio material 'mat-audio-m'" in err for err in errs)
+
+    dup_vs_for_lib = copy.deepcopy(final_data)
+    dup_case = copy.deepcopy(next(c for c in dup_vs_for_lib['cases'] if c['id'] == 'prep-voice-speak-1'))
+    dup_case['id'] = 'prep-voice-speak-dup'
+    dup_case['order'] = 3
+    dup_vs_for_lib['cases'].append(dup_case)
+    errs = demo_set.validate_demo_set(
+        dup_vs_for_lib,
+        assets=ctx['assets'],
+        provenance=final_prov,
+        examples_dir=ctx['examples_dir'],
+        app_guide=ctx['app_guide'],
+    )
+    assert any("library audio material 'mat-audio-f'" in err for err in errs)
+
+    # Rule 13: every listed subject must have a displayed character-voice case
+    missing_cv = copy.deepcopy(final_data)
+    missing_cv['cases'] = [c for c in missing_cv['cases'] if c['id'] != 'prep-cv-m']
+    errs = demo_set.validate_demo_set(
+        missing_cv,
+        assets=ctx['assets'],
+        provenance=final_prov,
+        examples_dir=ctx['examples_dir'],
+        app_guide=ctx['app_guide'],
+    )
+    assert any("listed subject 'real-m' missing displayed character-voice case" in err for err in errs)

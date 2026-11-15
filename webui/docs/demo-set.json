@@ -14,11 +14,37 @@
       "role_en": "Former demo subject",
       "description_zh": "舊示範使用的虛構角色，將在後續版本以全新示範角色取代。",
       "description_en": "Former fictional demo subject kept as a temporary placeholder.",
-      "tags_zh": ["真人"],
-      "tags_en": ["Realistic"],
+      "tags_zh": [
+        "真人"
+      ],
+      "tags_en": [
+        "Realistic"
+      ],
       "base": "ph-cheer",
       "portrait": null,
       "character_id": "docs-character-cheer"
+    },
+    {
+      "id": "cheer-anime",
+      "name_zh": "舊示範動漫角色",
+      "name_en": "Former demo anime character",
+      "gender": "female",
+      "age": null,
+      "domain": "anime",
+      "listed": true,
+      "role_zh": "舊示範角色",
+      "role_en": "Former demo subject",
+      "description_zh": "舊示範使用的虛構動漫角色，將在後續版本以全新示範角色取代。",
+      "description_en": "Former fictional anime demo subject kept as a temporary placeholder.",
+      "tags_zh": [
+        "動漫"
+      ],
+      "tags_en": [
+        "Anime"
+      ],
+      "base": "ph-anime",
+      "portrait": null,
+      "character_id": "docs-character-cheer-anime"
     }
   ],
   "materials": [
@@ -98,7 +124,7 @@
       "label_zh": "揮手打招呼影片",
       "label_en": "Waving greeting clip",
       "url_alias": "https://video.example.com/cheer-wave.mp4",
-      "produced_by": null,
+      "produced_by": "ph-wave-case",
       "bytes": 1310381,
       "width": 480,
       "height": 720,
@@ -114,7 +140,7 @@
       "kind": "audio",
       "folder": "voices",
       "library": true,
-      "subject": null,
+      "subject": "cheer",
       "domain": null,
       "label_zh": "溫暖迎賓",
       "label_en": "Warm welcome",
@@ -135,7 +161,7 @@
       "kind": "audio",
       "folder": "voices",
       "library": true,
-      "subject": null,
+      "subject": "cheer-anime",
       "domain": null,
       "label_zh": "元氣遊戲",
       "label_en": "Game cheer",
@@ -168,6 +194,237 @@
       "duration_seconds": null,
       "transcript": null,
       "gender": null
+    },
+    {
+      "id": "ph-ref",
+      "file": "cheer-reference.webp",
+      "thumb": null,
+      "poster": null,
+      "kind": "image",
+      "folder": "people",
+      "library": true,
+      "subject": "cheer",
+      "domain": "real",
+      "label_zh": "舊示範人物全身照",
+      "label_en": "Former demo full-body photo",
+      "url_alias": null,
+      "produced_by": null,
+      "bytes": 315286,
+      "width": 1024,
+      "height": 1536,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "ph-face-ref",
+      "file": "cheer-face-reference.webp",
+      "thumb": null,
+      "poster": null,
+      "kind": "image",
+      "folder": "people",
+      "library": true,
+      "subject": "cheer",
+      "domain": "real",
+      "label_zh": "舊示範人物臉部特寫",
+      "label_en": "Former demo face close-up",
+      "url_alias": null,
+      "produced_by": null,
+      "bytes": 250846,
+      "width": 530,
+      "height": 605,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "ph-anime",
+      "file": "cheer-anime.webp",
+      "thumb": null,
+      "poster": null,
+      "kind": "image",
+      "folder": "people",
+      "library": true,
+      "subject": "cheer-anime",
+      "domain": "anime",
+      "label_zh": "舊示範動漫角色",
+      "label_en": "Former demo anime character",
+      "url_alias": null,
+      "produced_by": "ph-anime-case",
+      "bytes": 830518,
+      "width": 832,
+      "height": 1216,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "ph-face",
+      "file": "cheer-instantid-2.webp",
+      "thumb": null,
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "cheer",
+      "domain": "real",
+      "label_zh": "多角度臉部（舊示範成果）",
+      "label_en": "Face angle (former demo result)",
+      "url_alias": null,
+      "produced_by": "ph-angles-case",
+      "bytes": 994352,
+      "width": 896,
+      "height": 1152,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "ph-english",
+      "file": "english-welcome.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": "voices",
+      "library": true,
+      "subject": null,
+      "domain": null,
+      "label_zh": "英文迎賓",
+      "label_en": "English welcome",
+      "url_alias": null,
+      "produced_by": "voxcpm2-english-welcome",
+      "bytes": 783404,
+      "width": null,
+      "height": null,
+      "duration_seconds": 8.16,
+      "transcript": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here.",
+      "gender": "female"
+    },
+    {
+      "id": "ph-clone",
+      "file": "synthetic-clone.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "合成聲音延續",
+      "label_en": "Synthetic voice continuation",
+      "url_alias": null,
+      "produced_by": "voxcpm2-synthetic-clone",
+      "bytes": 537644,
+      "width": null,
+      "height": null,
+      "duration_seconds": 5.6,
+      "transcript": "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！",
+      "gender": "female"
+    },
+    {
+      "id": "ph-story",
+      "file": "gentle-story.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "溫柔故事",
+      "label_en": "Gentle story",
+      "url_alias": null,
+      "produced_by": "voxcpm2-gentle-story",
+      "bytes": 906284,
+      "width": null,
+      "height": null,
+      "duration_seconds": 9.44,
+      "transcript": "溫暖的陽光輕輕落在窗邊。她捧起一杯熱茶，翻開書頁，讓忙碌的心慢慢安靜下來。",
+      "gender": "female"
+    },
+    {
+      "id": "ph-announce",
+      "file": "mature-announcement.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "成熟播報",
+      "label_en": "Mature announcement",
+      "url_alias": null,
+      "produced_by": "voxcpm2-mature-announcement",
+      "bytes": 752684,
+      "width": null,
+      "height": null,
+      "duration_seconds": 7.84,
+      "transcript": "各位來賓您好，今天的展覽將在十分鐘後開始。請依照現場指示入座，謝謝您的配合。",
+      "gender": "female"
+    },
+    {
+      "id": "ph-s1",
+      "file": "slide-one.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "簡報第一頁",
+      "label_en": "Slide one",
+      "url_alias": null,
+      "produced_by": "voxcpm2-slide-one",
+      "bytes": 752684,
+      "width": null,
+      "height": null,
+      "duration_seconds": 7.84,
+      "transcript": "第一頁，我們先看整體流程。從文字構想開始，選擇圖片與聲音，再把素材整理成一段完整的作品。",
+      "gender": "female"
+    },
+    {
+      "id": "ph-s2",
+      "file": "slide-two.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "簡報第二頁",
+      "label_en": "Slide two",
+      "url_alias": null,
+      "produced_by": "voxcpm2-slide-two",
+      "bytes": 921644,
+      "width": null,
+      "height": null,
+      "duration_seconds": 9.6,
+      "transcript": "第二頁，重點是保留人物原貌。先辨識主體，再替換背景，最後檢查頭髮與臉部邊緣是否自然。",
+      "gender": "female"
+    },
+    {
+      "id": "ph-s3",
+      "file": "slide-three.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "簡報第三頁",
+      "label_en": "Slide three",
+      "url_alias": null,
+      "produced_by": "voxcpm2-slide-three",
+      "bytes": 814124,
+      "width": null,
+      "height": null,
+      "duration_seconds": 8.48,
+      "transcript": "第三頁，完成前請先播放一次。看看畫面、旁白與字幕是否互相配合，再分享你的創作。",
+      "gender": "female"
     }
   ],
   "cases": [
@@ -180,7 +437,9 @@
       "order": 1,
       "title_zh": "舊示範：人物與球場融合",
       "title_en": "Former demo: subject and stadium blend",
-      "subjects": ["cheer"],
+      "subjects": [
+        "cheer"
+      ],
       "domain": "real",
       "inputs": {
         "image1": "ph-cheer",
@@ -220,7 +479,9 @@
       "order": 1,
       "title_zh": "舊示範：說話對嘴",
       "title_en": "Former demo: lip sync",
-      "subjects": ["cheer"],
+      "subjects": [
+        "cheer"
+      ],
       "domain": "real",
       "inputs": {
         "video": "ph-wave",
@@ -242,6 +503,825 @@
       ],
       "comparison": null,
       "run_id": "cheer-lipsync-v1",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ph-wave-case",
+      "feature_id": "img2video",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：揮手打招呼",
+      "title_en": "Former demo: waving hello",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "ph-ref"
+      },
+      "settings": {
+        "positive": "The adult woman takes two small natural steps towards the camera, smiles brightly, raises her right hand and waves hello twice. Her ponytail and jersey move naturally. Friendly confident adult baseball cheer performer. The camera stays still, full body in frame, consistent face and clothing, realistic fluid human motion.",
+        "negative": "static, frozen, camera pan, camera zoom, distorted face, deformed hands, extra limbs, duplicate person, blurry, text, logo, running",
+        "width": 480,
+        "height": 720,
+        "length": 81,
+        "fps": 16,
+        "steps": 6,
+        "cfg": 1,
+        "shift": 8,
+        "loraStrength": 1,
+        "seed": 2026102306,
+        "sampler": "euler",
+        "scheduler": "simple"
+      },
+      "outputs": [
+        {
+          "file": "cheer-wave.mp4",
+          "kind": "video",
+          "poster": "cheer-wave-poster.webp",
+          "thumb": null,
+          "material": "ph-wave"
+        }
+      ],
+      "comparison": null,
+      "run_id": "cheer-wave-wan-v1",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ph-angles-case",
+      "feature_id": "character-angles",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：多角度臉部",
+      "title_en": "Former demo: face angles",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": "real",
+      "inputs": {
+        "face": "ph-face-ref"
+      },
+      "settings": {
+        "positive": "RAW candid close-up photograph of a 26-year-old adult Taiwanese woman, natural expression, realistic brown eyes, realistic human facial proportions, realistic adult face, fine natural skin pores, long dark hair, wearing a plain dark navy sports jacket, head and shoulders, evening baseball stadium with blurred warm lights, soft natural lighting, Nikon full frame camera, 85mm f1.8, detailed photograph",
+        "negative": "anime, manga, cartoon, illustration, painting, 3d render, doll, plastic, airbrushed skin, overexposed, oversized eyes, huge eyes, giant eyes, juvenile face, child, bad anatomy, distorted fingers, text, logo, watermark, cropped head",
+        "width": 896,
+        "height": 1152,
+        "steps": 36,
+        "cfg": 5.5,
+        "weight": 0.6,
+        "batchSize": 2,
+        "seed": 2026102325,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras"
+      },
+      "outputs": [
+        {
+          "file": "cheer-instantid-2.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-face"
+        },
+        {
+          "file": "cheer-instantid.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": null,
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "cheer-instantid-v3",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ph-swap-case",
+      "feature_id": "face-swap",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：影片換臉",
+      "title_en": "Former demo: video face swap",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": "real",
+      "inputs": {
+        "video": "ph-wave",
+        "face": "ph-face"
+      },
+      "settings": {
+        "fps": 12,
+        "maxFrames": 48,
+        "restore": "none",
+        "detection": "retinaface_resnet50"
+      },
+      "outputs": [
+        {
+          "file": "cheer-face-swap.mp4",
+          "kind": "video",
+          "poster": null,
+          "thumb": null,
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "cheer-face-swap-v1",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ph-loop-case",
+      "feature_id": "video-loop",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：影片循環",
+      "title_en": "Former demo: video loop",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": "real",
+      "inputs": {
+        "video": "ph-wave"
+      },
+      "settings": {
+        "repeat": 2,
+        "pingpong": true,
+        "maxFrames": 81
+      },
+      "outputs": [
+        {
+          "file": "cheer-loop.mp4",
+          "kind": "video",
+          "poster": null,
+          "thumb": null,
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "cheer-loop-v1",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ph-edit-case",
+      "feature_id": "img2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：改變服裝顏色",
+      "title_en": "Former demo: recolor the outfit",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "ph-ref"
+      },
+      "settings": {
+        "instruction": "Change the teal parts of the baseball jersey to bright coral red, and change the white shorts to navy blue. Keep the same adult woman, her face, pose, white shoes, background and lighting unchanged. No logos or text.",
+        "steps": 22,
+        "guidance": 2.5,
+        "denoise": 1,
+        "seed": 2026102303,
+        "sampler": "euler",
+        "scheduler": "simple"
+      },
+      "outputs": [
+        {
+          "file": "cheer-kontext.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": null,
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "cheer-kontext-v1",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ph-anime-case",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：動漫角色立繪",
+      "title_en": "Former demo: anime character art",
+      "subjects": [
+        "cheer-anime"
+      ],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "positive": "Polished Japanese anime character key visual, a wholly fictional adult Taiwanese woman age 26, friendly confident smile, long dark ponytail, original teal and white baseball jersey with modest white sports shorts, full body natural standing pose and white sneakers, empty baseball field and stadium in sunny weather, crisp clean illustration linework, expressive adult face, detailed cel shading, cheerful turquoise warm cream palette, editorial character card composition. No team logos, no lettering, no watermark.",
+        "negative": "child, teen, text, watermark, logo, photorealistic, deformed hands, extra limbs",
+        "width": 832,
+        "height": 1216,
+        "steps": 9,
+        "seed": 2026102402,
+        "batchSize": 1
+      },
+      "outputs": [
+        {
+          "file": "cheer-anime.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-anime"
+        }
+      ],
+      "comparison": null,
+      "run_id": "cheer-anime-v1",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ph-blend-teahouse",
+      "feature_id": "image-blend",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 2,
+      "title_zh": "舊示範：人物與茶屋融合",
+      "title_en": "Former demo: subject and teahouse blend",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image1": "ph-cheer",
+        "image2": "ph-teahouse"
+      },
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5
+      },
+      "outputs": [
+        {
+          "file": "cheer-subject-blend.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-blend"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "ph-blend-case",
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範：顯示的是體育場的融合結果。",
+      "disclosure_en": "Placeholder: shows the stadium blend result."
+    },
+    {
+      "id": "ph-h3r",
+      "feature_id": "h3-reference-video",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：參考圖加聲音生成影片",
+      "title_en": "Former demo: video from a reference image and a voice",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": "real",
+      "inputs": {
+        "reference": "ph-ref",
+        "audio1": "ph-warm"
+      },
+      "settings": {
+        "subject_definitions": "參考圖片 1：舊示範人物，穿球衣的成年女性。參考音訊 1：她的聲音。",
+        "summary": "她走向鏡頭揮手打招呼，並用自己的聲音說話。",
+        "retention_analysis": "保留她的臉、髮型與服裝。",
+        "detailed_description": "一位穿球衣的成年女性走向鏡頭，微笑揮手兩次，全身入鏡，寫實。",
+        "overall_soundscape": "球場的環境聲與她說話的聲音。",
+        "non_diegetic_music": "輕快的流行配樂。",
+        "aspect": "portrait"
+      },
+      "outputs": [
+        {
+          "file": "cheer-wave.mp4",
+          "kind": "video",
+          "poster": "cheer-wave-poster.webp",
+          "thumb": null,
+          "material": "ph-wave"
+        },
+        {
+          "file": "warm-welcome.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-warm"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "ph-wave-case",
+      "audio": [
+        "ph-warm"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範：顯示的是揮手影片加上一段示範音檔。",
+      "disclosure_en": "Placeholder: shows the waving clip next to a demo audio file."
+    },
+    {
+      "id": "ph-vs-warm",
+      "feature_id": "voice-speak",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：用溫暖迎賓的聲音說新台詞",
+      "title_en": "Former demo: new lines in the warm welcome voice",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceSource": "library",
+        "voiceId": "ph-warm",
+        "sampleText": "嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？",
+        "cloneEngine": "taiwan",
+        "text": "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！"
+      },
+      "outputs": [
+        {
+          "file": "synthetic-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "ph-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範音檔。",
+      "disclosure_en": "Placeholder: a former demo audio file."
+    },
+    {
+      "id": "ph-vs-game",
+      "feature_id": "voice-speak",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 2,
+      "title_zh": "舊示範：用元氣遊戲的聲音說故事",
+      "title_en": "Former demo: a story in the game cheer voice",
+      "subjects": [
+        "cheer-anime"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceSource": "library",
+        "voiceId": "ph-game",
+        "sampleText": "各位玩家，準備好了嗎？倒數三、二、一！一起出發，把今天的精彩任務全部完成吧！",
+        "cloneEngine": "taiwan",
+        "text": "溫暖的陽光輕輕落在窗邊。她捧起一杯熱茶，翻開書頁，讓忙碌的心慢慢安靜下來。"
+      },
+      "outputs": [
+        {
+          "file": "gentle-story.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-story"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "ph-story"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範音檔。",
+      "disclosure_en": "Placeholder: a former demo audio file."
+    },
+    {
+      "id": "ph-vs-english",
+      "feature_id": "voice-speak",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 3,
+      "title_zh": "舊示範：英文迎賓",
+      "title_en": "Former demo: English welcome",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceSource": "library",
+        "voiceId": "ph-english",
+        "sampleText": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here.",
+        "cloneEngine": "f5",
+        "text": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here."
+      },
+      "outputs": [
+        {
+          "file": "english-welcome.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-english"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "ph-english"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範音檔。",
+      "disclosure_en": "Placeholder: a former demo audio file."
+    },
+    {
+      "id": "ph-vc-warm",
+      "feature_id": "voice-clone",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：用溫暖迎賓的樣本克隆",
+      "title_en": "Former demo: clone from the warm welcome sample",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": null,
+      "inputs": {
+        "voice": "ph-warm"
+      },
+      "settings": {
+        "engine": "taiwan",
+        "sampleText": "嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？",
+        "speech": "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！"
+      },
+      "outputs": [
+        {
+          "file": "synthetic-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "ph-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範音檔。",
+      "disclosure_en": "Placeholder: a former demo audio file."
+    },
+    {
+      "id": "ph-cv-cheer",
+      "feature_id": "character-voice",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：角色聲音",
+      "title_en": "Former demo: character voice",
+      "subjects": [
+        "cheer"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？"
+      },
+      "outputs": [
+        {
+          "file": "warm-welcome.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-warm"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "ph-warm"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範音檔。",
+      "disclosure_en": "Placeholder: a former demo audio file."
+    },
+    {
+      "id": "ph-cv-anime",
+      "feature_id": "character-voice",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 2,
+      "title_zh": "舊示範：角色聲音",
+      "title_en": "Former demo: character voice",
+      "subjects": [
+        "cheer-anime"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "各位玩家，準備好了嗎？倒數三、二、一！一起出發，把今天的精彩任務全部完成吧！"
+      },
+      "outputs": [
+        {
+          "file": "game-cheer.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-game"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "ph-game"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範音檔。",
+      "disclosure_en": "Placeholder: a former demo audio file."
+    },
+    {
+      "id": "ph-vb-slides",
+      "feature_id": "voice-batch",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：三頁簡報旁白",
+      "title_en": "Former demo: three-slide narration",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "第一頁，我們先看整體流程。從文字構想開始，選擇圖片與聲音，再把素材整理成一段完整的作品。\n第二頁，重點是保留人物原貌。先辨識主體，再替換背景，最後檢查頭髮與臉部邊緣是否自然。\n第三頁，完成前請先播放一次。看看畫面、旁白與字幕是否互相配合，再分享你的創作。"
+      },
+      "outputs": [
+        {
+          "file": "slide-one.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-s1"
+        },
+        {
+          "file": "slide-two.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-s2"
+        },
+        {
+          "file": "slide-three.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-s3"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "ph-s1",
+        "ph-s2",
+        "ph-s3"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範音檔。",
+      "disclosure_en": "Placeholder: a former demo audio file."
+    },
+    {
+      "id": "ph-vt-announce",
+      "feature_id": "voxcpm-tts",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：成熟播報",
+      "title_en": "Former demo: mature announcement",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceEngine": "voxcpm",
+        "mode": "design",
+        "language": "Chinese Mandarin",
+        "style": "A mature adult female announcer in her forties, rich low-pitched voice, composed professional Taiwan Mandarin, measured pacing and precise diction.",
+        "text": "各位來賓您好，今天的展覽將在十分鐘後開始。請依照現場指示入座，謝謝您的配合。"
+      },
+      "outputs": [
+        {
+          "file": "mature-announcement.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "ph-announce"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "ph-announce"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "暫用舊示範音檔。",
+      "disclosure_en": "Placeholder: a former demo audio file."
+    },
+    {
+      "id": "ph-pg-a",
+      "feature_id": "post-generator",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 1,
+      "title_zh": "舊示範：IG 貼文",
+      "title_en": "Former demo: Instagram post",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "sister": "claude",
+        "platform": "instagram",
+        "tone": "warm",
+        "length": "short",
+        "mode": "quick",
+        "quick": "晴晴在歐洲石板老街拍了一組新照片，幫她寫一則 IG 貼文。"
+      },
+      "outputs": [],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [],
+      "post": {
+        "text_zh": "午後的陽光剛好落在石板路上，粉色、黃色和薄荷綠的老房子，一路陪我走到街角。☀️\n\n今天沒有趕行程，只是慢慢走、慢慢拍，把喜歡的顏色都收進相機裡。\n\n你最近一次停下來好好看風景，是什麼時候呢？\n\n#晴晴的散步日記 #老街散步 #原創虛構角色",
+        "text_en": "The afternoon sun landed right on the cobblestones, and the pink, yellow and mint-green houses walked with me all the way to the corner. ☀️\n\nNo rush today: just slow steps, slow shots, and every favorite color saved in the camera.\n\nWhen did you last stop and really look around?\n\n#QingqingWalks #OldTownStroll #OriginalFictionalCharacter"
+      },
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "這份貼文為預先撰寫的文案範例，展示語氣、段落與標籤。",
+      "disclosure_en": "This prewritten copy illustrates tone, paragraphs and hashtags."
+    },
+    {
+      "id": "ph-pg-b",
+      "feature_id": "post-generator",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 2,
+      "title_zh": "舊示範：Facebook 貼文",
+      "title_en": "Former demo: Facebook post",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "sister": "chatgpt",
+        "platform": "facebook",
+        "tone": "professional",
+        "length": "medium",
+        "mode": "quick",
+        "quick": "志遠分享雪山稜線的拍攝心得，寫一則 Facebook 貼文。"
+      },
+      "outputs": [],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [],
+      "post": {
+        "text_zh": "這次上到雪山稜線，等了將近一個小時，才等到雲層散開、整排山峰被陽光照亮的那一刻。\n\n分享三個雪地拍攝的小技巧：\n1. 雪景容易讓測光偏暗，曝光補償可以先加 +0.7 到 +1。\n2. 低溫下電池消耗很快，備用電池請貼身保暖。\n3. 構圖時留一點前景，畫面的層次會更明顯。\n\n好的畫面，往往留給願意多等一下的人。\n\n#志遠的山野筆記 #雪山攝影 #原創虛構角色",
+        "text_en": "On the snowy ridge this time I waited almost an hour before the clouds opened and the whole line of peaks lit up.\n\nThree tips for shooting in snow:\n1. Snow fools the meter into underexposing, so start at +0.7 to +1 EV.\n2. Batteries drain fast in the cold; keep spares warm in an inner pocket.\n3. Leave some foreground in the frame for depth.\n\nThe best shots go to those who are willing to wait a little longer.\n\n#ZhiyuanFieldNotes #SnowPhotography #OriginalFictionalCharacter"
+      },
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "這份貼文為預先撰寫的文案範例，展示語氣、段落與標籤。",
+      "disclosure_en": "This prewritten copy illustrates tone, paragraphs and hashtags."
+    },
+    {
+      "id": "ph-cc",
+      "feature_id": "character-create",
+      "kind": "interface-simulation",
+      "engine": "none",
+      "display": true,
+      "order": 1,
+      "title_zh": "建立角色（模擬）",
+      "title_en": "Create a character (simulation)",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {},
+      "outputs": [],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ph-vl",
+      "feature_id": "voice-library",
+      "kind": "interface-simulation",
+      "engine": "none",
+      "display": true,
+      "order": 1,
+      "title_zh": "聲音庫（模擬）",
+      "title_en": "Voice library (simulation)",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {},
+      "outputs": [],
+      "comparison": null,
+      "run_id": null,
       "stand_in_for": null,
       "audio": [],
       "post": null,

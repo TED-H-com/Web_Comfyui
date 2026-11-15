@@ -420,17 +420,66 @@ def validate_demo_set(
             if not _is_nonempty_str(case.get('disclosure_en')):
                 errors.append(f'prepared case {cid}.disclosure_en must be non-empty string')
             target_id = case.get('stand_in_for')
+            expected_outputs: list[dict[str, Any]] | None = []
             if target_id is not None:
                 target = cases_by_id.get(target_id)
                 if target is None:
                     errors.append(f'prepared case {cid}.stand_in_for {target_id!r} does not exist')
+                    expected_outputs = None
+                elif target.get('kind') != 'recorded':
+                    errors.append(f'prepared case {cid}.stand_in_for {target_id} is not recorded')
+                    expected_outputs = None
                 else:
-                    if target.get('kind') != 'recorded':
-                        errors.append(f'prepared case {cid}.stand_in_for {target_id} is not recorded')
-                    if case.get('outputs') != target.get('outputs'):
-                        errors.append(f'prepared case {cid} outputs must equal target case {target_id} outputs')
+                    expected_outputs = list(target.get('outputs') or [])
+            if expected_outputs is not None:
+                audio_ids = case.get('audio')
+                if isinstance(audio_ids, list):
+                    for aid in audio_ids:
+                        amat = materials_by_id.get(aid) if isinstance(aid, str) else None
+                        if amat is None:
+                            expected_outputs = None
+                            break
+                        expected_outputs.append({
+                            'file': amat['file'],
+                            'kind': 'audio',
+                            'poster': None,
+                            'thumb': None,
+                            'material': aid,
+                        })
+                else:
+                    expected_outputs = None
+            if expected_outputs is not None and case.get('outputs') != expected_outputs:
+                if target_id is not None:
+                    errors.append(f'prepared case {cid} outputs must equal target case {target_id} plus audio outputs')
+                else:
+                    errors.append(f'prepared case {cid} outputs must match section 6.1 audio outputs mapping')
 
-    # Rules 8, 9, 10: final validation only
+        # Rule 8: post-generator cases
+        if case.get('feature_id') == 'post-generator':
+            settings = case.get('settings')
+            if not isinstance(settings, dict) or settings.get('mode') != 'quick':
+                errors.append(f'post-generator case {cid}.settings.mode must equal "quick"')
+            if not isinstance(settings, dict) or not _is_nonempty_str(settings.get('quick')):
+                errors.append(f'post-generator case {cid}.settings.quick must be non-empty string')
+            if case.get('outputs') != []:
+                errors.append(f'post-generator case {cid}.outputs must be []')
+            post = case.get('post')
+            if not isinstance(post, dict) or not _is_nonempty_str(post.get('text_zh')) or not _is_nonempty_str(post.get('text_en')):
+                errors.append(f'post-generator case {cid}.post must have non-empty text_zh and text_en')
+
+        # Rule 9: voice-speak cases
+        if case.get('feature_id') == 'voice-speak':
+            settings = case.get('settings')
+            if not isinstance(settings, dict) or settings.get('voiceSource') != 'library':
+                errors.append(f'voice-speak case {cid}.settings.voiceSource must equal "library"')
+            voice_id = settings.get('voiceId') if isinstance(settings, dict) else None
+            vmat = materials_by_id.get(voice_id) if isinstance(voice_id, str) else None
+            if vmat is None or vmat.get('kind') != 'audio' or vmat.get('library') is not True:
+                errors.append(f'voice-speak case {cid}.settings.voiceId {voice_id!r} must be an audio material with library=true')
+            elif settings.get('sampleText') != vmat.get('transcript'):
+                errors.append(f'voice-speak case {cid}.settings.sampleText must equal voiceId material transcript')
+
+    # Rules 10, 11, 12, 13: final validation only
     if data.get('status') == 'final':
         if app_guide is None:
             errors.append('app_guide required for final validation')
@@ -440,12 +489,12 @@ def validate_demo_set(
                 if case.get('display') is True:
                     displayed_by_feature.setdefault(case['feature_id'], []).append(case)
 
-            # Rule 8: every key of app_guide['demos'] has >= 1 displayed case
+            # Rule 10: every key of app_guide['demos'] has >= 1 displayed case
             for demo_key in app_guide.get('demos', {}):
                 if not displayed_by_feature.get(demo_key):
                     errors.append(f'final status missing displayed case for demo {demo_key!r}')
 
-            # Rule 9: gender rule
+            # Rule 11: gender rule
             for feature_id, displayed_cases in displayed_by_feature.items():
                 subj_genders = {
                     subjects_by_id[sid]['gender']
@@ -465,7 +514,30 @@ def validate_demo_set(
                     if audio_genders != GENDERS:
                         errors.append(f'gender rule violated for voice feature {feature_id}: audio has {sorted(audio_genders)}')
 
-        # Rule 9: domain rule within every case
+            # Rule 13: library voices -> voice-speak & listed subjects -> character-voice
+            voice_speak_counts: dict[str, int] = {}
+            for c in displayed_by_feature.get('voice-speak', []):
+                vid = c.get('settings', {}).get('voiceId') if isinstance(c.get('settings'), dict) else None
+                if isinstance(vid, str):
+                    voice_speak_counts[vid] = voice_speak_counts.get(vid, 0) + 1
+            for mid, mat in materials_by_id.items():
+                if mat.get('kind') == 'audio' and mat.get('library') is True:
+                    if voice_speak_counts.get(mid, 0) != 1:
+                        errors.append(
+                            f'library audio material {mid!r} must be settings.voiceId of exactly one displayed voice-speak case (got {voice_speak_counts.get(mid, 0)})'
+                        )
+
+            cv_subjects = {
+                sid
+                for c in displayed_by_feature.get('character-voice', [])
+                for sid in (c.get('subjects') or [])
+                if isinstance(sid, str)
+            }
+            for sid, subj in subjects_by_id.items():
+                if subj.get('listed') is True and sid not in cv_subjects:
+                    errors.append(f'listed subject {sid!r} missing displayed character-voice case')
+
+        # Rule 11: domain rule within every case
         for cid, case in cases_by_id.items():
             fid = case.get('feature_id', '')
             exempt = DOMAIN_EXEMPT_SLOTS.get(fid, set())
@@ -493,7 +565,7 @@ def validate_demo_set(
             if len(domains) > 1:
                 errors.append(f'domain rule violated in case {cid}: mixed domains {sorted(domains)}')
 
-        # Rule 10: every material used by at least one case or listed subject's base/portrait
+        # Rule 12: every material used by at least one case or listed subject's base/portrait
         used_materials: set[str] = set()
         for subj in subjects_by_id.values():
             if subj.get('listed') is True:
