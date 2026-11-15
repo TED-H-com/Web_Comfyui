@@ -19,6 +19,13 @@ ASSERT = r'''(async () => {
  const until = async fn => {for (let i = 0; i < 300; i++) {if(fn())return; await wait(20);}throw Error('timeout: '+fn.toString());};
  const assert = (value, message) => {if(!value)throw Error(message);};
  const visible = selector => [...document.querySelectorAll(selector)].find(node => node !== document.body && node.getBoundingClientRect().width > 0);
+ let createObjectUrlCalls = 0, fileReaderCalls = 0;
+ const origCreateObjectUrl = URL.createObjectURL.bind(URL);
+ URL.createObjectURL = (...args) => { createObjectUrlCalls++; return origCreateObjectUrl(...args); };
+ for (const m of ['readAsDataURL', 'readAsArrayBuffer', 'readAsText', 'readAsBinaryString']) {
+  const orig = FileReader.prototype[m];
+  FileReader.prototype[m] = function (...args) { fileReaderCalls++; return orig.apply(this, args); };
+ }
  const close = async () => {document.querySelector('.sheet-close').click(); await until(()=>!document.querySelector('[role="dialog"]'));};
  const feature = async name => {
   document.getElementById('studioToolTrigger').click();
@@ -83,11 +90,17 @@ ASSERT = r'''(async () => {
   document.querySelector('.demo-prefill-bar button').click();
   assert(document.querySelector('.app-demo').hidden && !document.querySelector('.demo-output img'),'reset hides and removes result');
   const upload=document.querySelector('input[type=file][data-demo-upload]');
-  const transfer=new DataTransfer();transfer.items.add(new File(['synthetic local input'],'local-example.png',{type:'image/png'}));upload.files=transfer.files;upload.dispatchEvent(new Event('change',{bubbles:true}));
-  assert(document.querySelector('.demo-input-preview img').src.startsWith('blob:'),'selected file preview remains local');
-  const revoked=[],originalRevoke=URL.revokeObjectURL;URL.revokeObjectURL=url=>{revoked.push(url);originalRevoke.call(URL,url);};
-  upload.dispatchEvent(new Event('change',{bubbles:true}));assert(revoked.length===1,'old preview URL released');
-  const drop=new Event('drop',{bubbles:true,cancelable:true});Object.defineProperty(drop,'dataTransfer',{value:transfer});upload.closest('label').dispatchEvent(drop);assert(revoked.length===2,'drag and drop replaces local preview');
+  const transfer=new DataTransfer();transfer.items.add(new File(['synthetic local input'],'local-example.png',{type:'image/png'}));
+  const drop=new Event('drop',{bubbles:true,cancelable:true});Object.defineProperty(drop,'dataTransfer',{value:transfer});
+  upload.closest('label').dispatchEvent(drop);
+  await until(()=>document.querySelector('.demo-toast')?.textContent.includes('不接受拖放'));
+  upload.files=transfer.files;upload.dispatchEvent(new Event('change',{bubbles:true}));
+  assert(!upload.value && createObjectUrlCalls===0 && fileReaderCalls===0,'local file selection never reads local file or creates blob');
+  upload.click();await until(()=>document.querySelector('.demo-disk-modal'));
+  document.querySelector('.demo-disk-modal [data-material-id="ph-cheer"]').click();
+  await until(()=>!document.querySelector('.demo-disk-modal') && document.querySelector('.demo-slot-preview[data-slot="image"] img'));
+  assert(document.querySelector('.demo-slot-preview[data-slot="image"] img').src.includes('cheer-subject-reference.webp'),'picked demo disk material fills preview without blob');
+  assert(createObjectUrlCalls===0,'no blob URLs created after disk pick');
   const resourceTab=visible('[data-view="resources"]');
   if(resourceTab) resourceTab.click();
   else {document.getElementById('moreMenuBtn').click();await until(()=>document.querySelector('.shell-menu-row'));[...document.querySelectorAll('.shell-menu-row')].find(row=>row.textContent==='角色創作資源中心').click();}
@@ -115,18 +128,15 @@ ASSERT = r'''(async () => {
   const personalName='文生圖';
   characterForm.elements.name.value=personalName;
   characterForm.elements.description.value='<img src=x onerror=alert(1)> 文生圖';
-  const canvas=document.createElement('canvas');canvas.width=32;canvas.height=48;canvas.getContext('2d').fillRect(0,0,32,48);
-  const photoFile=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-  const photos=new DataTransfer();photos.items.add(new File([photoFile],'my-character.png',{type:'image/png'}));
-  characterForm.elements.photos.files=photos.files;characterForm.elements.photos.dispatchEvent(new Event('change',{bubbles:true}));
-  const previewURL=document.querySelector('.demo-input-preview img').src;
+  characterForm.elements.photos.click();await until(()=>document.querySelector('.demo-disk-modal'));
+  document.querySelector('.demo-disk-modal [data-material-id="ph-cheer"]').click();
+  await until(()=>!document.querySelector('.demo-disk-modal') && characterForm.querySelector('.demo-slot-preview[data-slot="photos"] img'));
   characterForm.querySelector('button[type=submit]').click();await until(()=>document.querySelector('[data-session-character]'));
   assert(document.querySelector('.docs-character-header h1').textContent===personalName&&!document.querySelector('.docs-character-header h1 img'),'name is safe literal text');
   assert(document.querySelector('.docs-character-description').textContent==='<img src=x onerror=alert(1)> 文生圖' && !document.querySelector('.docs-character-description img'),'custom description retained');
   const cardPhoto=document.querySelector('.docs-character-reference'),cardURL=cardPhoto.src;
-  assert(cardURL.startsWith('blob:')&&cardURL!==previewURL,'session owns separate photo URL');
+  assert(cardURL.includes('cheer-subject-reference.webp')&&!cardURL.startsWith('blob:'),'session owns picked published photo URL without blob');
   await until(()=>cardPhoto.naturalWidth>0);
-  assert(!revoked.includes(cardURL),'closing form preserves session photo');
   assert((await (await fetch('/api/characters')).json()).characters.length===2,'both characters in memory list');
   const lang=document.getElementById('languageSelect');lang.value='en';lang.dispatchEvent(new Event('change'));
   await until(()=>document.documentElement.lang==='en' && visible('[data-view="characters"]').textContent.includes('Characters'));
@@ -137,7 +147,6 @@ ASSERT = r'''(async () => {
   assert(document.querySelector('#workspace').textContent.includes('Choose a character to start creating.'),'English character list guidance');
   assert(document.querySelector('#workspace').textContent.includes('+ New character'),'English new character action');
   assert(document.querySelector('.works-badge').textContent==='0 media items','English character media count');
-  assert(revoked.includes(cardURL),'delete releases session photo');
   assert((await (await fetch('/api/characters')).json()).characters.length===1,'deleting one preserves other character');
   document.querySelector('[data-character-id="'+firstId+'"]').click();await until(()=>document.querySelector('[data-session-character]'));
   [...document.querySelectorAll('.docs-character-workspace button')].find(button=>button.textContent==='Clear all session characters').click();
@@ -148,12 +157,15 @@ ASSERT = r'''(async () => {
   location.hash='#/studio/img2img';await until(()=>document.querySelector('form[data-demo-id="img2img"]'));
   const englishForm=document.querySelector('form[data-demo-id="img2img"]');
   const edited=englishForm.querySelector('textarea');edited.value='My unchanged prompt 文生圖';edited.dispatchEvent(new Event('input',{bubbles:true}));
-  const keptFile=englishForm.querySelector('input[type=file]');keptFile.files=transfer.files;keptFile.dispatchEvent(new Event('change',{bubbles:true}));
+  const keptFile=englishForm.querySelector('input[type=file]');
+  keptFile.click();await until(()=>document.querySelector('.demo-disk-modal'));
+  document.querySelector('.demo-disk-modal [data-material-id="ph-cheer"]').click();
+  await until(()=>!document.querySelector('.demo-disk-modal') && englishForm.querySelector('.demo-slot-preview[data-slot="image"]'));
   lang.value='zh-Hant';lang.dispatchEvent(new Event('change'));await until(()=>document.documentElement.lang==='zh-Hant');
   await until(()=>/[\u4e00-\u9fff]/.test(englishForm.querySelector('.app-demo h3').textContent));
-  assert(edited.value==='My unchanged prompt 文生圖'&&keptFile.files[0].name==='local-example.png','language preserves user prompt and file');
-  const revokedBeforeReset=revoked.length;englishForm.querySelector('.demo-prefill-bar button').click();
-  assert(!keptFile.value&&revoked.length===revokedBeforeReset+1,'reset inputs clears file and revokes preview');
+  assert(edited.value==='My unchanged prompt 文生圖'&&englishForm.querySelector('.demo-slot-preview[data-slot="image"]').dataset.materialId==='ph-cheer','language preserves user prompt and picked material');
+  englishForm.querySelector('.demo-prefill-bar button').click();
+  assert(!keptFile.dataset.demoMaterial&&!englishForm.querySelector('.demo-slot-preview'),'reset inputs clears picked slot preview');
   visible('[data-view="workflows"]').click();await until(()=>document.querySelectorAll('.workflow-card').length);
   const mode = document.querySelector('[aria-label="收錄狀態"]'); mode.value = 'local'; mode.dispatchEvent(new Event('change'));
   document.querySelector('.workflow-card').click();await until(()=>document.querySelector('.workflow-details'));
@@ -242,6 +254,7 @@ ASSERT = r'''(async () => {
   const blocked=await fetch('/api/generate',{method:'POST',body:'PRIVATE_TEST_INPUT'});assert(blocked.status===405,'writes blocked in memory');
   const external=await fetch('https://example.invalid/api');assert(external.status===405,'external calls blocked');
   assert((await fetch('/api/unlisted')).status===404,'unknown endpoint fails closed');
+  assert(createObjectUrlCalls===0 && fileReaderCalls===0,'zero local file reads or blob URLs');
   assert(document.documentElement.scrollWidth<=innerWidth+1,'final overflow');
   assert(window.__docsErrors.length===0,window.__docsErrors.join(';'));
   result.textContent='PASS';
@@ -309,6 +322,194 @@ def test_static_docs_browser(tmp_path, initial_page):
                         assert page.evaluate("WebComfyCharacterSession.list().length") == 0
         assert not any('/api/' in path or path.startswith('POST ') for path in requests)
         assert any('/downloads/' in path for path in requests)
+    finally:
+        server.shutdown(); server.server_close()
+
+
+def test_u1a_closed_loop_browser(tmp_path):
+    playwright = pytest.importorskip('playwright.sync_api')
+    browser = shutil.which('chromium')
+    if not browser:
+        with playwright.sync_playwright() as driver:
+            candidate = driver.chromium.executable_path
+            if Path(candidate).is_file():
+                browser = candidate
+    if not browser:
+        pytest.skip('Chromium not installed')
+
+    from functools import partial
+    from http.server import SimpleHTTPRequestHandler
+
+    output = tmp_path / 'Web_Comfyui'
+    build(ROOT, output)
+    requests = []
+
+    class Handler(SimpleHTTPRequestHandler):
+        def log_message(self, *args): pass
+        def do_GET(self):
+            requests.append(self.path)
+            super().do_GET()
+        def do_POST(self):
+            requests.append('POST ' + self.path)
+            self.send_error(405)
+
+    server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=str(tmp_path)))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    origin = f'http://127.0.0.1:{server.server_port}'
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                page = instance.new_page(viewport={'width': 1280, 'height': 900})
+                errors, external, filechoosers = [], [], []
+                page.on('pageerror', lambda err: errors.append(str(err)))
+                page.on('console', lambda msg: errors.append(msg.text) if msg.type == 'error' else None)
+                page.on('filechooser', lambda fc: filechoosers.append(fc))
+                page.route('**/*', lambda route: route.continue_() if route.request.url.startswith(origin + '/') else (external.append(route.request.url), route.abort()))
+                page.add_init_script("""(() => {
+                  window.__u1aCounts = {createObjectURL: 0, fileReader: 0};
+                  const origCreate = URL.createObjectURL.bind(URL);
+                  URL.createObjectURL = (...a) => { window.__u1aCounts.createObjectURL++; return origCreate(...a); };
+                  for (const m of ['readAsDataURL', 'readAsArrayBuffer', 'readAsText', 'readAsBinaryString']) {
+                    const orig = FileReader.prototype[m];
+                    FileReader.prototype[m] = function (...a) { window.__u1aCounts.fileReader++; return orig.apply(this, a); };
+                  }
+                })();""")
+
+                page.goto(f'{origin}/Web_Comfyui/demo/#/studio/image-blend', wait_until='domcontentloaded', timeout=12000)
+                page.locator('form[data-demo-id="image-blend"] label.dropzone[data-upload-id="image2"]').wait_for(timeout=12000)
+
+                # Keyboard activation on dropzone opens Demo Disk, Esc returns focus to opener
+                drop2 = page.locator('form[data-demo-id="image-blend"] label.dropzone[data-upload-id="image2"]')
+                drop2.focus()
+                page.keyboard.press('Enter')
+                page.locator('.demo-disk-modal').wait_for(timeout=5000)
+                assert [' '.join(t.inner_text().split()) for t in page.locator('.demo-folder-btn').all()] == [
+                    '人物照片 (1)', '場景 (2)', '影片 (1)', '聲音 (2)'
+                ]
+                assert page.locator('.demo-folder-btn[data-folder="people"]').get_attribute('aria-selected') == 'true'
+                page.locator('.demo-folder-btn[data-folder="videos"]').click()
+                vid_tile = page.locator('.demo-disk-modal .demo-tile[data-material-id="ph-wave"]')
+                assert vid_tile.get_attribute('aria-disabled') == 'true'
+                assert '這個欄位只接受圖片' in vid_tile.inner_text()
+                vid_tile.focus()
+                assert page.evaluate("() => document.activeElement?.dataset?.materialId") == 'ph-wave'
+                vid_tile.click(force=True, timeout=5000)
+                assert page.locator('.demo-disk-modal').is_visible()
+                page.keyboard.press('Escape')
+                page.locator('.demo-disk-modal').wait_for(state='detached', timeout=5000)
+                assert page.evaluate("() => document.activeElement === document.querySelector('label.dropzone[data-upload-id=\"image2\"]')")
+
+                # Case badge + default folder from dataset.demoCase + upload progress + event + live i18n
+                page.evaluate("""() => {
+                  const form = document.querySelector('form[data-demo-id="image-blend"]');
+                  form.dataset.demoCase = 'ph-blend-case';
+                  window.__pickedEvents = [];
+                  form.addEventListener('demo:material-picked', e => window.__pickedEvents.push(e.detail));
+                }""")
+                drop2.click()
+                page.locator('.demo-disk-modal').wait_for(timeout=5000)
+                assert page.locator('.demo-folder-btn[data-folder="scenes"]').get_attribute('aria-selected') == 'true'
+                stadium_tile = page.locator('.demo-disk-modal .demo-tile[data-material-id="ph-stadium"]')
+                assert '本案例使用的素材' in stadium_tile.inner_text()
+                assert '有預跑結果' in stadium_tile.inner_text()
+                page.evaluate("() => window.WebComfyI18n.setLanguage('en')")
+                page.wait_for_function("() => document.documentElement.lang === 'en'", timeout=5000)
+                assert 'Used by this case' in stadium_tile.inner_text()
+                assert page.locator('.sheet-head h2').inner_text() == 'Demo disk (simulated upload)'
+                page.evaluate("() => window.WebComfyI18n.setLanguage('zh-Hant')")
+                page.wait_for_function("() => document.documentElement.lang === 'zh-Hant'", timeout=5000)
+                assert page.locator('.sheet-head h2').inner_text() == '示範硬碟（模擬上傳）'
+                stadium_tile.click()
+                page.locator('.demo-disk-modal [role="progressbar"]').wait_for(timeout=3000)
+                page.locator('.demo-slot-preview[data-slot="image2"]').wait_for(timeout=5000)
+                assert '已上傳到素材庫' in page.locator('.demo-toast').inner_text()
+                assert page.evaluate("() => window.__pickedEvents.at(-1)") == {'slot': 'image2', 'materialId': 'ph-stadium', 'source': 'upload'}
+
+                # Reduced motion completes without waiting, external input & drop refused
+                page.emulate_media(reduced_motion='reduce')
+                page.locator('form[data-demo-id="image-blend"] [data-material-picker="image1"]').click()
+                page.locator('.demo-library-modal').wait_for(timeout=5000)
+                group_titles = [g.inner_text() for g in page.locator('.demo-library-group-title').all()]
+                assert group_titles[0] == '你剛剛加入的'
+                assert '人物照片' in group_titles and '預跑成果' in group_titles
+                page.locator('.demo-library-modal .demo-tile[data-material-id="ph-cheer"]').click()
+                page.locator('.demo-slot-preview[data-slot="image1"]').wait_for(timeout=5000)
+                assert page.locator('.demo-disk-modal [role="progressbar"]').count() == 0
+                page.emulate_media(reduced_motion='no-preference')
+
+                page.evaluate("""() => {
+                  const ext = document.createElement('input');
+                  ext.type = 'file';
+                  ext.id = 'ext-outside-input';
+                  document.body.append(ext);
+                }""")
+                page.locator('#ext-outside-input').click()
+                page.wait_for_function("() => document.querySelector('.demo-toast')?.textContent.includes('不接受拖放')", timeout=5000)
+
+                # Lipsync URL alias, crawl & Drive stubs
+                page.evaluate("() => { location.hash = '#/studio/lipsync'; }")
+                page.locator('form[data-demo-id="lipsync"] [data-url-fetch="video"]').wait_for(timeout=12000)
+                video_slot = page.locator('form[data-demo-id="lipsync"] .upload-slot:has([data-upload-id="video"])')
+                url_input = video_slot.locator('.url-fetch .url-input').first
+                list_id = url_input.get_attribute('list')
+                assert list_id and 'https://video.example.com/cheer-wave.mp4' in [
+                    o.get_attribute('value') for o in page.locator(f'#{list_id} option').all()
+                ]
+                video_slot.locator('[data-url-fetch="video"]').click()
+                video_slot.locator('.demo-url-refuse').wait_for(timeout=5000)
+                video_slot.locator('.demo-url-alias-btn').first.click()
+                video_slot.locator('.demo-slot-preview[data-slot="video"]').wait_for(timeout=5000)
+                assert '已從示範網址下載' in page.locator('.demo-toast').inner_text()
+                assert video_slot.locator('[data-crawl-picker] option').count() <= 1
+                assert 'fb_crawl' in video_slot.locator('[data-crawl-picker] .demo-picker-note').inner_text()
+                assert '尚未登入 Google Drive' in video_slot.locator('[data-drive-picker]').inner_text()
+                video_slot.locator('[data-drive-picker] button', has_text='登入 Google Drive').click()
+                page.wait_for_function("() => document.querySelector('.demo-toast')?.textContent.includes('不連線 Google')", timeout=5000)
+
+                # #/manage route, filters, session order, sorted results, live language switch & subject routes
+                page.evaluate("() => { location.hash = '#/manage'; }")
+                page.locator('.demo-manage-panel').wait_for(timeout=12000)
+                assert page.locator('.demo-filter-btn[data-filter-kind="all"]').get_attribute('aria-pressed') == 'true'
+                session_ids = [t.get_attribute('data-material-id') for t in page.locator('.demo-manage-section').nth(0).locator('.demo-tile').all()]
+                assert session_ids == ['ph-wave', 'ph-cheer', 'ph-stadium']
+                result_hrefs = [t.get_attribute('href') for t in page.locator('.demo-manage-section').nth(1).locator('.demo-tile').all()]
+                assert len(result_hrefs) == 2 and any('#/studio/image-blend?case=ph-blend-case' in h for h in result_hrefs)
+                page.locator('.demo-filter-btn[data-filter-kind="image"]').click()
+                assert page.locator('.demo-filter-btn[data-filter-kind="image"]').get_attribute('aria-pressed') == 'true'
+                assert [t.get_attribute('data-material-id') for t in page.locator('.demo-manage-section').nth(0).locator('.demo-tile').all()] == ['ph-cheer', 'ph-stadium']
+                page.locator('.demo-filter-btn[data-filter-kind="all"]').click()
+                page.locator('#languageSelect').select_option('en')
+                page.wait_for_function("() => document.documentElement.lang === 'en' && document.querySelector('.demo-manage-title')?.textContent === 'Library'", timeout=5000)
+                page.locator('#languageSelect').select_option('zh-Hant')
+                page.wait_for_function("() => document.documentElement.lang === 'zh-Hant' && document.querySelector('.demo-manage-title')?.textContent === '素材庫'", timeout=5000)
+
+                page.locator('.demo-manage-section').nth(1).locator('a.demo-tile[href*="ph-blend-case"]').click()
+                page.locator('form[data-demo-id="image-blend"]').wait_for(timeout=12000)
+                assert not page.locator('.missing-box').count()
+                assert page.evaluate("() => window.WebComfyDemoDrive?.pendingRoute()?.caseId") == 'ph-blend-case'
+
+                page.evaluate("() => { location.hash = '#/manage/docs-character-cheer'; }")
+                page.locator('.demo-manage-panel').wait_for(timeout=12000)
+                assert [t.get_attribute('data-material-id') for t in page.locator('.demo-manage-section').nth(0).locator('.demo-tile').all()] == ['ph-wave', 'ph-cheer']
+                page.evaluate("() => { location.hash = '#/manage/other'; }")
+                page.locator('.demo-manage-empty').wait_for(timeout=12000)
+                assert page.locator('.demo-manage-section').nth(1).locator('.demo-tile').count() == 0
+
+                # 390px mobile layout check
+                page.set_viewport_size({'width': 390, 'height': 844})
+                page.evaluate("() => { location.hash = '#/studio/img2img'; }")
+                page.locator('form[data-demo-id="img2img"] label.dropzone').wait_for(timeout=12000)
+                page.locator('form[data-demo-id="img2img"] label.dropzone').click()
+                page.locator('.demo-disk-modal').wait_for(timeout=5000)
+                assert page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1")
+                assert page.evaluate("() => getComputedStyle(document.querySelector('.demo-drive-folders')).flexDirection") == 'row'
+                page.keyboard.press('Escape')
+
+                assert page.evaluate("() => window.__u1aCounts") == {'createObjectURL': 0, 'fileReader': 0}
+                assert not errors, errors
+                assert not external, external
+                assert not filechoosers, filechoosers
+                assert not any('/api/' in path or path.startswith('POST ') for path in requests), requests
     finally:
         server.shutdown(); server.server_close()
 
