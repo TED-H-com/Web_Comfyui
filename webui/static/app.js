@@ -9740,7 +9740,7 @@ function renderDropzone(up) {
     preview,
     input,
   ]);
-  const materialButton = h("button", { type: "button", class: "ghost small", text: "從素材庫選擇", onclick: () => {
+  const materialButton = h("button", { type: "button", class: "ghost small", text: "從素材庫選擇", "data-material-picker": up.id, onclick: () => {
     const kind = (up.accept || "image/").split("/")[0];
     const session = captureSessionContext();
     openSheet({ id: "material-picker", title: "選擇工作流素材", className: "catalogue-detail-sheet", content: renderCatalogueExplorer({ kind, onSelect: async item => {
@@ -9788,7 +9788,7 @@ function renderUrlFetch(up, fileInput, preview, hint) {
     placeholder: "貼上 YouTube / TikTok / FB 影片網址",
   });
   const status = h("div", { class: "url-status" });
-  const btn = h("button", { type: "button", class: "ghost small url-btn", text: "下載" });
+  const btn = h("button", { type: "button", class: "ghost small url-btn", text: "下載", "data-url-fetch": up.id });
   btn.onclick = async () => {
     const value = url.value.trim();
     if (!value) {
@@ -9927,7 +9927,7 @@ function renderCrawlVideoPicker(up, fileInput, preview) {
     }
   });
   setTimeout(loadList, 0);
-  return h("div", { class: "url-fetch server-video-fetch" }, [
+  return h("div", { class: "url-fetch server-video-fetch", "data-crawl-picker": "" }, [
     h("div", { class: "method-tag", text: "方式三：fb_crawl 工作區影片" }),
     h("div", { class: "url-row" }, [search, refresh]),
     sel,
@@ -10112,7 +10112,7 @@ function renderDriveFetch(up, fileInput, preview) {
       btn.textContent = "匯入";
     }
   };
-  return h("div", { class: "url-fetch drive-fetch" }, [
+  return h("div", { class: "url-fetch drive-fetch", "data-drive-picker": "" }, [
     ...accountNodes,
     h("div", { class: "method-tag", text: isOperator() ? "或貼上分享連結" : "Google Drive 分享連結" }),
     h("div", { class: "url-row" }, [url, btn]),
