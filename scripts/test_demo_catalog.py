@@ -246,6 +246,26 @@ def test_new_feature_cannot_ship_without_matching_demo_content(app):
         demos(changed)
 
 
+def test_case_form_tools_carry_no_legacy_example_text(app):
+    from scripts.demo_catalog import (CONTENT, PROMPT_CASES, PROMPT_CASES_EN, TITLE_CASES,
+                                      TITLE_CASES_EN)
+    from scripts.demo_set import load_demo_set
+    from scripts.prepared_demo_catalog import PREPARED_DEMOS
+    from scripts.recorded_demo_catalog import RECORDED_DEMOS
+    examples = demos(app)
+    case_tools = {key for key, example in examples.items() if example['output']['kind'] == 'demo-cases'}
+    for key in case_tools:
+        example = examples[key]
+        assert (example['title'], example['title_en'], example['prompt'], example['prompt_en']) == (
+            TITLE_CASES, TITLE_CASES_EN, PROMPT_CASES, PROMPT_CASES_EN), key
+        dumped = json.dumps(example, ensure_ascii=False)
+        for legacy in CONTENT[key][0:4]:
+            assert legacy not in dumped, (key, legacy)
+    displayed = {case['feature_id'] for case in load_demo_set(ROOT)['cases'] if case['display']}
+    assert case_tools == (displayed & set(CONTENT)) - set(RECORDED_DEMOS) - set(PREPARED_DEMOS)
+    assert len(case_tools) == 16
+
+
 def test_empty_case_features_rejects_remaining_unavailable_tools(app):
     with pytest.raises(ValueError, match='Every public tool'):
         demos(app, case_features=set())

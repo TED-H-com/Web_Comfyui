@@ -14,6 +14,10 @@ NOTE = '模擬展示：預先準備的插圖／文案，不會依輸入即時生
 NOTE_EN = 'Simulation: prepared illustrations or copy, not generated from your input and not a benchmark or quality claim for the listed models.'
 NOTE_CASES = '預跑案例：選擇案例後按下生成，就會顯示該案例的實跑紀錄或預製示範；成果不會依輸入即時生成。'
 NOTE_CASES_EN = 'Prerecorded cases: pick a case and press Generate to see its recorded run or prepared example. Results are not generated from your input.'
+TITLE_CASES = '示範案例'
+TITLE_CASES_EN = 'Demo cases'
+PROMPT_CASES = '先選一個示範案例；表單會填入它實際使用的輸入。'
+PROMPT_CASES_EN = 'Pick a demo case first; the form is filled with the inputs it really used.'
 # Unverified tools retain editable examples of input text only. Verified runs
 # override these fields with the exact executed settings and recorded outputs.
 CONTENT = {
@@ -155,6 +159,10 @@ def demos(app_catalog, case_features=None):
             row['evidence'] = {'kind': 'demo-cases'}
             row['note'] = NOTE_CASES
             row['note_en'] = NOTE_CASES_EN
+            row['title'] = TITLE_CASES
+            row['title_en'] = TITLE_CASES_EN
+            row['prompt'] = PROMPT_CASES
+            row['prompt_en'] = PROMPT_CASES_EN
     if any(row['output']['kind'] == 'unavailable' for row in result.values()):
         raise ValueError('Every public tool needs a recorded result or an explicitly labeled prepared example')
     return result
