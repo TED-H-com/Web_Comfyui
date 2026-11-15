@@ -121,6 +121,8 @@ jobs:
           node --check webui/static/guide-translations-en.js
           node --check webui/docs/landing.js
           node --check webui/docs/hardware.js
+          node --check webui/docs/demo-drive.js
+          node --check webui/docs/demo-cases.js
       - name: Offline JavaScript regressions
         run: |
           node scripts/test_compute_r32_poll.cjs
