@@ -161,8 +161,11 @@ def test_case_strips_order_unfilled_and_url_routing(tmp_path):
 
 def test_matching_rules_gate_assist_timing_and_results(tmp_path):
     playwright, browser_path, server, origin, app_guide, demo_set = _launch_site(tmp_path)
-    anime_mat = next((m for m in demo_set['materials'] if m.get('domain') == 'anime' and m.get('kind') == 'image'), None)
-    assert anime_mat, 'Expected an anime image material in demo-set.json'
+    blend_image1 = {c['inputs'].get('image1') for c in demo_set['cases']
+                    if c['feature_id'] == 'image-blend' and c.get('display')}
+    anime_mat = next((m for m in demo_set['materials'] if m.get('domain') == 'anime' and m.get('kind') == 'image'
+                      and m['id'] not in blend_image1), None)
+    assert anime_mat, 'Expected an anime image material that no image-blend case uses in image1'
 
     blend_cases = [c for c in demo_set['cases'] if c['feature_id'] == 'image-blend' and c.get('display')]
     assert len(blend_cases) >= 2
@@ -749,6 +752,124 @@ def test_u1c_dance_url_alias_rule3(tmp_path):
                     '() => document.querySelector(\'form[data-demo-id="dance"]\')?.dataset.demoCase === "dn-chenyi-taichi"',
                     timeout=5000,
                 )
+                _assert_clean_page(page, errors, external, filechoosers)
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_u1c2_rule3_rule7_matching(tmp_path):
+    playwright, browser_path, server, origin, _app_guide, _demo_set = _launch_site(tmp_path)
+    try:
+        with playwright.sync_playwright() as driver:
+            with driver.chromium.launch(executable_path=browser_path, args=['--no-sandbox', '--disable-dev-shm-usage']) as instance:
+                page, errors, external, filechoosers = _new_monitored_page(instance, origin)
+                page.emulate_media(reduced_motion='reduce')
+
+                def open_case(feature_id, case_id):
+                    page.goto(
+                        f'{origin}/Web_Comfyui/demo/#/studio/{feature_id}?case={case_id}',
+                        wait_until='domcontentloaded',
+                        timeout=12000,
+                    )
+                    form = page.locator(f'form[data-demo-id="{feature_id}"]')
+                    form.wait_for(timeout=12000)
+                    page.wait_for_function(
+                        '(arg) => document.querySelector(`form[data-demo-id="${arg.f}"]`)?.dataset.demoCase === arg.c',
+                        arg={'f': feature_id, 'c': case_id},
+                        timeout=5000,
+                    )
+                    assert form.get_attribute('data-demo-case') == case_id
+                    return form
+
+                def pick_library(form, slot_id, material_id):
+                    form.locator(f'[data-material-picker="{slot_id}"]').click()
+                    page.locator('.demo-library-modal').wait_for(timeout=5000)
+                    page.locator(f'.demo-library-modal .demo-tile[data-material-id="{material_id}"]').click()
+
+                def assert_ready(form):
+                    assert form.get_attribute('data-demo-gate') == 'ready'
+                    assert not form.locator('.generate-btn').is_disabled()
+
+                # (a) image-blend: pick subject-zhiyuan into image1 on snow-ridge -> bl-zhiyuan-snow-ridge
+                form = open_case('image-blend', 'bl-qingqing-snow-ridge')
+                pick_library(form, 'image1', 'subject-zhiyuan')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoCase === "bl-zhiyuan-snow-ridge"',
+                    timeout=5000,
+                )
+                assert form.locator('.demo-case-switch-note').is_visible()
+                assert_ready(form)
+
+                # (b) image-blend: pick subject-xingyu into image1 on old-street -> bl-xingyu-sakura-shrine & image2 replaced
+                form = open_case('image-blend', 'bl-qingqing-old-street')
+                pick_library(form, 'image1', 'subject-xingyu')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoCase === "bl-xingyu-sakura-shrine"',
+                    timeout=5000,
+                )
+                assert form.locator('[data-upload-id="image2"] input[type=file]').get_attribute('data-demo-material') == 'scene-sakura-shrine'
+                assert form.locator('.demo-case-switch-note').is_visible()
+                assert_ready(form)
+
+                # (c) image-blend: pick subject-qingqing into image1 on old-street -> stays bl-qingqing-old-street, note hidden
+                form = open_case('image-blend', 'bl-qingqing-old-street')
+                pick_library(form, 'image1', 'subject-qingqing')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoCase === "bl-qingqing-old-street" '
+                    '&& document.querySelector(\'form[data-demo-id="image-blend"]\')?.dataset.demoGate === "ready"',
+                    timeout=5000,
+                )
+                assert form.locator('.demo-case-switch-note').is_hidden()
+                assert_ready(form)
+
+                # (d) face-swap: select detection -> YOLOv5l is an edit (rule 5: non-differing key)
+                form = open_case('face-swap', 'fs-qingqing-meiling')
+                form.locator('select[data-field-id="detection"]').select_option('YOLOv5l')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="face-swap"]\')?.dataset.demoEdited === "true"',
+                    timeout=5000,
+                )
+                assert form.get_attribute('data-demo-case') == 'fs-qingqing-meiling'
+                assert form.locator('.demo-case-switch-note').is_hidden()
+                assert_ready(form)
+
+                # (e) h3-text-video: select aspect -> square is an edit (rule 5: non-differing key)
+                form = open_case('h3-text-video', 'h3t-xingyu-sky')
+                form.locator('select[data-field-id="aspect"]').select_option('square')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="h3-text-video"]\')?.dataset.demoEdited === "true"',
+                    timeout=5000,
+                )
+                assert form.get_attribute('data-demo-case') == 'h3t-xingyu-sky'
+                assert_ready(form)
+
+                # (f) voxcpm-tts: language English -> vt-english-welcome, then Chinese Mandarin -> vt-warm-welcome
+                form = open_case('voxcpm-tts', 'vt-warm-welcome')
+                form.locator('select[data-field-id="language"]').select_option('English')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="voxcpm-tts"]\')?.dataset.demoCase === "vt-english-welcome"',
+                    timeout=5000,
+                )
+                assert form.locator('.demo-case-switch-note').is_visible()
+                assert_ready(form)
+                form.locator('select[data-field-id="language"]').select_option('Chinese Mandarin')
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="voxcpm-tts"]\')?.dataset.demoCase === "vt-warm-welcome"',
+                    timeout=5000,
+                )
+                assert_ready(form)
+
+                # (g) face-swap: card group click is an edit (rule 5)
+                form = open_case('face-swap', 'fs-qingqing-meiling')
+                form.locator('[data-field-id="restore"] .mode-card[data-value="GFPGANv1.4.pth"]').click()
+                page.wait_for_function(
+                    '() => document.querySelector(\'form[data-demo-id="face-swap"]\')?.dataset.demoEdited === "true"',
+                    timeout=5000,
+                )
+                assert form.get_attribute('data-demo-case') == 'fs-qingqing-meiling'
+                assert_ready(form)
+
                 _assert_clean_page(page, errors, external, filechoosers)
     finally:
         server.shutdown()

@@ -622,11 +622,55 @@
     return false;
   }
 
+  function resolvePickedSlot(filled, slot, materialId) {
+    if (slot && filled[slot] === materialId) return slot;
+    for (const [key, value] of Object.entries(filled)) {
+      if (value === materialId) return key;
+    }
+    return '';
+  }
+
+  // Spec 5.9 rule 3 (amendment 09:12): cases that use the picked material in the picked slot; the most
+  // other filled slots equal to the case inputs wins, ties go to the lowest order (st.cases is sorted).
+  function bestCaseForPick(st, filled, pickedSlot, materialId) {
+    let best = null;
+    let bestScore = -1;
+    for (const c of st.cases) {
+      const ci = c.inputs || {};
+      if (ci[pickedSlot] !== materialId) continue;
+      let score = 0;
+      for (const [slot, matId] of Object.entries(filled)) {
+        if (slot !== pickedSlot && ci[slot] === matId) score += 1;
+      }
+      if (score > bestScore) {
+        best = c;
+        bestScore = score;
+      }
+    }
+    return best;
+  }
+
   function handleMaterialChange(form, st, opts = {}) {
     if (st.selecting) return;
     const clearedSlot = opts.clearedSlot || null;
     const filled = readFilledSlots(form);
     const filledCount = Object.keys(filled).length;
+
+    if (opts.switchedFromMaterial && !clearedSlot) {
+      const pickedSlot = resolvePickedSlot(filled, opts.pickedSlot || '', opts.switchedFromMaterial);
+      if (pickedSlot) {
+        const target = bestCaseForPick(st, filled, pickedSlot, opts.switchedFromMaterial);
+        if (!target) {
+          clearSelectionState(form, st, computeDomainMismatch(st, filled) ? 'nomatch.domain' : 'nomatch.other');
+        } else if (target.id === st.selectedCaseId) {
+          st.matchReason = '';
+          applyGate(form);
+        } else {
+          select(form, target.id, { switchedFromMaterial: opts.switchedFromMaterial });
+        }
+        return;
+      }
+    }
 
     if (clearedSlot && filledCount === 0) {
       clearSelectionState(form, st, '');
@@ -696,6 +740,17 @@
       }
     }
     return keys;
+  }
+
+  // Spec 5.9 rule 7 (amendment 09:12): a select key "differs" when the displayed cases hold at least two
+  // distinct values for it.
+  function differingSelectKeys(cases) {
+    const out = new Set();
+    for (const k of distinguishingSelectKeys(cases)) {
+      const values = new Set(cases.map((c) => String(c.settings?.[k] ?? '')));
+      if (values.size > 1) out.add(k);
+    }
+    return out;
   }
 
   function inferSelectKey(form, st, sel) {
@@ -781,35 +836,37 @@
       return;
     }
 
-    const dKeys = distinguishingSelectKeys(st.cases);
+    const dKeys = differingSelectKeys(st.cases);
+    // Rule 5: a key that does not differ is an edit; the select's input event already marked the form edited.
     if (!dKeys.has(changedKey)) return;
 
     const filled = readFilledSlots(form);
-    const matchingChanged = st.cases.filter((c) => {
-      const ci = c.inputs || {};
+    let best = null;
+    let bestScore = -1;
+    for (const cand of st.cases) {
+      if (String(cand.settings?.[changedKey] ?? '') !== val) continue;
+      const ci = cand.inputs || {};
+      let score = 0;
       for (const [slot, matId] of Object.entries(filled)) {
-        if (ci[slot] !== matId) return false;
+        if (ci[slot] === matId) score += 1;
       }
-      return String(c.settings?.[changedKey] ?? '') === val;
-    });
-
-    if (matchingChanged.length === 0) {
-      clearSelectionState(form, st, 'nomatch.other');
+      for (const k of dKeys) {
+        if (k === changedKey) continue;
+        if (String(cand.settings?.[k] ?? '') === readSelectValueByKey(form, st, k)) score += 1;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = cand;
+      }
+    }
+    if (!best) {
+      clearSelectionState(form, st, computeDomainMismatch(st, filled) ? 'nomatch.domain' : 'nomatch.other');
       return;
     }
-
-    // Break ties across multiple candidates using other select controls currently chosen
-    let best = matchingChanged[0];
-    if (matchingChanged.length > 1) {
-      let bestScore = -1;
-      for (const cand of matchingChanged) {
-        let score = 0;
-        for (const k of dKeys) {
-          if (k === changedKey) continue;
-          if (String(cand.settings?.[k] ?? '') === readSelectValueByKey(form, st, k)) score += 1;
-        }
-        if (score > bestScore) { bestScore = score; best = cand; }
-      }
+    if (best.id === st.selectedCaseId) {
+      st.matchReason = '';
+      applyGate(form);
+      return;
     }
     select(form, best.id, { switchedFromMaterial: best.id });
   }
@@ -1027,7 +1084,7 @@
     // Matching rules 3-6 from demo-drive slot fills/removals
     form.addEventListener('demo:material-picked', (event) => {
       if (event.detail?.source === 'case') return;
-      handleMaterialChange(form, st, { switchedFromMaterial: event.detail?.materialId });
+      handleMaterialChange(form, st, { switchedFromMaterial: event.detail?.materialId, pickedSlot: event.detail?.slot || '' });
     });
     form.addEventListener('demo:material-cleared', (event) => {
       if (event.detail?.source === 'case') return;
