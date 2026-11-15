@@ -17,6 +17,13 @@ sys.path.insert(0, str(ROOT))
 def isolated_comfy_admission(tmp_path, monkeypatch):
     monkeypatch.setenv('CASTLE_COMFY_ADMISSION_LOCK', str(tmp_path / 'comfy-admission.lock'))
 
+class SyntheticServer(tuple):
+    def __new__(cls, base, opener, cookie, root):
+        result = super().__new__(cls, (base, opener, cookie))
+        result.root = root
+        return result
+
+
 @pytest.fixture(scope="module")
 def test_server(tmp_path_factory, request):
     tmp_path = tmp_path_factory.mktemp("test_server")
@@ -42,6 +49,9 @@ def test_server(tmp_path_factory, request):
     env = {key: os.environ[key] for key in ('PATH', 'HOME', 'LANG') if key in os.environ}
     env.update({
         'COMFY_HOME': str(tmp_path / 'comfy'),
+        'CASTLE_COLAB_ROOT': str(tmp_path / 'colab'),
+        'CASTLE_PROVIDER_DATABASE_PATH': str(tmp_path / 'provider-fabric.sqlite3'),
+        'CASTLE_PROVIDER_CREDENTIAL_ROOT': str(tmp_path / 'provider-secrets'),
         'COMFYUI_URL': f'http://127.0.0.1:{comfy.server_port}',
         'WEB_COMFYUI_DATA_DIR': str(tmp_path / 'data'),
         'WEB_COMFYUI_CACHE_DIR': str(tmp_path / 'cache'),
@@ -84,7 +94,7 @@ def test_server(tmp_path_factory, request):
 
             cookie_header = cookies[0].split(';')[0]
 
-            yield base, opener, cookie_header
+            yield SyntheticServer(base, opener, cookie_header, tmp_path)
     finally:
         if process is not None:
             process.terminate()
@@ -92,3 +102,41 @@ def test_server(tmp_path_factory, request):
             except subprocess.TimeoutExpired:
                 process.kill(); process.wait(timeout=5)
         comfy.shutdown(); comfy.server_close()
+
+
+@pytest.fixture(autouse=True)
+def enable_colab_browser_fixture(request):
+    """Enable the synthetic Colab connection once its browser login completes."""
+    if (request.path.name != 'test_colab_browser.py' or
+            not request.node.name.startswith('test_colab_real_http_login_admission_and_cancel[')):
+        yield
+        return
+
+    base, opener, cookie = request.getfixturevalue('test_server')
+    headers = {'Content-Type': 'application/json', 'Origin': base, 'Cookie': cookie}
+    stop = threading.Event()
+    def enable():
+        while not stop.wait(0.01):
+            try:
+                req = urllib.request.Request(base + '/api/compute/connections', headers=headers)
+                with opener.open(req, timeout=5) as response:
+                    cards = json.load(response)['connections']
+                colab = next(card for card in cards if card['provider'] == 'colab')
+                if not colab['credential_present']:
+                    continue
+                req = urllib.request.Request(base + '/api/compute/connections/colab',
+                    data=json.dumps({'revision': colab['revision'], 'use_enabled': True}).encode(),
+                    headers=headers, method='PATCH')
+                with opener.open(req, timeout=5) as response:
+                    json.load(response)
+                return
+            except (OSError, KeyError, StopIteration):
+                continue
+
+    thread = threading.Thread(target=enable, daemon=True)
+    thread.start()
+    yield
+    stop.set()
+    thread.join(timeout=10)
+    if thread.is_alive():
+        pytest.fail('Synthetic Colab connection setup did not stop')

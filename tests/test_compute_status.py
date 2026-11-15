@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'webui'))
 from compute_web import ComputeWeb
 from compute_routing import ComputeAdapter, ComputeRouter
 from provider_fabric.store import ProviderFabricStore
+from test_compute_web import AdmitAllConsole
 
 
 @pytest.mark.parametrize(('source','expected'), [
@@ -113,8 +114,9 @@ def test_local_worker_outputs_survive_comfy_offline_and_use_owned_durable_sideca
     with pytest.raises(PermissionError):web.status_local('owner','local-synthetic')
 
 
-def test_local_capacity_counts_direct_and_gpu_orchestrator_jobs_once():
+def test_local_capacity_counts_direct_and_gpu_orchestrator_jobs_once(tmp_path):
     web=object.__new__(ComputeWeb);web.user={}
+    web.console=AdmitAllConsole('owner', tmp_path/'compute-preferences.sqlite3')
     web.s=SimpleNamespace(FEATURE_BY_ID={'text2img':{'id':'text2img','builder':'text'}},
         feature_status=lambda:[{'id':'text2img','ready':True}],
         request_json=lambda path:{'queue_running':[[0,'shared-wrapper'],[1,'native']], 'queue_pending':[]},

@@ -52,11 +52,29 @@ def test_project_homepage_and_demo_entry(tmp_path):
                             if qr.evaluate('(image) => image.complete && image.naturalWidth > 0'): break
                             page.wait_for_timeout(20)
                         assert qr.evaluate('(image) => image.complete && image.naturalWidth > 0'), 'Referral QR renders'
+                        running = page.locator('a[href="https://www.runninghub.ai?inviteCode=qqgzxufp"]').first
+                        assert 'qqgzxufp' in page.content()
+                        assert 'sponsored' in running.get_attribute('rel')
+                        rh = page.locator('img[src$="runninghub-referral.svg"]')
+                        rh.scroll_into_view_if_needed()
+                        for _ in range(100):
+                            if rh.evaluate('(image) => image.complete && image.naturalWidth > 0'): break
+                            page.wait_for_timeout(20)
+                        assert rh.evaluate('(image) => image.complete && image.naturalWidth > 0'), 'RunningHub QR renders'
+                        assert page.evaluate('document.documentElement.scrollWidth') <= width + 1
                         page.locator('a[href^="./demo/"]').first.click()
                         page.wait_for_selector('form[data-demo-id="text2img"]')
                         assert urlsplit(page.url).path == '/Web_Comfyui/demo/'
                         assert page.locator('html').get_attribute('lang') == 'en'
                         assert 'Not a live service' in page.locator('#docsBanner').inner_text()
+                        banner_links = page.locator('#docsBanner a[target="_blank"]')
+                        assert banner_links.count() >= 2
+                        for index in range(banner_links.count()):
+                            assert 'sponsored' in banner_links.nth(index).get_attribute('rel')
+                            assert banner_links.nth(index).get_attribute('target') == '_blank'
+                        hrefs = [banner_links.nth(index).get_attribute('href') for index in range(banner_links.count())]
+                        assert any('ref=TEDH2FND' in href for href in hrefs)
+                        assert any('inviteCode=qqgzxufp' in href for href in hrefs)
                         assert page.locator('#hardwareSelect').count()
                         assert not any('/api/' in url or urlsplit(url).netloc != urlsplit(base).netloc for url in requests)
                         assert not errors, errors

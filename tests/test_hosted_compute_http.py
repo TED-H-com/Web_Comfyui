@@ -90,3 +90,14 @@ def test_public_dns_guard_blocks_private_and_mixed_answers(monkeypatch, addresse
 def test_url_validation_rejects_unsafe_destinations(url):
     with pytest.raises(T.TransportError):
         T.public_url(url)
+
+
+def test_package_import_needs_only_the_repository_root():
+    import sys
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    code = ("import sys; sys.path.insert(0, sys.argv[1]); "
+            "import webui.hosted_compute_http, webui.hosted_compute")
+    result = subprocess.run([sys.executable, '-I', '-c', code, str(root)],
+                            capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stderr[-400:]

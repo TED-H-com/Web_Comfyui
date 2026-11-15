@@ -59,9 +59,12 @@ ASSERT = r'''(async () => {
   if(WebComfyTour.demoFor('text2img').output.kind==='unavailable') assert(!document.querySelector('.demo-output img'),'untested text2img has no borrowed image');
   else await until(()=>document.querySelector('.demo-output img')?.naturalWidth>0);
   await feature('AI 指令改圖');
-  detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors'),'actual editing checkpoint');await close();
-  assert(location.hash.includes('img2img'), 'feature route matches selected button');
-  await until(()=>document.querySelector('[data-demo-id="img2img"]'));
+  detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('qwen_image_2.1_int8_convrot.safetensors')&&!detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors'),'actual editing checkpoint');await close();
+  assert(location.hash.includes('qwen21-edit'), 'feature route matches selected button');
+  await until(()=>document.querySelector('[data-demo-id="qwen21-edit"]'));
+  location.hash='#/studio/img2img';await until(()=>document.querySelector('[data-demo-id="img2img"]'));
+  document.querySelector('.app-guide-button button').click();await until(()=>document.querySelector('.app-feature-guide'));
+  detail=document.querySelector('.app-feature-guide');assert(detail.textContent.includes('flux1-dev-kontext_fp8_scaled.safetensors')&&detail.textContent.includes('目前一般工具選單隱藏'),'hidden Flux Kontext form stays documented at its direct route');await close();
   const editingDemo=WebComfyTour.demoFor('img2img');
   if(editingDemo.inputs?.length) {
     const original=document.querySelector('.demo-input-preview img');
@@ -217,12 +220,20 @@ ASSERT = r'''(async () => {
   location.hash='#/studio/text2img';await until(()=>document.querySelector('form[data-demo-id="text2img"]'));
   const hardwareForm=document.querySelector('form[data-demo-id="text2img"]');
   const hardwarePrompt=hardwareForm.querySelector('textarea');hardwarePrompt.value='Preserve this hardware-switch input';
+  const bannerLinks=[...document.querySelectorAll('#docsBanner a[target="_blank"]')];
+  assert(bannerLinks.length>=2&&bannerLinks.every(a=>a.rel.includes('sponsored')&&a.target==='_blank'),'banner referrals');
+  assert(bannerLinks.some(a=>a.href.includes('ref=TEDH2FND'))&&bannerLinks.some(a=>a.href.includes('inviteCode=qqgzxufp')),'banner hrefs');
   await chooseHardware('none');
+  const cloud=hardwareForm.querySelector('.hardware-cloud-option');
+  const cloudLinks=[...cloud.querySelectorAll('a')];
+  assert(cloud&&!cloud.hidden&&cloudLinks.length===2&&cloud.textContent.includes('TEDH2FND')&&cloud.textContent.includes('qqgzxufp'),'hardware referrals when blocked');
+  assert(cloudLinks.every(a=>a.rel.includes('sponsored')&&a.target==='_blank'),'hardware referral rel');
   assert(!WebComfyHardware.canUse('text2img')&&hardwareForm.querySelector('.generate-btn').disabled,'no GPU disables generation');
   assert(await WebComfyTour.start(hardwareForm)===false,'direct generation also blocked');
   if(innerWidth>=1280)assert(document.getElementById('studio-side-tool-text2img').getAttribute('aria-disabled')==='true','sidebar indicates unavailable workflow');
   if(innerWidth>=1280)for(const card of document.querySelectorAll('.side-tool'))for(const child of card.children)assert(!child.getBoundingClientRect().width||child.getBoundingClientRect().right<=card.getBoundingClientRect().right+1,'hardware status stays inside sidebar');
   await chooseHardware('vram-24');assert(WebComfyHardware.canUse('text2img')&&!WebComfyHardware.canUse('dance'),'24 GB planning threshold');
+  assert(hardwareForm.querySelector('.hardware-cloud-option').hidden,'hardware referrals hidden when allowed');
   await chooseHardware('dual-24');assert(!WebComfyHardware.canUse('dance'),'dual GPUs do not pool VRAM');
   await chooseHardware('autoip');assert(features.every(entry=>WebComfyHardware.canUse(entry.id)),'AutoIP opens every demonstration');
   assert(!hardwareForm.querySelector('.generate-btn').disabled&&hardwarePrompt.value==='Preserve this hardware-switch input','mode switch restores action and preserves inputs');

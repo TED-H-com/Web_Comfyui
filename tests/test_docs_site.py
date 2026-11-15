@@ -309,7 +309,17 @@ def test_project_homepage_is_separate_from_simulated_app(source, tmp_path):
     assert "connect-src 'none'" in home
     assert 'TEDH2FND' in home and 'rel="sponsored noopener noreferrer"' in home
     assert 'autoip-referral.svg' in home
+    assert 'https://www.runninghub.ai?inviteCode=qqgzxufp' in home
+    assert 'qqgzxufp' in home
+    assert (output / 'assets/runninghub-referral.svg').is_file()
+    referral_svg = (output / 'assets/runninghub-referral.svg').read_text()
+    assert '<desc>' in referral_svg and 'qqgzxufp' in referral_svg
+    for forbidden in ('<script', '<image', 'foreignObject', 'href'):
+        assert forbidden not in referral_svg
     assert '介面示範 · 非實際服務' in demo and 'Not a live service' in demo
+    assert 'href="https://www.runninghub.ai?inviteCode=qqgzxufp"' in demo
+    assert 'href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND"' in demo
+    assert demo.count('target="_blank"') >= 2 and demo.count('rel="sponsored noopener noreferrer"') >= 2
     assert 'href="../"' in demo
     hardware = read_json(output / 'app-guide.json')['hardware']
     assert hardware and 'none' in {profile['id'] for profile in hardware['profiles']}

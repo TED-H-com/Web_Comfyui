@@ -29,6 +29,38 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+class AdmitAllConsole:
+    """Ported provider-console interface for tests written before it existed: the same
+    owner check, every lane admitted, real default preferences."""
+    def __init__(self, owner, preferences_path):
+        from compute_preferences import ComputePreferences
+        self.owner = owner
+        self._prefs = ComputePreferences(preferences_path)
+
+    def snapshot(self):
+        return {'owner': self.owner, 'connections': [], 'preferences': self._prefs.get(self.owner)}
+
+    def gate(self, provider, owner=None):
+        if owner is not None and owner != self.owner:
+            raise PermissionError('connection owner mismatch')
+        return None
+
+
+def enable_colab_for_fixture(base, opener, cookie):
+    """Finish the ported connection setup after a synthetic account refresh."""
+    import urllib.request
+    headers = {'Content-Type': 'application/json', 'Origin': base, 'Cookie': cookie}
+    request = urllib.request.Request(base + '/api/compute/connections', headers=headers)
+    with opener.open(request, timeout=15) as response:
+        connections = json.load(response)['connections']
+    colab = next(item for item in connections if item['provider'] == 'colab')
+    body = {'revision': colab['revision'], 'use_enabled': True}
+    request = urllib.request.Request(base + '/api/compute/connections/colab',
+        data=json.dumps(body).encode(), headers=headers, method='PATCH')
+    with opener.open(request, timeout=15) as response:
+        json.load(response)
+
+
 def test_history_api_pages_owned_rows_and_rejects_foreign_cursor(tmp_path, monkeypatch):
     import sys
     import urllib.parse
@@ -119,7 +151,7 @@ def load_server_functions(namespace):
                 "validate_feature_option_contract", "resolve_server_file", "stage_character_asset_for_comfy",
                 "bind_character_capability_files", "character_entry_for_generation", "user_can_see_character",
                 "user_can_generate_character", "safe_path_segment", "validate_client_generation_files",
-                "plan_colab_generation_request", "record_input_upload_owner", "user_can_use_uploaded_input",
+                "plan_colab_generation_request", "character_feature_definition", "record_input_upload_owner", "user_can_use_uploaded_input",
                 "stage_colab_uploaded_file", "decode_data_url"]
     nodes = [ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0)]
     nodes.extend(copy.deepcopy(functions[name]) for name in selected)
@@ -202,7 +234,7 @@ def web_fixture(tmp_path, monkeypatch):
             raise ValueError("character release policy blocks generation")
         return cap
 
-    namespace = {"Path": Path, "os": os, "re": re, "secrets": secrets, "shutil": shutil,
+    namespace = {"Path": Path, "os": os, "re": re, "secrets": secrets, "shutil": shutil, "copy": copy,
         "base64": base64, "mimetypes": mimetypes, "time": time, "hmac": hmac,
         "MAX_UPLOAD_DECODED": 64 * 1024 * 1024, "RequestTooLarge": ValueError,
         "JOB_INDEX_PATH": tmp_path / "library" / ".job_index.json",
@@ -232,6 +264,8 @@ def web_fixture(tmp_path, monkeypatch):
         "user_can_access_view_item": lambda who, filename, *args: filename.startswith("owned-upload-"),
     }
     load_server_functions(namespace)
+    console = AdmitAllConsole(user['email'], service.root.parent / 'compute-preferences.sqlite3')
+    console.root = service.root.parent  # The parity runtime keeps its synthetic journal here.
 
     class Handler:
         _generate_result = namespace["_generate_result"]
@@ -239,6 +273,9 @@ def web_fixture(tmp_path, monkeypatch):
 
         def current_user(self):
             return user
+
+        def _provider_console(self):
+            return console
 
         def is_orchestrator_service_authenticated(self):
             return False
@@ -460,7 +497,10 @@ def test_raw_image_colab_http_never_needs_comfy_upload_endpoint(test_server):
         request = urllib.request.Request(base + path, data=json.dumps(body).encode(),
             headers={"Content-Type": "application/json", "Origin": base, "Cookie": cookie})
         with opener.open(request, timeout=15) as response:
-            return json.load(response)
+            result = json.load(response)
+        if path.endswith('/refresh'):
+            enable_colab_for_fixture(base, opener, cookie)
+        return result
 
     account = call("/api/colab/accounts", {"label": "Synthetic raw upload"})
     flow = call(f"/api/colab/accounts/{account['id']}/login", {})

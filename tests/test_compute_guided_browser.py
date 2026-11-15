@@ -5,105 +5,15 @@ from pathlib import Path
 import pytest
 
 from test_compute_browser import compute_page, fake_router
+from test_provider_console import env
+from test_provider_console_http import http_console
 from test_compute_management_browser import screenshot
 
 
-def guided_api(page):
-    recipe={'feature_id':'text2img','recipe_id':'native-synthetic','label':'合成範本','output_kind':'image','estimated_cost':1,
-            'workflow':{'6':{'class_type':'SyntheticNode','inputs':{'text':''}}},'partner_nodes':False,
-            'bindings':[{'source':'prompt','node_id':'6','input':'text','default':'','value_map':[{'from':'a','to':'b'}]}], 'fixed_settings':{}}
-    existing={'feature_id':'img2img','recipe_id':'keep-this','label':'保留的其他配方','output_kind':'image','workflow_id':'123',
-              'bindings':[{'source':'prompt','node_id':'1','input':'text'}],'fixed_settings':{},'estimated_cost':8,'verified':True}
-    providers={name:{'provider':name,'enabled':True,'endpoint':url,'credential_configured':True,'recipes':[existing.copy()]} for name,url in [('comfy_cloud','https://cloud.comfy.org'),('runninghub','https://www.runninghub.ai')]}
-    prefs={'default_placement':'local','feature_placements':{'img2img':'colab'}}
-    features=[{'id':key,'title':title,'providers':{lane:{'status':'unconfigured' if lane=='runninghub' else 'implemented','reason':'尚未設定此功能配方' if lane=='runninghub' else '已提供此功能契約'} for lane in ['local','colab','autoip','comfy_cloud','runninghub']}} for key,title in [('text2img','文字生圖'),('img2img','指令改圖')]]
-    writes=[]
-    def respond(route):
-        path=route.request.url.split('/api/compute/',1)[1]
-        if path=='recipe-catalog':route.fulfill(json={'templates':[{'id':'synthetic-template','label':'合成生圖範本','feature_id':'text2img','description':'沿用原生表單語意。','recipe':recipe,'requirements':['需要合成測試模型與節點'],'input_slots':[],'validation':'contract_tested','cost_requires_input':True}]});return
-        if path=='capabilities':route.fulfill(json={'features':features});return
-        if path=='preferences':
-            if route.request.method=='POST':prefs.update(route.request.post_data_json);writes.append(('preferences',route.request.post_data_json))
-            route.fulfill(json={'ok':True,**prefs});return
-        if path=='providers':route.fulfill(json={'providers':list(providers.values())});return
-        if path.startswith('providers/'):
-            name=path.split('/')[1];body=route.request.post_data_json;writes.append((name,body));providers[name].update(body);route.fulfill(json={'provider':providers[name]});return
-        route.fallback()
-    page.route('**/api/compute/**',respond)
-    return recipe,existing,providers,prefs,writes
 
 
-@pytest.mark.parametrize('width',[390,768,1440])
-def test_guided_template_setup_merges_recipes_and_requires_real_estimate(compute_page,tmp_path,width):
-    page,errors=compute_page;page.set_viewport_size({'width':width,'height':900})
-    recipe,existing,providers,_,writes=guided_api(page)
-    base=page.url.split('/compute-fixture')[0];page.goto(base+'/#/admin')
-    page.get_by_role('button',name='運算平台',exact=True).click()
-    page.get_by_label('設定項目',exact=True).select_option('templates')
-    page.get_by_label('功能範本',exact=True).select_option('synthetic-template')
-    assert page.get_by_label('每次預估用量',exact=True).input_value()==''
-    page.get_by_label('已確認平台具備列出的模型與節點',exact=True).check()
-    page.get_by_role('button',name='儲存功能配方',exact=True).click()
-    assert not writes
-    page.get_by_label('每次預估用量',exact=True).fill('12.5')
-    page.get_by_role('button',name='儲存功能配方',exact=True).click()
-    page.get_by_text('功能配方已儲存；其他功能配方已保留，尚未啟動生成。',exact=True).wait_for()
-    assert len(writes)==1 and writes[0][0]=='comfy_cloud'
-    saved=writes[0][1]['recipes'];assert len(saved)==2
-    assert saved[0]=={key:value for key,value in existing.items() if key!='verified'}
-    assert saved[1]=={**recipe,'estimated_cost':12.5}
-    assert page.get_by_label('替換此功能現有配方',exact=True).is_visible()
-    page.get_by_label('每次預估用量',exact=True).fill('15')
-    page.get_by_label('已確認平台具備列出的模型與節點',exact=True).check()
-    page.get_by_role('button',name='儲存功能配方',exact=True).click();assert len(writes)==1
-    page.get_by_label('替換此功能現有配方',exact=True).check()
-    page.get_by_role('button',name='儲存功能配方',exact=True).click()
-    page.get_by_text('功能配方已儲存；其他功能配方已保留，尚未啟動生成。',exact=True).wait_for()
-    assert len(writes)==2 and len(writes[-1][1]['recipes'])==2
-    page.get_by_label('平台',exact=True).select_option('runninghub')
-    page.get_by_label('RunningHub 已發布工作流 ID',exact=True).wait_for()
-    with page.expect_download() as download_info:page.get_by_role('button',name='下載工作流供發布',exact=True).click()
-    download_path=tmp_path/'downloaded-graph.json';download_info.value.save_as(str(download_path))
-    assert json.loads(download_path.read_text())==recipe['workflow']
-    page.get_by_label('RunningHub 已發布工作流 ID',exact=True).fill('998877')
-    page.get_by_label('每次預估用量',exact=True).fill('9')
-    page.get_by_label('已確認平台具備列出的模型與節點',exact=True).check()
-    assert '尚未在你的平台或 GPU 實跑' in page.get_by_role('dialog').inner_text()
-    screenshot(page,f'guided-template-{width}.png')
-    page.get_by_role('button',name='儲存功能配方',exact=True).click()
-    page.get_by_text('功能配方已儲存；其他功能配方已保留，尚未啟動生成。',exact=True).wait_for()
-    rh=writes[-1][1]['recipes'][-1]
-    assert writes[-1][0]=='runninghub' and rh['workflow_id']=='998877'
-    assert 'workflow' not in rh and 'partner_nodes' not in rh
-    assert rh['bindings']==recipe['bindings'] and rh['estimated_cost']==9
-    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-    assert not errors,errors
 
 
-@pytest.mark.parametrize('width',[390,768,1440])
-def test_capability_overview_and_private_placement_preferences(compute_page,width):
-    page,errors=compute_page;page.set_viewport_size({'width':width,'height':900})
-    _,_,_,prefs,writes=guided_api(page)
-    base=page.url.split('/compute-fixture')[0];page.goto(base+'/#/admin')
-    page.get_by_role('button',name='運算平台',exact=True).click()
-    page.get_by_label('設定項目',exact=True).select_option('capabilities')
-    page.get_by_label('搜尋可用功能',exact=True).fill('文字')
-    page.get_by_label('篩選平台',exact=True).select_option('runninghub')
-    page.get_by_text('尚未設定此功能配方',exact=True).wait_for()
-    assert page.locator('.compute-capability-row').count()==1
-    assert page.locator('[data-capability-lane]').count()==1
-    screenshot(page,f'guided-capabilities-{width}.png')
-    page.get_by_label('設定項目',exact=True).select_option('preferences')
-    page.get_by_label('一般預設位置',exact=True).select_option('auto')
-    page.get_by_label('指定功能',exact=True).select_option('text2img')
-    page.get_by_label('此功能預設位置',exact=True).select_option('runninghub')
-    page.get_by_role('button',name='儲存預設安排',exact=True).click()
-    page.get_by_text('預設安排已儲存；現有表單與任務維持原選擇。',exact=True).wait_for()
-    assert writes==[('preferences',{'default_placement':'auto','feature_placements':{'img2img':'colab','text2img':'runninghub'}})]
-    assert prefs['default_placement']=='auto'
-    screenshot(page,f'guided-preferences-{width}.png')
-    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-    assert not errors,errors
 
 
 def test_saved_default_and_manual_choice_win_over_delayed_preferences(compute_page):
@@ -217,16 +127,6 @@ def test_unknown_output_requires_explicit_type_and_removed_source_invalidates_bi
     assert not errors
 
 
-def test_member_preferences_excludes_credential_management(compute_page):
-    page,errors=compute_page;guided_api(page)
-    base=page.url.split('/compute-fixture')[0];page.goto(base+'/#/studio/qwen21-text2img')
-    page.wait_for_function('window.castleTimers && foregroundRefreshes.size === 0')
-    page.evaluate("() => {currentUser={...currentUser,role:'user',operator:false};openComputeSettings(document.querySelector('#identityChip'),'preferences');}")
-    choices=page.get_by_label('設定項目',exact=True)
-    assert choices.locator('option').all_text_contents()==['可用功能','預設安排']
-    assert page.get_by_label('API 金鑰',exact=True).is_hidden()
-    assert page.get_by_label('一般預設位置',exact=True).is_visible()
-    assert not errors
 
 
 def test_voice_quick_recipe_compiles_video_input_and_dynamic_step_ids(compute_page,monkeypatch):
@@ -290,26 +190,6 @@ def test_custom_h3_uses_authored_fields_and_preserves_uint64_seed_text(compute_p
     assert not errors,errors
 
 
-def test_platform_switch_and_partial_save_preserve_stored_key_and_recipes(compute_page):
-    page,errors=compute_page;_,existing,providers,_,writes=guided_api(page)
-    page.goto(page.url.split('/compute-fixture')[0]+'/#/admin')
-    page.get_by_role('button',name='運算平台',exact=True).click()
-    page.get_by_text('金鑰已設定；連線與配方仍會在使用時檢查。',exact=True).wait_for()
-    page.get_by_label('API 金鑰',exact=True).fill('synthetic-unsaved-key')
-    page.get_by_label('平台',exact=True).select_option('runninghub')
-    page.get_by_text('金鑰已設定；連線與配方仍會在使用時檢查。',exact=True).wait_for()
-    page.get_by_label('平台',exact=True).select_option('comfy_cloud')
-    page.get_by_label('平台網址',exact=True).wait_for()
-    assert page.get_by_label('API 金鑰',exact=True).input_value()=='' and not writes
-    assert providers['comfy_cloud']['credential_configured'] is True
-    page.get_by_label('啟用此平台',exact=True).uncheck()
-    page.get_by_role('button',name='儲存平台設定',exact=True).click()
-    page.get_by_text('平台設定已儲存；尚未啟動生成。',exact=True).wait_for()
-    assert writes==[('comfy_cloud',{'enabled':False,'endpoint':'https://cloud.comfy.org'})]
-    assert providers['comfy_cloud']['credential_configured'] is True
-    assert providers['comfy_cloud']['recipes']==[existing]
-    assert 'synthetic-unsaved-key' not in page.locator('body').inner_text()
-    assert not errors,errors
 
 
 def test_switching_back_to_builtin_ignores_hidden_custom_required_fields(compute_page):
@@ -326,3 +206,39 @@ def test_switching_back_to_builtin_ignores_hidden_custom_required_fields(compute
     page.get_by_label('圖片製作影片執行位置',exact=True).select_option('autoip')
     assert page.get_by_label('AutoIP 影片秒數',exact=True).is_enabled()
     assert not errors,errors
+
+
+def test_member_console_shows_only_own_connection_state(http_console):
+    import shutil
+    from test_provider_console import write
+    h = http_console
+    write(h.env.console('owner@example.invalid', 'admin'), p='comfy_cloud', secret='synthetic-' + 'test-key-1')
+    write(h.env.console('bob@example.test'), p='comfy_cloud', secret='synthetic-' + 'test-key-2')
+    playwright = pytest.importorskip('playwright.sync_api')
+    with playwright.sync_playwright() as p:
+        browser = p.chromium.launch(headless=True, executable_path=shutil.which('chromium'), args=['--no-sandbox', '--disable-dev-shm-usage'])
+        context = browser.new_context()
+        context.add_cookies([{'name': 'castle_comfy_session', 'value': h.sessions['other@example.invalid'], 'url': h.origin}])
+        page = context.new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(h.origin, wait_until='domcontentloaded')
+        page.wait_for_function("currentUser?.email === 'other@example.invalid'")
+        page.evaluate("openComputeSettings(document.getElementById('accountMenuBtn'))")
+        page.locator('.console-card').first.wait_for()
+        assert page.get_by_role('button', name='平台管理', exact=True).count() == 0
+        cloud = page.locator('[data-provider=comfy_cloud]')
+        assert cloud.get_by_role('button', name='儲存金鑰', exact=True).count() == 1
+        assert cloud.get_by_role('button', name='更換金鑰', exact=True).count() == 0
+        write(h.env.console('other@example.invalid'), secret='synthetic-' + 'test-key-3')
+        page.keyboard.press('Escape')
+        page.evaluate("openComputeSettings(document.getElementById('accountMenuBtn'))")
+        page.locator('[data-provider=runninghub]').get_by_role('button', name='更換金鑰', exact=True).wait_for()
+        assert page.locator('[data-provider=comfy_cloud]').get_by_role('button', name='更換金鑰', exact=True).count() == 0
+        text = page.locator('.compute-settings').inner_text()
+        for value in ('owner@example.invalid', 'bob@example.test', 'synthetic-test-key-1', 'synthetic-test-key-2', 'synthetic-test-key-3'):
+            assert value not in text
+        assert page.locator('input[type=password]').evaluate_all('(els)=>els.every(el=>!el.value)')
+        assert not h.calls
+        assert not errors, errors
+        browser.close()

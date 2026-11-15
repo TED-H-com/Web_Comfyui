@@ -10,15 +10,21 @@ from compute_routing import ComputeRoutingError, ComputeAdapter, ComputeRouter
 from test_compute_web import web_fixture
 
 
-def test_defaults_owner_isolation_and_strict_options(tmp_path):
+@pytest.fixture
+def auto_preferences_body():
+    return {'default_placement': 'auto', 'feature_placements': {'text2img': 'colab'},
+            'auto_order': ['local', 'colab']}
+
+
+def test_defaults_owner_isolation_and_strict_options(tmp_path, auto_preferences_body):
     store = ComputePreferences(tmp_path / 'prefs.sqlite3')
     assert store.get('alice')['default_placement'] == 'local'
-    body = {'default_placement': 'auto', 'feature_placements': {'text2img': 'colab'}}
-    assert store.save('alice', body, {'text2img'}) == body
+    body = auto_preferences_body
+    assert store.save('alice', body, {'text2img'}) == {**body, 'auto_policy': 'user_order', 'revision': 1}
     assert store.placement('alice', 'text2img') == 'colab'
     assert store.placement('alice', 'img2img') == 'auto'
     assert store.get('bob')['default_placement'] == 'local'
-    assert ComputePreferences(store.path).get('alice') == body
+    assert ComputePreferences(store.path).get('alice') == {**body, 'auto_policy': 'user_order', 'revision': 1}
     assert store.path.stat().st_mode & 0o077 == 0
     for invalid in ({**body, 'owner': 'bob'}, {**body, 'default_placement': 'unknown'},
                     {**body, 'feature_placements': {'hidden-admin-feature': 'local'}}):

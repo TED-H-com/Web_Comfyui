@@ -1,0 +1,17 @@
+{
+  "id": "00000000-0000-4000-8000-00000000c001",
+  "status": "succeeded",
+  "urls": {
+    "cancel": "http://cloud.comfy.org/api/v2/jobs/00000000-0000-4000-8000-00000000c001/cancel",
+    "events": "http://cloud.comfy.org/api/v2/jobs/00000000-0000-4000-8000-00000000c001/events",
+    "self": "http://cloud.comfy.org/api/v2/jobs/00000000-0000-4000-8000-00000000c001"
+  },
+  "outputs": [
+    {
+      "id": "00000000-0000-4000-8000-00000000c002",
+      "size_bytes": 1048576,
+      "hash": "blake3:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "url": "http://cloud.comfy.org/api/v2/assets/00000000-0000-4000-8000-00000000c002/content"
+    }
+  ]
+}

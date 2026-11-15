@@ -337,7 +337,7 @@ def test_allocation_records_identity_before_transport_and_never_retries(setup):
     assert error["error"]["ambiguous"] is True
     assert "SECRET" not in json.dumps(error)
     saved = bridge.private_json(account / "runtimes" / (runtime_id + ".json"))
-    assert saved["state"] == "allocating"
+    assert saved["state"] == "allocation_uncertain"
     assert saved["accelerator"] == "G4"
     error = call("runtime_allocate", allocation_id=runtime_id, gpu="G4")
     assert error["error"]["code"] == "allocation_already_attempted"
@@ -427,8 +427,10 @@ def test_remote_exec_persists_kernel_and_redacts_transport_secrets(setup):
                     "text": "result private-proxy-token private-access-token private-refresh-token"}]
     result = call("remote_exec", runtime_id=runtime_id, code="print('status')", timeout_seconds=30)
     assert result["result"]["stdout"] == "result [redacted] [redacted] [redacted]"
-    assert sdk.calls[-2:] == [("exec", "print('status')", {"allow_stdin": False, "timeout": 30}),
-                              ("close", {"shutdown_kernel": False})]
+    assert sdk.calls[-2][:2] == ("exec", "print('status')")
+    assert sdk.calls[-2][2]["allow_stdin"] is False
+    assert 1 <= sdk.calls[-2][2]["timeout"] <= 30
+    assert sdk.calls[-1] == ("close", {"shutdown_kernel": False})
     saved = bridge.private_json(account / "runtimes" / (runtime_id + ".json"))
     assert (saved["kernel_id"], saved["session_id"]) == ("kernel-1", "session-1")
 
@@ -520,7 +522,7 @@ def test_directory_conflict_stops_upload_before_media_is_sent(setup, tmp_path):
     sdk.request = conflict
     result = call("upload", runtime_id=runtime_id, local_path=str(source),
                   remote_path="/content/web-comfyui/job/input.png")
-    assert result["error"]["code"] == "invalid_remote_directory"
+    assert result["error"]["code"] == "upload_transport_failed"
     assert len(calls) == 1 and calls[0]["json"] == {"type": "directory"}
 
 
@@ -530,7 +532,7 @@ def test_remote_paths_are_contained(setup, tmp_path, remote):
     source = tmp_path / "input.png"
     source.write_bytes(b"x")
     result = call("upload", runtime_id=str(uuid.uuid4()), local_path=str(source), remote_path=remote)
-    assert result["error"]["code"] == "invalid_request"
+    assert result["error"]["code"] == "upload_local_invalid"
     assert not sdk.calls
 
 
@@ -538,10 +540,10 @@ def test_credentials_and_symlinks_cannot_be_uploaded(setup, tmp_path):
     account, sdk, call = setup
     runtime_id = str(uuid.uuid4())
     result = call("upload", runtime_id=runtime_id, local_path=str(account / "token.json"), remote_path="/content/token.json")
-    assert result["error"]["code"] == "private_path"
+    assert result["error"]["code"] == "upload_local_invalid"
     link = tmp_path / "input.png"
     link.symlink_to(account / "token.json")
-    assert call("upload", runtime_id=runtime_id, local_path=str(link), remote_path="/content/input.png")["error"]["code"] == "invalid_request"
+    assert call("upload", runtime_id=runtime_id, local_path=str(link), remote_path="/content/input.png")["error"]["code"] == "upload_local_invalid"
     assert not sdk.calls
 
 

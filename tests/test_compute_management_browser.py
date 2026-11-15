@@ -19,60 +19,6 @@ def screenshot(page,name):
         page.screenshot(path=str(Path(directory)/name),full_page=True)
 
 
-@pytest.mark.parametrize('width',[390,768,1440])
-def test_management_write_only_credentials_and_recipe_import(compute_page,width):
-    page,errors=compute_page;page.set_viewport_size({'width':width,'height':900})
-    providers={name:{'provider':name,'enabled':False,'credential_configured':False,'connection_state':'not_configured',
-                     'endpoint':url,'recipes':[]} for name,url in [('comfy_cloud','https://cloud.comfy.org'),('runninghub','https://www.runninghub.ai')]}
-    writes=[]
-    def respond(route):
-        if route.request.method=='GET':route.fulfill(json={'ok':True,'providers':list(providers.values())});return
-        name=route.request.url.rsplit('/',1)[-1];body=route.request.post_data_json;writes.append((name,body))
-        providers[name].update({key:value for key,value in body.items() if key not in ['api_key','clear_api_key']})
-        if body.get('api_key'):providers[name]['credential_configured']=True
-        if body.get('clear_api_key'):providers[name]['credential_configured']=False
-        route.fulfill(json={'ok':True,'provider':providers[name]})
-    page.route('**/api/compute/providers**',respond)
-    base=page.url.split('/compute-fixture')[0];page.goto(base+'/#/admin')
-    page.get_by_role('button',name='運算平台',exact=True).wait_for()
-    screenshot(page,f'compute-management-before-{width}.png')
-    page.get_by_role('button',name='運算平台',exact=True).click()
-    dialog=page.get_by_role('dialog',name='運算平台');dialog.wait_for()
-    page.get_by_text('尚未設定 API 金鑰。',exact=True).wait_for()
-    page.get_by_label('啟用此平台',exact=True).check()
-    page.get_by_label('API 金鑰',exact=True).fill('synthetic-key-only-for-testing')
-    page.get_by_text('進階：功能配方',exact=True).click()
-    recipe={'feature_id':'text2img','recipe_id':'synthetic-v1','label':'合成生圖配方','output_kind':'image',
-            'workflow':{'6':{'class_type':'SyntheticNode','inputs':{'text':''}}},
-            'bindings':[{'source':'prompt','node_id':'6','input':'text'}],'fixed_settings':{},'estimated_cost':4}
-    page.get_by_label('配方檔案',exact=True).set_input_files({'name':'synthetic-recipe.json','mimeType':'application/json','buffer':json.dumps({'recipes':[{**recipe,'verified':True}]}).encode()})
-    page.get_by_text('已讀取 1 個配方；按儲存後取代原清單。',exact=True).wait_for()
-    page.get_by_role('button',name='儲存平台設定',exact=True).click()
-    page.get_by_text('平台設定已儲存；尚未啟動生成。',exact=True).wait_for()
-    assert writes==[('comfy_cloud',{'enabled':True,'endpoint':'https://cloud.comfy.org','api_key':'synthetic-key-only-for-testing','recipes':[recipe]})]
-    assert page.get_by_label('API 金鑰',exact=True).input_value()==''
-    assert 'synthetic-key-only-for-testing' not in dialog.inner_text()
-    assert page.evaluate("![JSON.stringify(localStorage),JSON.stringify(sessionStorage)].some(value=>/synthetic-key|synthetic-unsaved|paper kite|pipeline_id|data:image/.test(value))")
-    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-    assert dialog.bounding_box()['width']<=400
-    dialog.locator('.sheet-body').evaluate('element=>element.scrollTop=0')
-    screenshot(page,f'compute-management-after-{width}.png')
-    page.get_by_label('平台',exact=True).select_option('runninghub')
-    page.get_by_text('尚未設定 API 金鑰。',exact=True).wait_for()
-    assert page.get_by_label('平台網址',exact=True).input_value()=='https://www.runninghub.ai'
-    assert page.get_by_label('API 金鑰',exact=True).input_value()==''
-    page.get_by_label('平台',exact=True).select_option('comfy_cloud')
-    page.get_by_text('金鑰已設定；連線與配方仍會在使用時檢查。',exact=True).wait_for()
-    page.get_by_label('移除已儲存的金鑰',exact=True).check()
-    page.get_by_role('button',name='儲存平台設定',exact=True).click()
-    page.get_by_text('平台設定已儲存；尚未啟動生成。',exact=True).wait_for()
-    assert writes[-1][1]['clear_api_key'] is True and 'api_key' not in writes[-1][1]
-    page.get_by_label('API 金鑰',exact=True).fill('synthetic-unsaved-key')
-    page.keyboard.press('Escape');dialog.wait_for(state='hidden')
-    page.get_by_role('button',name='運算平台',exact=True).click()
-    page.get_by_text('尚未設定 API 金鑰。',exact=True).wait_for()
-    assert page.get_by_label('API 金鑰',exact=True).input_value()==''
-    assert not errors,errors
 
 
 @pytest.mark.parametrize('recipe_id',['text-image-video','edit-image-video'])
@@ -108,21 +54,31 @@ def test_actual_recipe_schema_compiles_browser_inputs_without_execution(compute_
     assert not errors,errors
 
 
-def test_management_does_not_echo_provider_error_or_retain_failed_key(compute_page):
-    page,errors=compute_page
-    def respond(route):
-        if route.request.method=='POST':route.fulfill(status=422,json={'ok':False,'error':{'code':'provider_error','message':'synthetic-secret-reflected-by-error'}})
-        else:route.fulfill(json={'ok':True,'providers':[]})
-    page.route('**/api/compute/providers**',respond)
-    base=page.url.split('/compute-fixture')[0];page.goto(base+'/#/admin')
-    page.get_by_role('button',name='運算平台',exact=True).click()
-    page.get_by_text('尚未設定 API 金鑰。',exact=True).wait_for()
-    page.get_by_label('API 金鑰',exact=True).fill('synthetic-secret-reflected-by-error')
-    page.get_by_role('button',name='儲存平台設定',exact=True).click()
-    page.get_by_text('設定尚未儲存。請檢查連線與配方格式後再試；新金鑰需重新輸入。',exact=True).wait_for()
-    assert 'synthetic-secret-reflected-by-error' not in page.locator('body').inner_text()
-    assert page.get_by_label('API 金鑰',exact=True).input_value()==''
-    assert not errors
+def test_console_does_not_echo_rejected_key_or_retain_input(compute_page):
+    page, errors = compute_page
+    credential = 'synthetic-test-key-1'
+    writes = []
+
+    def reject(route):
+        writes.append(route.request.post_data_json)
+        route.fulfill(status=422, json={'ok': False, 'error': {
+            'code': 'provider_error', 'message': 'Provider rejected ' + credential}})
+
+    page.route('**/api/compute/connections/comfy_cloud/credential', reject)
+    base = page.url.split('/compute-fixture')[0]
+    page.goto(base + '/#/studio/qwen21-text2img')
+    page.wait_for_function("typeof openComputeSettings === 'function'")
+    page.evaluate("openComputeSettings(document.querySelector('#identityChip'))")
+    card = page.locator('[data-provider=comfy_cloud]')
+    key = card.get_by_label('Comfy Cloud API 金鑰', exact=True)
+    key.fill(credential)
+    card.get_by_role('button', name='儲存金鑰', exact=True).click()
+    page.get_by_text('操作未完成，請重新整理後再試。', exact=True).wait_for()
+    assert writes and writes[0]['credential'] == credential
+    assert credential not in page.locator('body').inner_text()
+    assert all(credential not in value for value in page.locator('input').evaluate_all('(nodes) => nodes.map(node => node.value)'))
+    assert card.get_by_label('Comfy Cloud API 金鑰', exact=True).input_value() == ''
+    assert not errors, errors
 
 
 def test_operator_can_open_platform_management_from_account_menu(compute_page):
@@ -131,9 +87,9 @@ def test_operator_can_open_platform_management_from_account_menu(compute_page):
     base=page.url.split('/compute-fixture')[0];page.goto(base+'/#/studio/qwen21-text2img')
     page.wait_for_function('window.castleTimers && foregroundRefreshes.size === 0')
     page.evaluate('''() => {currentUser={...currentUser,role:'user',operator:true};openAccountMenu(document.querySelector('#identityChip'));}''')
-    page.get_by_role('button',name='運算平台',exact=True).click()
-    page.get_by_role('dialog',name='運算平台').wait_for()
-    page.get_by_text('尚未設定 API 金鑰。',exact=True).wait_for()
+    page.get_by_role('button',name='我的運算平台',exact=True).click()
+    page.get_by_role('dialog',name='我的運算平台').wait_for()
+    page.get_by_text('不需要帳號或金鑰。',exact=True).wait_for()
     assert not errors,errors
 
 

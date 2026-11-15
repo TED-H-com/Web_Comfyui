@@ -87,13 +87,17 @@ BROWSER=r'''<!doctype html><html lang="zh-Hant"><meta charset="utf-8">
  const file=document.getElementById('file'),files=new DataTransfer();files.items.add(new File(['local'],'reference.png'));file.files=files.files;
  check(h.profile==='vram-32'&&!generate.disabled,'default enabled');
  h.setProfile('none');await wait();check(generate.disabled,'no GPU blocks generation');check(document.getElementById('tool').classList.contains('hardware-unavailable'),'dim marker');
- check(!form.querySelector('.hardware-cloud-option').hidden&&form.querySelector('.hardware-cloud-option a').rel.includes('sponsored'),'blocked contextual referral');
+ const cloud=form.querySelector('.hardware-cloud-option');const links=[...cloud.querySelectorAll('a')];
+ check(!cloud.hidden&&links.length===2&&links.every(a=>a.rel.includes('sponsored')&&a.target==='_blank'),'blocked contextual referrals');
+ check(links[0].href.includes('ref=TEDH2FND')&&links[1].href.includes('inviteCode=qqgzxufp'),'both referral hrefs');
+ check(cloud.textContent.includes('TEDH2FND')&&cloud.textContent.includes('qqgzxufp'),'both referral codes');
  WebComfyI18n.setLanguage('en');await wait();
  const tool=document.getElementById('tool'),rect=tool.getBoundingClientRect();
  check(tool.scrollWidth<=tool.clientWidth+1,'sidebar card contained');
  for(const node of tool.children){if(!node.hidden)check(node.getBoundingClientRect().right<=rect.right+1,'card child within sidebar');}
  WebComfyI18n.setLanguage('zh-Hant');await wait();
  h.setProfile('vram-24');await wait();check(!generate.disabled&&h.canUse('text2img')&&!h.canUse('dance'),'24GB threshold');
+ check(form.querySelector('.hardware-cloud-option').hidden,'referral hidden when allowed');
  h.setProfile('dual-24');check(!h.canUse('dance'),'dual cards do not pool');
  check(form.querySelector('.hardware-reason').textContent.includes('48 GB'),'dual reason');
  form.querySelector('.app-demo').dataset.state='running';generate.disabled=true;h.setProfile('none');h.setProfile('autoip');check(generate.disabled,'running remains disabled');

@@ -25,7 +25,10 @@ def test_five_routes_management_and_durable_pipeline_http(test_server):
     config = call('/api/compute/providers')
     assert {row['provider'] for row in config['providers']} == {'comfy_cloud', 'runninghub'}
     assert 'api_key' not in json.dumps(config)
-    call('/api/compute/providers/comfy_cloud', {'enabled': False, 'endpoint': 'https://cloud.comfy.org', 'recipes': []})
+    with pytest.raises(urllib.error.HTTPError) as legacy_error:
+        call('/api/compute/providers/comfy_cloud', {'enabled': False, 'endpoint': 'https://cloud.comfy.org', 'recipes': []})
+    assert legacy_error.value.code == 409
+    assert json.load(legacy_error.value)['error']['code'] == 'legacy_write_disabled'
     request = {'featureId': 'text2img', 'settings': {'positive': 'Synthetic blue landscape', 'aspect': '1024x1024'}, 'files': {}}
     preview = call('/api/compute/preview', {'request': request, 'placement': 'auto', 'limits': {}})
     assert {row['lane'] for row in preview['candidates']} == {'local', 'colab', 'autoip', 'comfy_cloud', 'runninghub'}
@@ -73,7 +76,36 @@ def test_guided_catalog_preferences_and_custom_dag_http(test_server):
     coverage = call('capabilities')
     assert coverage['readiness_checked'] is False
     assert any(row['id'] == 'text2img' for row in coverage['features'])
-    prefs = {'default_placement': 'auto', 'feature_placements': {'text2img': 'runninghub'}}
+    # Follow test_provider_console.py::write and its authenticated inventory test.
+    from types import SimpleNamespace
+    from colab_service import ColabService
+    from provider_console import ProviderConsole
+    from provider_fabric.runtime import actor_context_from_castle, load_or_create_identity_key
+    from provider_fabric.store import ProviderFabricStore
+    from compute_parity.readiness import save
+    root = test_server.root
+    with opener.open(urllib.request.Request(base + '/api/auth/status', headers={'Cookie': cookie})) as response:
+        user = json.load(response)['user']
+    identity = load_or_create_identity_key(root / 'actor-identity.key')
+    runtime = SimpleNamespace(config=SimpleNamespace(credential_root=root / 'provider-secrets'),
+        store=ProviderFabricStore(root / 'provider-fabric.sqlite3'),
+        actor_context=lambda email, role: actor_context_from_castle(email, role, identity_key=identity))
+    console = ProviderConsole(root, runtime, user, ColabService(root / 'colab'),
+        probes={'runninghub': lambda _: {'connected': True, 'account_type': 'NORMAL', 'balances': []}})
+    def rh_card():
+        return next(c for c in console.snapshot()['connections'] if c['provider'] == 'runninghub')
+    console.write_credential('runninghub', {'credential': 'synthetic-test-key-1', 'revision': rh_card()['revision'], 'operation_id': str(uuid.uuid4())})
+    console.test('runninghub', {'revision': rh_card()['revision']})
+    catalog_path = root / 'compute-parity/bundles-r29'
+    catalog_path.mkdir(parents=True, exist_ok=True)
+    (catalog_path / 'catalog.json').write_text(json.dumps({'cases': [{'owner': console.owner, 'ready': True, 'bundle_sha256': 'synthetic-bundle'}]}))
+    save(root / 'compute-parity', {'owner': console.owner, 'lane': 'runninghub', 'credential_version': rh_card()['credential_version'],
+        'bundle_sha256': 'synthetic-bundle', 'observed_at': time.time(), 'expires_at': time.time() + 300,
+        'connection_verified': True, 'dependencies_ready': True, 'hashes_verified': True, 'lifecycle_verified': True,
+        'alias_map_version': '20261111-r29b', 'alias_evidence_verified': True})
+    console.toggle('runninghub', {'revision': rh_card()['revision'], 'use_enabled': True})
+    prefs = {'default_placement': 'auto', 'feature_placements': {'text2img': 'runninghub'},
+             'auto_order': console.snapshot()['preferences']['auto_order']}
     assert call('preferences', prefs)['feature_placements'] == prefs['feature_placements']
     assert call('preferences')['default_placement'] == 'auto'
     request = {'featureId': 'text2img', 'settings': {'positive': 'Synthetic blue sky', 'width': 1024, 'height': 1024}, 'files': {}}
@@ -108,7 +140,7 @@ def test_guided_catalog_preferences_and_custom_dag_http(test_server):
             {'id': 'invalid', 'request': {'featureId': 'not-a-feature', 'settings': {}, 'files': {}}, 'placement': 'local'}]}})
     assert error.value.code in (400, 422)
     assert json.load(error.value)['submission_state'] == 'not_submitted'
-    call('preferences', {'default_placement': 'local', 'feature_placements': {}})
+    call('preferences', {'default_placement': 'local', 'feature_placements': {}, 'auto_order': console.snapshot()['preferences']['auto_order']})
 
 
 def test_pipeline_initial_media_is_frozen_and_kind_checked(test_server):
