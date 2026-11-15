@@ -1,0 +1,3616 @@
+{
+  "/api/assets?kind=image": {
+    "body": {
+      "assets": [],
+      "credits_spent": 0,
+      "filters": {
+        "catalogRole": null,
+        "characterId": null,
+        "kind": "image",
+        "origin": null,
+        "visualClass": null
+      },
+      "next_cursor": null,
+      "provider_transport_performed": false,
+      "schema_version": 1
+    },
+    "status": 200
+  },
+  "/api/colab": {
+    "body": {
+      "accounts": [],
+      "installed": false,
+      "jobs": [],
+      "ok": true,
+      "session": {
+        "phase": "closed",
+        "status_label": "未開啟"
+      },
+      "session_ledger": [],
+      "settings": {
+        "hard_hours": 6,
+        "idle_minutes": 20,
+        "max_units": 120
+      }
+    },
+    "status": 200
+  },
+  "/api/colab/session": {
+    "body": {
+      "ok": true,
+      "session": {
+        "phase": "closed",
+        "status_label": "未開啟"
+      },
+      "session_ledger": [],
+      "settings": {
+        "hard_hours": 6,
+        "idle_minutes": 20,
+        "max_units": 120
+      }
+    },
+    "status": 200
+  },
+  "/api/compute/capabilities": {
+    "body": {
+      "features": [
+        {
+          "id": "text2img",
+          "providers": {
+            "autoip": {
+              "reason": "已提供服務轉接；需帳號、報價與相容參數，角色綁定另行檢查",
+              "status": "implemented"
+            },
+            "colab": {
+              "reason": "已提供 PRISM / P-H3 轉接；仍需可用帳號與相容參數",
+              "status": "implemented"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "文生圖"
+        },
+        {
+          "id": "img2img",
+          "providers": {
+            "autoip": {
+              "reason": "已提供服務轉接；需帳號、報價與相容參數，角色綁定另行檢查",
+              "status": "implemented"
+            },
+            "colab": {
+              "reason": "已提供 PRISM / P-H3 轉接；仍需可用帳號與相容參數",
+              "status": "implemented"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "AI 指令改圖"
+        },
+        {
+          "id": "anime-scene-card",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "需要伺服器綁定的透明角色與核准場景版位；尚未提供完整的版位／遮罩語意映射。",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "需要伺服器綁定的透明角色與核准場景版位；尚未提供完整的版位／遮罩語意映射。",
+              "status": "unsupported"
+            }
+          },
+          "title": "動漫場景寫真"
+        },
+        {
+          "id": "image-blend",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "去背模型、遮罩與合成版位有專屬處理；尚未建立逐項保留其參數的託管配方。",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "去背模型、遮罩與合成版位有專屬處理；尚未建立逐項保留其參數的託管配方。",
+              "status": "unsupported"
+            }
+          },
+          "title": "AI 參考圖融合"
+        },
+        {
+          "id": "character-angles",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "需要 InsightFace 模型目錄與多角度身分處理；不能只用一般 prompt 映射替代。",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "需要 InsightFace 模型目錄與多角度身分處理；不能只用一般 prompt 映射替代。",
+              "status": "unsupported"
+            }
+          },
+          "title": "真人臉參考肖像"
+        },
+        {
+          "id": "clipmode-character-photoshoot",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "需要私有角色 LoRA／InstantID 身分檔案、觸發詞與生成後身分檢查；不能僅搬移圖或上傳任意臉圖。",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "需要私有角色 LoRA／InstantID 身分檔案、觸發詞與生成後身分檢查；不能僅搬移圖或上傳任意臉圖。",
+              "status": "unsupported"
+            }
+          },
+          "title": "角色身份寫真"
+        },
+        {
+          "id": "img2video",
+          "providers": {
+            "autoip": {
+              "reason": "已提供服務轉接；需帳號、報價與相容參數，角色綁定另行檢查",
+              "status": "implemented"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "AI 圖生影片"
+        },
+        {
+          "id": "first-last-frame",
+          "providers": {
+            "autoip": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "runninghub": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            }
+          },
+          "title": "首尾幀影片"
+        },
+        {
+          "id": "dance",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "AI 跳舞影片"
+        },
+        {
+          "id": "lipsync",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "真人對嘴工具"
+        },
+        {
+          "id": "face-swap",
+          "providers": {
+            "autoip": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "runninghub": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            }
+          },
+          "title": "AI 換人"
+        },
+        {
+          "id": "video-loop",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "影片循環接龍"
+        },
+        {
+          "id": "voice-speak",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "聲音庫與角色人格授權、語音生成後處理仍由原本的服務流程管理；沒有已審查的遠端節點契約。",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "聲音庫與角色人格授權、語音生成後處理仍由原本的服務流程管理；沒有已審查的遠端節點契約。",
+              "status": "unsupported"
+            }
+          },
+          "title": "聲音生成"
+        },
+        {
+          "id": "voice-batch",
+          "providers": {
+            "autoip": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "runninghub": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            }
+          },
+          "title": "簡報配音"
+        },
+        {
+          "id": "voice-clone",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "聲音擁有權與模型載入流程尚未建立託管契約，不能自動傳送聲音資料。",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "聲音擁有權與模型載入流程尚未建立託管契約，不能自動傳送聲音資料。",
+              "status": "unsupported"
+            }
+          },
+          "title": "聲音克隆"
+        },
+        {
+          "id": "voxcpm-tts",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "依賴本機語音模型、角色聲音設定與服務程序；沒有可直接移植的純 Comfy API 圖。",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "依賴本機語音模型、角色聲音設定與服務程序；沒有可直接移植的純 Comfy API 圖。",
+              "status": "unsupported"
+            }
+          },
+          "title": "整合語音生成"
+        },
+        {
+          "id": "voice-library",
+          "providers": {
+            "autoip": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "runninghub": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            }
+          },
+          "title": "聲音庫"
+        },
+        {
+          "id": "post-generator",
+          "providers": {
+            "autoip": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "comfy_cloud": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "local": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            },
+            "runninghub": {
+              "reason": "此功能尚未開放生成",
+              "status": "unsupported"
+            }
+          },
+          "title": "貼文生成器"
+        },
+        {
+          "id": "h3-text-video",
+          "providers": {
+            "autoip": {
+              "reason": "已提供服務轉接；需帳號、報價與相容參數，角色綁定另行檢查",
+              "status": "implemented"
+            },
+            "colab": {
+              "reason": "已提供 PRISM / P-H3 轉接；仍需可用帳號與相容參數",
+              "status": "implemented"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "文字生成有聲影片"
+        },
+        {
+          "id": "h3-image-video",
+          "providers": {
+            "autoip": {
+              "reason": "已提供服務轉接；需帳號、報價與相容參數，角色綁定另行檢查",
+              "status": "implemented"
+            },
+            "colab": {
+              "reason": "已提供 PRISM / P-H3 轉接；仍需可用帳號與相容參數",
+              "status": "implemented"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "首／尾格有聲影片"
+        },
+        {
+          "id": "h3-reference-video",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "已提供 PRISM / P-H3 轉接；仍需可用帳號與相容參數",
+              "status": "implemented"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "多參考有聲影片"
+        },
+        {
+          "id": "qwen21-text2img",
+          "providers": {
+            "autoip": {
+              "reason": "已提供服務轉接；需帳號、報價與相容參數，角色綁定另行檢查",
+              "status": "implemented"
+            },
+            "colab": {
+              "reason": "已提供 PRISM / P-H3 轉接；仍需可用帳號與相容參數",
+              "status": "implemented"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "Qwen 2.1 文生圖"
+        },
+        {
+          "id": "qwen21-edit",
+          "providers": {
+            "autoip": {
+              "reason": "已提供服務轉接；需帳號、報價與相容參數，角色綁定另行檢查",
+              "status": "implemented"
+            },
+            "colab": {
+              "reason": "已提供 PRISM / P-H3 轉接；仍需可用帳號與相容參數",
+              "status": "implemented"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "AI 指令改圖"
+        },
+        {
+          "id": "character-photoshoot",
+          "providers": {
+            "autoip": {
+              "reason": "尚未提供相容的執行契約",
+              "status": "unsupported"
+            },
+            "colab": {
+              "reason": "已提供 PRISM / P-H3 轉接；仍需可用帳號與相容參數",
+              "status": "implemented"
+            },
+            "comfy_cloud": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            },
+            "local": {
+              "reason": "已接上既有執行流程；模型與節點會在送出前檢查",
+              "status": "implemented"
+            },
+            "runninghub": {
+              "reason": "已有內建配方可選，尚需設定金鑰與遠端工作流",
+              "status": "unconfigured"
+            }
+          },
+          "title": "角色搭配寫真"
+        }
+      ],
+      "ok": true,
+      "readiness_checked": false
+    },
+    "status": 200
+  },
+  "/api/compute/connections": {
+    "body": {
+      "connections": [
+        {
+          "account_type": null,
+          "balances": [],
+          "can_enable": true,
+          "checked_at": null,
+          "connection_state": "ready",
+          "credential_present": false,
+          "credential_saved_at": null,
+          "credential_version": 0,
+          "disabled_code": null,
+          "disabled_reason": "",
+          "legacy_modified_at": null,
+          "provider": "local",
+          "readiness": "ready",
+          "revision": 0,
+          "safe_reason": "",
+          "status_message": "本機使用權已開放",
+          "test_available": true,
+          "test_disabled_reason": "",
+          "use_enabled": true
+        },
+        {
+          "account_type": null,
+          "balances": [],
+          "can_enable": false,
+          "checked_at": null,
+          "connection_state": "not_configured",
+          "credential_present": false,
+          "credential_saved_at": null,
+          "credential_version": 0,
+          "disabled_code": "login_required",
+          "disabled_reason": "請先使用 Google 登入",
+          "legacy_modified_at": null,
+          "provider": "colab",
+          "readiness": "unavailable",
+          "revision": 0,
+          "safe_reason": "",
+          "status_message": "尚未登入",
+          "test_available": false,
+          "test_disabled_reason": "請先使用 Google 登入",
+          "use_enabled": false
+        },
+        {
+          "account_type": null,
+          "balances": [],
+          "can_enable": false,
+          "checked_at": null,
+          "connection_state": "not_configured",
+          "credential_present": false,
+          "credential_saved_at": null,
+          "credential_version": 0,
+          "disabled_code": "credential_required",
+          "disabled_reason": "請先儲存金鑰",
+          "legacy_modified_at": null,
+          "provider": "autoip",
+          "readiness": "unavailable",
+          "revision": 0,
+          "safe_reason": "",
+          "status_message": "未設定",
+          "test_available": false,
+          "test_disabled_reason": "請先儲存金鑰",
+          "use_enabled": false
+        },
+        {
+          "account_type": null,
+          "balances": [],
+          "can_enable": false,
+          "checked_at": null,
+          "connection_state": "not_configured",
+          "credential_present": false,
+          "credential_saved_at": null,
+          "credential_version": 0,
+          "disabled_code": "credential_required",
+          "disabled_reason": "請先儲存金鑰",
+          "legacy_modified_at": null,
+          "provider": "comfy_cloud",
+          "readiness": "unavailable",
+          "revision": 0,
+          "safe_reason": "",
+          "status_message": "未設定",
+          "test_available": false,
+          "test_disabled_reason": "連線檢查尚未開放",
+          "use_enabled": false,
+          "verification_note": ""
+        },
+        {
+          "account_type": null,
+          "balances": [],
+          "can_enable": false,
+          "checked_at": null,
+          "connection_state": "not_configured",
+          "credential_present": false,
+          "credential_saved_at": null,
+          "credential_version": 0,
+          "disabled_code": "credential_required",
+          "disabled_reason": "請先儲存金鑰",
+          "key_type_label": "尚未確認金鑰類型",
+          "legacy_modified_at": null,
+          "provider": "runninghub",
+          "readiness": "unavailable",
+          "revision": 0,
+          "safe_reason": "",
+          "status_message": "未設定",
+          "test_available": false,
+          "test_disabled_reason": "請先儲存金鑰",
+          "use_enabled": false,
+          "verification_note": ""
+        }
+      ],
+      "ok": true,
+      "owner": "demo@example.invalid",
+      "preferences": {
+        "auto_order": [
+          "local"
+        ],
+        "auto_policy": "user_order",
+        "default_placement": "local",
+        "feature_placements": {},
+        "revision": 0
+      }
+    },
+    "status": 200
+  },
+  "/api/compute/jobs": {
+    "body": {
+      "jobs": [],
+      "next_cursor": null,
+      "ok": true
+    },
+    "status": 200
+  },
+  "/api/compute/parity/cases": {
+    "body": {
+      "cases": []
+    },
+    "status": 200
+  },
+  "/api/compute/pipeline-features": {
+    "body": {
+      "features": [
+        {
+          "characterOnly": false,
+          "description": "Z-Image Turbo",
+          "fields": [
+            {
+              "default": "",
+              "hint": "提示詞建議使用英文，畫面模型對英文較敏感。",
+              "id": "positive",
+              "label": "想生成什麼？",
+              "placeholder": "例如：午後窗邊的一杯咖啡，溫暖自然光，生活攝影",
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "default": "文字、水印、logo、过度磨皮、塑料皮肤、畸形手指、多余手指、断指、严重解剖错误、脸部崩坏",
+              "id": "negative",
+              "label": "負向提示詞",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "default": "1088x1920",
+              "id": "aspect",
+              "label": "畫面比例",
+              "options": [
+                {
+                  "height": 1920,
+                  "label": "直 9:16",
+                  "width": 1088
+                },
+                {
+                  "height": 1536,
+                  "label": "直 3:4",
+                  "width": 1152
+                },
+                {
+                  "height": 1408,
+                  "label": "方 1:1",
+                  "width": 1408
+                },
+                {
+                  "height": 1152,
+                  "label": "橫 4:3",
+                  "width": 1536
+                },
+                {
+                  "height": 1088,
+                  "label": "橫 16:9",
+                  "width": 1920
+                },
+                {
+                  "height": 1024,
+                  "label": "方 1K · 1024×1024",
+                  "width": 1024
+                },
+                {
+                  "height": 768,
+                  "label": "橫 1K · 1024×768",
+                  "width": 1024
+                },
+                {
+                  "height": 1024,
+                  "label": "直 1K · 768×1024",
+                  "width": 768
+                }
+              ],
+              "type": "aspect"
+            },
+            {
+              "default": 8,
+              "id": "steps",
+              "label": "步數",
+              "max": 40,
+              "min": 1,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": 1.0,
+              "id": "cfg",
+              "label": "CFG",
+              "max": 10,
+              "min": 0,
+              "step": 0.1,
+              "type": "slider"
+            },
+            {
+              "default": 1,
+              "id": "batchSize",
+              "label": "張數",
+              "max": 8,
+              "min": 1,
+              "step": 1,
+              "type": "number"
+            },
+            {
+              "default": false,
+              "id": "useDopsd",
+              "label": "DOPSD 白幕風格",
+              "type": "checkbox"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "max": 2147483647,
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "text2img",
+          "label": "文生圖",
+          "operatorOnly": false,
+          "output_kind": "image",
+          "studio": "image",
+          "uploads": []
+        },
+        {
+          "characterOnly": false,
+          "description": "Flux Kontext 重新生成式編輯",
+          "fields": [
+            {
+              "default": "",
+              "hint": "提示詞建議使用英文，畫面模型對英文較敏感。",
+              "id": "instruction",
+              "label": "修改指令（英文最佳）",
+              "placeholder": "Replace the background with a tropical beach at sunset",
+              "required": true,
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "default": 20,
+              "id": "steps",
+              "label": "步數",
+              "max": 50,
+              "min": 1,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": 2.5,
+              "id": "guidance",
+              "label": "Guidance",
+              "max": 10,
+              "min": 0,
+              "step": 0.1,
+              "type": "slider"
+            },
+            {
+              "default": 1.0,
+              "id": "denoise",
+              "label": "Denoise",
+              "max": 1,
+              "min": 0,
+              "step": 0.05,
+              "type": "slider"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "max": 2147483647,
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "img2img",
+          "label": "AI 指令改圖",
+          "operatorOnly": false,
+          "output_kind": "image",
+          "studio": "image",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "image",
+              "label": "參考圖片",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            }
+          ]
+        },
+        {
+          "characterOnly": true,
+          "description": "角色原圖合成 · 不會轉成真人",
+          "fields": [],
+          "id": "anime-scene-card",
+          "label": "動漫場景寫真",
+          "operatorOnly": false,
+          "output_kind": "image",
+          "studio": "image",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "image",
+              "label": "核准角色造型",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            },
+            {
+              "accept": "image/*",
+              "id": "scene",
+              "label": "核准動漫場景",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "保留人物原貌 · AI 去背合成",
+          "fields": [
+            {
+              "default": "person",
+              "id": "positive",
+              "label": "保留的主體",
+              "type": "text"
+            },
+            {
+              "default": 0.5,
+              "id": "threshold",
+              "label": "主體偵測門檻",
+              "max": 1,
+              "min": 0,
+              "step": 0.01,
+              "type": "slider"
+            },
+            {
+              "default": 0,
+              "id": "feather",
+              "label": "邊緣羽化（像素，0 為關閉）",
+              "max": 16,
+              "min": 0,
+              "step": 1,
+              "type": "slider"
+            }
+          ],
+          "id": "image-blend",
+          "label": "AI 參考圖融合",
+          "operatorOnly": false,
+          "output_kind": "image",
+          "studio": "image",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "image1",
+              "label": "人物原圖",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            },
+            {
+              "accept": "image/*",
+              "id": "image2",
+              "label": "背景參考圖",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "Qwen 2.1 · 保留原圖身份與色彩的多角度肖像",
+          "fields": [
+            {
+              "default": "自然棚拍半身肖像，輕微轉頭，保留原本的髮型、眼鏡與服裝。",
+              "hint": "提示詞建議使用英文，畫面模型對英文較敏感。",
+              "id": "positive",
+              "label": "場景／角度描述",
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "default": "black and white, monochrome, grayscale, different person, deformed face, watermark, text",
+              "id": "negative",
+              "label": "負向提示詞",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "default": 25,
+              "id": "steps",
+              "label": "步數",
+              "max": 50,
+              "min": 1,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": 1.0,
+              "id": "cfg",
+              "label": "CFG",
+              "max": 5,
+              "min": 1,
+              "step": 0.1,
+              "type": "slider"
+            },
+            {
+              "default": 2,
+              "id": "batchSize",
+              "label": "候選張數",
+              "max": 6,
+              "min": 1,
+              "step": 1,
+              "type": "number"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "max": 2147483647,
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "character-angles",
+          "label": "真人臉參考肖像",
+          "operatorOnly": false,
+          "output_kind": "image",
+          "studio": "image",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "face",
+              "label": "角色臉部參考",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            }
+          ]
+        },
+        {
+          "characterOnly": true,
+          "description": "角色卡原圖雙重身份鎖定 · SDXL Beta",
+          "fields": [
+            {
+              "default": "professional portrait, natural expression, soft studio lighting, highly detailed",
+              "hint": "提示詞建議使用英文，畫面模型對英文較敏感。",
+              "id": "prompt",
+              "label": "想拍什麼場景？",
+              "required": true,
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "default": "lowres, blurry, bad anatomy, deformed hands, extra fingers, watermark, text",
+              "id": "negative_prompt",
+              "label": "負向提示詞",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "default": "768x1024",
+              "id": "aspect_ratio",
+              "label": "畫面比例",
+              "options": [
+                {
+                  "label": "直 3:4",
+                  "value": "768x1024"
+                },
+                {
+                  "label": "方 1:1",
+                  "value": "1024x1024"
+                },
+                {
+                  "label": "橫 4:3",
+                  "value": "1024x768"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "max": 2147483647,
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "clipmode-character-photoshoot",
+          "label": "角色身份寫真",
+          "operatorOnly": false,
+          "output_kind": "image",
+          "studio": "image",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "image",
+              "label": "角色原圖",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "Wan 2.1 Image-to-Video",
+          "fields": [
+            {
+              "default": "",
+              "hint": "提示詞建議使用英文，影片模型對英文較敏感。",
+              "id": "positive",
+              "label": "動態描述",
+              "placeholder": "the woman slowly turns her head and smiles, gentle camera push-in",
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "default": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，杂乱的背景，三条腿，背景人很多，倒着走",
+              "id": "negative",
+              "label": "負向提示詞",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "default": "480x832",
+              "id": "aspect",
+              "label": "畫面比例",
+              "options": [
+                {
+                  "height": 832,
+                  "label": "直 480×832",
+                  "width": 480
+                },
+                {
+                  "height": 512,
+                  "label": "方 512×512",
+                  "width": 512
+                },
+                {
+                  "height": 480,
+                  "label": "橫 832×480",
+                  "width": 832
+                }
+              ],
+              "type": "aspect"
+            },
+            {
+              "default": 81,
+              "id": "length",
+              "label": "影格數",
+              "max": 161,
+              "min": 9,
+              "step": 4,
+              "type": "slider"
+            },
+            {
+              "default": 16,
+              "id": "fps",
+              "label": "FPS",
+              "max": 60,
+              "min": 1,
+              "step": 1,
+              "type": "number"
+            },
+            {
+              "default": 6,
+              "id": "steps",
+              "label": "步數",
+              "max": 30,
+              "min": 1,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": 8.0,
+              "id": "shift",
+              "label": "Shift",
+              "max": 20,
+              "min": 0,
+              "step": 0.5,
+              "type": "slider"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "max": 2147483647,
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "img2video",
+          "label": "AI 圖生影片",
+          "operatorOnly": false,
+          "output_kind": "video",
+          "studio": "video",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "image",
+              "label": "起始圖片",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "SCAIL 姿態驅動",
+          "fields": [
+            {
+              "default": "animate",
+              "id": "mode",
+              "label": "模式",
+              "options": [
+                {
+                  "label": "動畫模式(AI 生成背景,比例跟參考圖)",
+                  "value": "animate"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "hint": "提示詞建議使用英文，影片模型對英文較敏感。",
+              "id": "positive",
+              "label": "角色描述",
+              "placeholder": "a person dancing, full body, natural motion",
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "default": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，杂乱的背景，三条腿，背景人很多，倒着走",
+              "id": "negative",
+              "label": "負向提示詞",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "default": 1.0,
+              "id": "poseStrength",
+              "label": "姿態強度",
+              "max": 2,
+              "min": 0,
+              "step": 0.05,
+              "type": "slider"
+            },
+            {
+              "default": 133,
+              "id": "length",
+              "label": "影格數",
+              "max": 161,
+              "min": 81,
+              "step": 4,
+              "type": "slider"
+            },
+            {
+              "default": 16,
+              "id": "fps",
+              "label": "FPS",
+              "max": 60,
+              "min": 1,
+              "step": 1,
+              "type": "number"
+            },
+            {
+              "default": 6,
+              "id": "steps",
+              "label": "步數",
+              "max": 30,
+              "min": 1,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "max": 2147483647,
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "dance",
+          "label": "AI 跳舞影片",
+          "operatorOnly": false,
+          "output_kind": "video",
+          "studio": "video",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "reference",
+              "label": "角色參考圖",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            },
+            {
+              "accept": "video/*",
+              "id": "video",
+              "label": "動作驅動影片",
+              "media_kinds": [
+                "video"
+              ],
+              "required": true
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "非角色綁定 · Wav2Lip 真人臉口型同步",
+          "fields": [
+            {
+              "id": "voiceId",
+              "label": "聲音庫語音",
+              "type": "voiceSelect"
+            },
+            {
+              "default": "sequential",
+              "display": "cards",
+              "id": "mode",
+              "label": "影格對應",
+              "options": [
+                {
+                  "label": "順序對應",
+                  "sub": "影片隨語音長度伸縮",
+                  "value": "sequential"
+                },
+                {
+                  "label": "循環播放",
+                  "sub": "影片重複到語音結束",
+                  "value": "repetitive"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": 300,
+              "id": "maxFrames",
+              "label": "最多讀取影格數",
+              "max": 1200,
+              "min": 1,
+              "step": 1,
+              "type": "number"
+            },
+            {
+              "default": 8,
+              "id": "faceBatch",
+              "label": "臉部偵測批次",
+              "max": 100,
+              "min": 1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "lipsync",
+          "label": "真人對嘴工具",
+          "operatorOnly": false,
+          "output_kind": "video",
+          "studio": "video",
+          "uploads": [
+            {
+              "accept": "video/*",
+              "id": "video",
+              "label": "人物影片",
+              "media_kinds": [
+                "video"
+              ],
+              "required": true
+            },
+            {
+              "accept": "audio/*",
+              "id": "voice",
+              "label": "上傳語音（未選聲音庫時使用）",
+              "media_kinds": [
+                "audio"
+              ],
+              "required": false
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "重複或正反播放短片（輸出不含原音訊）",
+          "fields": [
+            {
+              "default": 4,
+              "id": "repeat",
+              "label": "重複次數",
+              "max": 30,
+              "min": 1,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": false,
+              "id": "pingpong",
+              "label": "正反來回（正放後倒放，減少接點跳動）",
+              "type": "checkbox"
+            },
+            {
+              "default": 600,
+              "id": "maxFrames",
+              "label": "最多讀取影格數",
+              "max": 1800,
+              "min": 1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "video-loop",
+          "label": "影片循環接龍",
+          "operatorOnly": false,
+          "output_kind": "video",
+          "studio": "video",
+          "uploads": [
+            {
+              "accept": "video/*",
+              "id": "video",
+              "label": "短影片",
+              "media_kinds": [
+                "video"
+              ],
+              "required": true
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "依目前入口提供角色聲音或聲音庫克隆",
+          "fields": [
+            {
+              "default": "persona",
+              "display": "cards",
+              "id": "voiceSource",
+              "label": "聲音路徑",
+              "options": [
+                {
+                  "label": "角色聲音",
+                  "sub": "已訓練的角色聲音(台灣國語),選人即說",
+                  "value": "persona"
+                },
+                {
+                  "label": "聲音庫克隆",
+                  "sub": "用 聲音庫 的參考音克隆音色,逐字稿自動帶入",
+                  "value": "library"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "id": "persona",
+              "label": "角色聲音",
+              "type": "personaSelect"
+            },
+            {
+              "id": "voiceId",
+              "label": "聲音庫參考音訊",
+              "type": "voiceSelect"
+            },
+            {
+              "id": "sampleText",
+              "label": "參考音訊逐字稿（最多 180 字）",
+              "maxLength": 180,
+              "placeholder": "參考音訊實際說的那段話；聲音庫有 metadata 時會自動帶入",
+              "required": true,
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "default": "taiwan",
+              "display": "cards",
+              "id": "cloneEngine",
+              "label": "聲音庫引擎",
+              "options": [
+                {
+                  "label": "台灣腔",
+                  "sub": "BreezyVoice reference clone",
+                  "value": "taiwan"
+                },
+                {
+                  "label": "多語 F5",
+                  "sub": "要說英日等外語選這個",
+                  "value": "f5"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "id": "text",
+              "label": "要說的話（最多 2400 字，自動分段合併）",
+              "maxLength": 2400,
+              "placeholder": "打字，讓她用這個聲音說出來；長文會自動切段後合併",
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "default": false,
+              "id": "qualityGate",
+              "label": "高品質 ASR Gate（較慢，會等 GPU，逐段檢查失敗重跑）",
+              "type": "checkbox"
+            }
+          ],
+          "id": "voice-speak",
+          "label": "聲音生成",
+          "operatorOnly": false,
+          "output_kind": "audio",
+          "studio": "voice",
+          "uploads": []
+        },
+        {
+          "characterOnly": false,
+          "description": "舊入口：請改用「聲音生成」的聲音庫 Clone",
+          "fields": [
+            {
+              "default": "f5",
+              "display": "cards",
+              "id": "engine",
+              "label": "語音版本",
+              "options": [
+                {
+                  "label": "國語通用",
+                  "sub": "F5-TTS・多語音色克隆",
+                  "value": "f5"
+                },
+                {
+                  "label": "國語台灣口音",
+                  "sub": "BreezyVoice・道地台灣腔",
+                  "value": "taiwan"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "id": "voiceId",
+              "label": "聲音庫參考音訊",
+              "type": "voiceSelect"
+            },
+            {
+              "id": "sampleText",
+              "label": "參考音訊逐字稿（最多 180 字）",
+              "maxLength": 180,
+              "placeholder": "參考音訊實際說的那段話",
+              "required": true,
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "id": "speech",
+              "label": "要生成的文字（最多 2400 字，自動分段合併）",
+              "maxLength": 2400,
+              "placeholder": "想用這個音色說的內容；長文會自動切段後合併",
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "default": "F5v1",
+              "id": "model",
+              "label": "模型",
+              "options": [
+                {
+                  "label": "F5v1（多語 / 中英）",
+                  "value": "F5v1"
+                },
+                {
+                  "label": "F5 Base（英文）",
+                  "value": "F5"
+                },
+                {
+                  "label": "日文",
+                  "value": "F5-JP"
+                },
+                {
+                  "label": "西班牙文",
+                  "value": "F5-ES"
+                },
+                {
+                  "label": "法文",
+                  "value": "F5-FR"
+                },
+                {
+                  "label": "德文",
+                  "value": "F5-DE"
+                },
+                {
+                  "label": "義大利文",
+                  "value": "F5-IT"
+                },
+                {
+                  "label": "印地文",
+                  "value": "F5-HI"
+                },
+                {
+                  "label": "泰文",
+                  "value": "F5-TH"
+                },
+                {
+                  "label": "E2-TTS（英文）",
+                  "value": "E2"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": 1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "voice-clone",
+          "label": "聲音克隆",
+          "operatorOnly": false,
+          "output_kind": null,
+          "studio": "voice",
+          "uploads": [
+            {
+              "accept": "audio/*",
+              "id": "voice",
+              "label": "上傳參考音訊（未選聲音庫時使用）",
+              "media_kinds": [
+                "audio"
+              ],
+              "required": false
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "BreezyVoice 台灣國語 · VoxCPM Custom English / 多語",
+          "fields": [
+            {
+              "default": "breezy",
+              "display": "cards",
+              "id": "voiceEngine",
+              "label": "語音引擎",
+              "options": [
+                {
+                  "label": "台灣國語",
+                  "sub": "BreezyVoice · operator / AI-Sister 本機聲音",
+                  "value": "breezy"
+                },
+                {
+                  "label": "Custom English / 多語",
+                  "sub": "VoxCPM2 · 口音 / LoRA / reference clone",
+                  "value": "voxcpm"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "id": "persona",
+              "label": "BreezyVoice 聲音",
+              "type": "personaSelect"
+            },
+            {
+              "default": false,
+              "id": "qualityGate",
+              "label": "高品質 ASR Gate（較慢，會等 GPU，逐段檢查失敗重跑）",
+              "type": "checkbox"
+            },
+            {
+              "default": "lora",
+              "display": "cards",
+              "id": "mode",
+              "label": "VoxCPM 模式",
+              "options": [
+                {
+                  "label": "Custom English Clone",
+                  "sub": "LoRA + 乾淨 reference，不讓模型自由猜聲音",
+                  "value": "lora"
+                },
+                {
+                  "label": "Voice Design",
+                  "sub": "不用參考音，靠描述生成聲音",
+                  "value": "design"
+                },
+                {
+                  "label": "Reference Clone",
+                  "sub": "只用參考音（免逐字稿）",
+                  "value": "reference"
+                },
+                {
+                  "label": "Ultimate Clone",
+                  "sub": "真人參考音 + 逐字稿（最像本人）",
+                  "value": "ultimate"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "English",
+              "id": "language",
+              "label": "語言",
+              "options": [
+                {
+                  "label": "自動（依文字內容）",
+                  "value": ""
+                },
+                {
+                  "label": "English",
+                  "value": "English"
+                },
+                {
+                  "label": "中文 / Mandarin",
+                  "value": "Chinese Mandarin"
+                },
+                {
+                  "label": "日本語",
+                  "value": "Japanese"
+                },
+                {
+                  "label": "한국어",
+                  "value": "Korean"
+                },
+                {
+                  "label": "Français",
+                  "value": "French"
+                },
+                {
+                  "label": "Deutsch",
+                  "value": "German"
+                },
+                {
+                  "label": "Español",
+                  "value": "Spanish"
+                },
+                {
+                  "label": "Português",
+                  "value": "Portuguese"
+                },
+                {
+                  "label": "Italiano",
+                  "value": "Italian"
+                },
+                {
+                  "label": "Nederlands",
+                  "value": "Dutch"
+                },
+                {
+                  "label": "Dansk",
+                  "value": "Danish"
+                },
+                {
+                  "label": "Suomi",
+                  "value": "Finnish"
+                },
+                {
+                  "label": "Ελληνικά",
+                  "value": "Greek"
+                },
+                {
+                  "label": "עברית",
+                  "value": "Hebrew"
+                },
+                {
+                  "label": "हिन्दी",
+                  "value": "Hindi"
+                },
+                {
+                  "label": "Bahasa Indonesia",
+                  "value": "Indonesian"
+                },
+                {
+                  "label": "Bahasa Melayu",
+                  "value": "Malay"
+                },
+                {
+                  "label": "Norsk",
+                  "value": "Norwegian"
+                },
+                {
+                  "label": "Polski",
+                  "value": "Polish"
+                },
+                {
+                  "label": "Русский",
+                  "value": "Russian"
+                },
+                {
+                  "label": "Kiswahili",
+                  "value": "Swahili"
+                },
+                {
+                  "label": "Svenska",
+                  "value": "Swedish"
+                },
+                {
+                  "label": "Tagalog",
+                  "value": "Tagalog"
+                },
+                {
+                  "label": "ไทย",
+                  "value": "Thai"
+                },
+                {
+                  "label": "Türkçe",
+                  "value": "Turkish"
+                },
+                {
+                  "label": "Tiếng Việt",
+                  "value": "Vietnamese"
+                },
+                {
+                  "label": "العربية",
+                  "value": "Arabic"
+                },
+                {
+                  "label": "မြန်မာ",
+                  "value": "Burmese"
+                },
+                {
+                  "label": "ភាសាខ្មែរ",
+                  "value": "Khmer"
+                },
+                {
+                  "label": "ລາວ",
+                  "value": "Lao"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "standard American English accent",
+              "id": "accent",
+              "label": "口音 / 方言",
+              "options": [
+                {
+                  "label": "自動 / 保持文字自然口音",
+                  "value": ""
+                },
+                {
+                  "label": "美式標準英文",
+                  "value": "standard American English accent"
+                },
+                {
+                  "label": "國際清晰英文",
+                  "value": "clear standard English with a neutral international accent"
+                },
+                {
+                  "label": "英式英文",
+                  "value": "British English accent"
+                },
+                {
+                  "label": "澳洲英文",
+                  "value": "Australian English accent"
+                },
+                {
+                  "label": "印度英文",
+                  "value": "Indian English accent"
+                },
+                {
+                  "label": "台灣國語",
+                  "value": "Taiwanese Mandarin accent"
+                },
+                {
+                  "label": "普通話",
+                  "value": "Mainland Mandarin accent"
+                },
+                {
+                  "label": "粵語 / Cantonese",
+                  "value": "Cantonese accent"
+                },
+                {
+                  "label": "閩南語 / 台語風格",
+                  "value": "Taiwanese Hokkien accent"
+                },
+                {
+                  "label": "四川話",
+                  "value": "Sichuan dialect accent"
+                },
+                {
+                  "label": "吳語",
+                  "value": "Wu dialect accent"
+                },
+                {
+                  "label": "東北話",
+                  "value": "Northeastern Chinese accent"
+                },
+                {
+                  "label": "河南話",
+                  "value": "Henan dialect accent"
+                },
+                {
+                  "label": "陝西話",
+                  "value": "Shaanxi dialect accent"
+                },
+                {
+                  "label": "山東話",
+                  "value": "Shandong dialect accent"
+                },
+                {
+                  "label": "天津話",
+                  "value": "Tianjin dialect accent"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "custom_english",
+              "id": "voiceProfile",
+              "label": "LoRA Profile",
+              "options": [
+                {
+                  "label": "Custom English LoRA (configure locally)",
+                  "value": "custom_english"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": true,
+              "id": "speakerGate",
+              "label": "聲紋 Gate（有 reference 時低於相似度會自動重跑）",
+              "type": "checkbox"
+            },
+            {
+              "id": "voiceId",
+              "label": "聲音庫參考音訊",
+              "type": "voiceSelect"
+            },
+            {
+              "id": "style",
+              "label": "語氣 / 風格控制",
+              "placeholder": "例如：calm, confident, standard American English, natural meeting voice",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "id": "promptText",
+              "label": "參考音訊逐字稿（Ultimate Clone 才需要）",
+              "maxLength": 500,
+              "placeholder": "參考音訊實際講的英文逐字稿",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "id": "text",
+              "label": "要生成的文字",
+              "maxLength": 2400,
+              "placeholder": "輸入要用 VoxCPM 說出的文字",
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "default": 2.0,
+              "id": "cfg",
+              "label": "CFG",
+              "max": 3.0,
+              "min": 1.0,
+              "step": 0.1,
+              "type": "slider"
+            },
+            {
+              "default": 10,
+              "id": "steps",
+              "label": "推理步數",
+              "max": 30,
+              "min": 4,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "voxcpm-tts",
+          "label": "整合語音生成",
+          "operatorOnly": false,
+          "output_kind": "audio",
+          "studio": "voice",
+          "uploads": [
+            {
+              "accept": "audio/*",
+              "id": "voice",
+              "label": "參考音訊（Reference / Ultimate 模式使用）",
+              "media_kinds": [
+                "audio"
+              ],
+              "required": false
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "MiniMax H3 FL2VA · 三欄原生提示詞",
+          "fields": [
+            {
+              "id": "integrated_multimodal_description",
+              "label": "integrated_multimodal_description",
+              "maxLength": 4000,
+              "placeholder": "依時間順序描述畫面、動作、鏡頭、對白與可見文字。",
+              "required": true,
+              "rows": 6,
+              "type": "textarea"
+            },
+            {
+              "id": "overall_soundscape",
+              "label": "overall_soundscape",
+              "maxLength": 4000,
+              "placeholder": "環境音、物理聲響、對白以外的場景聲音；沒有可填 N/A。",
+              "required": true,
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "id": "non_diegetic_music",
+              "label": "non_diegetic_music",
+              "maxLength": 4000,
+              "placeholder": "觀眾聽見、場景內角色聽不見的配樂；不要配樂可填 None.",
+              "required": true,
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "default": "landscape",
+              "id": "aspect",
+              "label": "畫布",
+              "options": [
+                {
+                  "height": 1344,
+                  "label": "原生直式 9:16",
+                  "value": "portrait",
+                  "width": 768
+                },
+                {
+                  "height": 768,
+                  "label": "原生橫式 16:9",
+                  "value": "landscape",
+                  "width": 1344
+                },
+                {
+                  "height": 992,
+                  "label": "原生方形 1:1",
+                  "value": "square",
+                  "width": 992
+                },
+                {
+                  "height": 864,
+                  "label": "預覽直式 9:16",
+                  "value": "portrait-preview",
+                  "width": 480
+                },
+                {
+                  "height": 480,
+                  "label": "預覽橫式 16:9",
+                  "value": "landscape-preview",
+                  "width": 864
+                },
+                {
+                  "height": 640,
+                  "label": "預覽方形 1:1",
+                  "value": "square-preview",
+                  "width": 640
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "124",
+              "id": "frames",
+              "label": "幀數（17k+5）",
+              "options": [
+                {
+                  "label": "124 幀 · 5.17 秒",
+                  "value": "124"
+                },
+                {
+                  "label": "141 幀 · 5.88 秒",
+                  "value": "141"
+                },
+                {
+                  "label": "158 幀 · 6.58 秒",
+                  "value": "158"
+                },
+                {
+                  "label": "175 幀 · 7.29 秒",
+                  "value": "175"
+                },
+                {
+                  "label": "192 幀 · 8.00 秒",
+                  "value": "192"
+                },
+                {
+                  "label": "209 幀 · 8.71 秒",
+                  "value": "209"
+                },
+                {
+                  "label": "226 幀 · 9.42 秒",
+                  "value": "226"
+                },
+                {
+                  "label": "243 幀 · 10.12 秒",
+                  "value": "243"
+                },
+                {
+                  "label": "260 幀 · 10.83 秒",
+                  "value": "260"
+                },
+                {
+                  "label": "277 幀 · 11.54 秒",
+                  "value": "277"
+                },
+                {
+                  "label": "294 幀 · 12.25 秒",
+                  "value": "294"
+                },
+                {
+                  "label": "311 幀 · 12.96 秒",
+                  "value": "311"
+                },
+                {
+                  "label": "328 幀 · 13.67 秒",
+                  "value": "328"
+                },
+                {
+                  "label": "345 幀 · 14.38 秒",
+                  "value": "345"
+                },
+                {
+                  "label": "362 幀 · 15.08 秒",
+                  "value": "362"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "stock",
+              "id": "acceleration",
+              "label": "加速模式",
+              "options": [
+                {
+                  "label": "Stock · 官方 20 步",
+                  "value": "stock"
+                },
+                {
+                  "label": "SageAttention · 20 步",
+                  "value": "sage"
+                },
+                {
+                  "label": "Sage + EasyCache 0.1",
+                  "value": "easycache"
+                },
+                {
+                  "label": "Sage + TeaCache 0.15",
+                  "value": "teacache"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "-1",
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "maxLength": 20,
+              "type": "integer-string"
+            }
+          ],
+          "id": "h3-text-video",
+          "label": "文字生成有聲影片",
+          "operatorOnly": false,
+          "output_kind": "video",
+          "studio": "video",
+          "uploads": []
+        },
+        {
+          "characterOnly": false,
+          "description": "MiniMax H3 FL2VA · I2V / FLF",
+          "fields": [
+            {
+              "id": "integrated_multimodal_description",
+              "label": "integrated_multimodal_description",
+              "maxLength": 4000,
+              "required": true,
+              "rows": 6,
+              "type": "textarea"
+            },
+            {
+              "id": "overall_soundscape",
+              "label": "overall_soundscape",
+              "maxLength": 4000,
+              "required": true,
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "id": "non_diegetic_music",
+              "label": "non_diegetic_music",
+              "maxLength": 4000,
+              "required": true,
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "default": "landscape",
+              "id": "aspect",
+              "label": "畫布",
+              "options": [
+                {
+                  "height": 1344,
+                  "label": "原生直式 9:16",
+                  "value": "portrait",
+                  "width": 768
+                },
+                {
+                  "height": 768,
+                  "label": "原生橫式 16:9",
+                  "value": "landscape",
+                  "width": 1344
+                },
+                {
+                  "height": 992,
+                  "label": "原生方形 1:1",
+                  "value": "square",
+                  "width": 992
+                },
+                {
+                  "height": 864,
+                  "label": "預覽直式 9:16",
+                  "value": "portrait-preview",
+                  "width": 480
+                },
+                {
+                  "height": 480,
+                  "label": "預覽橫式 16:9",
+                  "value": "landscape-preview",
+                  "width": 864
+                },
+                {
+                  "height": 640,
+                  "label": "預覽方形 1:1",
+                  "value": "square-preview",
+                  "width": 640
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "124",
+              "id": "frames",
+              "label": "幀數（17k+5）",
+              "options": [
+                {
+                  "label": "124 幀 · 5.17 秒",
+                  "value": "124"
+                },
+                {
+                  "label": "141 幀 · 5.88 秒",
+                  "value": "141"
+                },
+                {
+                  "label": "158 幀 · 6.58 秒",
+                  "value": "158"
+                },
+                {
+                  "label": "175 幀 · 7.29 秒",
+                  "value": "175"
+                },
+                {
+                  "label": "192 幀 · 8.00 秒",
+                  "value": "192"
+                },
+                {
+                  "label": "209 幀 · 8.71 秒",
+                  "value": "209"
+                },
+                {
+                  "label": "226 幀 · 9.42 秒",
+                  "value": "226"
+                },
+                {
+                  "label": "243 幀 · 10.12 秒",
+                  "value": "243"
+                },
+                {
+                  "label": "260 幀 · 10.83 秒",
+                  "value": "260"
+                },
+                {
+                  "label": "277 幀 · 11.54 秒",
+                  "value": "277"
+                },
+                {
+                  "label": "294 幀 · 12.25 秒",
+                  "value": "294"
+                },
+                {
+                  "label": "311 幀 · 12.96 秒",
+                  "value": "311"
+                },
+                {
+                  "label": "328 幀 · 13.67 秒",
+                  "value": "328"
+                },
+                {
+                  "label": "345 幀 · 14.38 秒",
+                  "value": "345"
+                },
+                {
+                  "label": "362 幀 · 15.08 秒",
+                  "value": "362"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "stock",
+              "id": "acceleration",
+              "label": "加速模式",
+              "options": [
+                {
+                  "label": "Stock · 官方 20 步",
+                  "value": "stock"
+                },
+                {
+                  "label": "SageAttention · 20 步",
+                  "value": "sage"
+                },
+                {
+                  "label": "Sage + EasyCache 0.1",
+                  "value": "easycache"
+                },
+                {
+                  "label": "Sage + TeaCache 0.15",
+                  "value": "teacache"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "-1",
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "maxLength": 20,
+              "type": "integer-string"
+            }
+          ],
+          "id": "h3-image-video",
+          "label": "首／尾格有聲影片",
+          "minimumUploads": 1,
+          "operatorOnly": false,
+          "output_kind": "video",
+          "studio": "video",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "image",
+              "label": "首格圖片",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "last_frame",
+              "label": "尾格圖片",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "MiniMax H3 Ref2VA · 圖片／影片／音訊",
+          "fields": [
+            {
+              "id": "subject_definitions",
+              "label": "subject_definitions",
+              "maxLength": 4000,
+              "required": true,
+              "rows": 5,
+              "type": "textarea"
+            },
+            {
+              "id": "summary",
+              "label": "summary",
+              "maxLength": 4000,
+              "required": true,
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "id": "retention_analysis",
+              "label": "retention_analysis",
+              "maxLength": 4000,
+              "required": true,
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "id": "detailed_description",
+              "label": "detailed_description",
+              "maxLength": 4000,
+              "required": true,
+              "rows": 7,
+              "type": "textarea"
+            },
+            {
+              "id": "overall_soundscape",
+              "label": "overall_soundscape",
+              "maxLength": 4000,
+              "required": true,
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "id": "non_diegetic_music",
+              "label": "non_diegetic_music",
+              "maxLength": 4000,
+              "required": true,
+              "rows": 3,
+              "type": "textarea"
+            },
+            {
+              "default": "landscape",
+              "id": "aspect",
+              "label": "畫布",
+              "options": [
+                {
+                  "height": 1344,
+                  "label": "原生直式 9:16",
+                  "value": "portrait",
+                  "width": 768
+                },
+                {
+                  "height": 768,
+                  "label": "原生橫式 16:9",
+                  "value": "landscape",
+                  "width": 1344
+                },
+                {
+                  "height": 992,
+                  "label": "原生方形 1:1",
+                  "value": "square",
+                  "width": 992
+                },
+                {
+                  "height": 864,
+                  "label": "預覽直式 9:16",
+                  "value": "portrait-preview",
+                  "width": 480
+                },
+                {
+                  "height": 480,
+                  "label": "預覽橫式 16:9",
+                  "value": "landscape-preview",
+                  "width": 864
+                },
+                {
+                  "height": 640,
+                  "label": "預覽方形 1:1",
+                  "value": "square-preview",
+                  "width": 640
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "124",
+              "id": "frames",
+              "label": "幀數（17k+5）",
+              "options": [
+                {
+                  "label": "124 幀 · 5.17 秒",
+                  "value": "124"
+                },
+                {
+                  "label": "141 幀 · 5.88 秒",
+                  "value": "141"
+                },
+                {
+                  "label": "158 幀 · 6.58 秒",
+                  "value": "158"
+                },
+                {
+                  "label": "175 幀 · 7.29 秒",
+                  "value": "175"
+                },
+                {
+                  "label": "192 幀 · 8.00 秒",
+                  "value": "192"
+                },
+                {
+                  "label": "209 幀 · 8.71 秒",
+                  "value": "209"
+                },
+                {
+                  "label": "226 幀 · 9.42 秒",
+                  "value": "226"
+                },
+                {
+                  "label": "243 幀 · 10.12 秒",
+                  "value": "243"
+                },
+                {
+                  "label": "260 幀 · 10.83 秒",
+                  "value": "260"
+                },
+                {
+                  "label": "277 幀 · 11.54 秒",
+                  "value": "277"
+                },
+                {
+                  "label": "294 幀 · 12.25 秒",
+                  "value": "294"
+                },
+                {
+                  "label": "311 幀 · 12.96 秒",
+                  "value": "311"
+                },
+                {
+                  "label": "328 幀 · 13.67 秒",
+                  "value": "328"
+                },
+                {
+                  "label": "345 幀 · 14.38 秒",
+                  "value": "345"
+                },
+                {
+                  "label": "362 幀 · 15.08 秒",
+                  "value": "362"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "stock",
+              "id": "acceleration",
+              "label": "加速模式",
+              "options": [
+                {
+                  "label": "Stock · 官方 20 步",
+                  "value": "stock"
+                },
+                {
+                  "label": "SageAttention · 20 步",
+                  "value": "sage"
+                },
+                {
+                  "label": "Sage + EasyCache 0.1",
+                  "value": "easycache"
+                },
+                {
+                  "label": "Sage + TeaCache 0.15",
+                  "value": "teacache"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "-1",
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "maxLength": 20,
+              "type": "integer-string"
+            }
+          ],
+          "id": "h3-reference-video",
+          "label": "多參考有聲影片",
+          "minimumUploads": 1,
+          "operatorOnly": false,
+          "output_kind": "video",
+          "studio": "video",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "reference",
+              "label": "參考圖片 1",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "reference2",
+              "label": "參考圖片 2",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "reference3",
+              "label": "參考圖片 3",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "reference4",
+              "label": "參考圖片 4",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "reference5",
+              "label": "參考圖片 5",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "reference6",
+              "label": "參考圖片 6",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "reference7",
+              "label": "參考圖片 7",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "reference8",
+              "label": "參考圖片 8",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "reference9",
+              "label": "參考圖片 9",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "video/*",
+              "id": "video1",
+              "label": "參考影片 1",
+              "media_kinds": [
+                "video"
+              ],
+              "required": false
+            },
+            {
+              "accept": "video/*",
+              "id": "video2",
+              "label": "參考影片 2",
+              "media_kinds": [
+                "video"
+              ],
+              "required": false
+            },
+            {
+              "accept": "video/*",
+              "id": "video3",
+              "label": "參考影片 3",
+              "media_kinds": [
+                "video"
+              ],
+              "required": false
+            },
+            {
+              "accept": "audio/*",
+              "id": "audio1",
+              "label": "參考音訊 1",
+              "media_kinds": [
+                "audio"
+              ],
+              "required": false
+            },
+            {
+              "accept": "audio/*",
+              "id": "audio2",
+              "label": "參考音訊 2",
+              "media_kinds": [
+                "audio"
+              ],
+              "required": false
+            },
+            {
+              "accept": "audio/*",
+              "id": "audio3",
+              "label": "參考音訊 3",
+              "media_kinds": [
+                "audio"
+              ],
+              "required": false
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "Qwen-Image-2.1 · 中文排版與原生 2K",
+          "fields": [
+            {
+              "default": "",
+              "hint": "支援中文與英文；要呈現的文字請用引號標明。",
+              "id": "positive",
+              "label": "想生成什麼？",
+              "placeholder": "例如：一座雲海中的城堡，晨光照亮塔樓，海報標題為「雲上之城」。",
+              "required": true,
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "default": "1:1",
+              "id": "aspectRatio",
+              "label": "畫面比例",
+              "options": [
+                {
+                  "label": "1:1",
+                  "value": "1:1"
+                },
+                {
+                  "label": "16:9",
+                  "value": "16:9"
+                },
+                {
+                  "label": "9:16",
+                  "value": "9:16"
+                },
+                {
+                  "label": "3:2",
+                  "value": "3:2"
+                },
+                {
+                  "label": "2:3",
+                  "value": "2:3"
+                },
+                {
+                  "label": "4:3",
+                  "value": "4:3"
+                },
+                {
+                  "label": "3:4",
+                  "value": "3:4"
+                },
+                {
+                  "label": "21:9",
+                  "value": "21:9"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "1",
+              "id": "megapixels",
+              "label": "輸出大小",
+              "options": [
+                {
+                  "label": "1 MP · 正方形 1024 × 1024",
+                  "value": "1"
+                },
+                {
+                  "label": "2 MP · 更多細節",
+                  "value": "2"
+                },
+                {
+                  "label": "4 MP · 正方形 2048 × 2048",
+                  "value": "4"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "id": "negative",
+              "label": "負向提示詞",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "default": 25,
+              "id": "steps",
+              "label": "步數",
+              "max": 50,
+              "min": 1,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": 1.0,
+              "id": "cfg",
+              "label": "CFG",
+              "max": 5,
+              "min": 1,
+              "step": 0.1,
+              "type": "slider"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "max": 9007199254740991,
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "qwen21-text2img",
+          "label": "Qwen 2.1 文生圖",
+          "operatorOnly": false,
+          "output_kind": "image",
+          "studio": "image",
+          "uploads": []
+        },
+        {
+          "characterOnly": false,
+          "description": "Qwen-Image-2.1 · 多圖參考",
+          "fields": [
+            {
+              "default": "",
+              "hint": "支援中文與英文；要呈現的文字請用引號標明。",
+              "id": "instruction",
+              "label": "修改指令",
+              "placeholder": "保留 <image1> 的構圖，把背景改成黃昏的海邊；可用 <image2> 指定參考風格。",
+              "required": true,
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "default": "1024",
+              "id": "resolution",
+              "label": "輸出大小",
+              "options": [
+                {
+                  "label": "約 1 MP · 依原圖比例",
+                  "value": "1024"
+                },
+                {
+                  "label": "約 2.25 MP · 依原圖比例",
+                  "value": "1536"
+                },
+                {
+                  "label": "約 4 MP · 依原圖比例",
+                  "value": "2048"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "id": "negative",
+              "label": "負向提示詞",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "default": 25,
+              "id": "steps",
+              "label": "步數",
+              "max": 50,
+              "min": 1,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": 1.0,
+              "id": "cfg",
+              "label": "CFG",
+              "max": 5,
+              "min": 1,
+              "step": 0.1,
+              "type": "slider"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "max": 9007199254740991,
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "qwen21-edit",
+          "label": "AI 指令改圖",
+          "operatorOnly": false,
+          "output_kind": "image",
+          "studio": "image",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "image",
+              "label": "圖片 1 · <image1>（原圖）",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            },
+            {
+              "accept": "image/*",
+              "id": "image2",
+              "label": "圖片 2 · <image2>（可選參考）",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "image3",
+              "label": "圖片 3 · <image3>（可選參考）",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            },
+            {
+              "accept": "image/*",
+              "id": "image4",
+              "label": "圖片 4 · <image4>（可選參考）",
+              "media_kinds": [
+                "image"
+              ],
+              "required": false
+            }
+          ]
+        },
+        {
+          "characterOnly": false,
+          "description": "角色原圖 × 場景、穿著與姿勢",
+          "fields": [
+            {
+              "default": "realistic",
+              "hint": "服裝依畫風分開；人物、衣服與背景使用同一畫風。選角色時依角色分類套用。",
+              "id": "visualStyle",
+              "label": "畫風",
+              "options": [
+                {
+                  "label": "動畫",
+                  "value": "anime"
+                },
+                {
+                  "label": "寫實",
+                  "value": "realistic"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "hint": "保持角色外觀，依描述重新安排畫面。",
+              "id": "instruction",
+              "label": "畫面描述",
+              "placeholder": "選擇下方搭配，或描述想要的場景、服裝與動作。",
+              "required": true,
+              "rows": 4,
+              "type": "textarea"
+            },
+            {
+              "default": "1024",
+              "id": "resolution",
+              "label": "輸出大小",
+              "options": [
+                {
+                  "label": "約 1 MP · 依原圖比例",
+                  "value": "1024"
+                },
+                {
+                  "label": "約 2.25 MP · 依原圖比例",
+                  "value": "1536"
+                },
+                {
+                  "label": "約 4 MP · 依原圖比例",
+                  "value": "2048"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": "",
+              "id": "negative",
+              "label": "負向提示詞",
+              "rows": 2,
+              "type": "textarea"
+            },
+            {
+              "default": 25,
+              "id": "steps",
+              "label": "步數",
+              "max": 50,
+              "min": 1,
+              "step": 1,
+              "type": "slider"
+            },
+            {
+              "default": 1.0,
+              "id": "cfg",
+              "label": "CFG",
+              "max": 5,
+              "min": 1,
+              "step": 0.1,
+              "type": "slider"
+            },
+            {
+              "default": -1,
+              "id": "seed",
+              "label": "種子（-1 隨機）",
+              "max": 9007199254740991,
+              "min": -1,
+              "step": 1,
+              "type": "number"
+            }
+          ],
+          "id": "character-photoshoot",
+          "label": "角色搭配寫真",
+          "minimumUploads": 1,
+          "operatorOnly": false,
+          "output_kind": "image",
+          "studio": "image",
+          "uploads": [
+            {
+              "accept": "image/*",
+              "id": "image",
+              "label": "角色原圖",
+              "media_kinds": [
+                "image"
+              ],
+              "required": true
+            }
+          ]
+        }
+      ],
+      "ok": true
+    },
+    "status": 200
+  },
+  "/api/compute/pipeline-recipes": {
+    "body": {
+      "ok": true,
+      "recipes": [
+        {
+          "description": "先生成一張圖片，驗證完成後交給下一步製作影片。",
+          "fields": [
+            {
+              "id": "image_prompt",
+              "label": "圖片描述",
+              "required": true,
+              "type": "textarea"
+            },
+            {
+              "default": "anime",
+              "id": "visual_class",
+              "label": "畫面風格",
+              "options": [
+                {
+                  "label": "動畫",
+                  "value": "anime"
+                },
+                {
+                  "label": "寫實",
+                  "value": "realistic"
+                }
+              ],
+              "required": true,
+              "type": "select"
+            },
+            {
+              "id": "motion_prompt",
+              "label": "影片動作與場景",
+              "required": true,
+              "type": "textarea"
+            },
+            {
+              "default": "124",
+              "description": "本機、Colab 與依此工作流部署的平台使用此長度。",
+              "id": "native_frames",
+              "label": "工作流影片長度",
+              "options": [
+                {
+                  "label": "約 5.2 秒",
+                  "value": "124"
+                },
+                {
+                  "label": "約 9.4 秒",
+                  "value": "226"
+                },
+                {
+                  "label": "約 15.1 秒",
+                  "value": "362"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": 8,
+              "description": "僅選到 AutoIP 時，改用此服務支援的影片規格。",
+              "id": "autoip_seconds",
+              "label": "AutoIP 影片秒數",
+              "max": 15,
+              "min": 2,
+              "show_when": {
+                "placements": [
+                  "auto",
+                  "autoip"
+                ],
+                "step_id": "video"
+              },
+              "type": "number"
+            },
+            {
+              "default": "480p",
+              "id": "autoip_resolution",
+              "label": "AutoIP 影片解析度",
+              "options": [
+                {
+                  "label": "480p",
+                  "value": "480p"
+                },
+                {
+                  "label": "768p",
+                  "value": "768p"
+                },
+                {
+                  "label": "2K",
+                  "value": "2k"
+                }
+              ],
+              "show_when": {
+                "placements": [
+                  "auto",
+                  "autoip"
+                ],
+                "step_id": "video"
+              },
+              "type": "select"
+            }
+          ],
+          "id": "text-image-video",
+          "label": "文字生圖 → 影片",
+          "steps": [
+            {
+              "depends_on": [],
+              "feature_id": "text2img",
+              "id": "image",
+              "label": "文字生圖"
+            },
+            {
+              "depends_on": [
+                "image"
+              ],
+              "feature_id": "h3-image-video",
+              "id": "video",
+              "label": "圖片製作影片"
+            }
+          ]
+        },
+        {
+          "description": "先依指令修改圖片，再將確認完成的成果交給影片步驟。",
+          "fields": [
+            {
+              "accept": "image/*",
+              "id": "image",
+              "label": "參考圖片",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "id": "instruction",
+              "label": "修改指令",
+              "required": true,
+              "type": "textarea"
+            },
+            {
+              "default": "anime",
+              "id": "visual_class",
+              "label": "畫面風格",
+              "options": [
+                {
+                  "label": "動畫",
+                  "value": "anime"
+                },
+                {
+                  "label": "寫實",
+                  "value": "realistic"
+                }
+              ],
+              "required": true,
+              "type": "select"
+            },
+            {
+              "id": "motion_prompt",
+              "label": "影片動作與場景",
+              "required": true,
+              "type": "textarea"
+            },
+            {
+              "default": "124",
+              "description": "本機、Colab 與依此工作流部署的平台使用此長度。",
+              "id": "native_frames",
+              "label": "工作流影片長度",
+              "options": [
+                {
+                  "label": "約 5.2 秒",
+                  "value": "124"
+                },
+                {
+                  "label": "約 9.4 秒",
+                  "value": "226"
+                },
+                {
+                  "label": "約 15.1 秒",
+                  "value": "362"
+                }
+              ],
+              "type": "select"
+            },
+            {
+              "default": 8,
+              "description": "僅選到 AutoIP 時，改用此服務支援的影片規格。",
+              "id": "autoip_seconds",
+              "label": "AutoIP 影片秒數",
+              "max": 15,
+              "min": 2,
+              "show_when": {
+                "placements": [
+                  "auto",
+                  "autoip"
+                ],
+                "step_id": "video"
+              },
+              "type": "number"
+            },
+            {
+              "default": "480p",
+              "id": "autoip_resolution",
+              "label": "AutoIP 影片解析度",
+              "options": [
+                {
+                  "label": "480p",
+                  "value": "480p"
+                },
+                {
+                  "label": "768p",
+                  "value": "768p"
+                },
+                {
+                  "label": "2K",
+                  "value": "2k"
+                }
+              ],
+              "show_when": {
+                "placements": [
+                  "auto",
+                  "autoip"
+                ],
+                "step_id": "video"
+              },
+              "type": "select"
+            }
+          ],
+          "id": "edit-image-video",
+          "label": "指令改圖 → 影片",
+          "steps": [
+            {
+              "depends_on": [],
+              "feature_id": "img2img",
+              "id": "image",
+              "label": "指令改圖"
+            },
+            {
+              "depends_on": [
+                "image"
+              ],
+              "feature_id": "h3-image-video",
+              "id": "video",
+              "label": "圖片製作影片"
+            }
+          ]
+        },
+        {
+          "description": "依描述生成合成聲音，驗證音訊後交給真人影片對嘴；不綁定或驗證任何角色身份。",
+          "fields": [
+            {
+              "accept": "video/*",
+              "id": "video",
+              "label": "可清楚辨識臉部的真人影片",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "id": "speech_text",
+              "label": "要說的話",
+              "maxLength": 2400,
+              "required": true,
+              "type": "textarea"
+            },
+            {
+              "description": "例如：溫和、清晰的中性聲線；依文字描述設計聲音，不使用真人聲音參考。",
+              "id": "voice_style",
+              "label": "聲音描述",
+              "required": true,
+              "type": "textarea"
+            },
+            {
+              "default": "sequential",
+              "id": "sync_mode",
+              "label": "影片影格對應",
+              "options": [
+                {
+                  "label": "依語音長度伸縮",
+                  "value": "sequential"
+                },
+                {
+                  "label": "循環播放原影片",
+                  "value": "repetitive"
+                }
+              ],
+              "type": "select"
+            }
+          ],
+          "id": "voice-design-lipsync",
+          "label": "設計聲音 → 影片對嘴",
+          "steps": [
+            {
+              "depends_on": [],
+              "feature_id": "voxcpm-tts",
+              "id": "voice",
+              "label": "設計合成聲音"
+            },
+            {
+              "depends_on": [
+                "voice"
+              ],
+              "feature_id": "lipsync",
+              "id": "lipsync",
+              "label": "影片對嘴"
+            }
+          ]
+        }
+      ]
+    },
+    "status": 200
+  },
+  "/api/compute/pipelines": {
+    "body": {
+      "ok": true,
+      "pipelines": []
+    },
+    "status": 200
+  },
+  "/api/compute/platform-admin": {
+    "body": {
+      "ok": true,
+      "users": []
+    },
+    "status": 200
+  },
+  "/api/compute/preferences": {
+    "body": {
+      "auto_order": [
+        "local"
+      ],
+      "auto_policy": "user_order",
+      "default_placement": "local",
+      "feature_placements": {},
+      "ok": true,
+      "revision": 0
+    },
+    "status": 200
+  },
+  "/api/history?max_items=500&scope=own": {
+    "body": {
+      "error": "<urlopen error Demo recorder forbids outgoing connections>",
+      "ok": false
+    },
+    "status": 502
+  },
+  "/api/provider-characters": {
+    "body": {
+      "characters": [],
+      "credits_spent": 0,
+      "filters": {
+        "visualClass": null
+      },
+      "next_cursor": null,
+      "provider_transport_performed": false,
+      "schema_version": 1
+    },
+    "status": 200
+  },
+  "/api/providers": {
+    "body": {
+      "features": {
+        "minimax_h3": {
+          "authorization_recorded": false,
+          "contracts": {
+            "h3.i2v.anime.stock.v1": false,
+            "h3.i2v.realistic.stock.v1": false,
+            "h3.ref2va-image.anime.stock.v1": false,
+            "h3.ref2va-image.realistic.stock.v1": false,
+            "h3.t2v.stock.v1": false
+          },
+          "execution_enabled": false,
+          "license_blocked": true,
+          "models_ready": false,
+          "runtime_ready": false,
+          "status": "license_blocked"
+        }
+      },
+      "providers": [
+        {
+          "account_count": 1,
+          "account_id": "local-main",
+          "configured": true,
+          "execution_enabled": true,
+          "provider_id": "local_comfy",
+          "runtime": {
+            "endpoint_scope": "loopback",
+            "node_count": null,
+            "ready": true,
+            "version": null
+          },
+          "status": "ready"
+        },
+        {
+          "account_count": 0,
+          "account_id": null,
+          "compatibility_receipt": null,
+          "compatibility_receipt_current": false,
+          "configured": false,
+          "credential_readback": false,
+          "execution_enabled": false,
+          "live_probe_performed": false,
+          "provider_id": "autoip",
+          "status": "needs_credential"
+        },
+        {
+          "account_count": 0,
+          "account_id": null,
+          "configured": false,
+          "execution_enabled": false,
+          "generation": "disabled",
+          "import_capabilities": [
+            "characters",
+            "profile_photos",
+            "media_versions",
+            "lineage"
+          ],
+          "import_contract": "castle.clipmode-export.v1",
+          "import_mode": "manual_import_only",
+          "provider_id": "clipmode",
+          "status": "offline_export_required",
+          "sync": "disabled"
+        }
+      ],
+      "schema_version": 1,
+      "transport_dispatched": false
+    },
+    "status": 200
+  }
+}

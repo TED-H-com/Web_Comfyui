@@ -6,6 +6,23 @@
   const demoBase = new URL('./', location.href);
   const reply = (data, status = 200) => new Response(JSON.stringify(data), {status, headers: {'Content-Type': 'application/json'}});
   let registry = null, workflows = null;
+  const unknownRequests = [];
+  const computeScreens = '.compute-settings,.compute-placement,.compute-production,.colab-content,castle-provider-fabric';
+  const actionMessage = '這是功能說明站；請在自己的 WebUI 執行此操作。';
+  const actionMessageEn = 'This is a documentation site; perform this action in your own WebUI.';
+  function showComputeAction() {
+    for (const screen of document.querySelectorAll(computeScreens)) {
+      let status = screen.querySelector(':scope > .docs-compute-action');
+      if (!status) {
+        status = document.createElement('p');status.className = 'docs-compute-action console-notice';status.setAttribute('role', 'status');
+        const notice = screen.querySelector(':scope > .docs-compute-notice');
+        if (notice) notice.after(status); else screen.prepend(status);
+      }
+      status.dataset.i18nZh = actionMessage;status.dataset.i18nEn = actionMessageEn;
+      const message = window.WebComfyI18n?.t(actionMessage, actionMessageEn) || actionMessage;
+      if (status.textContent !== message) status.textContent = message;
+    }
+  }
   const ready = Promise.all(['app-guide.json', 'catalog.json'].map(async path => {
     const response = await nativeFetch(new URL(path, base), {credentials: 'omit', cache: 'no-cache'});
     if (!response.ok) throw Error('說明資料載入失敗，請重新整理頁面。');
@@ -55,22 +72,24 @@
   window.WebSocket = class { constructor() {throw Error('說明站不建立即時服務連線');} };
   window.XMLHttpRequest = class { open() {throw Error('說明站不建立 API 連線');} };
   if (navigator.sendBeacon) navigator.sendBeacon = () => false;
-  const emptyProvider = {ok: true, provider_transport_performed: false, credits_spent: 0, next_cursor: null};
   window.fetch = async (input, options = {}) => {
     const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url, location.href);
     const method = String(options.method || input?.method || 'GET').toUpperCase();
     await ready;
-    if (url.origin !== location.origin || method !== 'GET') return reply({ok: false, error: '這是功能說明站；請在自己的 WebUI 執行此操作。'}, 405);
+    if (url.origin !== location.origin || method !== 'GET') {
+      showComputeAction();
+      return reply({ok: false, error: window.WebComfyI18n?.t(actionMessage, actionMessageEn) || actionMessage}, 405);
+    }
+    // History has a separate empty adapter: the real empty server needs ComfyUI.
+    if (url.pathname === '/api/history') return reply({images: [], jobs: [], recent_errors: [], items: [], has_more: false});
+    const recorded = registry.computeDemo?.[url.pathname + url.search];
+    if (recorded) return reply(recorded.body, recorded.status);
     // No fallthrough to native fetch: unknown calls fail closed in memory.
     switch (url.pathname) {
       case '/api/auth/status': return reply({configured: true, authenticated: true, lane: 'local', user: {email: 'documentation@example.invalid', displayName: '說明模式', role: 'admin', operator: true}});
       case '/api/features': return reply({studios: registry.studios, features: registry.features.map(feature => ({...feature, ready: true, runnable: !['storage', 'gated'].includes(feature.kind), missingModels: [], missingNodes: [], documentationOnly: true}))});
       case '/api/characters': return reply({characters: window.WebComfyCharacterSession?.list() || [], actions: []});
-      case '/api/provider-characters': return reply({...emptyProvider, characters: []});
-      case '/api/providers': return reply({...emptyProvider, providers: []});
-      case '/api/assets': return reply({...emptyProvider, assets: [], items: []});
       case '/api/queue': return reply({jobs: [], terminal: [], recent_errors: [], summary: {running: 0, pending: 0, total: 0, external: 0}});
-      case '/api/history': return reply({items: [], has_more: false});
       case '/api/posts': return reply({posts: [], items: []});
       case '/api/voices': return reply({voices: (registry.demos?.['voice-library']?.output?.audio_tracks || []).map((track, index) => ({id: 'docs-voice-' + index, name: track.title, url: track.src, transcript: track.transcript, source: '預製示範音訊 / Prepared voice sample', canDelete: false})), items: []});
       case '/api/voiceover/batches': return reply({batches: []});
@@ -81,6 +100,7 @@
     if (url.href === new URL('catalog.json', base).href) return reply(workflows);
     if (url.href === new URL('app-guide.json', base).href) return reply(registry);
     if (workflows.items.some(item => item.download_url && url.href === new URL(item.download_url, base).href)) return nativeFetch(url, {credentials: 'omit'});
+    unknownRequests.push(url.pathname + url.search);
     return reply({ok: false, error: '此資料由安裝後的本機服務提供；說明站沒有個人資料。'}, 404);
   };
   const el = (tag, text = '', className = '') => {
@@ -105,6 +125,7 @@
     }});
   }
   window.addEventListener('webcomfy:language', () => {
+    disableSecrets();
     document.querySelectorAll('[data-docs-close-zh]').forEach(node => node.setAttribute('aria-label', window.WebComfyI18n?.t(node.dataset.docsCloseZh, node.dataset.docsCloseEn) || node.dataset.docsCloseZh));
     updateDocsIdentity();
   });
@@ -227,7 +248,7 @@
     const selected = selectedFeature(); return selected ? openFeature(selected.id, opener) : openHelp(opener);
   }
   window.WebComfyDocs = {
-    ready, openFeature, openGraph, openHelp,
+    ready, openFeature, openGraph, openHelp, unknownRequests,
     renderCharacterRoute: (route, hooks) => window.WebComfyCharacterSession?.render(route, hooks),
     completeCharacter: character => window.completeDocumentationCharacter(character),
     createCharacterDemo() { location.hash = '#/characters'; openFeature('character-create'); },
@@ -240,6 +261,7 @@
     libraryOptions(openSheet) {return {openSheet, docsMode: true, catalogUrl: new URL('catalog.json', base).href, onGraph: openLibraryGraph, onSelect(id) {history.replaceState(history.state, '', '#/workflow/' + encodeURIComponent(id));}};},
   };
   document.addEventListener('submit', event => {
+    if (event.target.closest(computeScreens)) {event.preventDefault();event.stopImmediatePropagation();showComputeAction();return;}
     if (event.target.closest('[data-docs-interactive="true"]')) return;
     event.preventDefault();event.stopImmediatePropagation();
     if (event.target.dataset.demoId) window.WebComfyTour.start(event.target); else explainAction(event.submitter);
@@ -247,6 +269,7 @@
   document.addEventListener('click', event => {
     const target = event.target.closest('button,input,a');
     if (!target || target.closest('[data-docs-interactive="true"],.sheet-layer .workflow-details')) return;
+    if (target.closest(computeScreens) && !target.matches('input[type=password],input[type=file]')) return;
     if (target.matches('a[href="/admin"]') || (target.matches('button') && ['登出', 'Sign out', 'Log out'].includes(target.textContent.trim()))) {
       event.preventDefault();event.stopImmediatePropagation();openHelp(target);return;
     }
@@ -260,7 +283,29 @@
   document.addEventListener('drop', event => {event.preventDefault();event.stopImmediatePropagation();if (!window.WebComfyTour?.handleDrop(event)) explainAction(event.target);}, true);
   document.addEventListener('beforeinput', event => {if(event.target.matches('input[type=password]')) {event.preventDefault();event.stopImmediatePropagation();}}, true);
   const disableSecrets = () => {
-    document.querySelectorAll('input[type=password]').forEach(input => {input.disabled = true;input.value = '';input.placeholder = '請在本機 WebUI 設定';});
+    const placeholder = window.WebComfyI18n?.t('說明站不接受金鑰', 'Keys are not accepted on the documentation site') || '說明站不接受金鑰';
+    for (const input of document.querySelectorAll('input')) {
+      const credential = input.type === 'password' || (input.closest(computeScreens) && /credential|api.?key|token|secret|授權碼|金鑰/i.test([input.name, input.id, input.getAttribute('aria-label')].join(' ')));
+      if (credential) {input.disabled = true;input.value = '';if (input.placeholder !== placeholder) input.placeholder = placeholder;}
+    }
+    for (const screen of document.querySelectorAll(computeScreens)) {
+      if (!screen.querySelector(':scope > .docs-compute-notice')) {
+        const notice = document.createElement('p');notice.className = 'docs-compute-notice panel-note';
+        notice.dataset.i18nZh = '說明站只展示畫面：不會連線、不接受金鑰，也不會保存設定。';
+        notice.dataset.i18nEn = 'Documentation site: screens only. Nothing connects, no keys are accepted and nothing is saved.';
+        notice.textContent = window.WebComfyI18n?.t(notice.dataset.i18nZh, notice.dataset.i18nEn) || notice.dataset.i18nZh;
+        screen.prepend(notice);
+      }
+      // Empty credential fields remain inert; their actions still explain the demo.
+      for (const button of screen.querySelectorAll('.console-test button')) button.disabled = false;
+    }
+    // A rejected live preview must not disable playback of the existing canned tour.
+    for (const form of document.querySelectorAll('form[data-demo-id]')) {
+      if (form.querySelector('.app-demo')?.dataset.state === 'running') continue;
+      const allowed = window.WebComfyHardware?.canUse(form.dataset.demoId);
+      if (allowed === undefined) continue;
+      for (const button of form.querySelectorAll('[data-demo-submit]')) button.disabled = !allowed;
+    }
     updateDocsIdentity();
   };
   new MutationObserver(disableSecrets).observe(document.documentElement, {childList: true, subtree: true});

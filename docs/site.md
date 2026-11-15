@@ -94,3 +94,20 @@ python3 scripts/replay_recorded_demo.py <run-id> --run --input-dir ~/comfyui/inp
 ```
 
 預設連線為 `http://127.0.0.1:8188`；`--comfy-url` 只接受數字形式的 HTTP loopback 位址，不接受帳密、外部位址或重新導向。核准素材會複製至指定目錄中的 `web-demo-replay/`，遇到同名但不同內容的檔案會停止。腳本只回報提交取得的 `prompt_id`，完成與否請在 ComfyUI 查看；它不宣稱佇列提交就是生成成功。重跑前會確認輸入雜湊與原始執行一致；成果可能轉成公開用格式，與 ComfyUI 原始輸出分別記錄雜湊。即使使用同一份輸入，重跑結果也不保證逐像素相同。模型與節點版本、執行硬體也可能影響結果。
+
+## Demo compute screens / 示範運算畫面
+
+`/demo/` also displays the per-form execution chooser, all five compute lanes and their available-feature conditions, multi-step production, Google Colab accounts, and the resource provider console. These are read-only screens with canned empty-state responses: nothing connects, credential inputs are disabled, and settings are never saved. Action buttons explain that the operation requires your own installed WebUI. This is interface coverage, not a verified compute or GPU run.
+
+`/demo/` 也展示表單的執行位置、五個運算平台與可用條件、多步製作、Google Colab 帳號及資源平台管理畫面。畫面使用固定的空白狀態資料，不連線、不接受金鑰，也不保存設定；操作按鈕會提示改用自行安裝的 WebUI。這是介面展示，不代表已驗證運算或 GPU 生成。
+
+Regenerate with the WebUI Python dependencies installed / 安裝 WebUI Python 相依套件後重新產生：
+
+```bash
+python3 scripts/record_demo_compute.py
+python3 scripts/build_docs.py
+```
+
+The recorder starts the public server on `127.0.0.1` in a fresh temporary state under a temporary home directory, ignores `.env` and inherited provider configuration, completes local password setup and login, and blocks outgoing server connections. It replaces only the server's built-in local identity with `demo@example.invalid` (display name `Demo`), normalizes volatile timestamps/IDs, and rejects other e-mails, filesystem paths and credential-shaped values before writing `webui/docs/demo-compute.json`. Review that file before committing it. The build embeds it in `app-guide.json`; opening compute screens adds no native API requests.
+
+錄製器只啟動全新暫存狀態與暫存家目錄的本機服務，不讀取 `.env` 或繼承平台設定，完成本機密碼設定與登入後擷取回應，並阻止服務對外連線。僅將內建本機身份替換為 `demo@example.invalid`（名稱 `Demo`），固定時間與產生的識別碼；其他信箱、檔案絕對路徑或憑證樣式內容都會使錄製失敗。提交前請審查 `webui/docs/demo-compute.json`。建置時資料嵌入 `app-guide.json`，開啟運算畫面不會增加原生 API 請求。
