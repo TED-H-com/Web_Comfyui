@@ -1,146 +1,1229 @@
 {
   "schema_version": 1,
-  "status": "placeholder",
+  "status": "final",
   "subjects": [
     {
-      "id": "cheer",
-      "name_zh": "舊示範啦啦隊員",
-      "name_en": "Former demo cheer performer",
+      "id": "qingqing",
+      "name_zh": "晴晴",
+      "name_en": "Qingqing",
       "gender": "female",
-      "age": null,
+      "age": 26,
       "domain": "real",
       "listed": true,
-      "role_zh": "舊示範角色",
-      "role_en": "Former demo subject",
-      "description_zh": "舊示範使用的虛構角色，將在後續版本以全新示範角色取代。",
-      "description_en": "Former fictional demo subject kept as a temporary placeholder.",
+      "role_zh": "啦啦隊表演者",
+      "role_en": "Cheer performer",
+      "description_zh": "26 歲的台灣女性啦啦隊表演者，黑色高馬尾、笑容明亮，穿白色與天藍色相間的啦啦隊制服。",
+      "description_en": "A 26-year-old Taiwanese cheer performer with a high black ponytail, a bright smile and a white and sky-blue cheer uniform.",
       "tags_zh": [
-        "真人"
+        "真人",
+        "女性",
+        "啦啦隊"
       ],
       "tags_en": [
-        "Realistic"
+        "Realistic",
+        "Woman",
+        "Cheer"
       ],
-      "base": "ph-cheer",
-      "portrait": null,
-      "character_id": "docs-character-cheer"
+      "base": "subject-qingqing",
+      "portrait": "portrait-qingqing",
+      "character_id": "docs-character-qingqing"
     },
     {
-      "id": "cheer-anime",
-      "name_zh": "舊示範動漫角色",
-      "name_en": "Former demo anime character",
-      "gender": "female",
-      "age": null,
-      "domain": "anime",
+      "id": "zhiyuan",
+      "name_zh": "志遠",
+      "name_en": "Zhiyuan",
+      "gender": "male",
+      "age": 31,
+      "domain": "real",
       "listed": true,
-      "role_zh": "舊示範角色",
-      "role_en": "Former demo subject",
-      "description_zh": "舊示範使用的虛構動漫角色，將在後續版本以全新示範角色取代。",
-      "description_en": "Former fictional anime demo subject kept as a temporary placeholder.",
+      "role_zh": "戶外攝影師",
+      "role_en": "Outdoor photographer",
+      "description_zh": "31 歲的台灣男性戶外攝影師，黑色短髮、淡淡鬍渣，穿橄欖綠外套，肩上背著相機。",
+      "description_en": "A 31-year-old Taiwanese outdoor photographer with short black hair, light stubble, an olive field jacket and a camera on his shoulder.",
       "tags_zh": [
-        "動漫"
+        "真人",
+        "男性",
+        "攝影"
       ],
       "tags_en": [
-        "Anime"
+        "Realistic",
+        "Man",
+        "Photography"
       ],
-      "base": "ph-anime",
+      "base": "subject-zhiyuan",
+      "portrait": "portrait-zhiyuan",
+      "character_id": "docs-character-zhiyuan"
+    },
+    {
+      "id": "xingyu",
+      "name_zh": "星羽",
+      "name_en": "Xingyu",
+      "gender": "female",
+      "age": 24,
+      "domain": "anime",
+      "listed": true,
+      "role_zh": "奇幻冒險者",
+      "role_en": "Fantasy adventurer",
+      "description_zh": "24 歲的動漫風格成年女性，及腰銀藍色長髮、琥珀色眼睛，戴金色星星髮飾，穿白與深藍色奇幻斗篷大衣。",
+      "description_en": "A 24-year-old anime-style adult woman with waist-length silver-blue hair, amber eyes, a gold star hair ornament and a white and dark-blue fantasy cloak coat.",
+      "tags_zh": [
+        "動漫",
+        "女性",
+        "奇幻"
+      ],
+      "tags_en": [
+        "Anime",
+        "Woman",
+        "Fantasy"
+      ],
+      "base": "subject-xingyu",
       "portrait": null,
-      "character_id": "docs-character-cheer-anime"
+      "character_id": "docs-character-xingyu"
+    },
+    {
+      "id": "chenyi",
+      "name_zh": "辰翼",
+      "name_en": "Chenyi",
+      "gender": "male",
+      "age": 27,
+      "domain": "anime",
+      "listed": true,
+      "role_zh": "城市守護者",
+      "role_en": "City guardian",
+      "description_zh": "27 歲的動漫風格成年男性，黑色短刺蝟頭帶一撮深紅色挑染、金色眼睛，穿紅色內裡的黑色長大衣。",
+      "description_en": "A 27-year-old anime-style adult man with short spiky black hair with a crimson streak, gold eyes and a long black coat with a red lining.",
+      "tags_zh": [
+        "動漫",
+        "男性",
+        "都市奇幻"
+      ],
+      "tags_en": [
+        "Anime",
+        "Man",
+        "Urban fantasy"
+      ],
+      "base": "subject-chenyi",
+      "portrait": null,
+      "character_id": "docs-character-chenyi"
+    },
+    {
+      "id": "dancer",
+      "name_zh": "舞者",
+      "name_en": "Dancer",
+      "gender": "female",
+      "age": 28,
+      "domain": "real",
+      "listed": false,
+      "role_zh": "動作示範（不是角色）",
+      "role_en": "Motion performer (not a character)",
+      "description_zh": "約 28 歲的成年女性舞者，只用來產生街舞動作影片。",
+      "description_en": "An adult woman dancer, about 28, used only to make the street-dance motion clip.",
+      "tags_zh": [
+        "真人",
+        "女性",
+        "動作示範"
+      ],
+      "tags_en": [
+        "Realistic",
+        "Woman",
+        "Motion source"
+      ],
+      "base": "performer-dancer",
+      "portrait": null,
+      "character_id": null
+    },
+    {
+      "id": "taichi",
+      "name_zh": "太極演示者",
+      "name_en": "Tai chi performer",
+      "gender": "male",
+      "age": 45,
+      "domain": "real",
+      "listed": false,
+      "role_zh": "動作示範（不是角色）",
+      "role_en": "Motion performer (not a character)",
+      "description_zh": "約 45 歲的成年男性，只用來產生太極動作影片。",
+      "description_en": "An adult man, about 45, used only to make the tai chi motion clip.",
+      "tags_zh": [
+        "真人",
+        "男性",
+        "動作示範"
+      ],
+      "tags_en": [
+        "Realistic",
+        "Man",
+        "Motion source"
+      ],
+      "base": "performer-taichi",
+      "portrait": null,
+      "character_id": null
+    },
+    {
+      "id": "meiling",
+      "name_zh": "美玲",
+      "name_en": "Meiling",
+      "gender": "female",
+      "age": 58,
+      "domain": "real",
+      "listed": false,
+      "role_zh": "換臉示範（不是角色）",
+      "role_en": "Face-swap source (not a character)",
+      "description_zh": "約 58 歲的成年台灣女性，銀灰色短髮，只用來提供換臉示範的臉部照片。",
+      "description_en": "A Taiwanese woman of about 58 with short silver-grey hair, used only as the face photo for the face-swap example.",
+      "tags_zh": [
+        "真人",
+        "女性",
+        "換臉示範"
+      ],
+      "tags_en": [
+        "Realistic",
+        "Woman",
+        "Face-swap source"
+      ],
+      "base": "face-meiling",
+      "portrait": null,
+      "character_id": null
     }
   ],
   "materials": [
     {
-      "id": "ph-cheer",
-      "file": "cheer-subject-reference.webp",
-      "thumb": null,
+      "id": "subject-qingqing",
+      "file": "subject-qingqing.webp",
+      "thumb": "subject-qingqing-thumb.webp",
       "poster": null,
       "kind": "image",
       "folder": "people",
       "library": true,
-      "subject": "cheer",
+      "subject": "qingqing",
       "domain": "real",
-      "label_zh": "舊示範人物參考照",
-      "label_en": "Former demo subject reference",
+      "label_zh": "晴晴・全身照",
+      "label_en": "Qingqing, full body",
       "url_alias": null,
-      "produced_by": null,
-      "bytes": 1274512,
-      "width": 1024,
-      "height": 1536,
+      "produced_by": "t2i-qingqing",
+      "bytes": 28996,
+      "width": 725,
+      "height": 1280,
       "duration_seconds": null,
       "transcript": null,
       "gender": null
     },
     {
-      "id": "ph-stadium",
-      "file": "stadium-ground-v2-reference.webp",
-      "thumb": null,
+      "id": "subject-zhiyuan",
+      "file": "subject-zhiyuan.webp",
+      "thumb": "subject-zhiyuan-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "people",
+      "library": true,
+      "subject": "zhiyuan",
+      "domain": "real",
+      "label_zh": "志遠・全身照",
+      "label_en": "Zhiyuan, full body",
+      "url_alias": null,
+      "produced_by": "t2i-zhiyuan",
+      "bytes": 34130,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "subject-xingyu",
+      "file": "subject-xingyu.webp",
+      "thumb": "subject-xingyu-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "people",
+      "library": true,
+      "subject": "xingyu",
+      "domain": "anime",
+      "label_zh": "星羽・全身立繪",
+      "label_en": "Xingyu, full-body art",
+      "url_alias": null,
+      "produced_by": "t2i-xingyu",
+      "bytes": 50516,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "subject-chenyi",
+      "file": "subject-chenyi.webp",
+      "thumb": "subject-chenyi-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "people",
+      "library": true,
+      "subject": "chenyi",
+      "domain": "anime",
+      "label_zh": "辰翼・全身立繪",
+      "label_en": "Chenyi, full-body art",
+      "url_alias": null,
+      "produced_by": "t2i-chenyi",
+      "bytes": 24910,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "portrait-qingqing",
+      "file": "portrait-qingqing.webp",
+      "thumb": "portrait-qingqing-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "people",
+      "library": true,
+      "subject": "qingqing",
+      "domain": "real",
+      "label_zh": "晴晴・咖啡館肖像",
+      "label_en": "Qingqing, café portrait",
+      "url_alias": null,
+      "produced_by": "qe-portrait-qingqing",
+      "bytes": 44468,
+      "width": 714,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "portrait-zhiyuan",
+      "file": "portrait-zhiyuan.webp",
+      "thumb": "portrait-zhiyuan-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "people",
+      "library": true,
+      "subject": "zhiyuan",
+      "domain": "real",
+      "label_zh": "志遠・咖啡館肖像",
+      "label_en": "Zhiyuan, café portrait",
+      "url_alias": null,
+      "produced_by": "qe-portrait-zhiyuan",
+      "bytes": 46248,
+      "width": 714,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "performer-dancer",
+      "file": "performer-dancer.webp",
+      "thumb": "performer-dancer-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "dancer",
+      "domain": "real",
+      "label_zh": "舞者（動作示範用）",
+      "label_en": "Dancer (motion source)",
+      "url_alias": null,
+      "produced_by": "t2i-performer-dancer",
+      "bytes": 21986,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "performer-taichi",
+      "file": "performer-taichi.webp",
+      "thumb": "performer-taichi-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "taichi",
+      "domain": "real",
+      "label_zh": "太極演示者（動作示範用）",
+      "label_en": "Tai chi performer (motion source)",
+      "url_alias": null,
+      "produced_by": "t2i-performer-taichi",
+      "bytes": 20362,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "face-meiling",
+      "file": "face-meiling.webp",
+      "thumb": "face-meiling-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "people",
+      "library": true,
+      "subject": "meiling",
+      "domain": "real",
+      "label_zh": "美玲・臉部照片",
+      "label_en": "Meiling, face photo",
+      "url_alias": null,
+      "produced_by": "t2i-face-meiling",
+      "bytes": 81998,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "scene-old-street",
+      "file": "scene-old-street.webp",
+      "thumb": "scene-old-street-thumb.webp",
       "poster": null,
       "kind": "image",
       "folder": "scenes",
       "library": true,
       "subject": null,
       "domain": "real",
-      "label_zh": "露天球場場景",
-      "label_en": "Outdoor stadium scene",
+      "label_zh": "歐洲石板老街",
+      "label_en": "Cobblestone old street",
       "url_alias": null,
-      "produced_by": null,
-      "bytes": 1173444,
-      "width": 1024,
-      "height": 1536,
+      "produced_by": "t2i-scene-old-street",
+      "bytes": 168834,
+      "width": 725,
+      "height": 1280,
       "duration_seconds": null,
       "transcript": null,
       "gender": null
     },
     {
-      "id": "ph-teahouse",
-      "file": "mountain-teahouse.webp",
-      "thumb": null,
+      "id": "scene-snow-ridge",
+      "file": "scene-snow-ridge.webp",
+      "thumb": "scene-snow-ridge-thumb.webp",
       "poster": null,
       "kind": "image",
       "folder": "scenes",
       "library": true,
       "subject": null,
       "domain": "real",
-      "label_zh": "山間茶屋場景",
-      "label_en": "Mountain teahouse scene",
+      "label_zh": "雪山稜線",
+      "label_en": "Snowy mountain ridge",
       "url_alias": null,
-      "produced_by": null,
-      "bytes": 296614,
-      "width": 1536,
-      "height": 1024,
+      "produced_by": "t2i-scene-snow-ridge",
+      "bytes": 81568,
+      "width": 725,
+      "height": 1280,
       "duration_seconds": null,
       "transcript": null,
       "gender": null
     },
     {
-      "id": "ph-wave",
-      "file": "cheer-wave.mp4",
-      "thumb": null,
-      "poster": "cheer-wave-poster.webp",
+      "id": "scene-tropical-beach",
+      "file": "scene-tropical-beach.webp",
+      "thumb": "scene-tropical-beach-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "scenes",
+      "library": true,
+      "subject": null,
+      "domain": "real",
+      "label_zh": "熱帶海灘",
+      "label_en": "Tropical beach",
+      "url_alias": null,
+      "produced_by": "t2i-scene-tropical-beach",
+      "bytes": 108850,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "scene-sakura-shrine",
+      "file": "scene-sakura-shrine.webp",
+      "thumb": "scene-sakura-shrine-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "scenes",
+      "library": true,
+      "subject": null,
+      "domain": "anime",
+      "label_zh": "動漫・櫻花神社參道",
+      "label_en": "Anime sakura shrine path",
+      "url_alias": null,
+      "produced_by": "t2i-scene-sakura-shrine",
+      "bytes": 85916,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "scene-neon-rooftop",
+      "file": "scene-neon-rooftop.webp",
+      "thumb": "scene-neon-rooftop-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "scenes",
+      "library": true,
+      "subject": null,
+      "domain": "anime",
+      "label_zh": "動漫・霓虹都市屋頂",
+      "label_en": "Anime neon city rooftop",
+      "url_alias": null,
+      "produced_by": "t2i-scene-neon-rooftop",
+      "bytes": 62242,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "scene-sky-islands",
+      "file": "scene-sky-islands.webp",
+      "thumb": "scene-sky-islands-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": "scenes",
+      "library": true,
+      "subject": null,
+      "domain": "anime",
+      "label_zh": "動漫・天空浮島",
+      "label_en": "Anime floating sky islands",
+      "url_alias": null,
+      "produced_by": "t2i-scene-sky-islands",
+      "bytes": 107122,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "motion-energetic",
+      "file": "motion-energetic.mp4",
+      "thumb": "motion-energetic-thumb.webp",
+      "poster": "motion-energetic-poster.webp",
       "kind": "video",
       "folder": "videos",
       "library": true,
-      "subject": "cheer",
+      "subject": "dancer",
       "domain": "real",
-      "label_zh": "揮手打招呼影片",
-      "label_en": "Waving greeting clip",
-      "url_alias": "https://video.example.com/cheer-wave.mp4",
-      "produced_by": "ph-wave-case",
-      "bytes": 1310381,
+      "label_zh": "街舞動作（女性舞者）",
+      "label_en": "Street-dance moves (woman dancer)",
+      "url_alias": "https://video.example.com/street-dance.mp4",
+      "produced_by": "iv-motion-energetic",
+      "bytes": 784198,
       "width": 480,
-      "height": 720,
-      "duration_seconds": 5.0625,
+      "height": 832,
+      "duration_seconds": 5.062,
       "transcript": null,
       "gender": null
     },
     {
-      "id": "ph-warm",
-      "file": "warm-welcome.wav",
+      "id": "motion-taichi",
+      "file": "motion-taichi.mp4",
+      "thumb": "motion-taichi-thumb.webp",
+      "poster": "motion-taichi-poster.webp",
+      "kind": "video",
+      "folder": "videos",
+      "library": true,
+      "subject": "taichi",
+      "domain": "real",
+      "label_zh": "太極動作（男性）",
+      "label_en": "Tai chi moves (man)",
+      "url_alias": "https://video.example.com/tai-chi.mp4",
+      "produced_by": "iv-motion-taichi",
+      "bytes": 648297,
+      "width": 480,
+      "height": 832,
+      "duration_seconds": 5.062,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "iv-qingqing-cafe",
+      "file": "iv-qingqing-cafe.mp4",
+      "thumb": "iv-qingqing-cafe-thumb.webp",
+      "poster": "iv-qingqing-cafe-poster.webp",
+      "kind": "video",
+      "folder": "videos",
+      "library": true,
+      "subject": "qingqing",
+      "domain": "real",
+      "label_zh": "晴晴・咖啡館短片",
+      "label_en": "Qingqing, café clip",
+      "url_alias": "https://video.example.com/qingqing-cafe.mp4",
+      "produced_by": "iv-qingqing-cafe",
+      "bytes": 527887,
+      "width": 480,
+      "height": 832,
+      "duration_seconds": 5.062,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "iv-zhiyuan-cafe",
+      "file": "iv-zhiyuan-cafe.mp4",
+      "thumb": "iv-zhiyuan-cafe-thumb.webp",
+      "poster": "iv-zhiyuan-cafe-poster.webp",
+      "kind": "video",
+      "folder": "videos",
+      "library": true,
+      "subject": "zhiyuan",
+      "domain": "real",
+      "label_zh": "志遠・咖啡館短片",
+      "label_en": "Zhiyuan, café clip",
+      "url_alias": "https://video.example.com/zhiyuan-cafe.mp4",
+      "produced_by": "iv-zhiyuan-cafe",
+      "bytes": 504909,
+      "width": 480,
+      "height": 832,
+      "duration_seconds": 5.062,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "iv-xingyu-sky",
+      "file": "iv-xingyu-sky.mp4",
+      "thumb": "iv-xingyu-sky-thumb.webp",
+      "poster": "iv-xingyu-sky-poster.webp",
+      "kind": "video",
+      "folder": "videos",
+      "library": true,
+      "subject": "xingyu",
+      "domain": "anime",
+      "label_zh": "星羽・浮島轉圈短片",
+      "label_en": "Xingyu, sky-island twirl clip",
+      "url_alias": "https://video.example.com/xingyu-sky.mp4",
+      "produced_by": "iv-xingyu-sky",
+      "bytes": 2088917,
+      "width": 480,
+      "height": 832,
+      "duration_seconds": 5.062,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "bl-qingqing-old-street",
+      "file": "bl-qingqing-old-street.webp",
+      "thumb": "bl-qingqing-old-street-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "qingqing",
+      "domain": "real",
+      "label_zh": "晴晴・老街（融合結果）",
+      "label_en": "Qingqing on the old street (blend result)",
+      "url_alias": null,
+      "produced_by": "bl-qingqing-old-street",
+      "bytes": 146666,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "bl-qingqing-snow-ridge",
+      "file": "bl-qingqing-snow-ridge.webp",
+      "thumb": "bl-qingqing-snow-ridge-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "qingqing",
+      "domain": "real",
+      "label_zh": "晴晴・雪山（融合結果）",
+      "label_en": "Qingqing on the snowy ridge (blend result)",
+      "url_alias": null,
+      "produced_by": "bl-qingqing-snow-ridge",
+      "bytes": 82488,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "bl-zhiyuan-old-street",
+      "file": "bl-zhiyuan-old-street.webp",
+      "thumb": "bl-zhiyuan-old-street-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "zhiyuan",
+      "domain": "real",
+      "label_zh": "志遠・老街（融合結果）",
+      "label_en": "Zhiyuan on the old street (blend result)",
+      "url_alias": null,
+      "produced_by": "bl-zhiyuan-old-street",
+      "bytes": 147386,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "bl-zhiyuan-snow-ridge",
+      "file": "bl-zhiyuan-snow-ridge.webp",
+      "thumb": "bl-zhiyuan-snow-ridge-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "zhiyuan",
+      "domain": "real",
+      "label_zh": "志遠・雪山（融合結果）",
+      "label_en": "Zhiyuan on the snowy ridge (blend result)",
+      "url_alias": null,
+      "produced_by": "bl-zhiyuan-snow-ridge",
+      "bytes": 84214,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "bl-zhiyuan-tropical-beach",
+      "file": "bl-zhiyuan-tropical-beach.webp",
+      "thumb": "bl-zhiyuan-tropical-beach-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "zhiyuan",
+      "domain": "real",
+      "label_zh": "志遠・熱帶海灘（融合結果）",
+      "label_en": "Zhiyuan on the tropical beach (blend result)",
+      "url_alias": null,
+      "produced_by": "bl-zhiyuan-tropical-beach",
+      "bytes": 110870,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "bl-xingyu-sakura-shrine",
+      "file": "bl-xingyu-sakura-shrine.webp",
+      "thumb": "bl-xingyu-sakura-shrine-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "xingyu",
+      "domain": "anime",
+      "label_zh": "星羽・櫻花神社（融合結果）",
+      "label_en": "Xingyu at the sakura shrine (blend result)",
+      "url_alias": null,
+      "produced_by": "bl-xingyu-sakura-shrine",
+      "bytes": 102046,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "bl-xingyu-sky-islands",
+      "file": "bl-xingyu-sky-islands.webp",
+      "thumb": "bl-xingyu-sky-islands-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "xingyu",
+      "domain": "anime",
+      "label_zh": "星羽・天空浮島（融合結果）",
+      "label_en": "Xingyu on the sky islands (blend result)",
+      "url_alias": null,
+      "produced_by": "bl-xingyu-sky-islands",
+      "bytes": 104762,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "bl-chenyi-neon-rooftop",
+      "file": "bl-chenyi-neon-rooftop.webp",
+      "thumb": "bl-chenyi-neon-rooftop-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "chenyi",
+      "domain": "anime",
+      "label_zh": "辰翼・霓虹屋頂（融合結果）",
+      "label_en": "Chenyi on the neon rooftop (blend result)",
+      "url_alias": null,
+      "produced_by": "bl-chenyi-neon-rooftop",
+      "bytes": 53020,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "bl-chenyi-sky-islands",
+      "file": "bl-chenyi-sky-islands.webp",
+      "thumb": "bl-chenyi-sky-islands-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "chenyi",
+      "domain": "anime",
+      "label_zh": "辰翼・天空浮島（融合結果）",
+      "label_en": "Chenyi on the sky islands (blend result)",
+      "url_alias": null,
+      "produced_by": "bl-chenyi-sky-islands",
+      "bytes": 89202,
+      "width": 725,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "kx-qingqing-ballroom",
+      "file": "kx-qingqing-ballroom.webp",
+      "thumb": "kx-qingqing-ballroom-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "qingqing",
+      "domain": "real",
+      "label_zh": "晴晴・舞廳晚禮服（改圖結果）",
+      "label_en": "Qingqing in the ballroom (edit result)",
+      "url_alias": null,
+      "produced_by": "kx-qingqing-ballroom",
+      "bytes": 37316,
+      "width": 691,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "qe-qingqing-gown-studio",
+      "file": "qe-qingqing-gown-studio.webp",
+      "thumb": "qe-qingqing-gown-studio-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "qingqing",
+      "domain": "real",
+      "label_zh": "晴晴・攝影棚紅色長禮服（改圖結果）",
+      "label_en": "Qingqing in a red gown, studio (edit result)",
+      "url_alias": null,
+      "produced_by": "qe-qingqing-gown-studio",
+      "bytes": 22364,
+      "width": 714,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "qe-zhiyuan-suit-street",
+      "file": "qe-zhiyuan-suit-street.webp",
+      "thumb": "qe-zhiyuan-suit-street-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "zhiyuan",
+      "domain": "real",
+      "label_zh": "志遠・老街深藍西裝（改圖結果）",
+      "label_en": "Zhiyuan in a navy suit on the old street (edit result)",
+      "url_alias": null,
+      "produced_by": "qe-zhiyuan-suit-street",
+      "bytes": 112036,
+      "width": 714,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "qe-xingyu-shrine-night",
+      "file": "qe-xingyu-shrine-night.webp",
+      "thumb": "qe-xingyu-shrine-night-thumb.webp",
+      "poster": null,
+      "kind": "image",
+      "folder": null,
+      "library": true,
+      "subject": "xingyu",
+      "domain": "anime",
+      "label_zh": "星羽・夜晚燈籠神社（改圖結果）",
+      "label_en": "Xingyu at the shrine by lantern light (edit result)",
+      "url_alias": null,
+      "produced_by": "qe-xingyu-shrine-night",
+      "bytes": 96210,
+      "width": 714,
+      "height": 1280,
+      "duration_seconds": null,
+      "transcript": null,
+      "gender": null
+    },
+    {
+      "id": "qingqing-hello",
+      "file": "qingqing-hello.wav",
       "thumb": null,
       "poster": null,
       "kind": "audio",
       "folder": "voices",
       "library": true,
-      "subject": "cheer",
+      "subject": "qingqing",
+      "domain": null,
+      "label_zh": "晴晴自我介紹",
+      "label_en": "Qingqing says hello",
+      "url_alias": null,
+      "produced_by": "voxcpm2-qingqing-hello",
+      "bytes": 445484,
+      "width": null,
+      "height": null,
+      "duration_seconds": 4.64,
+      "transcript": "嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！",
+      "gender": "female"
+    },
+    {
+      "id": "zhiyuan-hello",
+      "file": "zhiyuan-hello.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": "voices",
+      "library": true,
+      "subject": "zhiyuan",
+      "domain": null,
+      "label_zh": "志遠自我介紹",
+      "label_en": "Zhiyuan says hello",
+      "url_alias": null,
+      "produced_by": "voxcpm2-zhiyuan-hello",
+      "bytes": 772844,
+      "width": null,
+      "height": null,
+      "duration_seconds": 8.05,
+      "transcript": "我是志遠，平常在山上拍照。好的畫面，要耐心等光線剛剛好的那一刻。",
+      "gender": "male"
+    },
+    {
+      "id": "xingyu-hello",
+      "file": "xingyu-hello.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": "voices",
+      "library": true,
+      "subject": "xingyu",
+      "domain": null,
+      "label_zh": "星羽登場",
+      "label_en": "Xingyu enters",
+      "url_alias": null,
+      "produced_by": "voxcpm2-xingyu-hello",
+      "bytes": 561644,
+      "width": null,
+      "height": null,
+      "duration_seconds": 5.85,
+      "transcript": "大家好，我是星羽！準備好了嗎？跟我一起飛到雲朵上面去冒險吧！",
+      "gender": "female"
+    },
+    {
+      "id": "chenyi-hello",
+      "file": "chenyi-hello.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": "voices",
+      "library": true,
+      "subject": "chenyi",
+      "domain": null,
+      "label_zh": "辰翼登場",
+      "label_en": "Chenyi enters",
+      "url_alias": null,
+      "produced_by": "voxcpm2-chenyi-hello",
+      "bytes": 414764,
+      "width": null,
+      "height": null,
+      "duration_seconds": 4.32,
+      "transcript": "我是辰翼。這座城市的夜晚，由我來守護。",
+      "gender": "male"
+    },
+    {
+      "id": "qingqing-english",
+      "file": "qingqing-english.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": "voices",
+      "library": true,
+      "subject": "qingqing",
+      "domain": null,
+      "label_zh": "晴晴英文",
+      "label_en": "Qingqing in English",
+      "url_alias": null,
+      "produced_by": "voxcpm2-qingqing-english",
+      "bytes": 418604,
+      "width": null,
+      "height": null,
+      "duration_seconds": 4.36,
+      "transcript": "Hi, I'm Qingqing! The sun is out, so let's go shoot some new photos together!",
+      "gender": "female"
+    },
+    {
+      "id": "zhiyuan-english",
+      "file": "zhiyuan-english.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": "voices",
+      "library": true,
+      "subject": "zhiyuan",
+      "domain": null,
+      "label_zh": "志遠英文",
+      "label_en": "Zhiyuan in English",
+      "url_alias": null,
+      "produced_by": "voxcpm2-zhiyuan-english",
+      "bytes": 542444,
+      "width": null,
+      "height": null,
+      "duration_seconds": 5.65,
+      "transcript": "Hi, I'm Zhiyuan. I photograph mountains, and the best shots come to those who wait for the light.",
+      "gender": "male"
+    },
+    {
+      "id": "male-announcement",
+      "file": "male-announcement.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "男聲廣播",
+      "label_en": "Male announcer",
+      "url_alias": null,
+      "produced_by": "voxcpm2-male-announcement",
+      "bytes": 627884,
+      "width": null,
+      "height": null,
+      "duration_seconds": 6.54,
+      "transcript": "各位旅客您好，本班列車即將抵達山城車站，請帶好隨身物品，準備下車。",
+      "gender": "male"
+    },
+    {
+      "id": "mountain-slide-one",
+      "file": "mountain-slide-one.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "山景簡報第一頁",
+      "label_en": "Mountain slides, page one",
+      "url_alias": null,
+      "produced_by": "voxcpm2-mountain-slide-one",
+      "bytes": 603884,
+      "width": null,
+      "height": null,
+      "duration_seconds": 6.29,
+      "transcript": "第一頁：清晨的山谷還在沉睡，雲海靜靜地鋪在群山之間。",
+      "gender": "male"
+    },
+    {
+      "id": "mountain-slide-two",
+      "file": "mountain-slide-two.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "山景簡報第二頁",
+      "label_en": "Mountain slides, page two",
+      "url_alias": null,
+      "produced_by": "voxcpm2-mountain-slide-two",
+      "bytes": 578924,
+      "width": null,
+      "height": null,
+      "duration_seconds": 6.03,
+      "transcript": "第二頁：第一道陽光越過山頭，把整片雲海染成金色。",
+      "gender": "male"
+    },
+    {
+      "id": "mountain-slide-three",
+      "file": "mountain-slide-three.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "山景簡報第三頁",
+      "label_en": "Mountain slides, page three",
+      "url_alias": null,
+      "produced_by": "voxcpm2-mountain-slide-three",
+      "bytes": 777644,
+      "width": null,
+      "height": null,
+      "duration_seconds": 8.1,
+      "transcript": "第三頁：山谷慢慢醒來，山路上的旅人準備出發，新的一天開始了。",
+      "gender": "male"
+    },
+    {
+      "id": "qingqing-clone",
+      "file": "qingqing-clone.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": "qingqing",
+      "domain": null,
+      "label_zh": "晴晴聲音克隆",
+      "label_en": "Qingqing voice clone",
+      "url_alias": null,
+      "produced_by": "voxcpm2-qingqing-clone",
+      "bytes": 625964,
+      "width": null,
+      "height": null,
+      "duration_seconds": 6.52,
+      "transcript": "這段話是用晴晴的聲音樣本克隆出來的：換上全新的台詞，聽起來還是同一個人。",
+      "gender": "female"
+    },
+    {
+      "id": "zhiyuan-clone",
+      "file": "zhiyuan-clone.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": "zhiyuan",
+      "domain": null,
+      "label_zh": "志遠聲音克隆",
+      "label_en": "Zhiyuan voice clone",
+      "url_alias": null,
+      "produced_by": "voxcpm2-zhiyuan-clone",
+      "bytes": 725804,
+      "width": null,
+      "height": null,
+      "duration_seconds": 7.56,
+      "transcript": "這句話是用志遠的聲音樣本克隆出來的：同一個聲音，說出全新的內容。",
+      "gender": "male"
+    },
+    {
+      "id": "xingyu-clone",
+      "file": "xingyu-clone.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": "xingyu",
+      "domain": null,
+      "label_zh": "星羽聲音克隆",
+      "label_en": "Xingyu voice clone",
+      "url_alias": null,
+      "produced_by": "voxcpm2-xingyu-clone",
+      "bytes": 603884,
+      "width": null,
+      "height": null,
+      "duration_seconds": 6.29,
+      "transcript": "這段話是用星羽的聲音樣本克隆的：同樣的聲音，喊出全新的冒險口號！",
+      "gender": "female"
+    },
+    {
+      "id": "chenyi-clone",
+      "file": "chenyi-clone.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": "chenyi",
+      "domain": null,
+      "label_zh": "辰翼聲音克隆",
+      "label_en": "Chenyi voice clone",
+      "url_alias": null,
+      "produced_by": "voxcpm2-chenyi-clone",
+      "bytes": 697004,
+      "width": null,
+      "height": null,
+      "duration_seconds": 7.26,
+      "transcript": "這句話也是用辰翼的聲音樣本克隆出來的：今晚的巡邏，換我用新台詞報告。",
+      "gender": "male"
+    },
+    {
+      "id": "qingqing-english-clone",
+      "file": "qingqing-english-clone.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": "qingqing",
+      "domain": null,
+      "label_zh": "晴晴英文克隆",
+      "label_en": "Qingqing English clone",
+      "url_alias": null,
+      "produced_by": "voxcpm2-qingqing-english-clone",
+      "bytes": 498284,
+      "width": null,
+      "height": null,
+      "duration_seconds": 5.19,
+      "transcript": "This line was cloned from Qingqing's English voice sample: same voice, brand-new words.",
+      "gender": "female"
+    },
+    {
+      "id": "zhiyuan-english-clone",
+      "file": "zhiyuan-english-clone.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": "zhiyuan",
+      "domain": null,
+      "label_zh": "志遠英文克隆",
+      "label_en": "Zhiyuan English clone",
+      "url_alias": null,
+      "produced_by": "voxcpm2-zhiyuan-english-clone",
+      "bytes": 570284,
+      "width": null,
+      "height": null,
+      "duration_seconds": 5.94,
+      "transcript": "This line was cloned from Zhiyuan's English voice sample: the same calm voice, saying something new.",
+      "gender": "male"
+    },
+    {
+      "id": "warm-welcome",
+      "file": "warm-welcome.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
       "domain": null,
       "label_zh": "溫暖迎賓",
       "label_en": "Warm welcome",
@@ -154,17 +1237,17 @@
       "gender": "female"
     },
     {
-      "id": "ph-game",
+      "id": "game-cheer",
       "file": "game-cheer.wav",
       "thumb": null,
       "poster": null,
       "kind": "audio",
-      "folder": "voices",
-      "library": true,
-      "subject": "cheer-anime",
+      "folder": null,
+      "library": false,
+      "subject": null,
       "domain": null,
       "label_zh": "元氣遊戲",
-      "label_en": "Game cheer",
+      "label_en": "Game host",
       "url_alias": null,
       "produced_by": "voxcpm2-game-cheer",
       "bytes": 721964,
@@ -175,154 +1258,7 @@
       "gender": "female"
     },
     {
-      "id": "ph-blend",
-      "file": "cheer-subject-blend.webp",
-      "thumb": null,
-      "poster": null,
-      "kind": "image",
-      "folder": null,
-      "library": true,
-      "subject": "cheer",
-      "domain": "real",
-      "label_zh": "球場融合（舊示範成果）",
-      "label_en": "Stadium blend (former demo result)",
-      "url_alias": null,
-      "produced_by": "ph-blend-case",
-      "bytes": 1249776,
-      "width": 1024,
-      "height": 1536,
-      "duration_seconds": null,
-      "transcript": null,
-      "gender": null
-    },
-    {
-      "id": "ph-ref",
-      "file": "cheer-reference.webp",
-      "thumb": null,
-      "poster": null,
-      "kind": "image",
-      "folder": "people",
-      "library": true,
-      "subject": "cheer",
-      "domain": "real",
-      "label_zh": "舊示範人物全身照",
-      "label_en": "Former demo full-body photo",
-      "url_alias": null,
-      "produced_by": null,
-      "bytes": 315286,
-      "width": 1024,
-      "height": 1536,
-      "duration_seconds": null,
-      "transcript": null,
-      "gender": null
-    },
-    {
-      "id": "ph-face-ref",
-      "file": "cheer-face-reference.webp",
-      "thumb": null,
-      "poster": null,
-      "kind": "image",
-      "folder": "people",
-      "library": true,
-      "subject": "cheer",
-      "domain": "real",
-      "label_zh": "舊示範人物臉部特寫",
-      "label_en": "Former demo face close-up",
-      "url_alias": null,
-      "produced_by": null,
-      "bytes": 250846,
-      "width": 530,
-      "height": 605,
-      "duration_seconds": null,
-      "transcript": null,
-      "gender": null
-    },
-    {
-      "id": "ph-anime",
-      "file": "cheer-anime.webp",
-      "thumb": null,
-      "poster": null,
-      "kind": "image",
-      "folder": "people",
-      "library": true,
-      "subject": "cheer-anime",
-      "domain": "anime",
-      "label_zh": "舊示範動漫角色",
-      "label_en": "Former demo anime character",
-      "url_alias": null,
-      "produced_by": "ph-anime-case",
-      "bytes": 830518,
-      "width": 832,
-      "height": 1216,
-      "duration_seconds": null,
-      "transcript": null,
-      "gender": null
-    },
-    {
-      "id": "ph-face",
-      "file": "cheer-instantid-2.webp",
-      "thumb": null,
-      "poster": null,
-      "kind": "image",
-      "folder": null,
-      "library": true,
-      "subject": "cheer",
-      "domain": "real",
-      "label_zh": "多角度臉部（舊示範成果）",
-      "label_en": "Face angle (former demo result)",
-      "url_alias": null,
-      "produced_by": "ph-angles-case",
-      "bytes": 994352,
-      "width": 896,
-      "height": 1152,
-      "duration_seconds": null,
-      "transcript": null,
-      "gender": null
-    },
-    {
-      "id": "ph-english",
-      "file": "english-welcome.wav",
-      "thumb": null,
-      "poster": null,
-      "kind": "audio",
-      "folder": "voices",
-      "library": true,
-      "subject": null,
-      "domain": null,
-      "label_zh": "英文迎賓",
-      "label_en": "English welcome",
-      "url_alias": null,
-      "produced_by": "voxcpm2-english-welcome",
-      "bytes": 783404,
-      "width": null,
-      "height": null,
-      "duration_seconds": 8.16,
-      "transcript": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here.",
-      "gender": "female"
-    },
-    {
-      "id": "ph-clone",
-      "file": "synthetic-clone.wav",
-      "thumb": null,
-      "poster": null,
-      "kind": "audio",
-      "folder": null,
-      "library": false,
-      "subject": null,
-      "domain": null,
-      "label_zh": "合成聲音延續",
-      "label_en": "Synthetic voice continuation",
-      "url_alias": null,
-      "produced_by": "voxcpm2-synthetic-clone",
-      "bytes": 537644,
-      "width": null,
-      "height": null,
-      "duration_seconds": 5.6,
-      "transcript": "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！",
-      "gender": "female"
-    },
-    {
-      "id": "ph-story",
+      "id": "gentle-story",
       "file": "gentle-story.wav",
       "thumb": null,
       "poster": null,
@@ -343,7 +1279,7 @@
       "gender": "female"
     },
     {
-      "id": "ph-announce",
+      "id": "mature-announcement",
       "file": "mature-announcement.wav",
       "thumb": null,
       "poster": null,
@@ -353,7 +1289,7 @@
       "subject": null,
       "domain": null,
       "label_zh": "成熟播報",
-      "label_en": "Mature announcement",
+      "label_en": "Mature announcer",
       "url_alias": null,
       "produced_by": "voxcpm2-mature-announcement",
       "bytes": 752684,
@@ -364,7 +1300,7 @@
       "gender": "female"
     },
     {
-      "id": "ph-s1",
+      "id": "slide-one",
       "file": "slide-one.wav",
       "thumb": null,
       "poster": null,
@@ -374,7 +1310,7 @@
       "subject": null,
       "domain": null,
       "label_zh": "簡報第一頁",
-      "label_en": "Slide one",
+      "label_en": "Slides, page one",
       "url_alias": null,
       "produced_by": "voxcpm2-slide-one",
       "bytes": 752684,
@@ -385,7 +1321,7 @@
       "gender": "female"
     },
     {
-      "id": "ph-s2",
+      "id": "slide-two",
       "file": "slide-two.wav",
       "thumb": null,
       "poster": null,
@@ -395,7 +1331,7 @@
       "subject": null,
       "domain": null,
       "label_zh": "簡報第二頁",
-      "label_en": "Slide two",
+      "label_en": "Slides, page two",
       "url_alias": null,
       "produced_by": "voxcpm2-slide-two",
       "bytes": 921644,
@@ -406,7 +1342,7 @@
       "gender": "female"
     },
     {
-      "id": "ph-s3",
+      "id": "slide-three",
       "file": "slide-three.wav",
       "thumb": null,
       "poster": null,
@@ -416,7 +1352,7 @@
       "subject": null,
       "domain": null,
       "label_zh": "簡報第三頁",
-      "label_en": "Slide three",
+      "label_en": "Slides, page three",
       "url_alias": null,
       "produced_by": "voxcpm2-slide-three",
       "bytes": 814124,
@@ -425,43 +1361,711 @@
       "duration_seconds": 8.48,
       "transcript": "第三頁，完成前請先播放一次。看看畫面、旁白與字幕是否互相配合，再分享你的創作。",
       "gender": "female"
+    },
+    {
+      "id": "english-welcome",
+      "file": "english-welcome.wav",
+      "thumb": null,
+      "poster": null,
+      "kind": "audio",
+      "folder": null,
+      "library": false,
+      "subject": null,
+      "domain": null,
+      "label_zh": "英文迎賓",
+      "label_en": "English welcome",
+      "url_alias": null,
+      "produced_by": "voxcpm2-english-welcome",
+      "bytes": 783404,
+      "width": null,
+      "height": null,
+      "duration_seconds": 8.16,
+      "transcript": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here.",
+      "gender": "female"
     }
   ],
   "cases": [
     {
-      "id": "ph-blend-case",
+      "id": "t2i-qingqing",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "晴晴：真人全身照",
+      "title_en": "Qingqing: realistic full-body photo",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {},
+      "settings": {
+        "positive": "全身照，一位 26 歲的成年台灣女性啦啦隊表演者，黑色高馬尾，明亮的笑容，穿著白色與天藍色相間的啦啦隊制服上衣、及膝的百褶裙與白色運動鞋，正面面對鏡頭站立，雙手自然放在身體兩側，從頭到鞋子完整入鏡，人物位於畫面正中央，頭頂與腳下都留有一些空間，背景是乾淨的淺灰色攝影棚，柔和均勻的棚燈，寫實攝影",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "subject-qingqing.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "subject-qingqing-thumb.webp",
+          "material": "subject-qingqing"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-qingqing",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-zhiyuan",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "志遠：真人全身照",
+      "title_en": "Zhiyuan: realistic full-body photo",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {},
+      "settings": {
+        "positive": "全身照，一位 31 歲的成年台灣男性戶外攝影師，黑色短髮，淡淡的鬍渣，穿著橄欖綠工作外套搭配灰色連帽上衣、卡其色工作褲與棕色登山靴，肩上斜背一台無反光鏡相機，正面面對鏡頭站立，雙手自然放在身體兩側，從頭到鞋子完整入鏡，人物位於畫面正中央，頭頂與腳下都留有一些空間，背景是乾淨的淺灰色攝影棚，柔和均勻的棚燈，寫實攝影",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "subject-zhiyuan.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "subject-zhiyuan-thumb.webp",
+          "material": "subject-zhiyuan"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-zhiyuan",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-xingyu",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 3,
+      "title_zh": "星羽：動漫全身立繪",
+      "title_en": "Xingyu: anime full-body art",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "positive": "動漫風格插畫，全身立繪，一位 24 歲的成年女性角色，修長的成人身材比例，及腰的銀藍色長直髮，琥珀色眼睛，頭上戴著金色星星髮飾，穿著白色與深藍色相間的奇幻風斗篷大衣與及膝長靴，正面面對觀眾站立，雙手自然放在身體兩側，從頭到靴子完整入鏡，人物位於畫面正中央，頭頂與腳下都留有一些空間，背景是乾淨的淺灰色，柔和均勻的光線",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "subject-xingyu.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "subject-xingyu-thumb.webp",
+          "material": "subject-xingyu"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-xingyu",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-chenyi",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 4,
+      "title_zh": "辰翼：動漫全身立繪",
+      "title_en": "Chenyi: anime full-body art",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "positive": "動漫風格插畫，全身立繪，一位 27 歲的成年男性角色，高挑的成人身材比例，黑色短刺蝟頭並帶一撮深紅色挑染，金色眼睛，穿著紅色內裡的黑色長大衣、白色襯衫、黑色長褲與靴子，正面面對觀眾站立，雙手自然放在身體兩側，從頭到靴子完整入鏡，人物位於畫面正中央，頭頂與腳下都留有一些空間，背景是乾淨的淺灰色，柔和均勻的光線",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "subject-chenyi.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "subject-chenyi-thumb.webp",
+          "material": "subject-chenyi"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-chenyi",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-performer-dancer",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "舞者（動作示範用）",
+      "title_en": "Dancer (motion source)",
+      "subjects": [
+        "dancer"
+      ],
+      "domain": "real",
+      "inputs": {},
+      "settings": {
+        "positive": "全身照，一位約 28 歲的成年女性舞者，深棕色短鮑伯頭，穿著亮橘色運動背心外搭黑色寬鬆外套、黑色運動長褲與白色球鞋，雙手自然放在身體兩側，站在淺灰色攝影棚背景前，正面面對鏡頭，從頭到鞋子完整入鏡，人物位於畫面正中央，只佔畫面高度約四分之三，頭頂與腳下都留有空間，寫實攝影",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "performer-dancer.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "performer-dancer-thumb.webp",
+          "material": "performer-dancer"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-performer-dancer",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-performer-taichi",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "太極演示者（動作示範用）",
+      "title_en": "Tai chi performer (motion source)",
+      "subjects": [
+        "taichi"
+      ],
+      "domain": "real",
+      "inputs": {},
+      "settings": {
+        "positive": "全身照，一位約 45 歲的成年男性，灰白短髮，穿著白色太極服與黑色布鞋，雙手自然下垂，站在淺灰色攝影棚背景前，正面面對鏡頭，從頭到鞋子完整入鏡，人物位於畫面正中央，只佔畫面高度約四分之三，頭頂與腳下都留有空間，寫實攝影",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "performer-taichi.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "performer-taichi-thumb.webp",
+          "material": "performer-taichi"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-performer-taichi",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-scene-old-street",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 5,
+      "title_zh": "場景：歐洲石板老街",
+      "title_en": "Scene: cobblestone old street",
+      "subjects": [],
+      "domain": "real",
+      "inputs": {},
+      "settings": {
+        "positive": "午後陽光灑落的歐洲石板老街，兩側是粉色、黃色與薄荷綠的老房子，窗台擺滿花盆，街道延伸到遠方，寫實攝影，無人，相機在約腰部高度平視，地平線約在畫面中央，畫面下半部是平坦開闊的地面，畫面中沒有任何人物",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "scene-old-street.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "scene-old-street-thumb.webp",
+          "material": "scene-old-street"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-scene-old-street",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-scene-snow-ridge",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 6,
+      "title_zh": "場景：雪山稜線",
+      "title_en": "Scene: snowy mountain ridge",
+      "subjects": [],
+      "domain": "real",
+      "inputs": {},
+      "settings": {
+        "positive": "冬季高山稜線上的平坦雪原，蔚藍晴空，白雪覆蓋的連綿山峰延伸到地平線，前景是平整光滑的新雪，雪面上有風吹出的細紋，寫實風景攝影，相機在約腰部高度平視，地平線約在畫面中央，畫面下半部是平坦開闊的地面，空曠寧靜的純風景",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "scene-snow-ridge.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "scene-snow-ridge-thumb.webp",
+          "material": "scene-snow-ridge"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-scene-snow-ridge",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-scene-tropical-beach",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 7,
+      "title_zh": "場景：熱帶海灘",
+      "title_en": "Scene: tropical beach",
+      "subjects": [],
+      "domain": "real",
+      "inputs": {},
+      "settings": {
+        "positive": "晴朗白天的熱帶海灘，湛藍清澈的海水與白色浪花，兩側是翠綠的椰子樹，天空有幾朵白雲，明亮柔和的日光均勻照亮整個畫面，前景是平坦乾淨的細白沙灘，寫實風景攝影，相機在約腰部高度平視，地平線約在畫面中央，畫面下半部是平坦開闊的地面，空曠寧靜的純風景",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "scene-tropical-beach.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "scene-tropical-beach-thumb.webp",
+          "material": "scene-tropical-beach"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-scene-tropical-beach",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-scene-sakura-shrine",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 8,
+      "title_zh": "場景：動漫櫻花神社",
+      "title_en": "Scene: anime sakura shrine",
+      "subjects": [],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "positive": "動漫風格插畫，春天的神社參道，粉紅色櫻花盛開，紅色鳥居一路延伸，石板地面，柔和陽光，無人，相機在約腰部高度平視，地平線約在畫面中央，畫面下半部是平坦開闊的地面，畫面中沒有任何人物",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "scene-sakura-shrine.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "scene-sakura-shrine-thumb.webp",
+          "material": "scene-sakura-shrine"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-scene-sakura-shrine",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-scene-neon-rooftop",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 9,
+      "title_zh": "場景：動漫霓虹屋頂",
+      "title_en": "Scene: anime neon rooftop",
+      "subjects": [],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "positive": "動漫風格插畫，夜晚的未來都市大樓屋頂，霓虹招牌與全息廣告閃爍，遠方有飛行車，前景是平坦的屋頂地面，無人，相機在約腰部高度平視，地平線約在畫面中央，畫面下半部是平坦開闊的地面，畫面中沒有任何人物",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "scene-neon-rooftop.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "scene-neon-rooftop-thumb.webp",
+          "material": "scene-neon-rooftop"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-scene-neon-rooftop",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-scene-sky-islands",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 10,
+      "title_zh": "場景：動漫天空浮島",
+      "title_en": "Scene: anime sky islands",
+      "subjects": [],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "positive": "動畫背景美術，天空中漂浮著幾座長滿綠樹的浮空島嶼，瀑布從島邊流下化成白霧，藍天白雲，前景是開滿白色與黃色小野花的平坦青草地，明亮清新的色彩，相機在約腰部高度平視，地平線約在畫面中央，畫面下半部是平坦開闊的地面，空曠寧靜的純風景",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "scene-sky-islands.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "scene-sky-islands-thumb.webp",
+          "material": "scene-sky-islands"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-scene-sky-islands",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qt-poster",
+      "feature_id": "qwen21-text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "中文海報「星際夜市」",
+      "title_en": "Chinese poster: 星際夜市 (Night Market in Space)",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "positive": "復古科幻電影海報，正中央的大標題寫著「星際夜市」，下方小字寫著「今夏 上映」，漂浮在太空中的台灣夜市攤位與紅燈籠，霓虹色調，精緻的海報排版。",
+        "aspectRatio": "2:3",
+        "megapixels": "1"
+      },
+      "outputs": [
+        {
+          "file": "qt-poster.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qt-poster-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "qt-poster",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qt-noodle-stall",
+      "feature_id": "qwen21-text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "招牌文字「夜市牛肉麵」",
+      "title_en": "Shop sign: 夜市牛肉麵 (night-market beef noodles)",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "positive": "台灣夜市的牛肉麵攤近拍，木頭招牌上寫著「夜市牛肉麵」，熱氣從大碗中升起，暖黃燈泡，寫實美食攝影。",
+        "aspectRatio": "1:1",
+        "megapixels": "1"
+      },
+      "outputs": [
+        {
+          "file": "qt-noodle-stall.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qt-noodle-stall-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "qt-noodle-stall",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qt-postcard",
+      "feature_id": "qwen21-text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 3,
+      "title_zh": "水彩明信片「海邊的問候」",
+      "title_en": "Watercolor postcard: 海邊的問候 (Seaside greetings)",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "positive": "手繪水彩風格的明信片，上方用手寫字寫著「海邊的問候」，下方畫著湛藍的海岸線、拍打礁石的白色浪花、白色燈塔與晴朗天空，水彩顏料自然暈染，紙張紋理清晰。",
+        "aspectRatio": "3:2",
+        "megapixels": "1"
+      },
+      "outputs": [
+        {
+          "file": "qt-postcard.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qt-postcard-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "qt-postcard",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-portrait-qingqing",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "晴晴：咖啡館肖像",
+      "title_en": "Qingqing: café portrait",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "subject-qingqing"
+      },
+      "settings": {
+        "instruction": "把 <image1> 的女性重新拍成一張胸上半身肖像：她坐在咖啡館窗邊，正面看著鏡頭微笑，微笑時嘴唇自然閉合，柔和的自然窗光，背景是柔焦的咖啡館。保留她的五官、髮型、膚色與服裝，寫實攝影。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "portrait-qingqing.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "portrait-qingqing-thumb.webp",
+          "material": "portrait-qingqing"
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-portrait-qingqing",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-portrait-zhiyuan",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "志遠：咖啡館肖像",
+      "title_en": "Zhiyuan: café portrait",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "subject-zhiyuan"
+      },
+      "settings": {
+        "instruction": "把 <image1> 的男性重新拍成一張胸上半身肖像：他坐在咖啡館窗邊，正面看著鏡頭微笑，微笑時嘴唇自然閉合，柔和的自然窗光，背景是柔焦的咖啡館。保留他的五官、髮型、膚色與服裝，寫實攝影。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "portrait-zhiyuan.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "portrait-zhiyuan-thumb.webp",
+          "material": "portrait-zhiyuan"
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-portrait-zhiyuan",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "bl-qingqing-old-street",
       "feature_id": "image-blend",
       "kind": "recorded",
       "engine": "comfyui",
       "display": true,
       "order": 1,
-      "title_zh": "舊示範：人物與球場融合",
-      "title_en": "Former demo: subject and stadium blend",
+      "title_zh": "晴晴 → 歐洲石板老街",
+      "title_en": "Qingqing → cobblestone old street",
       "subjects": [
-        "cheer"
+        "qingqing"
       ],
       "domain": "real",
       "inputs": {
-        "image1": "ph-cheer",
-        "image2": "ph-stadium"
+        "image1": "subject-qingqing",
+        "image2": "scene-old-street"
       },
       "settings": {
         "positive": "person",
-        "threshold": 0.5
+        "threshold": 0.5,
+        "feather": 0
       },
       "outputs": [
         {
-          "file": "cheer-subject-blend.webp",
+          "file": "bl-qingqing-old-street.webp",
           "kind": "image",
           "poster": null,
-          "thumb": null,
-          "material": "ph-blend"
+          "thumb": "bl-qingqing-old-street-thumb.webp",
+          "material": "bl-qingqing-old-street"
         }
       ],
       "comparison": {
         "before": "image1"
       },
-      "run_id": "cheer-subject-blend-v4",
+      "run_id": "bl-qingqing-old-street",
       "stand_in_for": null,
       "audio": [],
       "post": null,
@@ -471,143 +2075,83 @@
       "disclosure_en": null
     },
     {
-      "id": "ph-lipsync-case",
-      "feature_id": "lipsync",
+      "id": "bl-qingqing-snow-ridge",
+      "feature_id": "image-blend",
       "kind": "recorded",
       "engine": "comfyui",
       "display": true,
-      "order": 1,
-      "title_zh": "舊示範：說話對嘴",
-      "title_en": "Former demo: lip sync",
+      "order": 2,
+      "title_zh": "晴晴 → 雪山稜線",
+      "title_en": "Qingqing → snowy mountain ridge",
       "subjects": [
-        "cheer"
+        "qingqing"
       ],
       "domain": "real",
       "inputs": {
-        "video": "ph-wave",
-        "voice": "ph-warm"
+        "image1": "subject-qingqing",
+        "image2": "scene-snow-ridge"
       },
       "settings": {
-        "mode": "repetitive",
-        "maxFrames": 81,
-        "faceBatch": 4
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
       },
       "outputs": [
         {
-          "file": "cheer-lipsync.mp4",
-          "kind": "video",
-          "poster": "cheer-lipsync-poster.webp",
-          "thumb": null,
-          "material": null
-        }
-      ],
-      "comparison": null,
-      "run_id": "cheer-lipsync-v1",
-      "stand_in_for": null,
-      "audio": [],
-      "post": null,
-      "note_zh": null,
-      "note_en": null,
-      "disclosure_zh": null,
-      "disclosure_en": null
-    },
-    {
-      "id": "ph-wave-case",
-      "feature_id": "img2video",
-      "kind": "recorded",
-      "engine": "comfyui",
-      "display": true,
-      "order": 1,
-      "title_zh": "舊示範：揮手打招呼",
-      "title_en": "Former demo: waving hello",
-      "subjects": [
-        "cheer"
-      ],
-      "domain": "real",
-      "inputs": {
-        "image": "ph-ref"
-      },
-      "settings": {
-        "positive": "The adult woman takes two small natural steps towards the camera, smiles brightly, raises her right hand and waves hello twice. Her ponytail and jersey move naturally. Friendly confident adult baseball cheer performer. The camera stays still, full body in frame, consistent face and clothing, realistic fluid human motion.",
-        "negative": "static, frozen, camera pan, camera zoom, distorted face, deformed hands, extra limbs, duplicate person, blurry, text, logo, running",
-        "width": 480,
-        "height": 720,
-        "length": 81,
-        "fps": 16,
-        "steps": 6,
-        "cfg": 1,
-        "shift": 8,
-        "loraStrength": 1,
-        "seed": 2026102306,
-        "sampler": "euler",
-        "scheduler": "simple"
-      },
-      "outputs": [
-        {
-          "file": "cheer-wave.mp4",
-          "kind": "video",
-          "poster": "cheer-wave-poster.webp",
-          "thumb": null,
-          "material": "ph-wave"
-        }
-      ],
-      "comparison": null,
-      "run_id": "cheer-wave-wan-v1",
-      "stand_in_for": null,
-      "audio": [],
-      "post": null,
-      "note_zh": null,
-      "note_en": null,
-      "disclosure_zh": null,
-      "disclosure_en": null
-    },
-    {
-      "id": "ph-angles-case",
-      "feature_id": "character-angles",
-      "kind": "recorded",
-      "engine": "comfyui",
-      "display": true,
-      "order": 1,
-      "title_zh": "舊示範：多角度臉部",
-      "title_en": "Former demo: face angles",
-      "subjects": [
-        "cheer"
-      ],
-      "domain": "real",
-      "inputs": {
-        "face": "ph-face-ref"
-      },
-      "settings": {
-        "positive": "RAW candid close-up photograph of a 26-year-old adult Taiwanese woman, natural expression, realistic brown eyes, realistic human facial proportions, realistic adult face, fine natural skin pores, long dark hair, wearing a plain dark navy sports jacket, head and shoulders, evening baseball stadium with blurred warm lights, soft natural lighting, Nikon full frame camera, 85mm f1.8, detailed photograph",
-        "negative": "anime, manga, cartoon, illustration, painting, 3d render, doll, plastic, airbrushed skin, overexposed, oversized eyes, huge eyes, giant eyes, juvenile face, child, bad anatomy, distorted fingers, text, logo, watermark, cropped head",
-        "width": 896,
-        "height": 1152,
-        "steps": 36,
-        "cfg": 5.5,
-        "weight": 0.6,
-        "batchSize": 2,
-        "seed": 2026102325,
-        "sampler": "dpmpp_2m",
-        "scheduler": "karras"
-      },
-      "outputs": [
-        {
-          "file": "cheer-instantid-2.webp",
+          "file": "bl-qingqing-snow-ridge.webp",
           "kind": "image",
           "poster": null,
-          "thumb": null,
-          "material": "ph-face"
-        },
+          "thumb": "bl-qingqing-snow-ridge-thumb.webp",
+          "material": "bl-qingqing-snow-ridge"
+        }
+      ],
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-qingqing-snow-ridge",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "bl-qingqing-tropical-beach",
+      "feature_id": "image-blend",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 3,
+      "title_zh": "晴晴 → 熱帶海灘",
+      "title_en": "Qingqing → tropical beach",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image1": "subject-qingqing",
+        "image2": "scene-tropical-beach"
+      },
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
+      },
+      "outputs": [
         {
-          "file": "cheer-instantid.webp",
+          "file": "bl-qingqing-tropical-beach.webp",
           "kind": "image",
           "poster": null,
-          "thumb": null,
+          "thumb": "bl-qingqing-tropical-beach-thumb.webp",
           "material": null
         }
       ],
-      "comparison": null,
-      "run_id": "cheer-instantid-v3",
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-qingqing-tropical-beach",
       "stand_in_for": null,
       "audio": [],
       "post": null,
@@ -617,39 +2161,40 @@
       "disclosure_en": null
     },
     {
-      "id": "ph-swap-case",
-      "feature_id": "face-swap",
+      "id": "bl-zhiyuan-old-street",
+      "feature_id": "image-blend",
       "kind": "recorded",
       "engine": "comfyui",
       "display": true,
-      "order": 1,
-      "title_zh": "舊示範：影片換臉",
-      "title_en": "Former demo: video face swap",
+      "order": 4,
+      "title_zh": "志遠 → 歐洲石板老街",
+      "title_en": "Zhiyuan → cobblestone old street",
       "subjects": [
-        "cheer"
+        "zhiyuan"
       ],
       "domain": "real",
       "inputs": {
-        "video": "ph-wave",
-        "face": "ph-face"
+        "image1": "subject-zhiyuan",
+        "image2": "scene-old-street"
       },
       "settings": {
-        "fps": 12,
-        "maxFrames": 48,
-        "restore": "none",
-        "detection": "retinaface_resnet50"
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
       },
       "outputs": [
         {
-          "file": "cheer-face-swap.mp4",
-          "kind": "video",
+          "file": "bl-zhiyuan-old-street.webp",
+          "kind": "image",
           "poster": null,
-          "thumb": null,
-          "material": null
+          "thumb": "bl-zhiyuan-old-street-thumb.webp",
+          "material": "bl-zhiyuan-old-street"
         }
       ],
-      "comparison": null,
-      "run_id": "cheer-face-swap-v1",
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-zhiyuan-old-street",
       "stand_in_for": null,
       "audio": [],
       "post": null,
@@ -659,37 +2204,40 @@
       "disclosure_en": null
     },
     {
-      "id": "ph-loop-case",
-      "feature_id": "video-loop",
+      "id": "bl-zhiyuan-snow-ridge",
+      "feature_id": "image-blend",
       "kind": "recorded",
       "engine": "comfyui",
       "display": true,
-      "order": 1,
-      "title_zh": "舊示範：影片循環",
-      "title_en": "Former demo: video loop",
+      "order": 5,
+      "title_zh": "志遠 → 雪山稜線",
+      "title_en": "Zhiyuan → snowy mountain ridge",
       "subjects": [
-        "cheer"
+        "zhiyuan"
       ],
       "domain": "real",
       "inputs": {
-        "video": "ph-wave"
+        "image1": "subject-zhiyuan",
+        "image2": "scene-snow-ridge"
       },
       "settings": {
-        "repeat": 2,
-        "pingpong": true,
-        "maxFrames": 81
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
       },
       "outputs": [
         {
-          "file": "cheer-loop.mp4",
-          "kind": "video",
+          "file": "bl-zhiyuan-snow-ridge.webp",
+          "kind": "image",
           "poster": null,
-          "thumb": null,
-          "material": null
+          "thumb": "bl-zhiyuan-snow-ridge-thumb.webp",
+          "material": "bl-zhiyuan-snow-ridge"
         }
       ],
-      "comparison": null,
-      "run_id": "cheer-loop-v1",
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-zhiyuan-snow-ridge",
       "stand_in_for": null,
       "audio": [],
       "post": null,
@@ -699,43 +2247,378 @@
       "disclosure_en": null
     },
     {
-      "id": "ph-edit-case",
+      "id": "bl-zhiyuan-tropical-beach",
+      "feature_id": "image-blend",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 6,
+      "title_zh": "志遠 → 熱帶海灘",
+      "title_en": "Zhiyuan → tropical beach",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image1": "subject-zhiyuan",
+        "image2": "scene-tropical-beach"
+      },
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
+      },
+      "outputs": [
+        {
+          "file": "bl-zhiyuan-tropical-beach.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "bl-zhiyuan-tropical-beach-thumb.webp",
+          "material": "bl-zhiyuan-tropical-beach"
+        }
+      ],
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-zhiyuan-tropical-beach",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "bl-xingyu-sakura-shrine",
+      "feature_id": "image-blend",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 7,
+      "title_zh": "星羽 → 櫻花神社",
+      "title_en": "Xingyu → sakura shrine",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image1": "subject-xingyu",
+        "image2": "scene-sakura-shrine"
+      },
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
+      },
+      "outputs": [
+        {
+          "file": "bl-xingyu-sakura-shrine.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "bl-xingyu-sakura-shrine-thumb.webp",
+          "material": "bl-xingyu-sakura-shrine"
+        }
+      ],
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-xingyu-sakura-shrine",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "bl-xingyu-neon-rooftop",
+      "feature_id": "image-blend",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 8,
+      "title_zh": "星羽 → 霓虹屋頂",
+      "title_en": "Xingyu → neon rooftop",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image1": "subject-xingyu",
+        "image2": "scene-neon-rooftop"
+      },
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
+      },
+      "outputs": [
+        {
+          "file": "bl-xingyu-neon-rooftop.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "bl-xingyu-neon-rooftop-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-xingyu-neon-rooftop",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "bl-xingyu-sky-islands",
+      "feature_id": "image-blend",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 9,
+      "title_zh": "星羽 → 天空浮島",
+      "title_en": "Xingyu → sky islands",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image1": "subject-xingyu",
+        "image2": "scene-sky-islands"
+      },
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
+      },
+      "outputs": [
+        {
+          "file": "bl-xingyu-sky-islands.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "bl-xingyu-sky-islands-thumb.webp",
+          "material": "bl-xingyu-sky-islands"
+        }
+      ],
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-xingyu-sky-islands",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "bl-chenyi-sakura-shrine",
+      "feature_id": "image-blend",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 10,
+      "title_zh": "辰翼 → 櫻花神社",
+      "title_en": "Chenyi → sakura shrine",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image1": "subject-chenyi",
+        "image2": "scene-sakura-shrine"
+      },
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
+      },
+      "outputs": [
+        {
+          "file": "bl-chenyi-sakura-shrine.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "bl-chenyi-sakura-shrine-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-chenyi-sakura-shrine",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "bl-chenyi-neon-rooftop",
+      "feature_id": "image-blend",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 11,
+      "title_zh": "辰翼 → 霓虹屋頂",
+      "title_en": "Chenyi → neon rooftop",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image1": "subject-chenyi",
+        "image2": "scene-neon-rooftop"
+      },
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
+      },
+      "outputs": [
+        {
+          "file": "bl-chenyi-neon-rooftop.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "bl-chenyi-neon-rooftop-thumb.webp",
+          "material": "bl-chenyi-neon-rooftop"
+        }
+      ],
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-chenyi-neon-rooftop",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "bl-chenyi-sky-islands",
+      "feature_id": "image-blend",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 12,
+      "title_zh": "辰翼 → 天空浮島",
+      "title_en": "Chenyi → sky islands",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image1": "subject-chenyi",
+        "image2": "scene-sky-islands"
+      },
+      "settings": {
+        "positive": "person",
+        "threshold": 0.5,
+        "feather": 0
+      },
+      "outputs": [
+        {
+          "file": "bl-chenyi-sky-islands.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "bl-chenyi-sky-islands-thumb.webp",
+          "material": "bl-chenyi-sky-islands"
+        }
+      ],
+      "comparison": {
+        "before": "image1"
+      },
+      "run_id": "bl-chenyi-sky-islands",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "kx-qingqing-ballroom",
       "feature_id": "img2img",
       "kind": "recorded",
       "engine": "comfyui",
       "display": true,
       "order": 1,
-      "title_zh": "舊示範：改變服裝顏色",
-      "title_en": "Former demo: recolor the outfit",
+      "title_zh": "晴晴：紅色晚禮服＋水晶燈舞廳",
+      "title_en": "Qingqing: red evening gown in a ballroom",
       "subjects": [
-        "cheer"
+        "qingqing"
       ],
       "domain": "real",
       "inputs": {
-        "image": "ph-ref"
+        "image": "subject-qingqing"
       },
       "settings": {
-        "instruction": "Change the teal parts of the baseball jersey to bright coral red, and change the white shorts to navy blue. Keep the same adult woman, her face, pose, white shoes, background and lighting unchanged. No logos or text.",
-        "steps": 22,
-        "guidance": 2.5,
-        "denoise": 1,
-        "seed": 2026102303,
-        "sampler": "euler",
-        "scheduler": "simple"
+        "instruction": "Change the woman's outfit to an elegant red evening gown and replace the background with a grand ballroom with crystal chandeliers and warm golden light. Keep her face, hairstyle and pose unchanged."
       },
       "outputs": [
         {
-          "file": "cheer-kontext.webp",
+          "file": "kx-qingqing-ballroom.webp",
           "kind": "image",
           "poster": null,
-          "thumb": null,
+          "thumb": "kx-qingqing-ballroom-thumb.webp",
+          "material": "kx-qingqing-ballroom"
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "kx-qingqing-ballroom",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "kx-zhiyuan-winter",
+      "feature_id": "img2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "志遠：雪夜木屋與羽絨外套",
+      "title_en": "Zhiyuan: snowy night by a log cabin",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "subject-zhiyuan"
+      },
+      "settings": {
+        "instruction": "Make it a snowy winter night: dress the man in a thick navy down jacket, a red knit scarf and a beanie, with snow falling and a glowing log cabin behind him. Keep his face and pose unchanged."
+      },
+      "outputs": [
+        {
+          "file": "kx-zhiyuan-winter.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "kx-zhiyuan-winter-thumb.webp",
           "material": null
         }
       ],
       "comparison": {
         "before": "image"
       },
-      "run_id": "cheer-kontext-v1",
+      "run_id": "kx-zhiyuan-winter",
       "stand_in_for": null,
       "audio": [],
       "post": null,
@@ -745,39 +2628,118 @@
       "disclosure_en": null
     },
     {
-      "id": "ph-anime-case",
-      "feature_id": "text2img",
+      "id": "kx-xingyu-mage",
+      "feature_id": "img2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 3,
+      "title_zh": "星羽：星空魔法師",
+      "title_en": "Xingyu: starry-night mage",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "subject-xingyu"
+      },
+      "settings": {
+        "instruction": "Turn her into a fantasy mage: a flowing black-and-gold robe, a glowing crystal staff in her right hand, and a starry night sky full of magic circles behind her. Keep the anime illustration style, her face and her silver-blue hair."
+      },
+      "outputs": [
+        {
+          "file": "kx-xingyu-mage.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "kx-xingyu-mage-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "kx-xingyu-mage",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "kx-chenyi-samurai",
+      "feature_id": "img2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 4,
+      "title_zh": "辰翼：月夜竹林武士",
+      "title_en": "Chenyi: samurai in a moonlit bamboo forest",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "subject-chenyi"
+      },
+      "settings": {
+        "instruction": "Give him ornate silver samurai armor and replace the background with a moonlit bamboo forest at night. Keep the anime illustration style, his face and his hairstyle."
+      },
+      "outputs": [
+        {
+          "file": "kx-chenyi-samurai.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "kx-chenyi-samurai-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "kx-chenyi-samurai",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-qingqing-neon-rain",
+      "feature_id": "qwen21-edit",
       "kind": "recorded",
       "engine": "comfyui",
       "display": true,
       "order": 1,
-      "title_zh": "舊示範：動漫角色立繪",
-      "title_en": "Former demo: anime character art",
+      "title_zh": "晴晴：雨夜霓虹街頭",
+      "title_en": "Qingqing: neon street on a rainy night",
       "subjects": [
-        "cheer-anime"
+        "qingqing"
       ],
-      "domain": "anime",
-      "inputs": {},
+      "domain": "real",
+      "inputs": {
+        "image": "subject-qingqing"
+      },
       "settings": {
-        "positive": "Polished Japanese anime character key visual, a wholly fictional adult Taiwanese woman age 26, friendly confident smile, long dark ponytail, original teal and white baseball jersey with modest white sports shorts, full body natural standing pose and white sneakers, empty baseball field and stadium in sunny weather, crisp clean illustration linework, expressive adult face, detailed cel shading, cheerful turquoise warm cream palette, editorial character card composition. No team logos, no lettering, no watermark.",
-        "negative": "child, teen, text, watermark, logo, photorealistic, deformed hands, extra limbs",
-        "width": 832,
-        "height": 1216,
-        "steps": 9,
-        "seed": 2026102402,
-        "batchSize": 1
+        "instruction": "把 <image1> 改成雨夜的霓虹街頭：她撐著一把透明雨傘，穿著黑色皮夾克，濕亮的柏油路面倒映著粉紫色招牌燈光，整體重新打光成夜景。保留她的五官、髮型與身形，寫實攝影。",
+        "resolution": "1024"
       },
       "outputs": [
         {
-          "file": "cheer-anime.webp",
+          "file": "qe-qingqing-neon-rain.webp",
           "kind": "image",
           "poster": null,
-          "thumb": null,
-          "material": "ph-anime"
+          "thumb": "qe-qingqing-neon-rain-thumb.webp",
+          "material": null
         }
       ],
-      "comparison": null,
-      "run_id": "cheer-anime-v1",
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-qingqing-neon-rain",
       "stand_in_for": null,
       "audio": [],
       "post": null,
@@ -787,280 +2749,2394 @@
       "disclosure_en": null
     },
     {
-      "id": "ph-blend-teahouse",
-      "feature_id": "image-blend",
-      "kind": "prepared",
-      "engine": "none",
+      "id": "qe-zhiyuan-office",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
       "display": true,
       "order": 2,
-      "title_zh": "舊示範：人物與茶屋融合",
-      "title_en": "Former demo: subject and teahouse blend",
+      "title_zh": "志遠：西裝與城市辦公室",
+      "title_en": "Zhiyuan: suit in a city office",
       "subjects": [
-        "cheer"
+        "zhiyuan"
       ],
       "domain": "real",
       "inputs": {
-        "image1": "ph-cheer",
-        "image2": "ph-teahouse"
+        "image": "subject-zhiyuan"
       },
       "settings": {
-        "positive": "person",
-        "threshold": 0.5
+        "instruction": "讓 <image1> 的男性換上合身的深藍色西裝、白襯衫與領帶，背景換成現代辦公室的落地窗，窗外是白天的城市天際線。保留他的五官、髮型與身形，寫實攝影。",
+        "resolution": "1024"
       },
       "outputs": [
         {
-          "file": "cheer-subject-blend.webp",
+          "file": "qe-zhiyuan-office.webp",
           "kind": "image",
           "poster": null,
-          "thumb": null,
-          "material": "ph-blend"
+          "thumb": "qe-zhiyuan-office-thumb.webp",
+          "material": null
         }
       ],
-      "comparison": null,
-      "run_id": null,
-      "stand_in_for": "ph-blend-case",
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-zhiyuan-office",
+      "stand_in_for": null,
       "audio": [],
       "post": null,
       "note_zh": null,
       "note_en": null,
-      "disclosure_zh": "暫用舊示範：顯示的是體育場的融合結果。",
-      "disclosure_en": "Placeholder: shows the stadium blend result."
+      "disclosure_zh": null,
+      "disclosure_en": null
     },
     {
-      "id": "ph-h3r",
+      "id": "qe-xingyu-festival",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 3,
+      "title_zh": "星羽：夏日祭典浴衣",
+      "title_en": "Xingyu: summer festival yukata",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "subject-xingyu"
+      },
+      "settings": {
+        "instruction": "把 <image1> 改成夏日祭典的夜晚：她穿著深藍色有煙火圖案的浴衣，手拿團扇，背景是燈籠攤位與天空中綻放的煙火。保留她的五官與銀藍色長髮，維持動漫插畫畫風。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-xingyu-festival.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-xingyu-festival-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-xingyu-festival",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-chenyi-space",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 4,
+      "title_zh": "辰翼：太空站太空裝",
+      "title_en": "Chenyi: spacesuit on a space station",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "subject-chenyi"
+      },
+      "settings": {
+        "instruction": "讓 <image1> 的男性換上白色與橘色的未來感太空裝，背景換成太空站的大窗戶，窗外是藍色的地球。保留他的五官與髮型，維持動漫插畫畫風。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-chenyi-space.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-chenyi-space-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-chenyi-space",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-group-real",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 5,
+      "title_zh": "晴晴＋志遠：海邊木棧道合照",
+      "title_en": "Qingqing + Zhiyuan: boardwalk photo",
+      "subjects": [
+        "qingqing",
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "subject-qingqing",
+        "image2": "subject-zhiyuan"
+      },
+      "settings": {
+        "instruction": "讓 <image1> 的女性與 <image2> 的男性並肩站在陽光明亮的海邊木棧道上合照，兩人面帶微笑看向鏡頭，全身入鏡。保留兩人各自的五官、髮型與服裝，寫實攝影。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-group-real.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-group-real-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-group-real",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-group-anime",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 6,
+      "title_zh": "星羽＋辰翼：櫻花樹下合照",
+      "title_en": "Xingyu + Chenyi: under the cherry tree",
+      "subjects": [
+        "xingyu",
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "subject-xingyu",
+        "image2": "subject-chenyi"
+      },
+      "settings": {
+        "instruction": "讓 <image1> 的女性與 <image2> 的男性一起站在盛開的櫻花樹下合照，兩人面帶微笑看向鏡頭，全身入鏡。保留兩人各自的五官、髮型與服裝，維持動漫插畫畫風。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-group-anime.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-group-anime-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-group-anime",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-qingqing-jazz",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 7,
+      "title_zh": "晴晴：1920 年代爵士歌手",
+      "title_en": "Qingqing: 1920s jazz singer",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "subject-qingqing"
+      },
+      "settings": {
+        "instruction": "把 <image1> 的女性重新拍成 1920 年代爵士歌手的復古寫真：亮片流蘇洋裝、珍珠長項鍊、手指波浪捲髮，站在老式麥克風前，背景是暖黃燈光的爵士酒吧，復古底片色調。保留她的五官。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-qingqing-jazz.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-qingqing-jazz-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-qingqing-jazz",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-zhiyuan-rock",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 8,
+      "title_zh": "志遠：1970 年代搖滾樂手",
+      "title_en": "Zhiyuan: 1970s rock guitarist",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "subject-zhiyuan"
+      },
+      "settings": {
+        "instruction": "把 <image1> 的男性重新拍成 1970 年代搖滾樂手的復古寫真：及肩長捲髮、黑色皮夾克與喇叭褲、手拿電吉他，背景是舞台燈光與煙霧，復古底片色調。保留他的五官。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-zhiyuan-rock.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-zhiyuan-rock-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-zhiyuan-rock",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ca-qingqing",
+      "feature_id": "character-angles",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "晴晴：四個角度的肖像",
+      "title_en": "Qingqing: four-angle portraits",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "face": "portrait-qingqing"
+      },
+      "settings": {
+        "positive": "簡潔的淺灰色攝影棚背景，柔和的正面打光",
+        "batchSize": 4
+      },
+      "outputs": [
+        {
+          "file": "ca-qingqing-1.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "ca-qingqing-1-thumb.webp",
+          "material": null
+        },
+        {
+          "file": "ca-qingqing-2.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "ca-qingqing-2-thumb.webp",
+          "material": null
+        },
+        {
+          "file": "ca-qingqing-3.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "ca-qingqing-3-thumb.webp",
+          "material": null
+        },
+        {
+          "file": "ca-qingqing-4.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "ca-qingqing-4-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "ca-qingqing",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ca-zhiyuan",
+      "feature_id": "character-angles",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "志遠：四個角度的肖像",
+      "title_en": "Zhiyuan: four-angle portraits",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "face": "portrait-zhiyuan"
+      },
+      "settings": {
+        "positive": "簡潔的淺灰色攝影棚背景，柔和的正面打光",
+        "batchSize": 4
+      },
+      "outputs": [
+        {
+          "file": "ca-zhiyuan-1.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "ca-zhiyuan-1-thumb.webp",
+          "material": null
+        },
+        {
+          "file": "ca-zhiyuan-2.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "ca-zhiyuan-2-thumb.webp",
+          "material": null
+        },
+        {
+          "file": "ca-zhiyuan-3.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "ca-zhiyuan-3-thumb.webp",
+          "material": null
+        },
+        {
+          "file": "ca-zhiyuan-4.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "ca-zhiyuan-4-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "ca-zhiyuan",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "iv-qingqing-street",
+      "feature_id": "img2video",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "晴晴在老街回頭揮手",
+      "title_en": "Qingqing waves on the old street",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "bl-qingqing-old-street"
+      },
+      "settings": {
+        "positive": "她沿著石板老街向前走了兩步，轉頭對鏡頭露出燦爛的笑容並揮手，馬尾隨著步伐擺動，鏡頭緩慢跟隨，自然光影",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "iv-qingqing-street.mp4",
+          "kind": "video",
+          "poster": "iv-qingqing-street-poster.webp",
+          "thumb": "iv-qingqing-street-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "iv-qingqing-street",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "iv-zhiyuan-snow",
+      "feature_id": "img2video",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "志遠在雪山拍照",
+      "title_en": "Zhiyuan photographs the snowy peaks",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "bl-zhiyuan-snow-ridge"
+      },
+      "settings": {
+        "positive": "他舉起相機對著遠方的山峰拍照，接著放下相機看向鏡頭微笑，冷風吹動外套，細雪在空中飄落，鏡頭緩慢環繞",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "iv-zhiyuan-snow.mp4",
+          "kind": "video",
+          "poster": "iv-zhiyuan-snow-poster.webp",
+          "thumb": "iv-zhiyuan-snow-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "iv-zhiyuan-snow",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "iv-xingyu-sky",
+      "feature_id": "img2video",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 3,
+      "title_zh": "星羽在浮島轉圈",
+      "title_en": "Xingyu twirls on a sky island",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "bl-xingyu-sky-islands"
+      },
+      "settings": {
+        "positive": "她張開雙臂優雅地轉了一圈，長髮與披風在風中飛揚，花瓣與光點在空中飄散，遠處瀑布流動，動漫風格",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "iv-xingyu-sky.mp4",
+          "kind": "video",
+          "poster": "iv-xingyu-sky-poster.webp",
+          "thumb": "iv-xingyu-sky-thumb.webp",
+          "material": "iv-xingyu-sky"
+        }
+      ],
+      "comparison": null,
+      "run_id": "iv-xingyu-sky",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "iv-chenyi-neon",
+      "feature_id": "img2video",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 4,
+      "title_zh": "辰翼甩外套望向夜景",
+      "title_en": "Chenyi swings his coat over the neon city",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "bl-chenyi-neon-rooftop"
+      },
+      "settings": {
+        "positive": "他把長外套甩到肩上，轉身望向城市夜景，霓虹招牌閃爍，飛行車從背景呼嘯而過，風吹動頭髮與衣襬，動漫風格",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "iv-chenyi-neon.mp4",
+          "kind": "video",
+          "poster": "iv-chenyi-neon-poster.webp",
+          "thumb": "iv-chenyi-neon-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "iv-chenyi-neon",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "iv-qingqing-cafe",
+      "feature_id": "img2video",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 5,
+      "title_zh": "晴晴在咖啡館點頭微笑",
+      "title_en": "Qingqing nods and smiles in a café",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "portrait-qingqing"
+      },
+      "settings": {
+        "positive": "她坐在咖啡館窗邊，微笑看著鏡頭，輕輕點頭並眨眼，頭髮微微晃動，嘴唇自然閉合，鏡頭固定",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "iv-qingqing-cafe.mp4",
+          "kind": "video",
+          "poster": "iv-qingqing-cafe-poster.webp",
+          "thumb": "iv-qingqing-cafe-thumb.webp",
+          "material": "iv-qingqing-cafe"
+        }
+      ],
+      "comparison": null,
+      "run_id": "iv-qingqing-cafe",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "iv-zhiyuan-cafe",
+      "feature_id": "img2video",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 6,
+      "title_zh": "志遠在咖啡館點頭微笑",
+      "title_en": "Zhiyuan nods and smiles in a café",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "portrait-zhiyuan"
+      },
+      "settings": {
+        "positive": "他坐在咖啡館窗邊，微笑看著鏡頭，輕輕點頭，手指輕敲桌面，嘴唇自然閉合，鏡頭固定",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "iv-zhiyuan-cafe.mp4",
+          "kind": "video",
+          "poster": "iv-zhiyuan-cafe-poster.webp",
+          "thumb": "iv-zhiyuan-cafe-thumb.webp",
+          "material": "iv-zhiyuan-cafe"
+        }
+      ],
+      "comparison": null,
+      "run_id": "iv-zhiyuan-cafe",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "iv-motion-energetic",
+      "feature_id": "img2video",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "舞者跳街舞（動作影片）",
+      "title_en": "Dancer: street-dance clip (motion source)",
+      "subjects": [
+        "dancer"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "performer-dancer"
+      },
+      "settings": {
+        "positive": "她在淺灰色攝影棚中跳一段充滿活力的街舞：踏步、轉身、雙手向上揮動並跳躍，全身始終在畫面中，鏡頭固定",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "motion-energetic.mp4",
+          "kind": "video",
+          "poster": "motion-energetic-poster.webp",
+          "thumb": "motion-energetic-thumb.webp",
+          "material": "motion-energetic"
+        }
+      ],
+      "comparison": null,
+      "run_id": "iv-motion-energetic",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "iv-motion-taichi",
+      "feature_id": "img2video",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "太極動作（動作影片）",
+      "title_en": "Tai chi clip (motion source)",
+      "subjects": [
+        "taichi"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "performer-taichi"
+      },
+      "settings": {
+        "positive": "他在淺灰色攝影棚中緩慢地打太極拳：雙手畫圓、重心左右移動、單腳緩慢抬起，動作流暢穩定，全身始終在畫面中，鏡頭固定",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "motion-taichi.mp4",
+          "kind": "video",
+          "poster": "motion-taichi-poster.webp",
+          "thumb": "motion-taichi-thumb.webp",
+          "material": "motion-taichi"
+        }
+      ],
+      "comparison": null,
+      "run_id": "iv-motion-taichi",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "fl-qingqing-gown",
+      "feature_id": "first-last-frame",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "晴晴：啦啦隊制服 → 紅色長禮服",
+      "title_en": "Qingqing: cheer uniform to red gown",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "start": "subject-qingqing",
+        "end": "qe-qingqing-gown-studio"
+      },
+      "settings": {
+        "positive": "她站在淺灰色攝影棚中，微笑著原地優雅地轉了一圈，身上的啦啦隊制服在旋轉中流暢地變成紅色及地長禮服，馬尾變成低髮髻，背景與燈光保持不變，鏡頭固定，寫實",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "fl-qingqing-gown.mp4",
+          "kind": "video",
+          "poster": "fl-qingqing-gown-poster.webp",
+          "thumb": "fl-qingqing-gown-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "fl-qingqing-gown",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "fl-zhiyuan-suit",
+      "feature_id": "first-last-frame",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "志遠：工作外套 → 深藍西裝",
+      "title_en": "Zhiyuan: field jacket to navy suit",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "start": "bl-zhiyuan-old-street",
+        "end": "qe-zhiyuan-suit-street"
+      },
+      "settings": {
+        "positive": "他站在陽光下的石板老街上，原地轉了一圈，身上的橄欖綠外套與工作褲在轉身時流暢地變成合身的深藍色西裝與領帶，轉回正面站好，背景、光線與構圖保持不變，鏡頭固定，寫實",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "fl-zhiyuan-suit.mp4",
+          "kind": "video",
+          "poster": "fl-zhiyuan-suit-poster.webp",
+          "thumb": "fl-zhiyuan-suit-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "fl-zhiyuan-suit",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "fl-xingyu-shrine-night",
+      "feature_id": "first-last-frame",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 3,
+      "title_zh": "星羽：白天神社 → 夜晚燈籠",
+      "title_en": "Xingyu: shrine by day to lantern night",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "start": "bl-xingyu-sakura-shrine",
+        "end": "qe-xingyu-shrine-night"
+      },
+      "settings": {
+        "positive": "她站在櫻花神社參道上微笑，一陣櫻花花瓣旋風從她腳邊捲起、掠過整個畫面，花瓣散開時天色已從白天變成深藍色的夜晚，參道兩旁的紙燈籠亮起，人物與構圖保持不變，鏡頭固定，動漫風格",
+        "aspect": "480x832",
+        "length": 81,
+        "fps": 16
+      },
+      "outputs": [
+        {
+          "file": "fl-xingyu-shrine-night.mp4",
+          "kind": "video",
+          "poster": "fl-xingyu-shrine-night-poster.webp",
+          "thumb": "fl-xingyu-shrine-night-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "fl-xingyu-shrine-night",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "dn-xingyu-energetic",
+      "feature_id": "dance",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "星羽在櫻花神社跳街舞",
+      "title_en": "Xingyu street-dances at the sakura shrine",
+      "subjects": [
+        "xingyu",
+        "dancer"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "reference": "bl-xingyu-sakura-shrine",
+        "video": "motion-energetic"
+      },
+      "settings": {
+        "positive": "一位銀藍色長髮的動漫風格成年女性在櫻花神社參道上跳舞，全身入鏡，動作自然流暢，動漫風格",
+        "length": 81
+      },
+      "outputs": [
+        {
+          "file": "dn-xingyu-energetic.mp4",
+          "kind": "video",
+          "poster": "dn-xingyu-energetic-poster.webp",
+          "thumb": "dn-xingyu-energetic-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "dn-xingyu-energetic",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "dn-chenyi-taichi",
+      "feature_id": "dance",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "辰翼在浮島打太極",
+      "title_en": "Chenyi does tai chi on a sky island",
+      "subjects": [
+        "chenyi",
+        "taichi"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "reference": "bl-chenyi-sky-islands",
+        "video": "motion-taichi"
+      },
+      "settings": {
+        "positive": "一位黑色短髮的動漫風格成年男性在天空浮島的草地上打太極拳，全身入鏡，動作自然流暢，動漫風格",
+        "length": 81
+      },
+      "outputs": [
+        {
+          "file": "dn-chenyi-taichi.mp4",
+          "kind": "video",
+          "poster": "dn-chenyi-taichi-poster.webp",
+          "thumb": "dn-chenyi-taichi-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "dn-chenyi-taichi",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "dn-zhiyuan-energetic",
+      "feature_id": "dance",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 3,
+      "title_zh": "志遠在熱帶海灘跳街舞",
+      "title_en": "Zhiyuan street-dances on the tropical beach",
+      "subjects": [
+        "zhiyuan",
+        "dancer"
+      ],
+      "domain": "real",
+      "inputs": {
+        "reference": "bl-zhiyuan-tropical-beach",
+        "video": "motion-energetic"
+      },
+      "settings": {
+        "positive": "一位穿著橄欖綠外套的成年男性在陽光明媚的熱帶海灘上跳舞，全身入鏡，動作自然流暢，寫實",
+        "length": 81
+      },
+      "outputs": [
+        {
+          "file": "dn-zhiyuan-energetic.mp4",
+          "kind": "video",
+          "poster": "dn-zhiyuan-energetic-poster.webp",
+          "thumb": "dn-zhiyuan-energetic-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "dn-zhiyuan-energetic",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "dn-qingqing-taichi",
+      "feature_id": "dance",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 4,
+      "title_zh": "晴晴穿晚禮服在舞廳打太極",
+      "title_en": "Qingqing does tai chi in the ballroom",
+      "subjects": [
+        "qingqing",
+        "taichi"
+      ],
+      "domain": "real",
+      "inputs": {
+        "reference": "kx-qingqing-ballroom",
+        "video": "motion-taichi"
+      },
+      "settings": {
+        "positive": "一位盤著高髮髻、穿著紅色及地長禮服的成年女性在金色燈光的華麗舞廳中打太極拳，全身入鏡，動作自然流暢，寫實",
+        "length": 81
+      },
+      "outputs": [
+        {
+          "file": "dn-qingqing-taichi.mp4",
+          "kind": "video",
+          "poster": "dn-qingqing-taichi-poster.webp",
+          "thumb": "dn-qingqing-taichi-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "dn-qingqing-taichi",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ls-qingqing-zh",
+      "feature_id": "lipsync",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "晴晴說中文",
+      "title_en": "Qingqing speaks Mandarin",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "video": "iv-qingqing-cafe",
+        "voice": "qingqing-hello"
+      },
+      "settings": {
+        "mode": "sequential",
+        "maxFrames": 300,
+        "faceBatch": 8
+      },
+      "outputs": [
+        {
+          "file": "ls-qingqing-zh.mp4",
+          "kind": "video",
+          "poster": "ls-qingqing-zh-poster.webp",
+          "thumb": "ls-qingqing-zh-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "ls-qingqing-zh",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ls-zhiyuan-zh",
+      "feature_id": "lipsync",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "志遠說中文",
+      "title_en": "Zhiyuan speaks Mandarin",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "video": "iv-zhiyuan-cafe",
+        "voice": "zhiyuan-hello"
+      },
+      "settings": {
+        "mode": "sequential",
+        "maxFrames": 300,
+        "faceBatch": 8
+      },
+      "outputs": [
+        {
+          "file": "ls-zhiyuan-zh.mp4",
+          "kind": "video",
+          "poster": "ls-zhiyuan-zh-poster.webp",
+          "thumb": "ls-zhiyuan-zh-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "ls-zhiyuan-zh",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "ls-qingqing-en",
+      "feature_id": "lipsync",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 3,
+      "title_zh": "晴晴說英文",
+      "title_en": "Qingqing speaks English",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "video": "iv-qingqing-cafe",
+        "voice": "qingqing-english"
+      },
+      "settings": {
+        "mode": "sequential",
+        "maxFrames": 300,
+        "faceBatch": 8
+      },
+      "outputs": [
+        {
+          "file": "ls-qingqing-en.mp4",
+          "kind": "video",
+          "poster": "ls-qingqing-en-poster.webp",
+          "thumb": "ls-qingqing-en-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "ls-qingqing-en",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "fs-qingqing-meiling",
+      "feature_id": "face-swap",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "晴晴的咖啡館短片換成美玲的臉",
+      "title_en": "Qingqing's café clip with Meiling's face",
+      "subjects": [
+        "qingqing",
+        "meiling"
+      ],
+      "domain": "real",
+      "inputs": {
+        "video": "iv-qingqing-cafe",
+        "face": "face-meiling"
+      },
+      "settings": {
+        "restore": "codeformer-v0.1.0.pth",
+        "detection": "retinaface_resnet50",
+        "fps": 16,
+        "maxFrames": 150
+      },
+      "outputs": [
+        {
+          "file": "fs-qingqing-meiling.mp4",
+          "kind": "video",
+          "poster": "fs-qingqing-meiling-poster.webp",
+          "thumb": "fs-qingqing-meiling-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "fs-qingqing-meiling",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "fs-taichi-zhiyuan",
+      "feature_id": "face-swap",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "太極演示者換成志遠的臉",
+      "title_en": "Tai chi clip with Zhiyuan's face",
+      "subjects": [
+        "zhiyuan",
+        "taichi"
+      ],
+      "domain": "real",
+      "inputs": {
+        "video": "motion-taichi",
+        "face": "portrait-zhiyuan"
+      },
+      "settings": {
+        "restore": "GFPGANv1.4.pth",
+        "detection": "retinaface_resnet50",
+        "fps": 16,
+        "maxFrames": 150
+      },
+      "outputs": [
+        {
+          "file": "fs-taichi-zhiyuan.mp4",
+          "kind": "video",
+          "poster": "fs-taichi-zhiyuan-poster.webp",
+          "thumb": "fs-taichi-zhiyuan-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "fs-taichi-zhiyuan",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "lp-xingyu-boomerang",
+      "feature_id": "video-loop",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 1,
+      "title_zh": "星羽轉圈・來回播放",
+      "title_en": "Xingyu twirl, boomerang loop",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "video": "iv-xingyu-sky"
+      },
+      "settings": {
+        "repeat": 2,
+        "pingpong": true,
+        "maxFrames": 600
+      },
+      "outputs": [
+        {
+          "file": "lp-xingyu-boomerang.mp4",
+          "kind": "video",
+          "poster": "lp-xingyu-boomerang-poster.webp",
+          "thumb": "lp-xingyu-boomerang-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "lp-xingyu-boomerang",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "lp-taichi-repeat",
+      "feature_id": "video-loop",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": true,
+      "order": 2,
+      "title_zh": "太極動作・重複三次",
+      "title_en": "Tai chi clip, repeated three times",
+      "subjects": [
+        "taichi"
+      ],
+      "domain": "real",
+      "inputs": {
+        "video": "motion-taichi"
+      },
+      "settings": {
+        "repeat": 3,
+        "pingpong": false,
+        "maxFrames": 600
+      },
+      "outputs": [
+        {
+          "file": "lp-taichi-repeat.mp4",
+          "kind": "video",
+          "poster": "lp-taichi-repeat-poster.webp",
+          "thumb": "lp-taichi-repeat-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": "lp-taichi-repeat",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "t2i-face-meiling",
+      "feature_id": "text2img",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "美玲（換臉示範用的臉部照片）",
+      "title_en": "Meiling (face photo for the face swap)",
+      "subjects": [
+        "meiling"
+      ],
+      "domain": "real",
+      "inputs": {},
+      "settings": {
+        "positive": "頭肩特寫肖像照，一位 58 歲的成年台灣女性，銀灰色俐落短髮，眼角有笑紋，溫暖的笑容，戴著珍珠耳環，穿米白色針織開襟衫，正面面對鏡頭，臉部清晰完整，不戴眼鏡，背景是乾淨的淺灰色攝影棚，柔和均勻的棚燈，寫實攝影",
+        "aspect": "1088x1920",
+        "steps": 8,
+        "cfg": 1.0
+      },
+      "outputs": [
+        {
+          "file": "face-meiling.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "face-meiling-thumb.webp",
+          "material": "face-meiling"
+        }
+      ],
+      "comparison": null,
+      "run_id": "t2i-face-meiling",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-qingqing-gown-studio",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "晴晴：攝影棚紅色長禮服（首尾幀用）",
+      "title_en": "Qingqing: red gown in the studio (end frame)",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "subject-qingqing"
+      },
+      "settings": {
+        "instruction": "讓 <image1> 的女性換上紅色的及地長禮服，頭髮改盤成低髮髻。保持完全相同的淺灰色攝影棚背景、光線、站姿、構圖與鏡頭距離，人物在畫面中的位置與大小不變，保留她的五官，寫實攝影。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-qingqing-gown-studio.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-qingqing-gown-studio-thumb.webp",
+          "material": "qe-qingqing-gown-studio"
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-qingqing-gown-studio",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-zhiyuan-suit-street",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "志遠：老街深藍西裝（首尾幀用）",
+      "title_en": "Zhiyuan: navy suit on the old street (end frame)",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "bl-zhiyuan-old-street"
+      },
+      "settings": {
+        "instruction": "讓 <image1> 的男性換上合身的深藍色西裝、白襯衫、深色領帶與黑色皮鞋，拿掉肩上的相機。保持完全相同的石板老街背景、光線、站姿、構圖與鏡頭距離，人物在畫面中的位置與大小不變，保留他的五官與髮型，寫實攝影。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-zhiyuan-suit-street.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-zhiyuan-suit-street-thumb.webp",
+          "material": "qe-zhiyuan-suit-street"
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-zhiyuan-suit-street",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "qe-xingyu-shrine-night",
+      "feature_id": "qwen21-edit",
+      "kind": "recorded",
+      "engine": "comfyui",
+      "display": false,
+      "order": null,
+      "title_zh": "星羽：夜晚燈籠神社（首尾幀用）",
+      "title_en": "Xingyu: the shrine by lantern light (end frame)",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "bl-xingyu-sakura-shrine"
+      },
+      "settings": {
+        "instruction": "把 <image1> 改成夜晚：天空變成深藍色的星空，參道兩旁點亮一排溫暖的紙燈籠，櫻花在燈光下泛著粉紅色光暈，她被燈籠的暖光照亮。保持完全相同的鳥居、參道構圖、人物、服裝、站姿與位置，維持動漫插畫畫風。",
+        "resolution": "1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-xingyu-shrine-night.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-xingyu-shrine-night-thumb.webp",
+          "material": "qe-xingyu-shrine-night"
+        }
+      ],
+      "comparison": {
+        "before": "image"
+      },
+      "run_id": "qe-xingyu-shrine-night",
+      "stand_in_for": null,
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": null,
+      "disclosure_en": null
+    },
+    {
+      "id": "sc-xingyu-sakura",
+      "feature_id": "anime-scene-card",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 1,
+      "title_zh": "星羽 × 櫻花神社素材卡",
+      "title_en": "Xingyu × sakura shrine card",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "subject-xingyu",
+        "scene": "scene-sakura-shrine"
+      },
+      "settings": {},
+      "outputs": [
+        {
+          "file": "bl-xingyu-sakura-shrine.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "bl-xingyu-sakura-shrine-thumb.webp",
+          "material": "bl-xingyu-sakura-shrine"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "bl-xingyu-sakura-shrine",
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範站以『AI 參考圖融合』的預跑結果示意；正式功能使用核准的透明角色造型圖。",
+      "disclosure_en": "The demo shows a pre-run result of the reference-image blend; the real tool uses an approved transparent character design."
+    },
+    {
+      "id": "sc-chenyi-neon",
+      "feature_id": "anime-scene-card",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 2,
+      "title_zh": "辰翼 × 霓虹屋頂素材卡",
+      "title_en": "Chenyi × neon rooftop card",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "subject-chenyi",
+        "scene": "scene-neon-rooftop"
+      },
+      "settings": {},
+      "outputs": [
+        {
+          "file": "bl-chenyi-neon-rooftop.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "bl-chenyi-neon-rooftop-thumb.webp",
+          "material": "bl-chenyi-neon-rooftop"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "bl-chenyi-neon-rooftop",
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範站以『AI 參考圖融合』的預跑結果示意；正式功能使用核准的透明角色造型圖。",
+      "disclosure_en": "The demo shows a pre-run result of the reference-image blend; the real tool uses an approved transparent character design."
+    },
+    {
+      "id": "cm-qingqing-jazz",
+      "feature_id": "clipmode-character-photoshoot",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 1,
+      "title_zh": "晴晴：1920 年代爵士寫真",
+      "title_en": "Qingqing: 1920s jazz photoshoot",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "subject-qingqing"
+      },
+      "settings": {
+        "prompt": "把 <image1> 的女性重新拍成 1920 年代爵士歌手的復古寫真：亮片流蘇洋裝、珍珠長項鍊、手指波浪捲髮，站在老式麥克風前，背景是暖黃燈光的爵士酒吧，復古底片色調。保留她的五官。",
+        "aspect_ratio": "768x1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-qingqing-jazz.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-qingqing-jazz-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "qe-qingqing-jazz",
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範站以 Qwen 2.1 指令改圖的預跑結果示意；正式功能需要角色身份檔。",
+      "disclosure_en": "The demo shows a pre-run Qwen 2.1 instruction edit; the real tool needs a character identity profile."
+    },
+    {
+      "id": "cm-zhiyuan-rock",
+      "feature_id": "clipmode-character-photoshoot",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 2,
+      "title_zh": "志遠：1970 年代搖滾寫真",
+      "title_en": "Zhiyuan: 1970s rock photoshoot",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "subject-zhiyuan"
+      },
+      "settings": {
+        "prompt": "把 <image1> 的男性重新拍成 1970 年代搖滾樂手的復古寫真：及肩長捲髮、黑色皮夾克與喇叭褲、手拿電吉他，背景是舞台燈光與煙霧，復古底片色調。保留他的五官。",
+        "aspect_ratio": "768x1024"
+      },
+      "outputs": [
+        {
+          "file": "qe-zhiyuan-rock.webp",
+          "kind": "image",
+          "poster": null,
+          "thumb": "qe-zhiyuan-rock-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "qe-zhiyuan-rock",
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範站以 Qwen 2.1 指令改圖的預跑結果示意；正式功能需要角色身份檔。",
+      "disclosure_en": "The demo shows a pre-run Qwen 2.1 instruction edit; the real tool needs a character identity profile."
+    },
+    {
+      "id": "h3t-xingyu-sky",
+      "feature_id": "h3-text-video",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 1,
+      "title_zh": "星羽在天空浮島轉圈",
+      "title_en": "Xingyu twirls on a sky island",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "integrated_multimodal_description": "動漫風格的成年女性，銀藍色長髮與白色奇幻斗篷，在天空浮島的草地上張開雙臂優雅地轉了一圈，長髮與披風在風中飛揚，花瓣與光點在空中飄散，遠處瀑布流動。",
+        "overall_soundscape": "高空的風聲、遠處瀑布的水聲，以及披風被風吹動的聲音。",
+        "non_diegetic_music": "輕快明亮的奇幻管弦樂。",
+        "aspect": "portrait"
+      },
+      "outputs": [
+        {
+          "file": "iv-xingyu-sky.mp4",
+          "kind": "video",
+          "poster": "iv-xingyu-sky-poster.webp",
+          "thumb": "iv-xingyu-sky-thumb.webp",
+          "material": "iv-xingyu-sky"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "iv-xingyu-sky",
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範站以 Wan 2.1 圖生影片的預跑結果示意（無聲）；正式功能由 MiniMax H3 生成有聲影片。",
+      "disclosure_en": "The demo shows a pre-run Wan 2.1 image-to-video result (silent); the real tool makes a video with sound on MiniMax H3."
+    },
+    {
+      "id": "h3t-chenyi-neon",
+      "feature_id": "h3-text-video",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 2,
+      "title_zh": "辰翼在霓虹屋頂甩外套",
+      "title_en": "Chenyi on the neon rooftop",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "integrated_multimodal_description": "動漫風格的成年男性，黑色短髮帶一撮深紅色挑染，穿紅色內裡的黑色長大衣，在夜晚的霓虹都市屋頂上把外套甩到肩上，轉身望向城市夜景，飛行車從背景呼嘯而過。",
+        "overall_soundscape": "夜晚城市的車流聲、飛行車從遠處呼嘯而過，以及屋頂上的風聲。",
+        "non_diegetic_music": "低沉、有節奏感的電子合成器配樂。",
+        "aspect": "portrait"
+      },
+      "outputs": [
+        {
+          "file": "iv-chenyi-neon.mp4",
+          "kind": "video",
+          "poster": "iv-chenyi-neon-poster.webp",
+          "thumb": "iv-chenyi-neon-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "iv-chenyi-neon",
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範站以 Wan 2.1 圖生影片的預跑結果示意（無聲）；正式功能由 MiniMax H3 生成有聲影片。",
+      "disclosure_en": "The demo shows a pre-run Wan 2.1 image-to-video result (silent); the real tool makes a video with sound on MiniMax H3."
+    },
+    {
+      "id": "h3i-xingyu-shrine-night",
+      "feature_id": "h3-image-video",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 1,
+      "title_zh": "星羽：白天神社 → 夜晚燈籠",
+      "title_en": "Xingyu: shrine by day to lantern night",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {
+        "image": "bl-xingyu-sakura-shrine",
+        "last_frame": "qe-xingyu-shrine-night"
+      },
+      "settings": {
+        "integrated_multimodal_description": "她站在櫻花神社參道上微笑，一陣櫻花花瓣旋風從她腳邊捲起、掠過整個畫面，花瓣散開時天色已從白天變成深藍色的夜晚，參道兩旁的紙燈籠亮起，人物與構圖保持不變，鏡頭固定，動漫風格",
+        "overall_soundscape": "微風吹過櫻花樹的沙沙聲、入夜後漸起的蟲鳴，以及燈籠一盞盞亮起的輕響。",
+        "non_diegetic_music": "悠揚的日式笛聲與輕柔的太鼓。",
+        "aspect": "portrait"
+      },
+      "outputs": [
+        {
+          "file": "fl-xingyu-shrine-night.mp4",
+          "kind": "video",
+          "poster": "fl-xingyu-shrine-night-poster.webp",
+          "thumb": "fl-xingyu-shrine-night-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "fl-xingyu-shrine-night",
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範站以 Wan 2.1 首尾幀影片的預跑結果示意（無聲）；正式功能由 MiniMax H3 生成有聲影片。",
+      "disclosure_en": "The demo shows a pre-run Wan 2.1 first/last-frame result (silent); the real tool makes a video with sound on MiniMax H3."
+    },
+    {
+      "id": "h3i-zhiyuan-suit",
+      "feature_id": "h3-image-video",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 2,
+      "title_zh": "志遠：老街上換上西裝",
+      "title_en": "Zhiyuan: into a suit on the old street",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
+      "inputs": {
+        "image": "bl-zhiyuan-old-street",
+        "last_frame": "qe-zhiyuan-suit-street"
+      },
+      "settings": {
+        "integrated_multimodal_description": "他站在陽光下的石板老街上，原地轉了一圈，身上的橄欖綠外套與工作褲在轉身時流暢地變成合身的深藍色西裝與領帶，轉回正面站好，背景、光線與構圖保持不變，鏡頭固定，寫實",
+        "overall_soundscape": "老街上的鳥鳴與遠處的人聲，以及轉身時布料摩擦的聲音。",
+        "non_diegetic_music": "沉穩的鋼琴配樂。",
+        "aspect": "portrait"
+      },
+      "outputs": [
+        {
+          "file": "fl-zhiyuan-suit.mp4",
+          "kind": "video",
+          "poster": "fl-zhiyuan-suit-poster.webp",
+          "thumb": "fl-zhiyuan-suit-thumb.webp",
+          "material": null
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": "fl-zhiyuan-suit",
+      "audio": [],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範站以 Wan 2.1 首尾幀影片的預跑結果示意（無聲）；正式功能由 MiniMax H3 生成有聲影片。",
+      "disclosure_en": "The demo shows a pre-run Wan 2.1 first/last-frame result (silent); the real tool makes a video with sound on MiniMax H3."
+    },
+    {
+      "id": "h3r-xingyu-dance",
       "feature_id": "h3-reference-video",
       "kind": "prepared",
       "engine": "none",
       "display": true,
       "order": 1,
-      "title_zh": "舊示範：參考圖加聲音生成影片",
-      "title_en": "Former demo: video from a reference image and a voice",
+      "title_zh": "星羽跟著舞者跳舞並開口說話",
+      "title_en": "Xingyu dances and speaks",
       "subjects": [
-        "cheer"
+        "xingyu",
+        "dancer"
       ],
-      "domain": "real",
+      "domain": "anime",
       "inputs": {
-        "reference": "ph-ref",
-        "audio1": "ph-warm"
+        "reference": "bl-xingyu-sakura-shrine",
+        "video1": "motion-energetic",
+        "audio1": "xingyu-hello"
       },
       "settings": {
-        "subject_definitions": "參考圖片 1：舊示範人物，穿球衣的成年女性。參考音訊 1：她的聲音。",
-        "summary": "她走向鏡頭揮手打招呼，並用自己的聲音說話。",
-        "retention_analysis": "保留她的臉、髮型與服裝。",
-        "detailed_description": "一位穿球衣的成年女性走向鏡頭，微笑揮手兩次，全身入鏡，寫實。",
-        "overall_soundscape": "球場的環境聲與她說話的聲音。",
-        "non_diegetic_music": "輕快的流行配樂。",
+        "subject_definitions": "參考圖片 1：星羽，動漫風格的成年女性，銀藍色長髮、琥珀色眼睛，站在櫻花神社參道上。參考影片 1：街舞動作的來源，只參考動作。參考音訊 1：星羽的聲音。",
+        "summary": "星羽在櫻花神社參道上跳一段街舞，並用自己的聲音打招呼。",
+        "retention_analysis": "保留星羽的臉、髮型、服裝與動漫畫風；只沿用參考影片的動作，不保留影片中的舞者。",
+        "detailed_description": "一位銀藍色長髮的動漫風格成年女性在櫻花神社參道上跳舞，全身入鏡，動作自然流暢，動漫風格",
+        "overall_soundscape": "風吹過櫻花樹的聲音與輕快的舞步聲，加上星羽說話的聲音。",
+        "non_diegetic_music": "節奏輕快的流行舞曲。",
         "aspect": "portrait"
       },
       "outputs": [
         {
-          "file": "cheer-wave.mp4",
+          "file": "dn-xingyu-energetic.mp4",
           "kind": "video",
-          "poster": "cheer-wave-poster.webp",
-          "thumb": null,
-          "material": "ph-wave"
-        },
-        {
-          "file": "warm-welcome.wav",
-          "kind": "audio",
-          "poster": null,
-          "thumb": null,
-          "material": "ph-warm"
+          "poster": "dn-xingyu-energetic-poster.webp",
+          "thumb": "dn-xingyu-energetic-thumb.webp",
+          "material": null
         }
       ],
       "comparison": null,
       "run_id": null,
-      "stand_in_for": "ph-wave-case",
+      "stand_in_for": "dn-xingyu-energetic",
       "audio": [
-        "ph-warm"
+        "xingyu-hello"
       ],
       "post": null,
       "note_zh": null,
       "note_en": null,
-      "disclosure_zh": "暫用舊示範：顯示的是揮手影片加上一段示範音檔。",
-      "disclosure_en": "Placeholder: shows the waving clip next to a demo audio file."
+      "disclosure_zh": "示範站以 SCAIL 跳舞影片加上 VoxCPM2 音檔的預跑結果示意；正式功能由 MiniMax H3 依多張參考生成有聲影片。",
+      "disclosure_en": "The demo shows a pre-run SCAIL dance video next to a VoxCPM2 audio file; the real tool makes one video with sound from several references on MiniMax H3."
     },
     {
-      "id": "ph-vs-warm",
-      "feature_id": "voice-speak",
+      "id": "h3r-chenyi-taichi",
+      "feature_id": "h3-reference-video",
       "kind": "prepared",
-      "engine": "voxcpm2",
-      "display": true,
-      "order": 1,
-      "title_zh": "舊示範：用溫暖迎賓的聲音說新台詞",
-      "title_en": "Former demo: new lines in the warm welcome voice",
-      "subjects": [
-        "cheer"
-      ],
-      "domain": null,
-      "inputs": {},
-      "settings": {
-        "voiceSource": "library",
-        "voiceId": "ph-warm",
-        "sampleText": "嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？",
-        "cloneEngine": "taiwan",
-        "text": "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！"
-      },
-      "outputs": [
-        {
-          "file": "synthetic-clone.wav",
-          "kind": "audio",
-          "poster": null,
-          "thumb": null,
-          "material": "ph-clone"
-        }
-      ],
-      "comparison": null,
-      "run_id": null,
-      "stand_in_for": null,
-      "audio": [
-        "ph-clone"
-      ],
-      "post": null,
-      "note_zh": null,
-      "note_en": null,
-      "disclosure_zh": "暫用舊示範音檔。",
-      "disclosure_en": "Placeholder: a former demo audio file."
-    },
-    {
-      "id": "ph-vs-game",
-      "feature_id": "voice-speak",
-      "kind": "prepared",
-      "engine": "voxcpm2",
+      "engine": "none",
       "display": true,
       "order": 2,
-      "title_zh": "舊示範：用元氣遊戲的聲音說故事",
-      "title_en": "Former demo: a story in the game cheer voice",
+      "title_zh": "辰翼打太極並開口說話",
+      "title_en": "Chenyi does tai chi and speaks",
       "subjects": [
-        "cheer-anime"
+        "chenyi",
+        "taichi"
       ],
-      "domain": null,
-      "inputs": {},
-      "settings": {
-        "voiceSource": "library",
-        "voiceId": "ph-game",
-        "sampleText": "各位玩家，準備好了嗎？倒數三、二、一！一起出發，把今天的精彩任務全部完成吧！",
-        "cloneEngine": "taiwan",
-        "text": "溫暖的陽光輕輕落在窗邊。她捧起一杯熱茶，翻開書頁，讓忙碌的心慢慢安靜下來。"
-      },
-      "outputs": [
-        {
-          "file": "gentle-story.wav",
-          "kind": "audio",
-          "poster": null,
-          "thumb": null,
-          "material": "ph-story"
-        }
-      ],
-      "comparison": null,
-      "run_id": null,
-      "stand_in_for": null,
-      "audio": [
-        "ph-story"
-      ],
-      "post": null,
-      "note_zh": null,
-      "note_en": null,
-      "disclosure_zh": "暫用舊示範音檔。",
-      "disclosure_en": "Placeholder: a former demo audio file."
-    },
-    {
-      "id": "ph-vs-english",
-      "feature_id": "voice-speak",
-      "kind": "prepared",
-      "engine": "voxcpm2",
-      "display": true,
-      "order": 3,
-      "title_zh": "舊示範：英文迎賓",
-      "title_en": "Former demo: English welcome",
-      "subjects": [],
-      "domain": null,
-      "inputs": {},
-      "settings": {
-        "voiceSource": "library",
-        "voiceId": "ph-english",
-        "sampleText": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here.",
-        "cloneEngine": "f5",
-        "text": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here."
-      },
-      "outputs": [
-        {
-          "file": "english-welcome.wav",
-          "kind": "audio",
-          "poster": null,
-          "thumb": null,
-          "material": "ph-english"
-        }
-      ],
-      "comparison": null,
-      "run_id": null,
-      "stand_in_for": null,
-      "audio": [
-        "ph-english"
-      ],
-      "post": null,
-      "note_zh": null,
-      "note_en": null,
-      "disclosure_zh": "暫用舊示範音檔。",
-      "disclosure_en": "Placeholder: a former demo audio file."
-    },
-    {
-      "id": "ph-vc-warm",
-      "feature_id": "voice-clone",
-      "kind": "prepared",
-      "engine": "voxcpm2",
-      "display": true,
-      "order": 1,
-      "title_zh": "舊示範：用溫暖迎賓的樣本克隆",
-      "title_en": "Former demo: clone from the warm welcome sample",
-      "subjects": [
-        "cheer"
-      ],
-      "domain": null,
+      "domain": "anime",
       "inputs": {
-        "voice": "ph-warm"
+        "reference": "bl-chenyi-sky-islands",
+        "video1": "motion-taichi",
+        "audio1": "chenyi-hello"
       },
       "settings": {
-        "engine": "taiwan",
-        "sampleText": "嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？",
-        "speech": "大家好，我是晴晴。今天也要帶著笑容，一起為喜歡的隊伍加油！"
+        "subject_definitions": "參考圖片 1：辰翼，動漫風格的成年男性，黑色短髮帶深紅色挑染、金色眼睛，站在天空浮島的草地上。參考影片 1：太極動作的來源，只參考動作。參考音訊 1：辰翼的聲音。",
+        "summary": "辰翼在天空浮島的草地上緩慢地打太極拳，並用自己的聲音說出台詞。",
+        "retention_analysis": "保留辰翼的臉、髮型、服裝與動漫畫風；只沿用參考影片的動作，不保留影片中的演示者。",
+        "detailed_description": "一位黑色短髮的動漫風格成年男性在天空浮島的草地上打太極拳，全身入鏡，動作自然流暢，動漫風格",
+        "overall_soundscape": "高空的風聲與遠處瀑布的水聲，加上辰翼說話的聲音。",
+        "non_diegetic_music": "沉靜悠遠的東方風格配樂。",
+        "aspect": "portrait"
       },
       "outputs": [
         {
-          "file": "synthetic-clone.wav",
-          "kind": "audio",
-          "poster": null,
-          "thumb": null,
-          "material": "ph-clone"
+          "file": "dn-chenyi-taichi.mp4",
+          "kind": "video",
+          "poster": "dn-chenyi-taichi-poster.webp",
+          "thumb": "dn-chenyi-taichi-thumb.webp",
+          "material": null
         }
       ],
       "comparison": null,
       "run_id": null,
-      "stand_in_for": null,
+      "stand_in_for": "dn-chenyi-taichi",
       "audio": [
-        "ph-clone"
+        "chenyi-hello"
       ],
       "post": null,
       "note_zh": null,
       "note_en": null,
-      "disclosure_zh": "暫用舊示範音檔。",
-      "disclosure_en": "Placeholder: a former demo audio file."
+      "disclosure_zh": "示範站以 SCAIL 跳舞影片加上 VoxCPM2 音檔的預跑結果示意；正式功能由 MiniMax H3 依多張參考生成有聲影片。",
+      "disclosure_en": "The demo shows a pre-run SCAIL dance video next to a VoxCPM2 audio file; the real tool makes one video with sound from several references on MiniMax H3."
     },
     {
-      "id": "ph-cv-cheer",
+      "id": "cv-qingqing-hello",
       "feature_id": "character-voice",
       "kind": "prepared",
       "engine": "voxcpm2",
       "display": true,
       "order": 1,
-      "title_zh": "舊示範：角色聲音",
-      "title_en": "Former demo: character voice",
+      "title_zh": "晴晴自我介紹",
+      "title_en": "Qingqing says hello",
       "subjects": [
-        "cheer"
+        "qingqing"
       ],
       "domain": null,
       "inputs": {},
       "settings": {
+        "text": "嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！"
+      },
+      "outputs": [
+        {
+          "file": "qingqing-hello.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "qingqing-hello"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "qingqing-hello"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "cv-zhiyuan-hello",
+      "feature_id": "character-voice",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 2,
+      "title_zh": "志遠自我介紹",
+      "title_en": "Zhiyuan says hello",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "我是志遠，平常在山上拍照。好的畫面，要耐心等光線剛剛好的那一刻。"
+      },
+      "outputs": [
+        {
+          "file": "zhiyuan-hello.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "zhiyuan-hello"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "zhiyuan-hello"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "cv-xingyu-hello",
+      "feature_id": "character-voice",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 3,
+      "title_zh": "星羽登場",
+      "title_en": "Xingyu enters",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "大家好，我是星羽！準備好了嗎？跟我一起飛到雲朵上面去冒險吧！"
+      },
+      "outputs": [
+        {
+          "file": "xingyu-hello.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "xingyu-hello"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "xingyu-hello"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "cv-chenyi-hello",
+      "feature_id": "character-voice",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 4,
+      "title_zh": "辰翼登場",
+      "title_en": "Chenyi enters",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "我是辰翼。這座城市的夜晚，由我來守護。"
+      },
+      "outputs": [
+        {
+          "file": "chenyi-hello.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "chenyi-hello"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "chenyi-hello"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "cv-qingqing-english",
+      "feature_id": "character-voice",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 5,
+      "title_zh": "晴晴英文",
+      "title_en": "Qingqing in English",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "Hi, I'm Qingqing! The sun is out, so let's go shoot some new photos together!"
+      },
+      "outputs": [
+        {
+          "file": "qingqing-english.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "qingqing-english"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "qingqing-english"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "cv-zhiyuan-english",
+      "feature_id": "character-voice",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 6,
+      "title_zh": "志遠英文",
+      "title_en": "Zhiyuan in English",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "Hi, I'm Zhiyuan. I photograph mountains, and the best shots come to those who wait for the light."
+      },
+      "outputs": [
+        {
+          "file": "zhiyuan-english.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "zhiyuan-english"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "zhiyuan-english"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "vs-qingqing-clone",
+      "feature_id": "voice-speak",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 1,
+      "title_zh": "用晴晴的聲音樣本說新台詞",
+      "title_en": "New lines from Qingqing's voice sample",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceSource": "library",
+        "voiceId": "qingqing-hello",
+        "sampleText": "嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！",
+        "cloneEngine": "taiwan",
+        "text": "這段話是用晴晴的聲音樣本克隆出來的：換上全新的台詞，聽起來還是同一個人。"
+      },
+      "outputs": [
+        {
+          "file": "qingqing-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "qingqing-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "qingqing-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 依這段聲音樣本克隆預先生成；正式功能會用你選的語音版本（F5-TTS 或 BreezyVoice）生成。",
+      "disclosure_en": "The demo audio was cloned in advance from this voice sample with VoxCPM2 on a local CPU; the real tool generates it with the voice version you pick (F5-TTS or BreezyVoice)."
+    },
+    {
+      "id": "vs-zhiyuan-clone",
+      "feature_id": "voice-speak",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 2,
+      "title_zh": "用志遠的聲音樣本說新台詞",
+      "title_en": "New lines from Zhiyuan's voice sample",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceSource": "library",
+        "voiceId": "zhiyuan-hello",
+        "sampleText": "我是志遠，平常在山上拍照。好的畫面，要耐心等光線剛剛好的那一刻。",
+        "cloneEngine": "taiwan",
+        "text": "這句話是用志遠的聲音樣本克隆出來的：同一個聲音，說出全新的內容。"
+      },
+      "outputs": [
+        {
+          "file": "zhiyuan-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "zhiyuan-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "zhiyuan-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 依這段聲音樣本克隆預先生成；正式功能會用你選的語音版本（F5-TTS 或 BreezyVoice）生成。",
+      "disclosure_en": "The demo audio was cloned in advance from this voice sample with VoxCPM2 on a local CPU; the real tool generates it with the voice version you pick (F5-TTS or BreezyVoice)."
+    },
+    {
+      "id": "vs-xingyu-clone",
+      "feature_id": "voice-speak",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 3,
+      "title_zh": "用星羽的聲音樣本說新台詞",
+      "title_en": "New lines from Xingyu's voice sample",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceSource": "library",
+        "voiceId": "xingyu-hello",
+        "sampleText": "大家好，我是星羽！準備好了嗎？跟我一起飛到雲朵上面去冒險吧！",
+        "cloneEngine": "taiwan",
+        "text": "這段話是用星羽的聲音樣本克隆的：同樣的聲音，喊出全新的冒險口號！"
+      },
+      "outputs": [
+        {
+          "file": "xingyu-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "xingyu-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "xingyu-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 依這段聲音樣本克隆預先生成；正式功能會用你選的語音版本（F5-TTS 或 BreezyVoice）生成。",
+      "disclosure_en": "The demo audio was cloned in advance from this voice sample with VoxCPM2 on a local CPU; the real tool generates it with the voice version you pick (F5-TTS or BreezyVoice)."
+    },
+    {
+      "id": "vs-chenyi-clone",
+      "feature_id": "voice-speak",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 4,
+      "title_zh": "用辰翼的聲音樣本說新台詞",
+      "title_en": "New lines from Chenyi's voice sample",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceSource": "library",
+        "voiceId": "chenyi-hello",
+        "sampleText": "我是辰翼。這座城市的夜晚，由我來守護。",
+        "cloneEngine": "taiwan",
+        "text": "這句話也是用辰翼的聲音樣本克隆出來的：今晚的巡邏，換我用新台詞報告。"
+      },
+      "outputs": [
+        {
+          "file": "chenyi-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "chenyi-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "chenyi-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 依這段聲音樣本克隆預先生成；正式功能會用你選的語音版本（F5-TTS 或 BreezyVoice）生成。",
+      "disclosure_en": "The demo audio was cloned in advance from this voice sample with VoxCPM2 on a local CPU; the real tool generates it with the voice version you pick (F5-TTS or BreezyVoice)."
+    },
+    {
+      "id": "vs-qingqing-english-clone",
+      "feature_id": "voice-speak",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 5,
+      "title_zh": "用晴晴的英文樣本說新的英文台詞",
+      "title_en": "New English lines from Qingqing's English sample",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceSource": "library",
+        "voiceId": "qingqing-english",
+        "sampleText": "Hi, I'm Qingqing! The sun is out, so let's go shoot some new photos together!",
+        "cloneEngine": "f5",
+        "text": "This line was cloned from Qingqing's English voice sample: same voice, brand-new words."
+      },
+      "outputs": [
+        {
+          "file": "qingqing-english-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "qingqing-english-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "qingqing-english-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 依這段聲音樣本克隆預先生成；正式功能會用你選的語音版本（F5-TTS 或 BreezyVoice）生成。",
+      "disclosure_en": "The demo audio was cloned in advance from this voice sample with VoxCPM2 on a local CPU; the real tool generates it with the voice version you pick (F5-TTS or BreezyVoice)."
+    },
+    {
+      "id": "vs-zhiyuan-english-clone",
+      "feature_id": "voice-speak",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 6,
+      "title_zh": "用志遠的英文樣本說新的英文台詞",
+      "title_en": "New English lines from Zhiyuan's English sample",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceSource": "library",
+        "voiceId": "zhiyuan-english",
+        "sampleText": "Hi, I'm Zhiyuan. I photograph mountains, and the best shots come to those who wait for the light.",
+        "cloneEngine": "f5",
+        "text": "This line was cloned from Zhiyuan's English voice sample: the same calm voice, saying something new."
+      },
+      "outputs": [
+        {
+          "file": "zhiyuan-english-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "zhiyuan-english-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "zhiyuan-english-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 依這段聲音樣本克隆預先生成；正式功能會用你選的語音版本（F5-TTS 或 BreezyVoice）生成。",
+      "disclosure_en": "The demo audio was cloned in advance from this voice sample with VoxCPM2 on a local CPU; the real tool generates it with the voice version you pick (F5-TTS or BreezyVoice)."
+    },
+    {
+      "id": "vt-warm-welcome",
+      "feature_id": "voxcpm-tts",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 1,
+      "title_zh": "溫暖迎賓",
+      "title_en": "Warm welcome",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceEngine": "voxcpm",
+        "mode": "design",
+        "language": "Chinese Mandarin",
+        "style": "A warm adult woman in her late twenties, speaking natural Taiwan Mandarin with a friendly smile and clear soft mid-range voice.",
         "text": "嗨，歡迎回來！今天也辛苦了。準備好一起開始新的小冒險了嗎？"
       },
       "outputs": [
@@ -1069,36 +5145,38 @@
           "kind": "audio",
           "poster": null,
           "thumb": null,
-          "material": "ph-warm"
+          "material": "warm-welcome"
         }
       ],
       "comparison": null,
       "run_id": null,
       "stand_in_for": null,
       "audio": [
-        "ph-warm"
+        "warm-welcome"
       ],
       "post": null,
       "note_zh": null,
       "note_en": null,
-      "disclosure_zh": "暫用舊示範音檔。",
-      "disclosure_en": "Placeholder: a former demo audio file."
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
     },
     {
-      "id": "ph-cv-anime",
-      "feature_id": "character-voice",
+      "id": "vt-game-cheer",
+      "feature_id": "voxcpm-tts",
       "kind": "prepared",
       "engine": "voxcpm2",
       "display": true,
       "order": 2,
-      "title_zh": "舊示範：角色聲音",
-      "title_en": "Former demo: character voice",
-      "subjects": [
-        "cheer-anime"
-      ],
+      "title_zh": "元氣遊戲",
+      "title_en": "Game host",
+      "subjects": [],
       "domain": null,
       "inputs": {},
       "settings": {
+        "voiceEngine": "voxcpm",
+        "mode": "design",
+        "language": "Chinese Mandarin",
+        "style": "An energetic adult female game host in her twenties, bright and lively Taiwan Mandarin, cheerful crisp articulation and playful confidence.",
         "text": "各位玩家，準備好了嗎？倒數三、二、一！一起出發，把今天的精彩任務全部完成吧！"
       },
       "outputs": [
@@ -1107,82 +5185,70 @@
           "kind": "audio",
           "poster": null,
           "thumb": null,
-          "material": "ph-game"
+          "material": "game-cheer"
         }
       ],
       "comparison": null,
       "run_id": null,
       "stand_in_for": null,
       "audio": [
-        "ph-game"
+        "game-cheer"
       ],
       "post": null,
       "note_zh": null,
       "note_en": null,
-      "disclosure_zh": "暫用舊示範音檔。",
-      "disclosure_en": "Placeholder: a former demo audio file."
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
     },
     {
-      "id": "ph-vb-slides",
-      "feature_id": "voice-batch",
-      "kind": "prepared",
-      "engine": "voxcpm2",
-      "display": true,
-      "order": 1,
-      "title_zh": "舊示範：三頁簡報旁白",
-      "title_en": "Former demo: three-slide narration",
-      "subjects": [],
-      "domain": null,
-      "inputs": {},
-      "settings": {
-        "text": "第一頁，我們先看整體流程。從文字構想開始，選擇圖片與聲音，再把素材整理成一段完整的作品。\n第二頁，重點是保留人物原貌。先辨識主體，再替換背景，最後檢查頭髮與臉部邊緣是否自然。\n第三頁，完成前請先播放一次。看看畫面、旁白與字幕是否互相配合，再分享你的創作。"
-      },
-      "outputs": [
-        {
-          "file": "slide-one.wav",
-          "kind": "audio",
-          "poster": null,
-          "thumb": null,
-          "material": "ph-s1"
-        },
-        {
-          "file": "slide-two.wav",
-          "kind": "audio",
-          "poster": null,
-          "thumb": null,
-          "material": "ph-s2"
-        },
-        {
-          "file": "slide-three.wav",
-          "kind": "audio",
-          "poster": null,
-          "thumb": null,
-          "material": "ph-s3"
-        }
-      ],
-      "comparison": null,
-      "run_id": null,
-      "stand_in_for": null,
-      "audio": [
-        "ph-s1",
-        "ph-s2",
-        "ph-s3"
-      ],
-      "post": null,
-      "note_zh": null,
-      "note_en": null,
-      "disclosure_zh": "暫用舊示範音檔。",
-      "disclosure_en": "Placeholder: a former demo audio file."
-    },
-    {
-      "id": "ph-vt-announce",
+      "id": "vt-gentle-story",
       "feature_id": "voxcpm-tts",
       "kind": "prepared",
       "engine": "voxcpm2",
       "display": true,
-      "order": 1,
-      "title_zh": "舊示範：成熟播報",
-      "title_en": "Former demo: mature announcement",
+      "order": 3,
+      "title_zh": "溫柔故事",
+      "title_en": "Gentle story",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceEngine": "voxcpm",
+        "mode": "design",
+        "language": "Chinese Mandarin",
+        "style": "An adult woman in her thirties with a soft airy low-volume voice, gentle Taiwan Mandarin storytelling, unhurried and soothing.",
+        "text": "溫暖的陽光輕輕落在窗邊。她捧起一杯熱茶，翻開書頁，讓忙碌的心慢慢安靜下來。"
+      },
+      "outputs": [
+        {
+          "file": "gentle-story.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "gentle-story"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "gentle-story"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "vt-mature-announcement",
+      "feature_id": "voxcpm-tts",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 4,
+      "title_zh": "成熟播報",
+      "title_en": "Mature announcer",
       "subjects": [],
       "domain": null,
       "inputs": {},
@@ -1199,32 +5265,302 @@
           "kind": "audio",
           "poster": null,
           "thumb": null,
-          "material": "ph-announce"
+          "material": "mature-announcement"
         }
       ],
       "comparison": null,
       "run_id": null,
       "stand_in_for": null,
       "audio": [
-        "ph-announce"
+        "mature-announcement"
       ],
       "post": null,
       "note_zh": null,
       "note_en": null,
-      "disclosure_zh": "暫用舊示範音檔。",
-      "disclosure_en": "Placeholder: a former demo audio file."
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
     },
     {
-      "id": "ph-pg-a",
+      "id": "vt-english-welcome",
+      "feature_id": "voxcpm-tts",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 5,
+      "title_zh": "英文迎賓",
+      "title_en": "English welcome",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceEngine": "voxcpm",
+        "mode": "design",
+        "language": "English",
+        "style": "An adult woman in her thirties, warm expressive American English, clear mid-range voice and relaxed friendly delivery.",
+        "text": "Hello, and welcome! Let us turn a simple idea into a story you can see and hear. Your next creation starts here."
+      },
+      "outputs": [
+        {
+          "file": "english-welcome.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "english-welcome"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "english-welcome"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "vt-male-announcement",
+      "feature_id": "voxcpm-tts",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 6,
+      "title_zh": "男聲廣播",
+      "title_en": "Male announcer",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "voiceEngine": "voxcpm",
+        "mode": "design",
+        "language": "Chinese Mandarin",
+        "style": "A mature adult male announcer in his forties, rich low voice, composed clear Taiwan Mandarin, measured pacing and precise diction.",
+        "text": "各位旅客您好，本班列車即將抵達山城車站，請帶好隨身物品，準備下車。"
+      },
+      "outputs": [
+        {
+          "file": "male-announcement.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "male-announcement"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "male-announcement"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "vb-howto-slides",
+      "feature_id": "voice-batch",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 1,
+      "title_zh": "簡報配音：三頁操作說明（女聲）",
+      "title_en": "Slide narration: three how-to pages (woman's voice)",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "第一頁，我們先看整體流程。從文字構想開始，選擇圖片與聲音，再把素材整理成一段完整的作品。\n第二頁，重點是保留人物原貌。先辨識主體，再替換背景，最後檢查頭髮與臉部邊緣是否自然。\n第三頁，完成前請先播放一次。看看畫面、旁白與字幕是否互相配合，再分享你的創作。"
+      },
+      "outputs": [
+        {
+          "file": "slide-one.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "slide-one"
+        },
+        {
+          "file": "slide-two.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "slide-two"
+        },
+        {
+          "file": "slide-three.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "slide-three"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "slide-one",
+        "slide-two",
+        "slide-three"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "vb-mountain-slides",
+      "feature_id": "voice-batch",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 2,
+      "title_zh": "簡報配音：三頁山景旁白（男聲）",
+      "title_en": "Slide narration: three mountain pages (man's voice)",
+      "subjects": [],
+      "domain": null,
+      "inputs": {},
+      "settings": {
+        "text": "第一頁：清晨的山谷還在沉睡，雲海靜靜地鋪在群山之間。\n第二頁：第一道陽光越過山頭，把整片雲海染成金色。\n第三頁：山谷慢慢醒來，山路上的旅人準備出發，新的一天開始了。"
+      },
+      "outputs": [
+        {
+          "file": "mountain-slide-one.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "mountain-slide-one"
+        },
+        {
+          "file": "mountain-slide-two.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "mountain-slide-two"
+        },
+        {
+          "file": "mountain-slide-three.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "mountain-slide-three"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "mountain-slide-one",
+        "mountain-slide-two",
+        "mountain-slide-three"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 預先生成。",
+      "disclosure_en": "The demo audio was generated in advance with VoxCPM2 on a local CPU."
+    },
+    {
+      "id": "vc-qingqing",
+      "feature_id": "voice-clone",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 1,
+      "title_zh": "用晴晴的聲音說新台詞",
+      "title_en": "New lines in Qingqing's voice",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": null,
+      "inputs": {
+        "voice": "qingqing-hello"
+      },
+      "settings": {
+        "engine": "taiwan",
+        "sampleText": "嗨，我是晴晴！今天陽光超好，我們一起去拍一組新的照片吧！",
+        "speech": "這段話是用晴晴的聲音樣本克隆出來的：換上全新的台詞，聽起來還是同一個人。"
+      },
+      "outputs": [
+        {
+          "file": "qingqing-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "qingqing-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "qingqing-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 依這段聲音樣本克隆預先生成；正式功能會用你選的語音版本（F5-TTS 或 BreezyVoice）生成。",
+      "disclosure_en": "The demo audio was cloned in advance from this voice sample with VoxCPM2 on a local CPU; the real tool generates it with the voice version you pick (F5-TTS or BreezyVoice)."
+    },
+    {
+      "id": "vc-zhiyuan",
+      "feature_id": "voice-clone",
+      "kind": "prepared",
+      "engine": "voxcpm2",
+      "display": true,
+      "order": 2,
+      "title_zh": "用志遠的聲音說新台詞",
+      "title_en": "New lines in Zhiyuan's voice",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": null,
+      "inputs": {
+        "voice": "zhiyuan-hello"
+      },
+      "settings": {
+        "engine": "taiwan",
+        "sampleText": "我是志遠，平常在山上拍照。好的畫面，要耐心等光線剛剛好的那一刻。",
+        "speech": "這句話是用志遠的聲音樣本克隆出來的：同一個聲音，說出全新的內容。"
+      },
+      "outputs": [
+        {
+          "file": "zhiyuan-clone.wav",
+          "kind": "audio",
+          "poster": null,
+          "thumb": null,
+          "material": "zhiyuan-clone"
+        }
+      ],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [
+        "zhiyuan-clone"
+      ],
+      "post": null,
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "示範音檔由本機 CPU 上的 VoxCPM2 依這段聲音樣本克隆預先生成；正式功能會用你選的語音版本（F5-TTS 或 BreezyVoice）生成。",
+      "disclosure_en": "The demo audio was cloned in advance from this voice sample with VoxCPM2 on a local CPU; the real tool generates it with the voice version you pick (F5-TTS or BreezyVoice)."
+    },
+    {
+      "id": "pg-qingqing",
       "feature_id": "post-generator",
       "kind": "prepared",
       "engine": "none",
       "display": true,
       "order": 1,
-      "title_zh": "舊示範：IG 貼文",
-      "title_en": "Former demo: Instagram post",
-      "subjects": [],
-      "domain": null,
+      "title_zh": "晴晴的老街散步 IG 貼文",
+      "title_en": "Qingqing's old-street Instagram post",
+      "subjects": [
+        "qingqing"
+      ],
+      "domain": "real",
       "inputs": {},
       "settings": {
         "sister": "claude",
@@ -1249,16 +5585,18 @@
       "disclosure_en": "This prewritten copy illustrates tone, paragraphs and hashtags."
     },
     {
-      "id": "ph-pg-b",
+      "id": "pg-zhiyuan",
       "feature_id": "post-generator",
       "kind": "prepared",
       "engine": "none",
       "display": true,
       "order": 2,
-      "title_zh": "舊示範：Facebook 貼文",
-      "title_en": "Former demo: Facebook post",
-      "subjects": [],
-      "domain": null,
+      "title_zh": "志遠的雪山攝影 Facebook 貼文",
+      "title_en": "Zhiyuan's snowy-ridge Facebook post",
+      "subjects": [
+        "zhiyuan"
+      ],
+      "domain": "real",
       "inputs": {},
       "settings": {
         "sister": "chatgpt",
@@ -1283,14 +5621,86 @@
       "disclosure_en": "This prewritten copy illustrates tone, paragraphs and hashtags."
     },
     {
-      "id": "ph-cc",
+      "id": "pg-xingyu",
+      "feature_id": "post-generator",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 3,
+      "title_zh": "星羽的浮島冒險小紅書貼文",
+      "title_en": "Xingyu's sky-island Xiaohongshu post",
+      "subjects": [
+        "xingyu"
+      ],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "sister": "gemini",
+        "platform": "xiaohongshu",
+        "tone": "humorous",
+        "length": "medium",
+        "mode": "quick",
+        "quick": "星羽去天空浮島冒險，寫一則小紅書風格的有趣貼文。"
+      },
+      "outputs": [],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [],
+      "post": {
+        "text_zh": "浮島冒險實測報告 ✨\n\n✔️ 風景：瀑布從天上往下流，美到我忘記眨眼\n✔️ 交通：靠披風滑翔，降落姿勢 0 分\n✔️ 美食：雲朵棉花糖，吃起來像空氣（真的就是空氣）\n\n結論：值得再去，但下次一定要先練習降落。\n\n#星羽冒險日誌 #浮島旅行 #原創虛構角色",
+        "text_en": "Sky-island adventure, honest review ✨\n\n✔️ Views: waterfalls pouring off the edge of the sky. I forgot to blink.\n✔️ Transport: gliding on my cloak. Landing style: zero points.\n✔️ Food: cloud cotton candy. Tastes like air (because it is air).\n\nVerdict: would go again, but next time I practice landing first.\n\n#XingyuAdventureLog #SkyIslands #OriginalFictionalCharacter"
+      },
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "這份貼文為預先撰寫的文案範例，展示語氣、段落與標籤。",
+      "disclosure_en": "This prewritten copy illustrates tone, paragraphs and hashtags."
+    },
+    {
+      "id": "pg-chenyi",
+      "feature_id": "post-generator",
+      "kind": "prepared",
+      "engine": "none",
+      "display": true,
+      "order": 4,
+      "title_zh": "辰翼的城市夜景 Threads 貼文",
+      "title_en": "Chenyi's night-city Threads post",
+      "subjects": [
+        "chenyi"
+      ],
+      "domain": "anime",
+      "inputs": {},
+      "settings": {
+        "sister": "grok",
+        "platform": "threads",
+        "tone": "heartfelt",
+        "length": "short",
+        "mode": "quick",
+        "quick": "辰翼在霓虹屋頂上看城市夜景，寫一則走心的 Threads 貼文。"
+      },
+      "outputs": [],
+      "comparison": null,
+      "run_id": null,
+      "stand_in_for": null,
+      "audio": [],
+      "post": {
+        "text_zh": "深夜的屋頂很安靜，只剩霓虹燈還醒著。\n\n我常在這裡看著整座城市的燈一盞一盞亮起來。每一扇窗後面，都有人在努力把今天過完。\n\n如果你今天也很累，沒關係，這座城市的夜晚，我先幫你守著。\n\n#辰翼的夜巡 #城市夜景 #原創虛構角色",
+        "text_en": "The rooftop is quiet late at night; only the neon is still awake.\n\nI often watch the city's lights come on one by one from up here. Behind every window someone is doing their best to get through the day.\n\nIf today wore you out, that's okay. I'll keep watch over the city's night for a while.\n\n#ChenyiNightWatch #CityLights #OriginalFictionalCharacter"
+      },
+      "note_zh": null,
+      "note_en": null,
+      "disclosure_zh": "這份貼文為預先撰寫的文案範例，展示語氣、段落與標籤。",
+      "disclosure_en": "This prewritten copy illustrates tone, paragraphs and hashtags."
+    },
+    {
+      "id": "cc-create-demo",
       "feature_id": "character-create",
       "kind": "interface-simulation",
       "engine": "none",
       "display": true,
       "order": 1,
-      "title_zh": "建立角色（模擬）",
-      "title_en": "Create a character (simulation)",
+      "title_zh": "用示範照片建立角色",
+      "title_en": "Create a character from a demo photo",
       "subjects": [],
       "domain": null,
       "inputs": {},
@@ -1307,14 +5717,14 @@
       "disclosure_en": null
     },
     {
-      "id": "ph-vl",
+      "id": "vl-library-demo",
       "feature_id": "voice-library",
       "kind": "interface-simulation",
       "engine": "none",
       "display": true,
       "order": 1,
-      "title_zh": "聲音庫（模擬）",
-      "title_en": "Voice library (simulation)",
+      "title_zh": "把示範聲音加入聲音庫",
+      "title_en": "Add a demo voice to the voice library",
       "subjects": [],
       "domain": null,
       "inputs": {},
