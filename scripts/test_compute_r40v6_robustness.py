@@ -783,3 +783,33 @@ def test_point_monitor_pause_ignores_a_patched_shared_sleep(monkeypatch):
     assert ticked.wait(2)
     threading.Event().wait(0.3)
     assert calls == []
+
+
+def test_native_input_check_proves_containment_before_reading(tmp_path, monkeypatch):
+    """Session inputs are read only after their resolved path is proven to stay inside the job directory."""
+    import types
+    import scripts.colab_session_inputs as inputs
+    monkeypatch.setitem(sys.modules, 'native_schema', types.SimpleNamespace(validate_native_manifest=lambda manifest, job_dir, check_files=True: manifest))
+    job = tmp_path / 'job'
+    (job / 'input').mkdir(parents=True)
+    data = b'\x89PNG\r\n\x1a\n' + b'0' * 24
+
+    def manifest(name, payload=data):
+        entry = {'path': name, 'size': len(payload), 'sha256': hashlib.sha256(payload).hexdigest()}
+        return {'jobs': [{'bundle': {'inputs': [{'name': name, 'bytes': entry['size'], 'sha256': entry['sha256']}]}}], 'input_files': [entry]}
+
+    (job / 'input' / 'a.png').write_bytes(data)
+    assert inputs.validate_native_manifest(manifest('input/a.png'), job)['input_files'][0]['path'] == 'input/a.png'
+    (tmp_path / 'outside.png').write_bytes(data)
+    (job / 'input' / 'link.png').symlink_to(job / 'input' / 'a.png')
+    (job / 'linked').symlink_to(job / 'input', target_is_directory=True)
+    (job / 'loop.png').symlink_to(job / 'loop.png')
+    (tmp_path / 'outdir').mkdir()
+    (job / 'linked_out').symlink_to(tmp_path / 'outdir', target_is_directory=True)
+    for name in ('../outside.png', str(tmp_path / 'outside.png'), 'input/link.png', 'linked/a.png', 'loop.png', 'linked_out/../input/a.png'):
+        with pytest.raises(ValueError, match='Native input integrity failure'):
+            inputs.validate_native_manifest(manifest(name), job)
+    with pytest.raises(ValueError, match='Native input integrity failure'):
+        inputs.validate_native_manifest(manifest('input/a.png', data[:-1] + b'1'), job)
+    with pytest.raises(FileNotFoundError):
+        inputs.validate_native_manifest(manifest('input/missing.png'), job)
