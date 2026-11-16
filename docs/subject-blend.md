@@ -77,6 +77,8 @@ quality. Public demo GPU evidence and hashes are recorded independently in
 `webui/docs/examples/provenance.json`; inspect that evidence for the validated
 inputs and actual result rather than treating a static graph as a GPU run.
 
+The interactive demo now shows 12 recorded background-replacement cases: four fictional demo characters, each in three scenes (realistic characters with real scenes, anime characters with anime scenes). The measurement below belongs to the historical run `cheer-subject-blend-v4`, which stays published for this test.
+
 The historical example `cheer-subject-blend-v4` ran on RTX 5090 at 1024 × 1536
 (runtime-reported ComfyUI 0.37.0). The 2/255 measurement compares decoded RGB
 from **`cheer-subject-reference.webp` and `cheer-subject-blend.webp`**, restricted
@@ -136,6 +138,8 @@ pytest-disktmp uv run --with pytest pytest -q tests/test_subject_blend_native.py
 髮絲及去背邊緣。動漫角色的書包、手腳可能漏切，可把道具加入主體描述，
 但仍需逐張檢查。選用羽化會混合邊緣與背景，不能補回缺失部位；預設為 0。
 請先安裝上方連結中的 SAM3.1 模型並閱讀其授權。
+
+互動示範現在顯示 12 個實跑的換背景案例：四位虛構示範角色各換三個場景（寫實角色配真實場景、動漫角色配動漫場景）。下方的量測屬於保留發布、供此測試使用的歷史紀錄 `cheer-subject-blend-v4`。
 
 公開範例已在 RTX 5090 實跑；人物遮罩內 315,611 個像素的 RGB 最大差異
 為 2/255，臉部檢查區為 1/255；比較的是上方明列的兩張公開 WebP。

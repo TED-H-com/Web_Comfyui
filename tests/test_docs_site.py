@@ -22,6 +22,7 @@ MANIFESTS = (
     'manifests/community_recipes/recipes.json',
     'manifests/app_guides/en.json',
     'webui/docs/demo-compute.json',
+    'webui/docs/demo-set.json',
 )
 
 
@@ -292,8 +293,10 @@ def test_static_shell_preserves_app_navigation_and_loads_adapter_first(source, t
     assert "form-action 'none'" in html
     script_paths = [urlsplit(url).path for url in parsed.scripts]
     assert script_paths[0] == '../assets/docs.js'
-    assert script_paths[1:5] == ['../assets/explorers.js', '../assets/hardware.js', '../assets/character-session.js', '../assets/tour.js']
-    assert script_paths[5:] == [urlsplit(url).path.replace('/static/', '../assets/') for url in original.scripts]
+    assert script_paths[1] == '../assets/demo-drive.js'
+    assert script_paths[2] == '../assets/demo-cases.js'
+    assert script_paths[3:7] == ['../assets/explorers.js', '../assets/hardware.js', '../assets/character-session.js', '../assets/tour.js']
+    assert script_paths[7:] == [urlsplit(url).path.replace('/static/', '../assets/') for url in original.scripts]
     for url in parsed.scripts:
         asset = output / 'demo' / urlsplit(url).path
         assert urlsplit(url).query == 'v=' + hashlib.sha256(asset.read_bytes()).hexdigest()[:16]
@@ -321,6 +324,9 @@ def test_project_homepage_is_separate_from_simulated_app(source, tmp_path):
     assert 'href="https://www.runninghub.ai?inviteCode=qqgzxufp"' in demo
     assert 'href="https://autoip.app/register?ref=TEDH2FND&amp;utm_source=affiliate&amp;utm_medium=referral&amp;utm_campaign=TEDH2FND"' in demo
     assert demo.count('target="_blank"') >= 2 and demo.count('rel="sponsored noopener noreferrer"') >= 2
+    start = demo.index('data-i18n-en="No GPU? Cloud referrals:"')
+    referrals = demo[start:demo.index('</nav>', start)]
+    assert 'AutoIP</a>' in referrals and 'RunningHub</a>' in referrals and '·' not in referrals
     assert 'href="../"' in demo
     hardware = read_json(output / 'app-guide.json')['hardware']
     assert hardware and 'none' in {profile['id'] for profile in hardware['profiles']}
@@ -466,3 +472,47 @@ def test_compute_recorder_normalization_preserves_evidence_and_only_maps_builtin
     assert normalize('prefix' + identity['email'], identity) == 'prefix' + identity['email']
     with pytest.raises(ValueError, match='Non-example'):
         validate(normalized)
+
+
+def test_demo_set_is_embedded_and_validated_during_build(source, tmp_path, capsys):
+    output = tmp_path / 'site'
+    build_docs.build(source, output)
+    captured = capsys.readouterr()
+    assert 'demo set: placeholder' not in captured.out
+    app = read_json(output / 'app-guide.json')
+    assert app['demo_set'] == read_json(source / 'webui/docs/demo-set.json')
+    assert app['demo_run_dates']['cheer-subject-blend-v4'] == '2026-10-22T21:00:02.032000+00:00'
+
+    recorded_ids = {
+        c['run_id']
+        for c in app['demo_set']['cases']
+        if c['kind'] == 'recorded' and c.get('run_id')
+    }
+    assert set(app['demo_runs']) == recorded_ids
+    prov = read_json(source / 'webui/docs/examples/provenance.json')
+    runs_by_id = {r['id']: r for r in prov['runs']}
+    for rid, entry in app['demo_runs'].items():
+        raw = runs_by_id[rid]
+        assert set(entry) == {
+            'duration_seconds',
+            'executed_at',
+            'comfyui_version',
+            'inputs',
+            'settings',
+            'adjustments',
+            'workflow_sha256',
+        }
+        assert 'prefix' not in entry['settings']
+        assert entry['duration_seconds'] == raw['duration_seconds']
+        assert entry['executed_at'] == raw['executed_at']
+        assert entry['comfyui_version'] == raw['comfyui_version']
+        assert entry['workflow_sha256'] == raw['workflow']['sha256']
+        assert entry['adjustments'] == list(raw.get('adjustments') or [])
+
+    bad_path = source / 'webui/docs/demo-set.json'
+    bad_data = read_json(bad_path)
+    bad_data['status'] = 'unknown'
+    bad_path.write_text(json.dumps(bad_data), encoding='utf-8')
+    with pytest.raises(ValueError, match='Invalid demo set'):
+        build_docs.build(source, tmp_path / 'bad-site')
+

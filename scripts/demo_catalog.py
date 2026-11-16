@@ -12,6 +12,12 @@ from scripts.prepared_demo_catalog import PREPARED_DEMOS
 
 NOTE = '模擬展示：預先準備的插圖／文案，不會依輸入即時生成，也不是所列模型的實測或品質保證。'
 NOTE_EN = 'Simulation: prepared illustrations or copy, not generated from your input and not a benchmark or quality claim for the listed models.'
+NOTE_CASES = '預跑案例：選擇案例後按下生成，就會顯示該案例的實跑紀錄或預製示範；成果不會依輸入即時生成。'
+NOTE_CASES_EN = 'Prerecorded cases: pick a case and press Generate to see its recorded run or prepared example. Results are not generated from your input.'
+TITLE_CASES = '示範案例'
+TITLE_CASES_EN = 'Demo cases'
+PROMPT_CASES = '先選一個示範案例；表單會填入它實際使用的輸入。'
+PROMPT_CASES_EN = 'Pick a demo case first; the form is filled with the inputs it really used.'
 # Unverified tools retain editable examples of input text only. Verified runs
 # override these fields with the exact executed settings and recorded outputs.
 CONTENT = {
@@ -114,12 +120,19 @@ STEPS_EN = {
 }
 
 
-def demos(app_catalog):
+def demos(app_catalog, case_features=None):
     """Return fresh examples for exactly the current app registry plus creation."""
     features = {row['id']: row for row in app_catalog['features']}
     guides = {row['id']: row for row in app_catalog['guides']}
     if set(features) != set(CONTENT) or set(guides) != set(CONTENT) or set(STEPS_EN) != set(CONTENT):
         raise ValueError('Demo content must match every app feature and source guide')
+    if case_features is None:
+        from pathlib import Path
+        from scripts.demo_set import load_demo_set
+        ds = load_demo_set(Path(__file__).resolve().parents[1])
+        case_features = {c['feature_id'] for c in ds.get('cases', []) if c.get('display')}
+    else:
+        case_features = set(case_features)
     result = {}
     for feature_id, spec in CONTENT.items():
         title, title_en, prompt, prompt_en, kind, asset = spec
@@ -140,6 +153,16 @@ def demos(app_catalog):
         if identifier not in result:
             raise ValueError('Recorded example does not match an app feature')
         result[identifier].update(deepcopy(recorded))
+    for identifier, row in result.items():
+        if row['output']['kind'] == 'unavailable' and identifier in case_features:
+            row['output'] = {'kind': 'demo-cases', 'images': []}
+            row['evidence'] = {'kind': 'demo-cases'}
+            row['note'] = NOTE_CASES
+            row['note_en'] = NOTE_CASES_EN
+            row['title'] = TITLE_CASES
+            row['title_en'] = TITLE_CASES_EN
+            row['prompt'] = PROMPT_CASES
+            row['prompt_en'] = PROMPT_CASES_EN
     if any(row['output']['kind'] == 'unavailable' for row in result.values()):
         raise ValueError('Every public tool needs a recorded result or an explicitly labeled prepared example')
     return result
