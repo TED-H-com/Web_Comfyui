@@ -2736,30 +2736,30 @@
     {
       "file": "fl-qingqing-gown-poster.webp",
       "kind": "image",
-      "bytes": 13388,
-      "sha256": "58cd74f07ef58ede1c015caa58bfc9e4d78652fae2d4ccd6da6f33297975dddc",
+      "bytes": 14978,
+      "sha256": "284143b174a4f0fc2eaf0336c21c1dc1388a4cbc2f26ec7726dbbafd11ec57ac",
       "width": 480,
       "height": 832,
       "derived_from": [
         "fl-qingqing-gown.mp4"
       ],
       "metadata_policy": "RGB WebP (quality 82); no EXIF, prompt chunks or private metadata.",
-      "source": "Frame at 1.0 seconds from fl-qingqing-gown.mp4",
-      "tool": "ffmpeg + Pillow"
+      "source": "Last decoded frame (frame 76, zero-based) from fl-qingqing-gown.mp4",
+      "tool": "ffmpeg + Pillow (CPU)"
     },
     {
       "file": "fl-qingqing-gown-thumb.webp",
       "kind": "image",
-      "bytes": 3758,
-      "sha256": "15f1e62ba2414dfa71489f4edd69d67abcec051a7652eb4438caf5cadc0d98ff",
+      "bytes": 4034,
+      "sha256": "3b38c8582bf6f756fc616691f7eb8adc720050c1f12f0fd65fc7158633e81ec5",
       "width": 208,
       "height": 360,
       "derived_from": [
         "fl-qingqing-gown.mp4"
       ],
       "metadata_policy": "RGB WebP thumbnail (quality 75, long side 360 px); no EXIF, prompt chunks or private metadata.",
-      "source": "Thumbnail of fl-qingqing-gown.mp4",
-      "tool": "Pillow"
+      "source": "Last decoded frame (frame 76, zero-based) from fl-qingqing-gown.mp4; thumbnail of the poster",
+      "tool": "ffmpeg + Pillow (CPU)"
     },
     {
       "file": "fl-zhiyuan-suit.mp4",
@@ -2781,30 +2781,30 @@
     {
       "file": "fl-zhiyuan-suit-poster.webp",
       "kind": "image",
-      "bytes": 72356,
-      "sha256": "26a4929ad05c4410b2667628d46b5c1dccd0dfff6d7fff2a3192120a68a243b2",
+      "bytes": 62038,
+      "sha256": "cdd70db836bdd5f9085e7c849dc00c4d60c9e586692081160b8e9e42d7a3ad07",
       "width": 480,
       "height": 832,
       "derived_from": [
         "fl-zhiyuan-suit.mp4"
       ],
       "metadata_policy": "RGB WebP (quality 82); no EXIF, prompt chunks or private metadata.",
-      "source": "Frame at 1.0 seconds from fl-zhiyuan-suit.mp4",
-      "tool": "ffmpeg + Pillow"
+      "source": "Last decoded frame (frame 76, zero-based) from fl-zhiyuan-suit.mp4",
+      "tool": "ffmpeg + Pillow (CPU)"
     },
     {
       "file": "fl-zhiyuan-suit-thumb.webp",
       "kind": "image",
-      "bytes": 14636,
-      "sha256": "4604e588a5cecf2c9ff009f67063eaf1fc34a160fcc6c6b6ae99d63224310324",
+      "bytes": 13238,
+      "sha256": "3ee4b2e39a30b0399b8704178f580be5991e115041012e14ae596bd8e9ab2bbb",
       "width": 208,
       "height": 360,
       "derived_from": [
         "fl-zhiyuan-suit.mp4"
       ],
       "metadata_policy": "RGB WebP thumbnail (quality 75, long side 360 px); no EXIF, prompt chunks or private metadata.",
-      "source": "Thumbnail of fl-zhiyuan-suit.mp4",
-      "tool": "Pillow"
+      "source": "Last decoded frame (frame 76, zero-based) from fl-zhiyuan-suit.mp4; thumbnail of the poster",
+      "tool": "ffmpeg + Pillow (CPU)"
     },
     {
       "file": "fl-xingyu-shrine-night.mp4",
