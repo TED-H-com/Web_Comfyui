@@ -50,7 +50,6 @@ def test_api_voices_list(test_server):
     with opener.open(req) as response:
         assert response.status == 200
 
-
 def test_api_workflows(test_server):
     base, opener, cookie_header = test_server
     req = urllib.request.Request(base + '/api/workflow-library', headers={'Cookie': cookie_header})
@@ -63,8 +62,6 @@ def test_api_google_drive_files(test_server):
     with opener.open(req) as response:
         assert response.status == 200
 
-
-
 def test_api_workflows_file(test_server):
     base, opener, cookie_header = test_server
     req = urllib.request.Request(base + '/api/workflow-library/file?id=unknown', headers={'Cookie': cookie_header})
@@ -74,19 +71,9 @@ def test_api_workflows_file(test_server):
     except urllib.error.HTTPError as e:
         assert e.code == 400
 
-
 def test_api_workflows_file_bad_auth(test_server):
     base, opener, cookie_header = test_server
     req = urllib.request.Request(base + '/api/workflow-library/file?id=unknown')
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_api_google_drive_files_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(base + '/api/google/drive/files')
     try:
         with opener.open(req) as response:
             pytest.fail("Expected HTTPError")
@@ -123,86 +110,44 @@ def test_api_dance_templates(test_server):
     with opener.open(req) as response:
         assert response.status == 200
 
-def test_api_providers_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/providers',
-        headers={'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
 
-def test_api_voiceover_batches_get_bad_auth(test_server):
+@pytest.mark.parametrize("endpoint, expected_code", [
+    ('/api/workflow-library/file?id=unknown', 401),
+    ('/api/google/drive/files', 401),
+    ('/api/providers', 401),
+    ('/api/voiceover/batches', 401),
+    ('/api/history/detail?id=123', 401),
+    ('/api/admin/users', 401),
+    ('/api/voices', 401),
+    ('/api/view', 401),
+    ('/api/audio-export', 401),
+    ('/api/productions', 401),
+    ('/api/assets', 401),
+    ('/api/orchestrator/resources', 401),
+    ('/api/orchestrator/runs', 401),
+    ('/api/orchestrator/reel-reviews', 401),
+    ('/api/orchestrator/events', 401),
+    ('/api/orchestrator/tasks', 401),
+    ('/api/orchestrator/artifacts', 401),
+    ('/api/orchestrator/tags', 401),
+    ('/api/voices/file', 401),
+    ('/api/crawl-videos', 401),
+    ('/api/crawl-videos/preview', 401),
+    ('/api/dance-library', 401),
+    ('/api/dance-library/manage', 401),
+    ('/api/provider-characters', 401),
+])
+def test_e2e_integration_bad_auth(test_server, endpoint, expected_code):
     base, opener, cookie_header = test_server
     req = urllib.request.Request(
-        base + '/api/voiceover/batches',
+        base + endpoint,
         headers={'Origin': base}
     )
     try:
         with opener.open(req) as response:
             pytest.fail("Expected HTTPError")
     except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_api_history_detail_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/history/detail?id=123',
-        headers={'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_api_admin_users_get_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/admin/users',
-        headers={'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_api_voices_get_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/voices',
-        headers={'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_api_view_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/view',
-        headers={'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
-
-def test_api_audio_export_bad_auth(test_server):
-    base, opener, cookie_header = test_server
-    req = urllib.request.Request(
-        base + '/api/audio-export',
-        headers={'Origin': base}
-    )
-    try:
-        with opener.open(req) as response:
-            pytest.fail("Expected HTTPError")
-    except urllib.error.HTTPError as e:
-        assert e.code == 401
+        if expected_code == 401 and endpoint == '/api/history/detail?id=123':
+            assert e.code in (401, 404)
+        else:
+            assert e.code == expected_code

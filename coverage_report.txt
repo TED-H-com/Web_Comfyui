@@ -1,0 +1,180 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+rootdir: /app
+plugins: cov-7.1.0
+collected 114 items
+
+tests/test_e2e_integration.py .......................................... [ 36%]
+...                                                                      [ 39%]
+tests/test_e2e_generate.py ............................................. [ 78%]
+........................                                                 [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.13-final-0 _______________
+
+Name                                                   Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------
+webui/comfy_schema.py                                      9      9     0%   4-13
+webui/config_env.py                                       23     23     0%   2-40
+webui/content_completeness.py                            233    233     0%   11-435
+webui/file_lock.py                                        22     22     0%   7-33
+webui/guarded_breezy_tts.py                              218    218     0%   9-355
+webui/library_catalog.py                                 312    312     0%   6-425
+webui/library_service.py                                 193    193     0%   2-247
+webui/material_collector.py                              186    186     0%   6-221
+webui/media_projects/__init__.py                          34     34     0%   3-211
+webui/media_projects/autoip_adapter.py                   125    125     0%   3-231
+webui/media_projects/brief.py                            248    248     0%   3-415
+webui/media_projects/compiler.py                         317    317     0%   3-819
+webui/media_projects/contracts.py                        749    749     0%   8-1214
+webui/media_projects/delivery_package.py                 161    161     0%   3-277
+webui/media_projects/director_plan.py                     46     46     0%   3-86
+webui/media_projects/edit_executor.py                    219    219     0%   3-348
+webui/media_projects/edit_timeline.py                    143    143     0%   3-295
+webui/media_projects/execution.py                        325    325     0%   10-666
+webui/media_projects/formal_pack.py                      116    116     0%   3-287
+webui/media_projects/formal_pack_evidence.py             109    109     0%   3-271
+webui/media_projects/h3_adapter.py                        40     40     0%   3-79
+webui/media_projects/lint.py                             293    293     0%   3-471
+webui/media_projects/material_selection.py                88     88     0%   3-155
+webui/media_projects/output_binding.py                    40     40     0%   3-97
+webui/media_projects/pack_proposal.py                     72     72     0%   3-159
+webui/media_projects/preview.py                          140    140     0%   10-355
+webui/media_projects/production_api.py                    97     97     0%   3-287
+webui/media_projects/production_edit_api.py              158    158     0%   3-373
+webui/media_projects/production_execution.py              97     97     0%   3-210
+webui/media_projects/production_intent_api.py             24     24     0%   3-75
+webui/media_projects/production_output_api.py             79     79     0%   3-174
+webui/media_projects/production_preparation_api.py       171    171     0%   3-423
+webui/media_projects/production_quote_api.py             112    112     0%   3-258
+webui/media_projects/production_repair_api.py             52     52     0%   3-148
+webui/media_projects/production_state.py                 224    224     0%   3-392
+webui/media_projects/production_store.py                 364    364     0%   3-933
+webui/media_projects/project_runs.py                     135    135     0%   8-314
+webui/media_projects/prompt_contract.py                   74     74     0%   8-179
+webui/media_projects/provider_prompt.py                   70     70     0%   3-172
+webui/media_projects/rights_api.py                        29     29     0%   3-88
+webui/media_projects/rights_store.py                     119    119     0%   8-226
+webui/media_projects/route_review.py                      69     69     0%   8-158
+webui/media_projects/series_continuity_api.py             27     27     0%   3-75
+webui/media_projects/series_continuity_store.py          113    113     0%   3-229
+webui/minimax_h3_native.py                               226    226     0%   14-745
+webui/minimax_h3_product.py                              224    224     0%   13-727
+webui/minimax_h3_readiness.py                            682    682     0%   19-1423
+webui/minimax_h3_web_executor.py                         372    372     0%   9-855
+webui/novel_scene_art/__init__.py                          2      2     0%   8-10
+webui/novel_scene_art/comfy_client.py                    312    312     0%   3-575
+webui/novel_scene_art/compiler.py                        171    171     0%   3-311
+webui/novel_scene_art/contracts.py                       277    277     0%   3-661
+webui/novel_scene_art/errors.py                           10     10     0%   3-36
+webui/novel_scene_art/gpu_lock.py                         78     78     0%   3-130
+webui/novel_scene_art/journal.py                         334    334     0%   3-890
+webui/novel_scene_art/manifests.py                       615    615     0%   3-1563
+webui/novel_scene_art/platform_http.py                   422    422     0%   15-906
+webui/novel_scene_art/platform_output_lifecycle.py       328    328     0%   9-1233
+webui/novel_scene_art/platform_output_store.py          1358   1358     0%   26-2923
+webui/novel_scene_art/platform_request_lifecycle.py      268    268     0%   10-954
+webui/novel_scene_art/platform_request_vault.py         1135   1135     0%   21-2292
+webui/novel_scene_art/platform_service.py                196    196     0%   19-466
+webui/novel_scene_art/platform_service_account.py        399    399     0%   8-1764
+webui/novel_scene_art/platform_service_auth.py           449    449     0%   14-871
+webui/novel_scene_art/platform_store.py                 1493   1493     0%   13-4363
+webui/novel_scene_art/png.py                              82     82     0%   3-140
+webui/novel_scene_art/protocol.py                         55     55     0%   3-83
+webui/novel_scene_art/screening.py                        42     42     0%   3-172
+webui/novel_scene_art/secure_path.py                      33     33     0%   3-64
+webui/novel_scene_art/transport.py                       152    152     0%   3-350
+webui/novel_scene_art/worker.py                          604    604     0%   3-1123
+webui/orchestrator/__init__.py                             4      4     0%   3-44
+webui/orchestrator/api.py                               1046   1046     0%   1-1986
+webui/orchestrator/config.py                             127    127     0%   1-205
+webui/orchestrator/cover_audit.py                         87     87     0%   1-222
+webui/orchestrator/db.py                                 119    119     0%   1-406
+webui/orchestrator/events.py                              21     21     0%   1-51
+webui/orchestrator/project_tasks.py                      314    314     0%   12-597
+webui/orchestrator/reel_autopublish_policy.py             36     36     0%   1-107
+webui/orchestrator/reel_native_stage.py                 1112   1112     0%   10-2543
+webui/orchestrator/reel_proxy_contract.py                133    133     0%   1-292
+webui/orchestrator/reel_proxy_executor.py                 14     14     0%   1-42
+webui/orchestrator/reel_qc_contract.py                   165    165     0%   1-418
+webui/orchestrator/reel_release_gate.py                  682    682     0%   1-1562
+webui/orchestrator/resources.py                          108    108     0%   1-142
+webui/orchestrator/review.py                             422    422     0%   1-876
+webui/orchestrator/review_bridge.py                      163    163     0%   1-426
+webui/orchestrator/review_role_contract.py                51     51     0%   1-81
+webui/orchestrator/review_sync_trigger.py                 49     49     0%   1-89
+webui/orchestrator/review_transport.py                    87     87     0%   1-142
+webui/orchestrator/store.py                              344    344     0%   1-703
+webui/orchestrator/task_wrapper.py                        64     64     0%   1-118
+webui/orchestrator/tasks.py                             4219   4219     0%   1-9244
+webui/orchestrator/worker.py                             819    819     0%   1-1631
+webui/presenter_voice_api.py                              43     43     0%   4-59
+webui/provider_fabric/__init__.py                          9      9     0%   7-71
+webui/provider_fabric/asset_handoff.py                    90     90     0%   3-212
+webui/provider_fabric/autoip.py                         1023   1023     0%   12-2131
+webui/provider_fabric/autoip_catalog_http.py             115    115     0%   3-205
+webui/provider_fabric/autoip_catalog_sync.py             149    149     0%   3-294
+webui/provider_fabric/autoip_contract.py                 924    924     0%   31-2191
+webui/provider_fabric/autoip_golden_http.py               67     67     0%   3-92
+webui/provider_fabric/autoip_golden_issue.py              88     88     0%   3-195
+webui/provider_fabric/autoip_golden_store.py             125    125     0%   8-212
+webui/provider_fabric/autoip_history_adoption.py         110    110     0%   3-261
+webui/provider_fabric/autoip_probe_http.py               116    116     0%   3-249
+webui/provider_fabric/autoip_profiles.py                  44     44     0%   9-275
+webui/provider_fabric/autoip_quote.py                     79     79     0%   3-172
+webui/provider_fabric/autoip_readiness.py                123    123     0%   3-279
+webui/provider_fabric/autoip_reconciliation.py           211    211     0%   3-534
+webui/provider_fabric/autoip_worker.py                   234    234     0%   9-420
+webui/provider_fabric/canonical_spine.py                 338    338     0%   26-805
+webui/provider_fabric/catalog_publication.py              30     30     0%   3-72
+webui/provider_fabric/character_model_publisher.py       237    237     0%   9-507
+webui/provider_fabric/clipmode_import.py                 651    651     0%   14-1250
+webui/provider_fabric/clipmode_preview.py                 54     54     0%   15-214
+webui/provider_fabric/clipmode_projection.py             573    573     0%   18-1531
+webui/provider_fabric/config.py                          174    174     0%   7-259
+webui/provider_fabric/credentials.py                     310    310     0%   14-565
+webui/provider_fabric/h3_adoption.py                      92     92     0%   3-186
+webui/provider_fabric/h3_catalog.py                       43     43     0%   3-113
+webui/provider_fabric/h3_gpu_executor.py                 216    216     0%   3-463
+webui/provider_fabric/h3_profiles.py                      21     21     0%   3-72
+webui/provider_fabric/h3_worker.py                       134    134     0%   3-225
+webui/provider_fabric/http_api.py                        528    528     0%   18-1400
+webui/provider_fabric/import_storage.py                 1083   1083     0%   20-1962
+webui/provider_fabric/local_catalog.py                   508    508     0%   9-807
+webui/provider_fabric/local_history_adoption.py           80     80     0%   3-164
+webui/provider_fabric/local_output_reconciliation.py      45     45     0%   3-89
+webui/provider_fabric/media_materializer.py             1154   1154     0%   15-2295
+webui/provider_fabric/media_preview_http.py               58     58     0%   3-129
+webui/provider_fabric/media_signatures.py                212    212     0%   15-417
+webui/provider_fabric/media_source.py                     74     74     0%   3-138
+webui/provider_fabric/models.py                          313    313     0%   8-523
+webui/provider_fabric/owned_media_source.py               67     67     0%   3-138
+webui/provider_fabric/owner_import.py                    527    527     0%   16-1380
+webui/provider_fabric/owner_import_confirm.py            213    213     0%   9-709
+webui/provider_fabric/owner_import_coordinator.py         51     51     0%   9-163
+webui/provider_fabric/owner_import_http.py               186    186     0%   3-467
+webui/provider_fabric/owner_import_previews.py            88     88     0%   3-190
+webui/provider_fabric/owner_import_renditions.py          74     74     0%   3-139
+webui/provider_fabric/owner_import_store.py              716    716     0%   16-2102
+webui/provider_fabric/owner_import_token.py              120    120     0%   3-320
+webui/provider_fabric/profile_rendition.py               102    102     0%   3-192
+webui/provider_fabric/protocols.py                        10     10     0%   3-60
+webui/provider_fabric/provider_worker.py                  86     86     0%   9-226
+webui/provider_fabric/quality.py                         305    305     0%   9-501
+webui/provider_fabric/router.py                           41     41     0%   3-105
+webui/provider_fabric/runtime.py                         576    576     0%   11-1367
+webui/provider_fabric/service.py                        1354   1354     0%   15-3437
+webui/provider_fabric/shadow_routing.py                  193    193     0%   8-423
+webui/provider_fabric/store.py                          2587   2587     0%   13-12074
+webui/provider_fabric/variant_profiles.py                480    480     0%   10-930
+webui/provider_fabric/webhook.py                         166    166     0%   9-329
+webui/qwen_image21.py                                     61     61     0%   2-151
+webui/server.py                                        13270  13270     0%   4-22519
+webui/speaker_similarity.py                               47     47     0%   8-82
+webui/voice_content_quality.py                            83     83     0%   4-126
+webui/voxcpm_tts.py                                      581    581     0%   9-1117
+webui/workflow_guides.py                                 247    247     0%   7-504
+webui/workflow_library.py                                273    273     0%   2-367
+------------------------------------------------------------------------------------
+TOTAL                                                  59962  59962     0%
+============================= 114 passed in 20.53s =============================
